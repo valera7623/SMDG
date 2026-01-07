@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  smdg:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./encrypted:/app/encrypted
+      - ./decrypted:/app/decrypted
+      - ./keys:/app/keys
+    environment:
+      
+      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123
+        DEV_MODE=true

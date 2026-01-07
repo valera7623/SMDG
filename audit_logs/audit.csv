@@ -1,0 +1,12 @@
+timestamp,action,filename,size,user,ip,hash,reason,success
+2026-01-07T21:31:03.783842,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T21:31:03.784216,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T21:33:02.664990,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T21:33:02.665375,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:20:37.807973,keys_loaded,age.key,0,system,127.0.0.1,,Существующий ключ загружен при старте,True
+2026-01-07T22:20:37.808855,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:21:48.028578,delete,meditsinskiy_protokol.txt.age,1184,admin,127.0.0.1,ac9d12abee5a63f55ac7ff452be625aad2774b907873c460f262722340bd2bd6,Ручное удаление администратором,True
+2026-01-07T22:27:12.172447,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T22:27:12.172807,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:29:02.547169,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T22:29:02.547478,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True

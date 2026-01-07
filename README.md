@@ -1,22 +1,28 @@
 SMDG                                                              
 ├─ app                                                            
 │  ├─ api                                                         
-│  │  ├─ __init.py__                                              
+│  │  ├─ __init__.py                                              
+│  │  ├─ cleanup.py                                               
+│  │  ├─ delete.py                                                
 │  │  ├─ download.py                                              
+│  │  ├─ list.py                                                  
+│  │  ├─ stats.py                                                 
 │  │  └─ upload.py                                                
 │  ├─ audit                                                       
 │  │  └─ audit.py                                                 
 │  ├─ config                                                      
 │  │  └─ settings.py                                              
-│  ├─ corer                                                       
-│  │  ├─ __init.py__                                              
-│  │  └─ auth.py                                                  
+│  ├─ core                                                        
+│  │  ├─ __init__.py                                              
+│  │  ├─ audit.py                                                 
+│  │  ├─ auth.py                                                  
+│  │  ├─ cleanup.py                                               
+│  │  └─ storage.py                                               
 │  ├─ crypto                                                      
 │  │  └─ crypto.py                                                
-│  ├─ static                                                      
-│  │  └─ style.css                                                
-│  ├─ storage                                                     
-│  │  └─ storage.py                                               
+│  ├─ keys                                                        
+│  │  ├─ age.key                                                  
+│  │  └─ age.pub                                                  
 │  ├─ templates                                                   
 │  │  ├─ error.html                                               
 │  │  ├─ result.html                                              
@@ -25,12 +31,39 @@ SMDG
 │  └─ main.py                                                     
 ├─ decrypted                                                      
 ├─ encrypted                                                      
-├─ keys                                                                                                           
+├─ keys                                                           
+│  ├─ age.key                                                     
+│  └─ age.pub                                                     
+├─ static                                                         
+│  ├─ css                                                         
+│  │  └─ style.css                                                
+│  ├─ html                                                        
+│  │  ├─ admin.html                                               
+│  │  └─ index.html                                               
+│  └─ js                                                          
+│     ├─ admin.js                                                 
+│     └─ main.js                                                  
+├─ tests                                                          
 ├─ uploads                                                        
-├─ venv                                                                      
+├─ venv                                                                                                             
 ├─ Dockerfile                                                     
 ├─ MVP.md                                                         
-├─ README.md                                                                                                    
-├─ docker-compose.yml                                                                                              
+├─ README.md                                                      
+├─ clean_project.py                                               
+├─ docker-compose.yml                                             
+├─ private_key.key                                                
+├─ public_key.key                                                 
 ├─ requirements.txt                                               
-                                               
+├─ test_delete.py                                                 
+├─ test_file.txt                                                  
+├─ test_stats.py                                                  
+└─ медицинский_протокол.txt                                       
+
+### Безопасность ключей
+
+- Никогда не запускайте сервис в production с `DEV_MODE=true`
+- Приватный ключ `keys/age.key` должен быть создан один раз и сохранён в безопасном месте
+- Используйте Docker volumes для сохранения ключей между перезапусками:
+  ```yaml
+  volumes:
+    - ./keys:/app/keys:ro  # или через docker secrets в swarm/kubernetes

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMDG - Secure Medical Data Gateway</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="/static/js/main.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Secure Medical Data Gateway</h1>
+            <p class="subtitle">v0.1 - Безопасная передача медицинских файлов</p>
+        </header>
+
+        <div class="status ok">
+            ✅ Система работает. Ключи инициализированы.<br>
+            🚮 Автоматическая очистка: включена (30 дней TTL)
+        </div>
+
+        <div class="api-key">
+            🔑 API Key для тестирования: <code>test-token-123</code>
+        </div>
+
+        <section class="section">
+            <h2>📤 Загрузить файл</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="hidden" name="x-api-key" value="test-token-123">
+                <input type="file" name="file" id="fileInput" required>
+                <button type="submit" class="btn-primary">🔐 Зашифровать и загрузить</button>
+            </form>
+        </section>
+
+        <section class="section">
+            <h2>📋 Список файлов</h2>
+            <button onclick="loadFileList()" class="btn-secondary">🔄 Обновить список</button>
+            <div id="fileList" class="file-list">
+                <!-- Файлы появятся здесь -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>📥 Скачать файл</h2>
+            <form id="downloadForm">
+                <input type="hidden" name="x-api-key" value="test-token-123">
+                <input type="text" name="filename" placeholder="Имя зашифрованного файла (например: file.txt.age)" required>
+                <button type="submit" class="btn-primary">🔓 Скачать и расшифровать</button>
+            </form>
+        </section>
+
+        <nav class="nav-links">
+            <a href="/admin" class="btn-admin">⚙️ Панель администратора</a>
+            <a href="/health" class="btn-info">🩺 Проверка здоровья</a>
+            <a href="/docs" class="btn-info">📚 Документация API</a>
+        </nav>
+
+        <footer>
+            <p><strong>Информация о системе:</strong></p>
+            <ul>
+                <li>Все файлы автоматически шифруются при загрузке</li>
+                <li>Зашифрованные файлы хранятся 30 дней</li>
+                <li>Все операции логируются для аудита</li>
+                <li>API: /health, /docs, /admin</li>
+            </ul>
+        </footer>
+    </div>
+</body>
+</html>

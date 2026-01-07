@@ -16,7 +16,8 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
-
+keys/*
+.key
 # Project specific
 *.db
 *.sqlite3
