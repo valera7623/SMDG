@@ -67,3 +67,8 @@ SMDG
   ```yaml
   volumes:
     - ./keys:/app/keys:ro  # или через docker secrets в swarm/kubernetes
+
+
+chmod +x generate-self-signed.sh
+./generate-self-signed.sh
+docker-compose up --build  - запуск с самоподписанным сертификатом

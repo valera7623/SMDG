@@ -10,3 +10,39 @@ timestamp,action,filename,size,user,ip,hash,reason,success
 2026-01-07T22:27:12.172807,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
 2026-01-07T22:29:02.547169,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
 2026-01-07T22:29:02.547478,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:50:53.065006,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T22:50:53.065889,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:51:17.824724,upload,a2fbbdea_meditsinskiy_protokol.txt.age,0,api_user,unknown,979da0a193af596bc6155d57e1032db793042ec2b5d3d556a83b5f1612e3580a,File uploaded and encrypted,True
+2026-01-07T22:51:25.155087,download,a2fbbdea_meditsinskiy_protokol.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T22:51:44.496887,download,a2fbbdea_meditsinskiy_protokol.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T22:52:08.935862,delete,a2fbbdea_meditsinskiy_protokol.txt.age,1184,admin,127.0.0.1,6aceeeb1216829cc09fa63f54e93f88920ed055056b712e73183471b8d0a1f63,Ручное удаление администратором,True
+2026-01-07T22:52:33.466020,upload,3dfbfb05_meditsinskiy_protokol.txt.age,0,api_user,unknown,979da0a193af596bc6155d57e1032db793042ec2b5d3d556a83b5f1612e3580a,File uploaded and encrypted,True
+2026-01-07T22:55:55.362484,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T22:55:55.362963,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T22:56:17.758529,delete,3dfbfb05_meditsinskiy_protokol.txt.age,1184,admin,127.0.0.1,78051aec432a8236f6e071f0c197dbcd12b63d7884d3f817c02ef8a510dd3ce4,Ручное удаление администратором,True
+2026-01-07T23:03:29.847243,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T23:03:29.847546,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T23:04:04.894427,upload,8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,e12f15f1fe275d545bf11c4b1b4d3a717bceec6eea1e9b6fa83cc8d136db9156,File uploaded and encrypted,True
+2026-01-07T23:04:19.206536,download,8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T23:04:30.916172,download,8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T23:04:52.854203,delete,8074cfb8_test_delete.py.age,2744,admin,127.0.0.1,422205039ca1a10f9dc4e33663013f41837941be38b9b58c4adea820740bb687,Ручное удаление администратором,True
+2026-01-07T23:07:39.182171,upload_rejected,SteamSetup.exe,0,api_user,127.0.0.1,,Forbidden MIME type: application/vnd.microsoft.portable-executable,False
+2026-01-07T23:15:51.218070,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T23:15:51.218410,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T23:16:41.692174,upload_rejected,10308255_d4004e714w1631z3213k4067i3416o2100.zip,0,api_user,127.0.0.1,,Forbidden MIME type: application/zip,False
+2026-01-07T23:16:56.132070,upload,meditsinskiy_protokol (13).txt,0,api_user,127.0.0.1,,"Ошибка шифрования age: age: error: failed to open input file ""'/home/ubuntu/SMDG/uploads/tmp_98183243_meditsinskiy_protokol_(13).txt'"": open '/home/ubuntu/SMDG/uploads/tmp_98183243_meditsinskiy_protokol_(13).txt': no such file or directory
+age: report unexpected or unhelpful errors at https://filippo.io/age/report",False
+2026-01-07T23:17:46.290026,upload,d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-07T23:17:52.583614,download,d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T23:18:04.256802,download,d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T23:18:20.605459,delete,d812bdee_commands.txt.age,1940,admin,127.0.0.1,500b94c75ba4a588a369d3000f33af1dbc4e311a07d2ae31014549724bfe0496,Ручное удаление администратором,True
+2026-01-07T23:24:13.842271,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T23:24:13.842676,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-07T23:28:26.746419,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T23:28:26.746741,system_start,,0,system,127.0.0.1,,SMDG v0.1 запущен,True
+2026-01-08T00:23:00.706828,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T00:23:00.707530,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T00:23:16.630704,upload,717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-08T00:23:21.512739,download,717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T00:23:36.843945,download,717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T00:24:02.763723,delete,717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,7aa00f5f16583bcdf7b178bf04561b5a9c8a1c0e562a771c7b933cc7fd4da1a8,Ручное удаление администратором,True

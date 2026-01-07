@@ -7,35 +7,43 @@ from .cleanup import FileCleanupManager
 from .audit import AuditLogger
 import asyncio
 
-# Инициализация логгера (первым, чтобы другие компоненты могли его использовать)
+# Инициализация аудит-логгера (первым, чтобы все компоненты могли его использовать)
 audit_logger = AuditLogger()
 
-# Определение корневой директории проекта
+# Корневая директория проекта
 BASE_DIR = Path.cwd()
 
-print(f"🔧 DEBUG: Корень проекта: {BASE_DIR}")
-print(f"🔧 DEBUG: __file__: {Path(__file__)}")
+# Отладочные print'ы — только если DEBUG=true в окружении
+DEBUG_MODE = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
 
-# Корректировка BASE_DIR, если запущено из папки app/
+if DEBUG_MODE:
+    print(f"🔧 DEBUG: Корень проекта: {BASE_DIR}")
+    print(f"🔧 DEBUG: __file__: {Path(__file__)}")
+
+# Корректировка BASE_DIR, если запущено из подпапки app/
 if BASE_DIR.name == 'app' and (BASE_DIR / 'core').exists():
     BASE_DIR = BASE_DIR.parent
-    print(f"🔧 DEBUG: Исправляем BASE_DIR на: {BASE_DIR}")
+    if DEBUG_MODE:
+        print(f"🔧 DEBUG: Исправляем BASE_DIR на: {BASE_DIR}")
 
-# Основные директории
+# Основные рабочие директории (в корне проекта)
 UPLOAD_DIR = BASE_DIR / "uploads"
 ENCRYPTED_DIR = BASE_DIR / "encrypted"
 DECRYPTED_DIR = BASE_DIR / "decrypted"
 
-print(f"📁 UPLOAD_DIR: {UPLOAD_DIR}")
-print(f"📁 ENCRYPTED_DIR: {ENCRYPTED_DIR}")
-print(f"📁 DECRYPTED_DIR: {DECRYPTED_DIR}")
+if DEBUG_MODE:
+    print(f"📁 UPLOAD_DIR: {UPLOAD_DIR}")
+    print(f"📁 ENCRYPTED_DIR: {ENCRYPTED_DIR}")
+    print(f"📁 DECRYPTED_DIR: {DECRYPTED_DIR}")
 
+# Создаём директории
 for d in [UPLOAD_DIR, ENCRYPTED_DIR, DECRYPTED_DIR]:
     d.mkdir(parents=True, exist_ok=True)
-    print(f"✅ Создана/проверена директория: {d}")
-    print(f"   📍 Абсолютный путь: {d.absolute()}")
+    if DEBUG_MODE:
+        print(f"✅ Создана/проверена директория: {d}")
+        print(f"   📍 Абсолютный путь: {d.absolute()}")
 
-# Директория и путь к ключам шифрования
+# Директория с ключами шифрования
 KEYS_DIR = BASE_DIR / "keys"
 KEYS_DIR.mkdir(exist_ok=True)
 PRIVATE_KEY_PATH = KEYS_DIR / "age.key"
@@ -43,24 +51,23 @@ PRIVATE_KEY_PATH = KEYS_DIR / "age.key"
 # Глобальная переменная для публичного ключа
 _PUBLIC_KEY: str | None = None
 
-# === API KEYS через переменные окружения ===
-# Формат: API_KEYS="test-token-123,another-token-456,admin-789"
-# Если переменная не задана — используем тестовый ключ (только для разработки!)
-raw_api_keys = os.getenv("API_KEYS", "test-token-123")  # fallback только для dev
+# API-ключи через переменную окружения
+raw_api_keys = os.getenv("API_KEYS", "test-token-123")  # fallback только для локальной разработки
 API_KEYS = {key.strip() for key in raw_api_keys.split(",") if key.strip()}
 API_KEY_HEADER = "X-API-KEY"
 
-print(f"🔑 Загружено {len(API_KEYS)} API-ключ(ей) из переменной окружения API_KEYS")
-if "test-token-123" in API_KEYS:
-    print("⚠️  Обнаружен тестовый ключ 'test-token-123' — рекомендуется заменить в production!")
+if DEBUG_MODE or "test-token-123" in API_KEYS:
+    print(f"🔑 Загружено {len(API_KEYS)} API-ключ(ей)")
+    if "test-token-123" in API_KEYS:
+        print("⚠️  ВНИМАНИЕ: обнаружен тестовый ключ 'test-token-123' — замените в production!")
 
-# Менеджер временных файлов (расшифрованные, TTL 1 час)
+# Менеджер временных расшифрованных файлов (TTL = 1 час)
 file_storage = FileStorageManager(
     storage_dir=DECRYPTED_DIR,
     ttl_seconds=3600
 )
 
-# Менеджер очистки зашифрованных файлов (TTL 30 дней)
+# Менеджер автоматической очистки зашифрованных файлов (TTL = 30 дней)
 cleanup_manager = FileCleanupManager(
     encrypted_dir=ENCRYPTED_DIR,
     ttl_days=30
@@ -75,7 +82,8 @@ async def init_keys() -> str:
     dev_mode = os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes")
     
     if PRIVATE_KEY_PATH.exists():
-        print(f"🔑 Найден существующий приватный ключ: {PRIVATE_KEY_PATH}")
+        if DEBUG_MODE:
+            print(f"🔑 Найден существующий приватный ключ: {PRIVATE_KEY_PATH}")
         try:
             with open(PRIVATE_KEY_PATH, "r", encoding="utf-8") as f:
                 content = f.read()
@@ -90,7 +98,8 @@ async def init_keys() -> str:
                 raise ValueError("Не удалось извлечь публичный ключ из age.key")
             
             _PUBLIC_KEY = public_key
-            print("✅ Публичный ключ успешно загружен")
+            if DEBUG_MODE:
+                print("✅ Публичный ключ успешно загружен")
             audit_logger.log_operation(
                 action="keys_loaded",
                 filename="age.key",
@@ -101,19 +110,22 @@ async def init_keys() -> str:
             return public_key
         
         except Exception as e:
-            print(f"❌ Ошибка чтения ключа: {e}")
+            error_msg = f"Ошибка чтения приватного ключа: {e}"
+            if DEBUG_MODE:
+                print(f"❌ {error_msg}")
             audit_logger.log_operation(
                 action="keys_load_failed",
                 filename="age.key",
                 user="system",
-                reason=str(e),
+                reason=error_msg,
                 success=False
             )
             raise
     
     else:
         if dev_mode:
-            print("🔐 DEV_MODE включён — генерируем новую пару ключей...")
+            if DEBUG_MODE:
+                print("🔐 DEV_MODE активен — генерируем новую пару ключей age...")
             try:
                 private_key, public_key = await crypto_manager.generate_keypair(PRIVATE_KEY_PATH)
                 
@@ -122,8 +134,9 @@ async def init_keys() -> str:
                     f.write(f"# Public key for SMDG\n{public_key}\n")
                 
                 _PUBLIC_KEY = public_key
-                print(f"✅ Новые ключи созданы: {PRIVATE_KEY_PATH}")
-                print("⚠️  В production используйте вручную созданные ключи и НЕ включайте DEV_MODE!")
+                if DEBUG_MODE:
+                    print(f"✅ Новые ключи созданы: {PRIVATE_KEY_PATH}")
+                    print("⚠️  В production используйте вручную созданные ключи!")
                 
                 audit_logger.log_operation(
                     action="keys_generated",
@@ -135,18 +148,18 @@ async def init_keys() -> str:
                 return public_key
             
             except Exception as e:
-                print(f"❌ Ошибка генерации ключей: {e}")
+                error_msg = f"Ошибка генерации ключей: {e}"
+                if DEBUG_MODE:
+                    print(f"❌ {error_msg}")
                 raise
         else:
             error_msg = (
                 f"❌ Критическая ошибка: приватный ключ не найден ({PRIVATE_KEY_PATH})\n"
                 "Автоматическая генерация запрещена вне DEV_MODE.\n"
-                "Решение:\n"
-                "  1. Создайте ключ: age-keygen -o keys/age.key\n"
-                "  2. Смонтируйте директорию keys/ в Docker\n"
-                "  3. Перезапустите сервис"
+                "Создайте ключ вручную: age-keygen -o keys/age.key"
             )
-            print(error_msg)
+            if DEBUG_MODE:
+                print(error_msg)
             audit_logger.log_operation(
                 action="keys_missing",
                 filename="age.key",
@@ -157,7 +170,7 @@ async def init_keys() -> str:
             raise RuntimeError("Encryption private key missing in production mode")
 
 def get_public_key() -> str:
-    """Безопасный доступ к публичному ключу"""
+    """Возвращает публичный ключ после инициализации"""
     if _PUBLIC_KEY is None:
         raise RuntimeError("Публичный ключ не инициализирован. Вызовите await init_keys() при старте.")
     return _PUBLIC_KEY

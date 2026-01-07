@@ -30,29 +30,36 @@ async def startup_event():
     print("🚀 Запуск SMDG v0.1...")
     
     try:
-        # Инициализируем ключи
-        public_key = await init_keys()
-        if public_key:
-            print(f"✅ Публичный ключ инициализирован")
-        else:
-            print("❌ Не удалось инициализировать публичный ключ")
+        await init_keys()
+        print("✅ Ключи шифрования инициализированы")
     except Exception as e:
-        print(f"❌ Ошибка при инициализации ключей: {e}")
-        raise
+        print(f"❌ Критическая ошибка при инициализации ключей: {e}")
+        audit_logger.log_operation(
+            action="system_start_failed",
+            filename="",
+            user="system",
+            reason=f"Key initialization failed: {str(e)}",
+            success=False
+        )
+        raise  # Прерываем запуск — без ключей сервис не имеет смысла
     
-    # Логируем запуск системы
-    audit_logger.log_operation(
-        action="system_start",
-        filename="",
-        user="system",
-        reason="SMDG v0.1 запущен"
-    )
+    try:
+        audit_logger.log_operation(
+            action="system_start",
+            filename="",
+            user="system",
+            reason="SMDG v0.1 успешно запущен"
+        )
+    except Exception as e:
+        print(f"⚠️ Ошибка записи в audit лог при старте: {e}")
     
-    # Запускаем автоматическую очистку
-    asyncio.create_task(cleanup_manager.start_cleanup_task())
-    print("✅ Менеджер очистки файлов запущен")
+    try:
+        asyncio.create_task(cleanup_manager.start_cleanup_task())
+        print("✅ Фоновая очистка зашифрованных файлов запущена")
+    except Exception as e:
+        print(f"⚠️ Ошибка запуска cleanup_manager: {e}")
     
-    print("✅ SMDG запущен")
+    print("✅ SMDG полностью готов к работе")
 
 # Главная страница
 @app.get("/", response_class=HTMLResponse)

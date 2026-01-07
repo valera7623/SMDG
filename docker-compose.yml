@@ -10,6 +10,7 @@ services:
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
       - ./keys:/app/keys
+      - /etc/letsencrypt/live/yourdomain.com:/app/certs:ro
     environment:
       
       - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123

@@ -1,6 +1,7 @@
 # app/api/delete.py
 from fastapi import APIRouter, HTTPException, Form, Query, Request
 from app.core import ENCRYPTED_DIR, API_KEYS, audit_logger
+from app.core.utils import sanitize_filename
 from pathlib import Path
 import os
 import hashlib
@@ -25,7 +26,7 @@ async def delete_file(
         raise HTTPException(status_code=401, detail="Invalid API Key")
     
     # Безопасное имя файла
-    safe_filename = _sanitize_filename(filename)
+    safe_filename = sanitize_filename(filename)
     file_path = ENCRYPTED_DIR / safe_filename
     
     print(f"   Безопасное имя: {safe_filename}")
@@ -129,19 +130,7 @@ async def delete_file_get(
     # Используем ту же логику что и в POST
     return await delete_file(filename, api_key, confirm, reason)
 
-def _sanitize_filename(filename: str) -> str:
-    """Безопасное имя файла"""
-    from pathlib import Path
-    filename = Path(filename).name
-    
-    # Запрещаем переход по директориям
-    if '..' in filename or filename.startswith('/') or filename.startswith('\\'):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    
-    # Убираем лишние пробелы
-    filename = filename.strip()
-    
-    return filename
+
 
 def _calculate_file_hash(file_path: Path) -> str:
     """Вычисление хеша файла для аудита"""

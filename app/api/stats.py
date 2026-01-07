@@ -9,6 +9,8 @@ import os
 import time
 import hashlib
 from datetime import datetime, timedelta
+import platform
+import psutil
 import json
 
 router = APIRouter()
@@ -50,65 +52,82 @@ async def _collect_all_stats():
     
     return stats
 
+
 async def _get_system_stats():
-    """Статистика системы"""
-    import psutil
-    import platform
+    """Статистика системы с защитой от ошибок в контейнеризированных средах (Docker)"""
+    
+    # Базовая информация о системе — почти всегда доступна
+    system_info = {
+        "platform": platform.system(),
+        "platform_version": platform.version(),
+        "python_version": platform.python_version(),
+        "hostname": platform.node(),
+        "processor": platform.processor() or "Unknown",
+    }
+    
+    stats = {
+        "system": system_info,
+        "cpu": {},
+        "memory": {},
+        "disk": {},
+        "uptime": "unavailable"
+    }
+    
+    # --- CPU статистика ---
+    try:
+        stats["cpu"]["percent"] = psutil.cpu_percent(interval=0.1)
+        stats["cpu"]["count"] = psutil.cpu_count(logical=True)
+        stats["cpu"]["physical_count"] = psutil.cpu_count(logical=False)
+    except Exception as e:
+        print(f"⚠️ psutil.cpu_* недоступен (вероятно, Docker): {e}")
+        stats["cpu"]["percent"] = "unavailable_in_container"
+        stats["cpu"]["count"] = "unavailable_in_container"
     
     try:
-        # Информация о системе
-        system_info = {
-            "platform": platform.system(),
-            "platform_version": platform.version(),
-            "python_version": platform.python_version(),
-            "hostname": platform.node(),
-            "processor": platform.processor() or "Unknown",
-        }
-        
-        # Использование CPU
-        cpu_percent = psutil.cpu_percent(interval=0.1)
-        cpu_count = psutil.cpu_count()
-        
-        # Использование памяти
-        memory = psutil.virtual_memory()
-        
-        # Использование диска
-        disk = psutil.disk_usage('/')
-        
-        # Загрузка системы
-        load_avg = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else (0, 0, 0)
-        
-        return {
-            "system": system_info,
-            "cpu": {
-                "percent": cpu_percent,
-                "count": cpu_count,
-                "load_avg": load_avg
-            },
-            "memory": {
-                "total_gb": memory.total / (1024**3),
-                "available_gb": memory.available / (1024**3),
-                "percent": memory.percent,
-                "used_gb": memory.used / (1024**3)
-            },
-            "disk": {
-                "total_gb": disk.total / (1024**3),
-                "free_gb": disk.free / (1024**3),
-                "percent": disk.percent,
-                "used_gb": disk.used / (1024**3)
-            },
-            "uptime": time.time() - psutil.boot_time()
-        }
-        
+        # getloadavg() часто недоступен в Docker
+        if hasattr(psutil, 'getloadavg'):
+            stats["cpu"]["load_avg"] = psutil.getloadavg()
+        else:
+            stats["cpu"]["load_avg"] = "not_supported"
     except Exception as e:
-        print(f"⚠️  Не удалось собрать системную статистику: {e}")
-        return {
-            "system": {"error": str(e)},
-            "cpu": {"error": "Not available"},
-            "memory": {"error": "Not available"},
-            "disk": {"error": "Not available"},
-            "uptime": 0
+        print(f"⚠️ psutil.getloadavg() недоступен: {e}")
+        stats["cpu"]["load_avg"] = "unavailable_in_container"
+    
+    # --- Память ---
+    try:
+        memory = psutil.virtual_memory()
+        stats["memory"] = {
+            "total_gb": round(memory.total / (1024**3), 2),
+            "available_gb": round(memory.available / (1024**3), 2),
+            "used_gb": round(memory.used / (1024**3), 2),
+            "percent": memory.percent
         }
+    except Exception as e:
+        print(f"⚠️ psutil.virtual_memory() недоступен: {e}")
+        stats["memory"] = {"error": "unavailable_in_container"}
+    
+    # --- Диск ---
+    try:
+        disk = psutil.disk_usage('/')
+        stats["disk"] = {
+            "total_gb": round(disk.total / (1024**3), 2),
+            "used_gb": round(disk.used / (1024**3), 2),
+            "free_gb": round(disk.free / (1024**3), 2),
+            "percent": disk.percent
+        }
+    except Exception as e:
+        print(f"⚠️ psutil.disk_usage() недоступен: {e}")
+        stats["disk"] = {"error": "unavailable_in_container"}
+    
+    # --- Uptime системы ---
+    try:
+        boot_time = psutil.boot_time()
+        stats["uptime"] = round(time.time() - boot_time, 0)
+    except Exception as e:
+        print(f"⚠️ psutil.boot_time() недоступен: {e}")
+        stats["uptime"] = "unavailable_in_container"
+    
+    return stats
 
 async def _get_storage_stats():
     """Статистика хранилища"""
