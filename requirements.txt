@@ -1,0 +1,6 @@
+fastapi
+unicorn
+python-multipart
+python_magic
+age
+requests
