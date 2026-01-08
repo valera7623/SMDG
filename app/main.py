@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.api import upload, download, list, delete, cleanup, stats
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
+from app.core.middleware import AuditMiddleware
 import asyncio
 import os
 
@@ -12,6 +13,8 @@ app = FastAPI(
     title="Secure Medical Data Gateway v0.1",
     version="0.1.0"
 )
+
+app.add_middleware(AuditMiddleware)
 
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")

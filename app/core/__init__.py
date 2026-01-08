@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 from app.crypto.crypto import crypto_manager
 from app.core.storage import FileStorageManager
+from app.core.auth import API_KEYS
 from .cleanup import FileCleanupManager
 from .audit import AuditLogger
 import asyncio
@@ -51,15 +52,7 @@ PRIVATE_KEY_PATH = KEYS_DIR / "age.key"
 # Глобальная переменная для публичного ключа
 _PUBLIC_KEY: str | None = None
 
-# API-ключи через переменную окружения
-raw_api_keys = os.getenv("API_KEYS", "test-token-123")  # fallback только для локальной разработки
-API_KEYS = {key.strip() for key in raw_api_keys.split(",") if key.strip()}
-API_KEY_HEADER = "X-API-KEY"
 
-if DEBUG_MODE or "test-token-123" in API_KEYS:
-    print(f"🔑 Загружено {len(API_KEYS)} API-ключ(ей)")
-    if "test-token-123" in API_KEYS:
-        print("⚠️  ВНИМАНИЕ: обнаружен тестовый ключ 'test-token-123' — замените в production!")
 
 # Менеджер временных расшифрованных файлов (TTL = 1 час)
 file_storage = FileStorageManager(

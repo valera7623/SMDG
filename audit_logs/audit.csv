@@ -73,3 +73,29 @@ age: report unexpected or unhelpful errors at https://filippo.io/age/report",Fal
 2026-01-08T08:21:24.174611,download,9dddcb13_8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
 2026-01-08T08:21:44.158103,download,9dddcb13_8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
 2026-01-08T08:22:13.935015,delete,9dddcb13_8074cfb8_test_delete.py.age,2744,admin,127.0.0.1,a552d24e6636551a955d4ccc6634539e30cf7fd978ce61ea1839034c2c6c0e6f,Ручное удаление администратором,True
+2026-01-08T17:00:07.030642,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T17:00:07.031003,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T17:00:22.439076,upload,108b4bc9_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-08T17:00:37.797268,download,108b4bc9_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T17:00:55.142124,delete,108b4bc9_717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,32ca1ef55958f2372bd418524e33e0dda4093fadcc46ad5f43afa4af03b36852,Ручное удаление администратором,True
+2026-01-08T17:07:21.999209,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T17:07:21.999605,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T17:07:27.814079,GET /admin,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:27.869431,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:27.981369,GET /api/stats/summary,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:31.935365,GET /,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:31.985843,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:41.366276,upload,a3c871ac_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-08T17:07:41.366801,POST /api/upload,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:40.895467,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:52.161568,download,a3c871ac_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T17:07:52.162503,GET /api/download,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:59.565295,GET /admin,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:59.616264,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:07:59.723203,GET /api/stats/summary,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:08:02.554656,download,a3c871ac_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T17:08:02.555402,GET /api/download,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:08:10.230225,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:08:15.010601,delete,a3c871ac_717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,7ada6f18ef395d67d3fc4fb5d504ab7a291d623fb806b84ef935d867c7a11dbf,Ручное удаление администратором,True
+2026-01-08T17:08:15.011105,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True
+2026-01-08T17:08:16.714538,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Sa",True

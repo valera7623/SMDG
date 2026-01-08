@@ -4,6 +4,7 @@ import re
 import hashlib
 from pathlib import Path
 
+
 def sanitize_filename(filename: str) -> str:
     """
     Безопасная очистка имени файла с транслитерацией русских букв.
