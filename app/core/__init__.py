@@ -5,7 +5,7 @@ from app.crypto.crypto import crypto_manager
 from app.core.storage import FileStorageManager
 from .cleanup import FileCleanupManager
 from .audit import AuditLogger
-from .config import settings  # ← Импорт настроек через pydantic-settings
+from .config import settings  
 
 # Инициализация аудит-логгера (первым, чтобы другие компоненты могли его использовать)
 audit_logger = AuditLogger()
@@ -14,7 +14,7 @@ audit_logger = AuditLogger()
 BASE_DIR = Path.cwd()
 
 # Отладочный режим — берётся из настроек
-DEBUG_MODE = settings.is_debug
+DEBUG_MODE = settings.debug
 
 if DEBUG_MODE:
     print(f"🔧 DEBUG: Корень проекта: {BASE_DIR}")
@@ -72,7 +72,7 @@ async def init_keys() -> str:
     KEYS_DIR.mkdir(exist_ok=True)
     
     # DEV_MODE берётся из настроек
-    dev_mode = settings.is_dev_mode
+    dev_mode = settings.dev_mode
     
     if PRIVATE_KEY_PATH.exists():
         if DEBUG_MODE:

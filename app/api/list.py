@@ -2,13 +2,15 @@
 from fastapi import APIRouter, Query, HTTPException, Depends
 from app.core import ENCRYPTED_DIR
 from pathlib import Path
-from app.core.auth import verify_api_key
+
+from app.core.auth import get_current_user, get_current_doctor, get_current_admin
 import os
 
 router = APIRouter()
 
 @router.get("/list")
-async def list_files(current_key: str = Depends(verify_api_key)):
+async def list_files(current_user: str = Depends(get_current_doctor)):
+    
     """Получить список зашифрованных файлов"""
     
     print(f"📋 Запрос списка файлов из {ENCRYPTED_DIR}")

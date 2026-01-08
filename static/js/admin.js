@@ -4,7 +4,7 @@ const API_BASE = '/api';
 
 // Заголовки для всех запросов (API-ключ в заголовке)
 const headers = {
-    'x-api-key': API_KEY
+    'Authorization': `Bearer ${localStorage.getItem("token")}`
 };
 
 // Инициализация

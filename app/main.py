@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from app.api import upload, download, list, delete, cleanup, stats
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core.middleware import AuditMiddleware
+from app.api.auth import router as auth_router
 import asyncio
 import os
 
@@ -26,6 +27,7 @@ app.include_router(list.router, prefix="/api")
 app.include_router(delete.router, prefix="/api")
 app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(auth_router, prefix="/api")
 
 # Инициализация при запуске
 @app.on_event("startup")

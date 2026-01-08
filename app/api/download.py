@@ -9,7 +9,7 @@ from app.core import (
     audit_logger
 )
 from app.core.utils import sanitize_filename
-from app.core.auth import verify_api_key
+from app.core.auth import get_current_user, get_current_admin, get_current_doctor
 from pathlib import Path
 import uuid
 
@@ -26,18 +26,19 @@ def delete_file_after_response(path: Path):
 # ПРАВИЛЬНЫЙ ПОРЯДОК: сначала без дефолта, потом с дефолтом
 @router.get("/download")
 async def download_file_get(
-    background_tasks: BackgroundTasks,          # ← сначала (без дефолта)
-    filename: str = Query(...),                 # ← потом с дефолтом
-    current_key: str = Depends(verify_api_key)  # ← с дефолтом
+    background_tasks: BackgroundTasks,          
+    filename: str = Query(...),                 
+    current_user: str = Depends(get_current_doctor)  
 ):
     return await _download_file(filename, background_tasks)
 
 @router.post("/download")
 async def download_file_post(
-    background_tasks: BackgroundTasks,          # ← сначала
-    filename: str = Form(...),                  # ← потом с дефолтом
-    current_key: str = Depends(verify_api_key)  # ← с дефолтом
+    background_tasks: BackgroundTasks,         
+    filename: str = Form(...),                  
+    current_user: str = Depends(get_current_doctor)  
 ):
+    print(f"Upload от пользователя: {current_user.sub} ({current_user.role})")
     return await _download_file(filename, background_tasks)
 
 # В общей функции порядок тоже важен — без дефолта первым

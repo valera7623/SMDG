@@ -1,6 +1,6 @@
 # app/api/stats.py
 from fastapi import APIRouter, HTTPException, Query, Depends
-from app.core.auth import verify_api_key
+from app.core.auth import get_current_admin
 from app.core import (
     ENCRYPTED_DIR, DECRYPTED_DIR, UPLOAD_DIR, 
     file_storage, cleanup_manager, audit_logger
@@ -17,7 +17,7 @@ import json
 router = APIRouter()
 
 @router.get("/stats")
-async def get_system_stats(current_key: str = Depends(verify_api_key)):
+async def get_system_stats(current_user: str = Depends(get_current_admin)):
     """Получить полную статистику системы"""
     print(f"📊 Запрос статистики системы")
     
@@ -348,7 +348,7 @@ async def _get_performance_stats():
     }
 
 @router.get("/stats/summary")
-async def get_stats_summary(current_key: str = Depends(verify_api_key)):
+async def get_stats_summary(current_key: str = Depends(get_current_admin)):
     """Краткая сводка статистики"""
     try:
         full_stats = await _collect_all_stats()
@@ -381,7 +381,7 @@ async def get_stats_summary(current_key: str = Depends(verify_api_key)):
         raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
 
 @router.get("/stats/health")
-async def get_health_detailed(current_key: str = Depends(verify_api_key)):
+async def get_health_detailed(current_key: str = Depends(get_current_admin)):
     """Детальная проверка здоровья системы"""
     
     health_checks = []

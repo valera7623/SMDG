@@ -6,3 +6,6 @@ age
 requests
 psutil
 pydantic-settings
+
+PyJWT[crypto]>=2.8.0
+python-dotenv  

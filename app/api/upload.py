@@ -11,7 +11,7 @@ from app.core import (
     get_public_key
 )
 from app.core.utils import sanitize_filename, calculate_hash
-from app.core.auth import verify_api_key  # ← Централизованная проверка API-ключа
+from app.core.auth import get_current_user, get_current_doctor, get_current_admin
 
 router = APIRouter()
 
@@ -31,8 +31,9 @@ ALLOWED_MIME_PREFIXES = [
 @router.post("/upload")
 async def upload_file(
     file: UploadFile = File(...),
-    current_key: str = Depends(verify_api_key)  # ← Автоматическая проверка ключа
+    current_user: str = Depends(get_current_doctor)  
 ):
+    print(f"Upload от пользователя: {current_user.sub} ({current_user.role})")
     """
     Загрузка файла с проверкой типа, шифрованием и аудитом.
     """

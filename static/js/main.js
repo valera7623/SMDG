@@ -1,189 +1,222 @@
 // static/js/main.js
-const API_KEY = 'test-token-123';
 const API_BASE = '/api';
 
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // Загружаем список файлов
-    loadFileList();
-    
-    // Настраиваем обработчики форм
-    setupForms();
-});
+let JWT_TOKEN = localStorage.getItem('token') || null;
 
-// Настройка обработчиков форм
-function setupForms() {
-    // Форма загрузки
-    const uploadForm = document.getElementById('uploadForm');
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', handleUpload);
+function getAuthHeaders() {
+    if (JWT_TOKEN) {
+        return { 'Authorization': `Bearer ${JWT_TOKEN}` };
     }
-    
-    // Форма скачивания
-    const downloadForm = document.getElementById('downloadForm');
-    if (downloadForm) {
-        downloadForm.addEventListener('submit', handleDownload);
+    return {};
+}
+
+// Выход из системы
+function logout() {
+    if (confirm('Вы уверены, что хотите выйти?')) {
+        localStorage.removeItem("token");
+        JWT_TOKEN = null;
+
+        document.getElementById('mainApp').style.display = 'none';
+        document.getElementById('loginForm').style.display = 'block';
+
+        // Очищаем список файлов
+        const fileList = document.getElementById('fileList');
+        if (fileList) {
+            fileList.innerHTML = '';
+        }
+
+        alert('Вы успешно вышли из системы');
     }
 }
 
-// Заголовки для всех запросов (API-ключ в заголовке)
-const headers = {
-    'x-api-key': API_KEY
-};
+document.addEventListener('DOMContentLoaded', function () {
+    if (JWT_TOKEN) {
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        loadFileList();
+    } else {
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('mainApp').style.display = 'none';
+    }
 
-// Загрузка списка файлов
+    setupForms();
+});
+
+async function handleLogin(event) {
+    event.preventDefault();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!username || !password) {
+        alert('Введите логин и пароль');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ username, password })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Ошибка входа');
+        }
+
+        const data = await response.json();
+        JWT_TOKEN = data.access_token;
+        localStorage.setItem("token", JWT_TOKEN);
+
+        alert(`Добро пожаловать, ${data.username}!`);
+
+        document.getElementById('loginForm').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        loadFileList();
+
+    } catch (error) {
+        alert(`Ошибка входа: ${error.message}`);
+    }
+}
+
+function setupForms() {
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) uploadForm.addEventListener('submit', handleUpload);
+
+    const downloadForm = document.getElementById('downloadForm');
+    if (downloadForm) downloadForm.addEventListener('submit', handleDownload);
+}
+
 async function loadFileList() {
     const fileList = document.getElementById('fileList');
     if (!fileList) return;
-    
-    fileList.innerHTML = '<div class="loading">⏳ Загрузка списка файлов...</div>';
-    
+
+    fileList.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
+
     try {
-        const response = await fetch(`${API_BASE}/list`, {
-            headers: headers
-        });
-        
+        const response = await fetch(`${API_BASE}/list`, { headers: getAuthHeaders() });
+
         if (!response.ok) {
-            throw new Error(`Ошибка: ${response.status}`);
+            const err = await response.json();
+            throw new Error(err.detail || `Ошибка ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         if (data.count === 0) {
             fileList.innerHTML = '<div class="empty">📭 Нет загруженных файлов</div>';
             return;
         }
-        
+
         let html = '';
         data.files.forEach(file => {
+            // file.name — это полное зашифрованное имя (с префиксом и .age) — именно его нужно для скачивания
+            const encryptedName = file.name;
+            const originalName = file.original_name || encryptedName.replace(/^[a-f0-9]+_/, '').replace('.age$', '');
+
             html += `
                 <div class="file-item">
                     <div class="file-info">
-                        <div class="file-name">📄 ${file.original_name}</div>
+                        <div class="file-name">📄 ${originalName}</div>
                         <div class="file-size">
                             📏 ${file.size} байт<br>
-                            🔐 ${file.name}
+                            🔐 <small>${encryptedName}</small>
                         </div>
                     </div>
-                    <a href="#" onclick="downloadFile('${file.name}')" class="btn-download">📥 Скачать</a>
+                    <button onclick="downloadFile('${encryptedName}')" class="btn-secondary">📥 Скачать</button>
                 </div>
             `;
         });
+
         fileList.innerHTML = html;
-        
+
     } catch (error) {
-        console.error('Ошибка загрузки списка:', error);
-        fileList.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
+        fileList.innerHTML = `<div class="error">❌ ${error.message}</div>`;
     }
 }
 
-// Обработка загрузки файла
 async function handleUpload(event) {
     event.preventDefault();
-    
+
     const form = event.target;
     const fileInput = form.querySelector('input[name="file"]');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    
+    const btn = form.querySelector('button[type="submit"]');
+
     if (!fileInput.files.length) {
-        alert('Пожалуйста, выберите файл для загрузки');
+        alert('Выберите файл');
         return;
     }
-    
-    const originalBtnText = submitBtn.textContent;
-    submitBtn.textContent = '⏳ Шифрование...';
-    submitBtn.disabled = true;
-    
+
+    const oldText = btn.textContent;
+    btn.textContent = '⏳ Шифрование...';
+    btn.disabled = true;
+
     try {
         const formData = new FormData(form);
-        
+
         const response = await fetch(`${API_BASE}/upload`, {
             method: 'POST',
             body: formData,
-            headers: headers  // ← API-ключ в заголовке
+            headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || `Ошибка: ${response.status}`);
+            const err = await response.json();
+            throw new Error(err.detail || `Ошибка ${response.status}`);
         }
-        
+
         const result = await response.json();
-        
-        alert(`✅ Файл успешно загружен и зашифрован!\n\nЗашифрованный файл: ${result.encrypted_file}\nРазмер: ${result.original_size} → ${result.encrypted_size} байт`);
-        
-        // Очищаем поле файла
+        alert(`✅ Успешно загружен: ${result.encrypted_file}`);
         fileInput.value = '';
-        
-        // Обновляем список файлов
         loadFileList();
-        
+
     } catch (error) {
-        console.error('Ошибка загрузки:', error);
         alert(`❌ Ошибка загрузки: ${error.message}`);
     } finally {
-        submitBtn.textContent = originalBtnText;
-        submitBtn.disabled = false;
+        btn.textContent = oldText;
+        btn.disabled = false;
     }
 }
 
-// Обработка формы скачивания (из формы)
-async function handleDownload(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const filenameInput = form.querySelector('input[name="filename"]');
-    const filename = filenameInput.value.trim();
-    
-    if (!filename) {
-        alert('Пожалуйста, введите имя файла');
-        return;
-    }
-    
-    await downloadFile(filename);
-    
-    // Очищаем поле
-    filenameInput.value = '';
-}
-
-// Функция для скачивания файла (используется из списка и формы)
-async function downloadFile(filename) {
+async function downloadFile(encryptedFilename) {
     try {
-        const response = await fetch(`${API_BASE}/download?filename=${encodeURIComponent(filename)}`, {
-            headers: headers  // ← API-ключ в заголовке
+        const response = await fetch(`${API_BASE}/download?filename=${encodeURIComponent(encryptedFilename)}`, {
+            headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || `Ошибка: ${response.status}`);
+            const err = await response.json();
+            throw new Error(err.detail || `Ошибка ${response.status}`);
         }
-        
-        // Создаём blob и скачиваем файл
+
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.style.display = 'none';
         a.href = url;
-        
-        // Извлекаем оригинальное имя из заголовка Content-Disposition
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let originalName = filename.replace('.age', '');  // fallback
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="?(.+)"?/i);
-            if (match) originalName = match[1];
-        }
-        a.download = originalName;
-        
+        a.download = encryptedFilename.replace(/^[a-f0-9]+_/, '').replace('.age$', '');  // оригинальное имя
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
+        a.remove();
+
     } catch (error) {
-        console.error('Ошибка скачивания:', error);
         alert(`❌ Ошибка скачивания: ${error.message}`);
     }
 }
 
-// Обновление списка файлов каждые 30 секунд
-setInterval(loadFileList, 30000);
+async function handleDownload(event) {
+    event.preventDefault();
+    const input = document.querySelector('#downloadForm input[name="filename"]');
+    const filename = input.value.trim();
+    if (filename) {
+        await downloadFile(filename);
+        input.value = '';
+    } else {
+        alert('Введите имя зашифрованного файла (с .age)');
+    }
+}
+
+setInterval(() => {
+    if (JWT_TOKEN) loadFileList();
+}, 30000);
