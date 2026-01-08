@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 import hashlib
 from typing import Tuple
-
+from app.core.utils import calculate_hash
 
 class CryptoManager:
     """Менеджер для асинхронной работы с age"""
@@ -66,14 +66,8 @@ class CryptoManager:
         private_key = content.splitlines()[0] if content.splitlines() else ""
         return private_key, public_key
 
-    @staticmethod
-    def calculate_hash(file_path: Path) -> str:
-        """SHA256 хеш файла (синхронно — быстро и безопасно)"""
-        hasher = hashlib.sha256()
-        with open(file_path, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hasher.update(chunk)
-        return hasher.hexdigest()
+    
+    
 
     @staticmethod
     async def encrypt_file(input_path: Path, output_path: Path, public_key: str) -> None:

@@ -3,7 +3,7 @@ import os
 import uuid
 import magic
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Query
-from app.core.utils import sanitize_filename
+from app.core.utils import sanitize_filename, calculate_hash
 from app.core import (
     UPLOAD_DIR, ENCRYPTED_DIR, crypto_manager,
     API_KEYS, get_public_key, audit_logger
@@ -82,7 +82,7 @@ async def upload_file(
         )
         
         encrypted_size = encrypted_path.stat().st_size
-        file_hash = crypto_manager.calculate_hash(upload_path)
+        file_hash = calculate_hash(upload_path)
         
         audit_logger.log_operation(
             action="upload",

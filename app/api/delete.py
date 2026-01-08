@@ -1,7 +1,7 @@
 # app/api/delete.py
 from fastapi import APIRouter, HTTPException, Form, Query, Request
 from app.core import ENCRYPTED_DIR, API_KEYS, audit_logger
-from app.core.utils import sanitize_filename
+from app.core.utils import sanitize_filename, calculate_hash
 from pathlib import Path
 import os
 import hashlib
@@ -52,7 +52,7 @@ async def delete_file(
     file_info = {
         "filename": safe_filename,
         "size": file_path.stat().st_size,
-        "hash": _calculate_file_hash(file_path),
+        "hash": calculate_hash(file_path),
         "path": str(file_path)
     }
     
@@ -132,13 +132,3 @@ async def delete_file_get(
 
 
 
-def _calculate_file_hash(file_path: Path) -> str:
-    """Вычисление хеша файла для аудита"""
-    hasher = hashlib.sha256()
-    try:
-        with open(file_path, 'rb') as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hasher.update(chunk)
-        return hasher.hexdigest()
-    except Exception as e:
-        return f"hash_error: {str(e)}"

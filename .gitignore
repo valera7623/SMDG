@@ -23,4 +23,4 @@ keys/*
 *.sqlite3
 logs/
 *.log
-*.svg
+*.csv
