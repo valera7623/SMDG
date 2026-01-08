@@ -46,3 +46,30 @@ age: report unexpected or unhelpful errors at https://filippo.io/age/report",Fal
 2026-01-08T00:23:21.512739,download,717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
 2026-01-08T00:23:36.843945,download,717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
 2026-01-08T00:24:02.763723,delete,717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,7aa00f5f16583bcdf7b178bf04561b5a9c8a1c0e562a771c7b933cc7fd4da1a8,Ручное удаление администратором,True
+2026-01-08T01:02:02.417013,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T01:02:02.417663,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T01:03:45.720227,upload,169fca6c_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-08T01:04:18.360518,download,169fca6c_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T01:05:39.313923,delete,169fca6c_717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,ccbd9078653cba91fdf4cd4441cd1323bf347da76175a84993b92864537a7f21,Ручное удаление администратором,True
+2026-01-08T01:46:01.377430,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T01:46:01.378572,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T01:46:45.463524,upload,6511ef21_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-07T19:43:40.267962,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-07T19:43:40.268248,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-07T19:44:12.584012,delete,6511ef21_717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,110c0fa2e332e314daa2b678d02b11c4f937bfd7be5db4b346a93894b9c72931,Ручное удаление администратором,True
+2026-01-07T19:44:29.776150,upload,717004b8_d812bdee_commands (1).txt,0,api_user,127.0.0.1,,"Ошибка шифрования age: age: error: failed to open input file ""'/app/uploads/tmp_e4482314_717004b8_d812bdee_commands_(1).txt'"": open '/app/uploads/tmp_e4482314_717004b8_d812bdee_commands_(1).txt': no such file or directory
+age: report unexpected or unhelpful errors at https://filippo.io/age/report",False
+2026-01-07T19:44:46.346057,upload,67422b49_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,f5ef332b01c77bd58e8dc328c00d6c7c899a6594ca0d6359ed1fb125f04b1b4a,File uploaded and encrypted,True
+2026-01-07T19:44:56.501746,download,67422b49_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T19:45:15.269094,download,67422b49_717004b8_d812bdee_commands.txt.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-07T19:45:45.336067,delete,67422b49_717004b8_d812bdee_commands.txt.age,1940,admin,127.0.0.1,3ae7fe06ac484147fb2d22edfaf4d8c16e747a585c6e2259ad03479caf25fb99,Ручное удаление администратором,True
+2026-01-08T08:19:47.024643,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-08T08:19:47.025464,system_start,,0,system,127.0.0.1,,SMDG v0.1 успешно запущен,True
+2026-01-08T08:20:58.870757,upload,67422b49_717004b8_d812bdee_commands (1).txt,0,api_user,127.0.0.1,,"Ошибка шифрования age: age: error: failed to open input file ""'/app/uploads/tmp_4ce07db7_67422b49_717004b8_d812bdee_commands_(1).txt'"": open '/app/uploads/tmp_4ce07db7_67422b49_717004b8_d812bdee_commands_(1).txt': no such file or directory
+age: report unexpected or unhelpful errors at https://filippo.io/age/report",False
+2026-01-08T08:21:07.059764,upload,d812bdee_commands (1).txt,0,api_user,127.0.0.1,,"Ошибка шифрования age: age: error: failed to open input file ""'/app/uploads/tmp_f9acda1d_d812bdee_commands_(1).txt'"": open '/app/uploads/tmp_f9acda1d_d812bdee_commands_(1).txt': no such file or directory
+age: report unexpected or unhelpful errors at https://filippo.io/age/report",False
+2026-01-08T08:21:19.347652,upload,9dddcb13_8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,e12f15f1fe275d545bf11c4b1b4d3a717bceec6eea1e9b6fa83cc8d136db9156,File uploaded and encrypted,True
+2026-01-08T08:21:24.174611,download,9dddcb13_8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T08:21:44.158103,download,9dddcb13_8074cfb8_test_delete.py.age,0,api_user,127.0.0.1,,File downloaded and decrypted,True
+2026-01-08T08:22:13.935015,delete,9dddcb13_8074cfb8_test_delete.py.age,2744,admin,127.0.0.1,a552d24e6636551a955d4ccc6634539e30cf7fd978ce61ea1839034c2c6c0e6f,Ручное удаление администратором,True

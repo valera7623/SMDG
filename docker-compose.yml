@@ -10,8 +10,9 @@ services:
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
       - ./keys:/app/keys
-      - /etc/letsencrypt/live/yourdomain.com:/app/certs:ro
+      - ./certs:/app/certs
+      - ./static:/app/static  
+      - ./audit_logs:/app/audit_logs  
     environment:
-      
-      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123
-        DEV_MODE=true
+      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123,test-token-123
+      - DEV_MODE=true

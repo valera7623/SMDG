@@ -1,5 +1,5 @@
 fastapi
-unicorn
+uvicorn
 python-multipart
 python_magic
 age
