@@ -1,21 +1,20 @@
 # app/core/__init__.py
 from pathlib import Path
-import os
+import asyncio
 from app.crypto.crypto import crypto_manager
 from app.core.storage import FileStorageManager
-from app.core.auth import API_KEYS
 from .cleanup import FileCleanupManager
 from .audit import AuditLogger
-import asyncio
+from .config import settings  # ← Импорт настроек через pydantic-settings
 
-# Инициализация аудит-логгера (первым, чтобы все компоненты могли его использовать)
+# Инициализация аудит-логгера (первым, чтобы другие компоненты могли его использовать)
 audit_logger = AuditLogger()
 
 # Корневая директория проекта
 BASE_DIR = Path.cwd()
 
-# Отладочные print'ы — только если DEBUG=true в окружении
-DEBUG_MODE = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes")
+# Отладочный режим — берётся из настроек
+DEBUG_MODE = settings.is_debug
 
 if DEBUG_MODE:
     print(f"🔧 DEBUG: Корень проекта: {BASE_DIR}")
@@ -27,7 +26,7 @@ if BASE_DIR.name == 'app' and (BASE_DIR / 'core').exists():
     if DEBUG_MODE:
         print(f"🔧 DEBUG: Исправляем BASE_DIR на: {BASE_DIR}")
 
-# Основные рабочие директории (в корне проекта)
+# Основные рабочие директории
 UPLOAD_DIR = BASE_DIR / "uploads"
 ENCRYPTED_DIR = BASE_DIR / "encrypted"
 DECRYPTED_DIR = BASE_DIR / "decrypted"
@@ -44,7 +43,7 @@ for d in [UPLOAD_DIR, ENCRYPTED_DIR, DECRYPTED_DIR]:
         print(f"✅ Создана/проверена директория: {d}")
         print(f"   📍 Абсолютный путь: {d.absolute()}")
 
-# Директория с ключами шифрования
+# Директория и путь к ключам шифрования
 KEYS_DIR = BASE_DIR / "keys"
 KEYS_DIR.mkdir(exist_ok=True)
 PRIVATE_KEY_PATH = KEYS_DIR / "age.key"
@@ -60,19 +59,20 @@ file_storage = FileStorageManager(
     ttl_seconds=3600
 )
 
-# Менеджер автоматической очистки зашифрованных файлов (TTL = 30 дней)
+# Менеджер очистки зашифрованных файлов (TTL = 30 дней)
 cleanup_manager = FileCleanupManager(
     encrypted_dir=ENCRYPTED_DIR,
     ttl_days=30
 )
 
 async def init_keys() -> str:
-    """Безопасная инициализация ключей age с поддержкой DEV_MODE"""
+    """Безопасная инициализация ключей age с использованием настроек"""
     global _PUBLIC_KEY
     
     KEYS_DIR.mkdir(exist_ok=True)
     
-    dev_mode = os.getenv("DEV_MODE", "false").lower() in ("true", "1", "yes")
+    # DEV_MODE берётся из настроек
+    dev_mode = settings.is_dev_mode
     
     if PRIVATE_KEY_PATH.exists():
         if DEBUG_MODE:
@@ -176,10 +176,10 @@ __all__ = [
     'PRIVATE_KEY_PATH',
     'get_public_key',
     'crypto_manager',
-    'API_KEYS',
-    'API_KEY_HEADER',
+    
     'file_storage',
     'cleanup_manager',
     'audit_logger',
-    'init_keys'
+    'init_keys',
+    'settings'  # ← Экспортируем для возможного использования в других модулях
 ]

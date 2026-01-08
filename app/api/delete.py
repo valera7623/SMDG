@@ -1,6 +1,7 @@
 # app/api/delete.py
-from fastapi import APIRouter, HTTPException, Form, Query, Request
-from app.core import ENCRYPTED_DIR, API_KEYS, audit_logger
+from fastapi import APIRouter, HTTPException, Form, Query, Request, Depends
+from app.core import ENCRYPTED_DIR, audit_logger
+from app.core.auth import verify_api_key
 from app.core.utils import sanitize_filename, calculate_hash
 from pathlib import Path
 import os
@@ -11,19 +12,17 @@ router = APIRouter()
 @router.post("/delete")
 async def delete_file(
     filename: str = Form(...), 
-    api_key: str = Form(..., alias="x-api-key"),
+    current_key: str = Depends(verify_api_key),
     confirm: str = Form("false"),  # Изменим на строку для простоты
     reason: str = Form("")
 ):
     """Удалить зашифрованный файл"""
     print(f"🗑️  Запрос на удаление файла: {filename}")
-    print(f"   API Key: {api_key}")
+    print(f"   API Key: {verify_api_key}")
     print(f"   Confirm: {confirm}")
     print(f"   Reason: {reason}")
     
-    if api_key not in API_KEYS:
-        print(f"   ❌ Неверный API ключ")
-        raise HTTPException(status_code=401, detail="Invalid API Key")
+    
     
     # Безопасное имя файла
     safe_filename = sanitize_filename(filename)

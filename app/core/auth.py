@@ -1,6 +1,7 @@
 # app/core/auth.py
 import os
-from fastapi import Header, HTTPException, status
+from fastapi import Header, HTTPException, status, Depends
+from .config import settings
 
 # Единственное место определения API-ключей
 def get_api_keys() -> set[str]:

@@ -26,6 +26,11 @@ function setupForms() {
     }
 }
 
+// Заголовки для всех запросов (API-ключ в заголовке)
+const headers = {
+    'x-api-key': API_KEY
+};
+
 // Загрузка списка файлов
 async function loadFileList() {
     const fileList = document.getElementById('fileList');
@@ -34,7 +39,9 @@ async function loadFileList() {
     fileList.innerHTML = '<div class="loading">⏳ Загрузка списка файлов...</div>';
     
     try {
-        const response = await fetch(`${API_BASE}/list?x-api-key=${API_KEY}`);
+        const response = await fetch(`${API_BASE}/list`, {
+            headers: headers
+        });
         
         if (!response.ok) {
             throw new Error(`Ошибка: ${response.status}`);
@@ -49,7 +56,6 @@ async function loadFileList() {
         
         let html = '';
         data.files.forEach(file => {
-            const downloadUrl = `${API_BASE}/download?filename=${encodeURIComponent(file.name)}&x-api-key=${API_KEY}`;
             html += `
                 <div class="file-item">
                     <div class="file-info">
@@ -59,17 +65,14 @@ async function loadFileList() {
                             🔐 ${file.name}
                         </div>
                     </div>
-                    <a href="${downloadUrl}" class="btn-primary" download="${file.original_name}">
-                        📥 Скачать
-                    </a>
+                    <a href="#" onclick="downloadFile('${file.name}')" class="btn-download">📥 Скачать</a>
                 </div>
             `;
         });
-        
         fileList.innerHTML = html;
         
     } catch (error) {
-        console.error('Ошибка загрузки списка файлов:', error);
+        console.error('Ошибка загрузки списка:', error);
         fileList.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
     }
 }
@@ -79,7 +82,7 @@ async function handleUpload(event) {
     event.preventDefault();
     
     const form = event.target;
-    const fileInput = form.querySelector('input[type="file"]');
+    const fileInput = form.querySelector('input[name="file"]');
     const submitBtn = form.querySelector('button[type="submit"]');
     
     if (!fileInput.files.length) {
@@ -96,7 +99,8 @@ async function handleUpload(event) {
         
         const response = await fetch(`${API_BASE}/upload`, {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: headers  // ← API-ключ в заголовке
         });
         
         if (!response.ok) {
@@ -123,7 +127,7 @@ async function handleUpload(event) {
     }
 }
 
-// Обработка скачивания файла
+// Обработка формы скачивания (из формы)
 async function handleDownload(event) {
     event.preventDefault();
     
@@ -136,15 +140,50 @@ async function handleDownload(event) {
         return;
     }
     
-    // Просто открываем ссылку для скачивания
-    const downloadUrl = `${API_BASE}/download?filename=${encodeURIComponent(filename)}&x-api-key=${API_KEY}`;
-    window.open(downloadUrl, '_blank');
+    await downloadFile(filename);
     
     // Очищаем поле
     filenameInput.value = '';
 }
 
-
+// Функция для скачивания файла (используется из списка и формы)
+async function downloadFile(filename) {
+    try {
+        const response = await fetch(`${API_BASE}/download?filename=${encodeURIComponent(filename)}`, {
+            headers: headers  // ← API-ключ в заголовке
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `Ошибка: ${response.status}`);
+        }
+        
+        // Создаём blob и скачиваем файл
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        
+        // Извлекаем оригинальное имя из заголовка Content-Disposition
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let originalName = filename.replace('.age', '');  // fallback
+        if (contentDisposition) {
+            const match = contentDisposition.match(/filename="?(.+)"?/i);
+            if (match) originalName = match[1];
+        }
+        a.download = originalName;
+        
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        console.error('Ошибка скачивания:', error);
+        alert(`❌ Ошибка скачивания: ${error.message}`);
+    }
+}
 
 // Обновление списка файлов каждые 30 секунд
 setInterval(loadFileList, 30000);

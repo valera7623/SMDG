@@ -1,63 +1,67 @@
 # app/api/download.py
-from fastapi import APIRouter, Query, Form, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse, StreamingResponse
-from app.core.utils import sanitize_filename
+from fastapi import APIRouter, Query, Form, HTTPException, BackgroundTasks, Depends
+from fastapi.responses import FileResponse
 from app.core import (
-    ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH,
-    crypto_manager, API_KEYS, audit_logger
+    ENCRYPTED_DIR,
+    DECRYPTED_DIR,
+    PRIVATE_KEY_PATH,
+    crypto_manager,
+    audit_logger
 )
+from app.core.utils import sanitize_filename
+from app.core.auth import verify_api_key
 from pathlib import Path
 import uuid
-import urllib.parse
-import os
 
 router = APIRouter()
 
+def delete_file_after_response(path: Path):
+    try:
+        if path.exists():
+            path.unlink()
+            print(f"🗑️ Удалён временный файл: {path.name}")
+    except Exception as e:
+        print(f"Ошибка удаления {path}: {e}")
 
-
-async def _download_file(filename: str, api_key: str, background_tasks: BackgroundTasks):
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
-    # Используем унифицированную функцию вместо локальной
-    safe_filename = sanitize_filename(filename)
-    
-    # Проверка на path traversal
-    if Path(safe_filename).resolve().name != safe_filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    
-    encrypted_path = ENCRYPTED_DIR / f"{safe_filename}.age"  
-    
-    
-
+# ПРАВИЛЬНЫЙ ПОРЯДОК: сначала без дефолта, потом с дефолтом
 @router.get("/download")
 async def download_file_get(
-    filename: str = Query(...),
-    api_key: str = Query(..., alias="x-api-key")
+    background_tasks: BackgroundTasks,          # ← сначала (без дефолта)
+    filename: str = Query(...),                 # ← потом с дефолтом
+    current_key: str = Depends(verify_api_key)  # ← с дефолтом
 ):
-    return await _download_file(filename, api_key)
+    return await _download_file(filename, background_tasks)
 
 @router.post("/download")
 async def download_file_post(
-    filename: str = Form(...),
-    api_key: str = Form(..., alias="x-api-key")
+    background_tasks: BackgroundTasks,          # ← сначала
+    filename: str = Form(...),                  # ← потом с дефолтом
+    current_key: str = Depends(verify_api_key)  # ← с дефолтом
 ):
-    return await _download_file(filename, api_key)
+    return await _download_file(filename, background_tasks)
 
-async def _download_file(filename: str, api_key: str):
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
+# В общей функции порядок тоже важен — без дефолта первым
+async def _download_file(
+    filename: str,
+    background_tasks: BackgroundTasks
+):
+    # проверка ключа уже сделана через Depends
+    safe_filename = sanitize_filename(filename)
     
-    safe_filename = Path(filename).name
-    if '..' in safe_filename or safe_filename.startswith('/'):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not safe_filename.endswith('.age'):
+        raise HTTPException(status_code=400, detail="Имя файла должно заканчиваться на .age")
+    
+    if Path(safe_filename).name != safe_filename:
+        raise HTTPException(status_code=400, detail="Недопустимые символы в имени файла")
     
     encrypted_path = ENCRYPTED_DIR / safe_filename
-    if not encrypted_path.exists() or not safe_filename.endswith('.age'):
-        raise HTTPException(status_code=404, detail="File not found")
     
-    temp_id = uuid.uuid4().hex
-    decrypted_path = DECRYPTED_DIR / f"decrypted_{temp_id}_{safe_filename[:-4]}"
+    if not encrypted_path.exists() or not encrypted_path.is_file():
+        raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
+    
+    temp_id = uuid.uuid4().hex[:12]
+    original_name = safe_filename[:-4]
+    decrypted_path = DECRYPTED_DIR / f"dec_{temp_id}_{original_name}"
     
     try:
         await crypto_manager.decrypt_file(
@@ -66,40 +70,28 @@ async def _download_file(filename: str, api_key: str):
             private_key_path=PRIVATE_KEY_PATH
         )
         
-        original_name = decrypted_path.name[len(f"decrypted_{temp_id}_"):]
+        if not decrypted_path.exists() or decrypted_path.stat().st_size == 0:
+            raise Exception("Расшифровка не удалась")
         
         audit_logger.log_operation(
             action="download",
             filename=safe_filename,
             user="api_user",
-            reason="File downloaded and decrypted",
+            reason="Успешное скачивание и расшифровка",
             success=True,
             metadata={"original_name": original_name}
         )
         
-        # === НОВОЕ: Создаём StreamingResponse с генератором ===
-        def file_generator():
-            try:
-                with open(decrypted_path, "rb") as f:
-                    while chunk := f.read(8192):
-                        yield chunk
-            finally:
-                # Гарантированное удаление сразу после отправки всех чанков
-                try:
-                    if decrypted_path.exists():
-                        decrypted_path.unlink()
-                        print(f"   Удалён временный файл: {decrypted_path.name}")
-                except Exception as e:
-                    print(f"   Ошибка удаления временного файла: {e}")
+        background_tasks.add_task(delete_file_after_response, decrypted_path)
         
-        return StreamingResponse(
-            file_generator(),
-            media_type='application/octet-stream',
-            headers={"Content-Disposition": f'attachment; filename="{original_name}"'}
+        return FileResponse(
+            path=str(decrypted_path),
+            filename=original_name,
+            media_type="application/octet-stream"
         )
         
     except Exception as e:
-        print(f"Ошибка при скачивании {safe_filename}: {e}")
+        print(f"Ошибка скачивания {safe_filename}: {e}")
         audit_logger.log_operation(
             action="download",
             filename=safe_filename,
@@ -107,10 +99,9 @@ async def _download_file(filename: str, api_key: str):
             reason=str(e),
             success=False
         )
-        # Удаляем файл даже при ошибке
         if decrypted_path.exists():
             try:
                 decrypted_path.unlink()
             except:
                 pass
-        raise HTTPException(status_code=500, detail=f"Download failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка скачивания: {str(e)}")

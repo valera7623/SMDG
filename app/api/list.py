@@ -1,16 +1,15 @@
 # app/api/list.py
-from fastapi import APIRouter, Query, HTTPException
-from app.core import ENCRYPTED_DIR, API_KEYS
+from fastapi import APIRouter, Query, HTTPException, Depends
+from app.core import ENCRYPTED_DIR
 from pathlib import Path
+from app.core.auth import verify_api_key
 import os
 
 router = APIRouter()
 
 @router.get("/list")
-async def list_files(api_key: str = Query(..., alias="x-api-key")):
+async def list_files(current_key: str = Depends(verify_api_key)):
     """Получить список зашифрованных файлов"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
     
     print(f"📋 Запрос списка файлов из {ENCRYPTED_DIR}")
     

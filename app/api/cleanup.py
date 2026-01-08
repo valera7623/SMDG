@@ -1,35 +1,27 @@
 # app/api/cleanup.py
 from time import time
-from fastapi import APIRouter, HTTPException, Query
-from app.core import DECRYPTED_DIR, API_KEYS, file_storage
+from fastapi import APIRouter, HTTPException, Query, Depends
+from app.core import DECRYPTED_DIR, file_storage
+from app.core.auth import verify_api_key
 from pathlib import Path
 import os
 
 router = APIRouter()
 
 @router.get("/cleanup/stats")
-async def get_cleanup_stats(api_key: str = Query(..., alias="x-api-key")):
+async def get_cleanup_stats(current_key: str = Depends(verify_api_key)):
     """Получить статистику по временным файлам"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
     return file_storage.get_stats()
 
 @router.post("/cleanup/force")
-async def force_cleanup(api_key: str = Query(..., alias="x-api-key")):
+async def force_cleanup(current_key: str = Depends(verify_api_key)):
     """Принудительно очистить все временные файлы"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
     result = file_storage.force_cleanup()
     return result
 
 @router.get("/cleanup/files")
-async def list_temp_files(api_key: str = Query(..., alias="x-api-key")):
+async def list_temp_files(current_key: str = Depends(verify_api_key)):
     """Список временных файлов"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
     files = []
     if DECRYPTED_DIR.exists():
         for file_path in DECRYPTED_DIR.iterdir():

@@ -1,8 +1,9 @@
 # app/api/stats.py
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
+from app.core.auth import verify_api_key
 from app.core import (
     ENCRYPTED_DIR, DECRYPTED_DIR, UPLOAD_DIR, 
-    API_KEYS, file_storage, cleanup_manager, audit_logger
+    file_storage, cleanup_manager, audit_logger
 )
 from pathlib import Path
 import os
@@ -16,11 +17,8 @@ import json
 router = APIRouter()
 
 @router.get("/stats")
-async def get_system_stats(api_key: str = Query(..., alias="x-api-key")):
+async def get_system_stats(current_key: str = Depends(verify_api_key)):
     """Получить полную статистику системы"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
     print(f"📊 Запрос статистики системы")
     
     try:
@@ -350,11 +348,8 @@ async def _get_performance_stats():
     }
 
 @router.get("/stats/summary")
-async def get_stats_summary(api_key: str = Query(..., alias="x-api-key")):
+async def get_stats_summary(current_key: str = Depends(verify_api_key)):
     """Краткая сводка статистики"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
-    
     try:
         full_stats = await _collect_all_stats()
         
@@ -386,10 +381,8 @@ async def get_stats_summary(api_key: str = Query(..., alias="x-api-key")):
         raise HTTPException(status_code=500, detail=f"Failed to generate summary: {str(e)}")
 
 @router.get("/stats/health")
-async def get_health_detailed(api_key: str = Query(..., alias="x-api-key")):
+async def get_health_detailed(current_key: str = Depends(verify_api_key)):
     """Детальная проверка здоровья системы"""
-    if api_key not in API_KEYS:
-        raise HTTPException(status_code=401, detail="Invalid API Key")
     
     health_checks = []
     
