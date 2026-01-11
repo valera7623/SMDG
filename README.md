@@ -1,7 +1,8 @@
 SMDG                                                              
 ├─ app                                                            
 │  ├─ api                                                         
-│  │  ├─ __init__.py                                              
+│  │  ├─ __init__.py
+|  |  ├─ auth.py                                          
 │  │  ├─ cleanup.py                                               
 │  │  ├─ delete.py                                                
 │  │  ├─ download.py                                              
@@ -10,13 +11,15 @@ SMDG
 │  │  └─ upload.py                                                
 │  ├─ audit                                                       
 │  │  └─ audit.py                                                 
-│  ├─ config                                                      
-│  │  └─ settings.py                                              
+|  |                                              
 │  ├─ core                                                        
 │  │  ├─ __init__.py                                              
 │  │  ├─ audit.py                                                 
 │  │  ├─ auth.py                                                  
-│  │  ├─ cleanup.py                                               
+│  │  ├─ cleanup.py  
+|  |  ├─ config.py
+|  |  ├─ middleware.py  
+|  |  ├─ utils.py                                  
 │  │  └─ storage.py                                               
 │  ├─ crypto                                                      
 │  │  └─ crypto.py                                                
@@ -44,20 +47,18 @@ SMDG
 │     ├─ admin.js                                                 
 │     └─ main.js                                                  
 ├─ tests                                                          
-├─ uploads                                                        
-├─ venv                                                                                                             
+├─ uploads                                                         ├─venv                                                                                                    |     
 ├─ Dockerfile                                                     
 ├─ MVP.md                                                         
 ├─ README.md                                                      
 ├─ clean_project.py                                               
-├─ docker-compose.yml                                             
+├─ docker-compose.yml 
+├─ docker_compose.yml(production)                                 
 ├─ private_key.key                                                
 ├─ public_key.key                                                 
 ├─ requirements.txt                                               
-├─ test_delete.py                                                 
-├─ test_file.txt                                                  
-├─ test_stats.py                                                  
-└─ медицинский_протокол.txt                                       
+                                                  
+                                      
 
 ### Безопасность ключей
 

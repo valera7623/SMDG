@@ -1,10 +1,16 @@
 # app/main.py
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.api import upload, download, list, delete, cleanup, stats
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
+from app.core.database import engine, AsyncSessionLocal
+from app.models.user import User
+from app.core.security import get_password_hash
+from app.core.config import settings
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 import asyncio
@@ -30,41 +36,75 @@ app.include_router(stats.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 
 # Инициализация при запуске
+
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Запуск SMDG v0.1...")
     
+    # Инициализация ключей шифрования
     try:
         await init_keys()
         print("✅ Ключи шифрования инициализированы")
     except Exception as e:
-        print(f"❌ Критическая ошибка при инициализации ключей: {e}")
-        audit_logger.log_operation(
-            action="system_start_failed",
-            filename="",
-            user="system",
-            reason=f"Key initialization failed: {str(e)}",
-            success=False
-        )
-        raise  # Прерываем запуск — без ключей сервис не имеет смысла
+        print(f"❌ Ошибка инициализации ключей: {e}")
+        # Можно добавить критический выход, если ключи обязательны
     
-    try:
-        audit_logger.log_operation(
-            action="system_start",
-            filename="",
-            user="system",
-            reason="SMDG v0.1 успешно запущен"
-        )
-    except Exception as e:
-        print(f"⚠️ Ошибка записи в audit лог при старте: {e}")
+    # Запуск фоновых задач
+    asyncio.create_task(cleanup_manager.start_cleanup_task())
+    print("✅ Фоновая очистка запущена")
     
-    try:
-        asyncio.create_task(cleanup_manager.start_cleanup_task())
-        print("✅ Фоновая очистка зашифрованных файлов запущена")
-    except Exception as e:
-        print(f"⚠️ Ошибка запуска cleanup_manager: {e}")
-    
-    print("✅ SMDG полностью готов к работе")
+    # ← Новый блок: создание первого админа
+    await create_first_admin()
+
+
+async def create_first_admin():
+    """Создаёт первого администратора, если его ещё нет (только в dev-режиме)"""
+    if not settings.dev_mode:
+        print("👀 Production-режим: пропускаем создание тестового админа")
+        return
+
+    async with AsyncSessionLocal() as db:
+        async with db.begin():  # транзакция
+            # Проверяем существование пользователя admin
+            result = await db.execute(
+                select(User).where(User.username == "admin")
+            )
+            existing_admin = result.scalar_one_or_none()
+
+            if existing_admin:
+                print("ℹ️  Пользователь admin уже существует")
+                return
+
+            # Создаём первого админа
+            admin = User(
+                username="admin",
+                hashed_password=get_password_hash("admin123"),  # ← В ПРОДАКШЕНЕ ИЗМЕНИТЬ!
+                role="admin",
+                is_active=True
+            )
+            
+            db.add(admin)
+            await db.commit()
+            
+            audit_logger.log_operation(
+                action="system_init",
+                filename="",
+                user="system",
+                reason="Создан первый администратор при запуске в dev-режиме",
+                success=True,
+                metadata={"username": "admin"}
+            )
+            
+            print("=" * 60)
+            print("🔐 СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
+            print("   Логин:    admin")
+            print("   Пароль:   admin123")
+            print("   Роль:     admin")
+            print("   ВНИМАНИЕ: Измените пароль сразу после первого входа!")
+            print("=" * 60)
+
+
+
 
 # Главная страница
 @app.get("/", response_class=HTMLResponse)

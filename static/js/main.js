@@ -220,3 +220,37 @@ async function handleDownload(event) {
 setInterval(() => {
     if (JWT_TOKEN) loadFileList();
 }, 30000);
+
+
+async function changePassword(oldPass, newPass) {
+    try {
+        const response = await fetch(`${API_BASE}/auth/change-password`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                old_password: oldPass,
+                new_password: newPass
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Ошибка смены пароля');
+        }
+
+        alert('✅ Пароль успешно изменён');
+    } catch (error) {
+        alert(`❌ ${error.message}`);
+    }
+}
+
+// Пример вызова из формы
+document.getElementById('changePassForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const oldPass = document.getElementById('oldPassword').value;
+    const newPass = document.getElementById('newPassword').value;
+    await changePassword(oldPass, newPass);
+});
