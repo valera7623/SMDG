@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     dev_mode: bool = False
 
     # ← Добавляем это!
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/smdg"
+    database_url: str = "postgresql+psycopg://smdg_user:password@localhost:5432/smdg"
 
     # Опционально: можно добавить отдельные поля для удобства
     # POSTGRES_USER: str = "postgres"
@@ -31,5 +31,6 @@ class Settings(BaseSettings):
     # def database_url(self) -> str:
     #     return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-
+    redis_url: str = "redis://localhost:6379/0"
+    
 settings = Settings()

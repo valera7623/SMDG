@@ -5,3 +5,4 @@ from . import list
 from . import delete
 from . import cleanup
 from . import stats
+from . import auth

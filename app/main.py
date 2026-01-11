@@ -1,5 +1,10 @@
 # app/main.py
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI, Request
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from fastapi.responses import JSONResponse
+from slowapi.middleware import SlowAPIMiddleware
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse, FileResponse
@@ -15,13 +20,31 @@ from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 import asyncio
 import os
+from app.core.rate_limiter import limiter
+
 
 app = FastAPI(
     title="Secure Medical Data Gateway v0.1",
     version="0.1.0"
 )
 
+app.state.limiter = limiter
+def safe_rate_limit_handler(request: Request, exc: Exception):
+    if isinstance(exc, RateLimitExceeded):
+        return _rate_limit_exceeded_handler(request, exc)
+    
+    # Если что-то другое (например ConnectionError) — возвращаем 429 с общим сообщением
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Слишком много запросов или ошибка сервиса. Попробуйте позже."},
+        headers={"Retry-After": "60"}
+    )
+
+app.add_exception_handler(RateLimitExceeded, safe_rate_limit_handler)
+
+
 app.add_middleware(AuditMiddleware)
+app.add_middleware(SlowAPIMiddleware)
 
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -34,6 +57,7 @@ app.include_router(delete.router, prefix="/api")
 app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+
 
 # Инициализация при запуске
 
