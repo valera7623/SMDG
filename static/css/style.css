@@ -21,17 +21,16 @@ body {
     color: #333;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    padding: 20px;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0;
+    padding: 20px;
 }
 
-/* Header (для главной страницы) */
-header:not(#loginForm header) {
+/* Header */
+header {
     text-align: center;
     margin-bottom: 30px;
     padding: 20px;
@@ -40,13 +39,13 @@ header:not(#loginForm header) {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-h1:not(#loginForm h1) {
+h1 {
     color: var(--secondary-color);
     margin-bottom: 10px;
     font-size: 2.5rem;
 }
 
-.subtitle:not(#loginForm .subtitle) {
+.subtitle {
     color: #666;
     font-size: 1.2rem;
 }
@@ -95,13 +94,13 @@ h1:not(#loginForm h1) {
     border-bottom: 2px solid var(--primary-color);
 }
 
-/* Forms (кроме формы авторизации) */
-form:not(#loginForm form) {
+/* Forms */
+form {
     margin: 20px 0;
 }
 
-input[type="file"]:not(#loginForm input),
-input[type="text"]:not(#loginForm input) {
+input[type="file"],
+input[type="text"] {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
@@ -110,8 +109,8 @@ input[type="text"]:not(#loginForm input) {
     font-size: 16px;
 }
 
-/* Buttons (кроме кнопки в форме авторизации) */
-.btn-primary:not(#loginForm .btn-primary),
+/* Buttons */
+.btn-primary,
 .btn-secondary,
 .btn-admin,
 .btn-info,
@@ -130,7 +129,7 @@ input[type="text"]:not(#loginForm input) {
     margin: 10px 0;
 }
 
-.btn-primary:not(#loginForm .btn-primary) {
+.btn-primary {
     background: var(--primary-color);
     color: white;
 }
@@ -155,7 +154,7 @@ input[type="text"]:not(#loginForm input) {
     color: white;
 }
 
-.btn-primary:not(#loginForm .btn-primary):hover,
+.btn-primary:hover,
 .btn-secondary:hover,
 .btn-admin:hover,
 .btn-info:hover {
@@ -276,6 +275,7 @@ footer li:before {
     margin-bottom: 20px;
 }
 
+
 /* Статистика */
 .stats-container {
     background: white;
@@ -392,154 +392,13 @@ footer li:before {
     margin-top: 10px;
 }
 
-/* ============================================= */
-/* СТИЛИ ФОРМЫ АВТОРИЗАЦИИ - ИСПРАВЛЕННЫЕ */
-/* ============================================= */
-
-#loginForm {
-    background: white;
-    border-radius: 16px;
-    padding: 50px 40px;
-    max-width: 450px;
-    margin: 80px auto;
-    box-shadow: 0 20px 40px rgba(0, 105, 148, 0.1);
-    position: relative;
-    overflow: hidden;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-#loginForm:before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(to right, #4fc3f7, #0288d1, #005b9f);
-}
-
-#loginForm header {
-    text-align: center;
-    margin-bottom: 35px;
-    padding: 0;
-    background: none;
-    border-radius: 0;
-    box-shadow: none;
-}
-
-#loginForm h1 {
-    color: #01579b;
-    font-size: 26px !important;
-    margin-bottom: 12px !important;
-    font-weight: 700;
-    text-align: center;
-    border-bottom: none !important;
-    padding-bottom: 0 !important;
-    line-height: 1.3 !important;
-}
-
-#loginForm .subtitle {
-    color: #607d8b;
-    text-align: center;
-    font-size: 15px;
-    margin-bottom: 35px;
-    line-height: 1.5;
-    font-size: 1rem !important;
-}
-
-/* Контейнеры для полей с иконками */
-#loginForm .input-group {
-    position: relative;
-    margin-bottom: 25px;
-}
-
-#loginForm .input-group i {
-    position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #0288d1;
-    font-size: 18px;
-    z-index: 1;
-}
-
-/* Специфичные стили для инпутов в форме авторизации */
-#loginForm input[type="text"],
-#loginForm input[type="password"] {
-    width: 100%;
-    padding: 18px 18px 18px 50px;
-    border: 2px solid #e1f5fe;
-    border-radius: 10px;
-    font-size: 16px;
-    transition: all 0.3s;
-    background-color: #f8fdff;
-    box-sizing: border-box;
-    margin: 0 !important;
-    display: block;
-}
-
-#loginForm input[type="text"]:focus,
-#loginForm input[type="password"]:focus {
-    border-color: #4fc3f7;
-    background-color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.2);
-    outline: none;
-    padding-left: 52px;
-}
-
-#loginForm input[type="text"]::placeholder,
-#loginForm input[type="password"]::placeholder {
-    color: #90a4ae;
-}
-
-/* Специфичная кнопка для формы авторизации */
-#loginForm .btn-primary {
-    width: 100%;
-    background: linear-gradient(135deg, #0288d1 0%, #0277bd 100%);
-    color: white;
-    border: none;
-    padding: 18px;
-    border-radius: 10px;
-    font-size: 17px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-    text-decoration: none;
-}
-
-#loginForm .btn-primary:hover {
-    background: linear-gradient(135deg, #0277bd 0%, #01579b 100%);
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(2, 119, 189, 0.25);
-}
-
-#loginForm .btn-primary i {
-    font-size: 18px;
-}
-
-/* Форма внутри #loginForm */
-#loginForm form {
-    margin: 0;
-    padding: 0;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-    body {
+    .container {
         padding: 10px;
     }
     
-    .container {
-        padding: 0;
-    }
-    
-    h1:not(#loginForm h1) {
+    h1 {
         font-size: 2rem;
     }
     
@@ -550,97 +409,4 @@ footer li:before {
     .controls {
         flex-direction: column;
     }
-    
-    /* Адаптация формы авторизации для мобильных */
-    #loginForm {
-        margin: 40px auto;
-        padding: 30px 20px;
-        max-width: 100%;
-        border-radius: 12px;
-    }
-    
-    #loginForm h1 {
-        font-size: 22px !important;
-    }
-    
-    #loginForm input[type="text"],
-    #loginForm input[type="password"] {
-        padding: 15px 15px 15px 45px;
-        font-size: 15px;
-    }
-    
-    #loginForm .input-group i {
-        left: 15px;
-        font-size: 16px;
-    }
-    
-    #loginForm .btn-primary {
-        padding: 16px;
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 480px) {
-    #loginForm {
-        margin: 20px auto;
-        padding: 25px 15px;
-    }
-    
-    #loginForm h1 {
-        font-size: 20px !important;
-    }
-    
-    #loginForm .subtitle {
-        font-size: 14px !important;
-    }
-}
-
-/* Дополнительные стили для main.js */
-
-.file-meta {
-    margin-top: 5px;
-    font-size: 0.85em;
-    color: #666;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.file-meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.loading, .empty, .error {
-    text-align: center;
-    padding: 30px;
-    color: #666;
-    font-style: italic;
-}
-
-.error {
-    color: #dc3545;
-    background: #f8d7da;
-    border-radius: 8px;
-    padding: 20px;
-    border-left: 4px solid #dc3545;
-}
-
-.file-item {
-    transition: background-color 0.2s ease;
-}
-
-.file-item:hover {
-    background-color: #f8f9fa;
-}
-
-/* Улучшенные кнопки */
-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-button .fa-spinner {
-    margin-right: 8px;
 }

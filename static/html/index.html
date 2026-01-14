@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMDG - Secure Medical Data Gateway</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/main.js" defer></script>
 </head>
@@ -16,24 +15,14 @@
         <!-- Форма логина — видимая по умолчанию -->
         <div id="loginForm">
             <header>
-                <h1><i class="fas fa-shield-alt"></i> Secure Medical Data Gateway</h1>
+                <h1>🔐 Secure Medical Data Gateway</h1>
                 <p class="subtitle">Вход в систему</p>
             </header>
 
             <form onsubmit="handleLogin(event)">
-                <div class="input-group">
-                    <i class="fas fa-user-md"></i>
-                    <input type="text" id="username" placeholder="Логин (admin, doctor1 и т.д.)" required>
-                </div>
-
-                <div class="input-group">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" placeholder="Пароль" required>
-                </div>
-
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-sign-in-alt"></i> Войти
-                </button>
+                <input type="text" id="username" placeholder="Логин (admin, doctor1 и т.д.)" required><br><br>
+                <input type="password" id="password" placeholder="Пароль" required><br><br>
+                <button type="submit" class="btn-primary">Войти</button>
             </form>
         </div>
 
@@ -54,7 +43,9 @@
                 🚮 Автоматическая очистка: включена (30 дней TTL)
             </div>
 
-
+            <div class="api-key">
+                🔑 API Key для тестирования: <code>test-token-123</code>
+            </div>
 
             <section class="section">
                 <h2>📤 Загрузить файл</h2>
@@ -77,8 +68,7 @@
                 <h2>📥 Скачать файл</h2>
                 <form id="downloadForm">
                     <input type="hidden" name="x-api-key" value="test-token-123">
-                    <input type="text" name="filename" placeholder="Имя зашифрованного файла (например: file.txt.age)"
-                        required>
+                    <input type="text" name="filename" placeholder="Имя зашифрованного файла (например: file.txt.age)" required>
                     <button type="submit" class="btn-primary">🔓 Скачать и расшифровать</button>
                 </form>
             </section>
@@ -101,5 +91,4 @@
         </div>
     </div>
 </body>
-
 </html>
