@@ -1,6 +1,10 @@
 # app/api/download.py
-from fastapi import APIRouter, Query, Form, HTTPException, BackgroundTasks, Depends
+from fastapi import APIRouter, Query, HTTPException, BackgroundTasks, Depends, Form
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
 from fastapi.responses import FileResponse
+from sqlalchemy import select
+from datetime import datetime, timezone
 from app.core import (
     ENCRYPTED_DIR,
     DECRYPTED_DIR,
@@ -13,6 +17,9 @@ from app.core.auth import get_current_user, get_current_admin, get_current_docto
 from pathlib import Path
 import uuid
 
+from app.models.file import File
+from app.models.file_link import FileLink
+
 router = APIRouter()
 
 def delete_file_after_response(path: Path):
@@ -23,14 +30,71 @@ def delete_file_after_response(path: Path):
     except Exception as e:
         print(f"Ошибка удаления {path}: {e}")
 
-# ПРАВИЛЬНЫЙ ПОРЯДОК: сначала без дефолта, потом с дефолтом
 @router.get("/download")
-async def download_file_get(
-    background_tasks: BackgroundTasks,          
-    filename: str = Query(...),                 
-    current_user: str = Depends(get_current_doctor)  
+async def download_by_token(
+    background_tasks: BackgroundTasks,
+    token: str = Query(...),
+    db: AsyncSession = Depends(get_db)
 ):
-    return await _download_file(filename, background_tasks)
+    print(f"Запрос скачивания по токену: {token}")
+
+    stmt = select(FileLink).where(FileLink.token == token)
+    result = await db.execute(stmt)
+    link = result.scalar_one_or_none()
+
+    if not link:
+        print("Ссылка не найдена")
+        raise HTTPException(404, "Ссылка не найдена или уже использована")
+
+    print(f"Ссылка найдена: downloads_count={link.downloads_count}/{link.max_downloads}, expires_at={link.expires_at}")
+
+    from datetime import timezone
+    if link.expires_at and link.expires_at < datetime.now(timezone.utc):
+        print("Ссылка истекла")
+        await db.delete(link)
+        await db.commit()
+        raise HTTPException(410, "Ссылка истекла")
+
+    if link.downloads_count >= link.max_downloads:
+        print("Лимит исчерпан")
+        await db.delete(link)
+        await db.commit()
+        raise HTTPException(410, "Лимит скачиваний исчерпан")
+
+    stmt = select(File).where(File.id == link.file_id)
+    result = await db.execute(stmt)
+    file = result.scalar_one_or_none()
+
+    if not file:
+        print("Файл не найден")
+        raise HTTPException(404, "Файл не найден")
+
+    encrypted_path = Path(file.encrypted_path)          # ← исправление здесь
+    decrypted_path = DECRYPTED_DIR / f"{uuid.uuid4()}_{file.original_name}"
+    print(f"Расшифровка в {decrypted_path}")
+
+    await crypto_manager.decrypt_file(
+        encrypted_path,
+        decrypted_path,
+        PRIVATE_KEY_PATH                 
+    )
+
+    link.downloads_count += 1
+    print(f"Обновлено: downloads_count = {link.downloads_count}")
+
+    if link.downloads_count >= link.max_downloads:
+        print("Удаляем ссылку — лимит достигнут")
+        await db.delete(link)
+
+    await db.commit()
+
+    background_tasks.add_task(delete_file_after_response, decrypted_path)
+
+    return FileResponse(
+        path=str(decrypted_path),
+        filename=file.original_name,
+        media_type="application/octet-stream"
+    )
 
 @router.post("/download")
 async def download_file_post(

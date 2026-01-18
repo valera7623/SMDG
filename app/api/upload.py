@@ -1,5 +1,6 @@
 # app/api/upload.py
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form
+from app.models.user import User
 import magic  
 import uuid
 
@@ -11,7 +12,13 @@ from app.core import (
     get_public_key
 )
 from app.core.utils import sanitize_filename, calculate_hash
-from app.core.auth import get_current_user, get_current_doctor, get_current_admin
+from app.core.auth import get_current_user, TokenData
+from app.core.database import get_db
+from app.models.file import File
+from app.models.file_link import FileLink
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from datetime import datetime, timedelta
 
 router = APIRouter()
 
@@ -24,116 +31,126 @@ ALLOWED_MIME_PREFIXES = [
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
     "application/vnd.ms-excel",                                  # .xls
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",       # .xlsx
-    "application/rtf",                                           # RTF
-    # Добавьте другие при необходимости, например DICOM: "application/dicom"
+    "application/dicom"                                          # DICOM файлы
 ]
 
 @router.post("/upload")
 async def upload_file(
-    file: UploadFile = File(...),
-    current_user: str = Depends(get_current_doctor)  
+    file: UploadFile,  # ← Убрали File(...), оставили только тип
+    max_downloads: int = Form(1, ge=1, le=10),
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
-    print(f"Upload от пользователя: {current_user.sub} ({current_user.role})")
-    """
-    Загрузка файла с проверкой типа, шифрованием и аудитом.
-    """
-    original_filename = file.filename or "unknown_file"
-    
-    # === Проверка mime-type ===
-    # Читаем первые 4KB — достаточно для определения типа
-    header_bytes = await file.read(4096)
-    mime_type = magic.from_buffer(header_bytes, mime=True)
-    await file.seek(0)  # Возвращаем указатель в начало для дальнейшего чтения
-    
+    original_filename = sanitize_filename(file.filename)
+
+    # Чтение буфера для MIME (async)
+    buffer = await file.read(2048)
+    mime_type = magic.from_buffer(buffer, mime=True)
+    await file.seek(0)  # async seek назад
+
     if not any(mime_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
-        raise HTTPException(
-            status_code=415,
-            detail=f"Недопустимый тип файла: {mime_type}. "
-                   f"Разрешены: PDF, изображения, офисные документы."
-        )
-    
-    # === Санитизация имени и подготовка путей ===
-    safe_filename = sanitize_filename(original_filename)
-    
-    if not safe_filename:
-        raise HTTPException(status_code=400, detail="Невозможно обработать имя файла")
-    
-    # Добавляем уникальный префикс для избежания коллизий
-    unique_id = uuid.uuid4().hex[:8]
-    final_encrypted_name = f"{unique_id}_{safe_filename}.age"
-    
-    temp_upload_path = UPLOAD_DIR / f"tmp_{unique_id}_{safe_filename}"
-    encrypted_path = ENCRYPTED_DIR / final_encrypted_name
-    
+        raise HTTPException(status_code=400, detail=f"Недопустимый тип файла: {mime_type}")
+
+    temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{original_filename}"
+
     try:
-        # Сохраняем загруженный файл временно
-        contents = await file.read()
-        if not contents:
-            raise HTTPException(status_code=400, detail="Пустой файл")
-        
-        temp_upload_path.write_bytes(contents)
+        with open(temp_upload_path, "wb") as f:
+            while chunk := await file.read(1024 * 1024):  # async read
+                f.write(chunk)
+
         original_size = temp_upload_path.stat().st_size
-        
-        # Получаем публичный ключ для шифрования
-        public_key = get_public_key()
-        
-        # Асинхронное шифрование
-        await crypto_manager.encrypt_file(
-            input_path=temp_upload_path,
-            output_path=encrypted_path,
-            public_key=public_key
-        )
-        
-        encrypted_size = encrypted_path.stat().st_size
-        
-        # Вычисляем хеш оригинального файла
+
+        if original_size == 0:
+            raise HTTPException(status_code=400, detail="Пустой файл")
+
         file_hash = calculate_hash(temp_upload_path)
-        
-        # Аудит успешной загрузки
+
+        final_encrypted_name = f"{uuid.uuid4()}_{original_filename}.age"
+        encrypted_path = ENCRYPTED_DIR / final_encrypted_name
+
+        await crypto_manager.encrypt_file(temp_upload_path, encrypted_path, get_public_key())
+
+        encrypted_size = encrypted_path.stat().st_size
+
+        # Создание записи File в БД
+        user_id = None
+        if current_user:
+            stmt = select(User.id).where(User.username == current_user.sub)
+            result = await db.execute(stmt)
+            user_id = result.scalar_one_or_none()
+
+            if user_id is None:
+                raise HTTPException(status_code=401, detail="Пользователь не найден в БД")
+
+        file_record = File(
+            user_id=user_id,
+            original_name=original_filename,
+            encrypted_name=final_encrypted_name,
+            encrypted_path=str(encrypted_path),
+            original_size=original_size,
+            encrypted_size=encrypted_size,
+            original_hash=file_hash,
+            mime_type=mime_type,
+            uploaded_at=datetime.utcnow(),
+            expires_at=datetime.utcnow() + timedelta(days=30)
+        )
+        db.add(file_record)
+        await db.commit()
+        await db.refresh(file_record)
+
+        # Создание FileLink
+        link = FileLink(
+            file_id=file_record.id,
+            token=str(uuid.uuid4()),
+            max_downloads=max_downloads,
+            downloads_count=0,
+            expires_at=datetime.utcnow() + timedelta(days=7)
+        )
+        db.add(link)
+        await db.commit()
+        await db.refresh(link)
+
         audit_logger.log_operation(
             action="upload",
-            filename=final_encrypted_name,
-            user="api_user",
-            ip="unknown",  # можно добавить Request для реального IP
-            reason="File successfully uploaded and encrypted",
+            filename=original_filename,
+            user=current_user.sub if current_user else "api_user",
+            reason="Файл успешно загружен и зашифрован",
             success=True,
             metadata={
                 "original_name": original_filename,
-                "safe_name": safe_filename,
-                "mime_type": mime_type,
+                "encrypted_file": final_encrypted_name,
                 "original_size": original_size,
                 "encrypted_size": encrypted_size,
-                "hash": file_hash,
-                "hash_algorithm": "sha256"
+                "hash": file_hash
             }
         )
-        
+
         return {
-            "message": "Файл успешно загружен и зашифрован",
+            "status": "success",
+            "file_id": file_record.id,
             "original_name": original_filename,
             "encrypted_file": final_encrypted_name,
-            "original_size": original_size,
-            "encrypted_size": encrypted_size,
-            "hash": file_hash
+            "download_url": f"/api/download?token={link.token}",
+            "expires_at": link.expires_at.isoformat(),
+            "max_downloads": link.max_downloads
         }
-        
+
     except HTTPException:
-        # Перебрасываем известные ошибки дальше
         raise
+
     except Exception as e:
         print(f"Ошибка загрузки файла '{original_filename}': {e}")
         audit_logger.log_operation(
             action="upload",
             filename=original_filename,
-            user="api_user",
+            user=current_user.sub if current_user else "api_user",
             reason=f"Upload failed: {str(e)}",
             success=False,
             metadata={"mime_type": mime_type if 'mime_type' in locals() else "unknown"}
         )
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-    
+
     finally:
-        # Удаляем временный оригинал в любом случае
         if temp_upload_path.exists():
             try:
                 temp_upload_path.unlink()

@@ -16,7 +16,10 @@ logger = logging.getLogger("alembic.env")
 
 # Добавляем модели проекта
 from app.core.database import Base
-from app.models.user import User  # если есть другие модели — тоже импортируй
+from app.models.user import User
+from app.models.file import File
+from app.models.file_link import FileLink
+
 
 target_metadata = Base.metadata
 
