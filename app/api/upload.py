@@ -1,5 +1,5 @@
 # app/api/upload.py
-from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
 from app.models.user import User
 import magic  
 import uuid
@@ -36,10 +36,12 @@ ALLOWED_MIME_PREFIXES = [
 
 @router.post("/upload")
 async def upload_file(
-    file: UploadFile,  # ← Убрали File(...), оставили только тип
+    request: Request,
+    file: UploadFile,  
     max_downloads: int = Form(1, ge=1, le=10),
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
+    
 ):
     original_filename = sanitize_filename(file.filename)
 
@@ -124,13 +126,16 @@ async def upload_file(
                 "hash": file_hash
             }
         )
+        
+        base_url = str(request.base_url).rstrip('/')  # https://localhost:8000/
+        download_url = f"{base_url}/api/download?token={link.token}"
 
         return {
             "status": "success",
             "file_id": file_record.id,
             "original_name": original_filename,
             "encrypted_file": final_encrypted_name,
-            "download_url": f"/api/download?token={link.token}",
+            "download_url": download_url,
             "expires_at": link.expires_at.isoformat(),
             "max_downloads": link.max_downloads
         }
