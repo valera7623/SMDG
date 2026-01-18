@@ -14,7 +14,7 @@ from app.api import upload, download, list, delete, cleanup, stats
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core.database import engine, AsyncSessionLocal
 from app.models.user import User
-from app.core.security import get_password_hash
+from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
@@ -57,6 +57,37 @@ app.include_router(delete.router, prefix="/api")
 app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
+
+
+# Можно вынести в отдельный модуль app/core/initial_data.py
+async def ensure_admin_exists(session: AsyncSession):
+    result = await session.execute(
+        select(User).where(User.username == "admin")
+    )
+    admin = result.scalar_one_or_none()
+
+    if not admin:
+        print("⚡ Создаём первого администратора...")
+        admin = User(
+            username="admin",
+            hashed_password=get_password_hash("ChangeMe123!"),  # ← сразу меняй!
+            role="admin",
+            is_active=True
+        )
+        session.add(admin)
+        await session.commit()
+        await session.refresh(admin)
+        print("✅ Админ создан. Логин: admin | Пароль: ChangeMe123! (измените немедленно!)")
+    else:
+        # Проверяем, валиден ли хэш
+        if not admin.hashed_password.startswith("$argon2"):
+            print("⚠️  Обнаружен НЕВАЛИДНЫЙ хэш пароля у admin!")
+            print("   Текущее значение:", repr(admin.hashed_password[:50]))
+            print("   Автоматически перехэшируем...")
+            admin.hashed_password = get_password_hash("ChangeMe123!")  # ← или генерировать случайный
+            await session.commit()
+            print("✅ Хэш пароля исправлен (argon2)")
+
 
 
 # Инициализация при запуске

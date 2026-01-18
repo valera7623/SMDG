@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     dev_mode: bool = False
 
     # ← Добавляем это!
-    database_url: str = "postgresql+psycopg://smdg_user:password@localhost:5432/smdg"
+    database_url: str = "postgresql+asyncpg://smdg_user:password@localhost:5432/smdg"
 
     # Опционально: можно добавить отдельные поля для удобства
     # POSTGRES_USER: str = "postgres"
