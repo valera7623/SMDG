@@ -80,12 +80,89 @@ async function handleLogin(event) {
     }
 }
 
-function setupForms() {
-    const uploadForm = document.getElementById('uploadForm');
-    if (uploadForm) uploadForm.addEventListener('submit', handleUpload);
+// Обработчик формы загрузки (обновлённый)
+// Обработчик формы загрузки файла
+document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    if (!file) {
+        alert('❌ Выберите файл');
+        return;
+    }
 
-    const downloadForm = document.getElementById('downloadForm');
-    if (downloadForm) downloadForm.addEventListener('submit', handleDownload);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Ошибка загрузки');
+        }
+
+        const data = await response.json();
+
+        // Показываем блок со ссылкой
+        if (data.download_url) {
+            showDownloadLink(data.download_url, data.original_name, data.expires_at, data.max_downloads);
+        } else {
+            alert('✅ Файл загружен, но ссылка не получена');
+        }
+
+        // Обновляем список файлов
+        loadFileList();
+
+        // Очищаем инпут
+        fileInput.value = '';
+    } catch (error) {
+        alert(`❌ ${error.message}`);
+    }
+});
+
+// Функция показа блока со ссылкой
+function showDownloadLink(url, filename, expiresAt, maxDownloads) {
+    const resultDiv = document.getElementById('uploadResult');
+    if (!resultDiv) {
+        console.warn('Элемент #uploadResult не найден');
+        return;  // Если див не найден, не показываем
+    }
+
+    // Очищаем предыдущий контент
+    resultDiv.innerHTML = '';
+
+    // Форматируем дату
+    const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('ru-RU') : 'Не указано';
+
+    // Создаём блок
+    const linkContainer = document.createElement('div');
+    linkContainer.className = 'download-link';
+    linkContainer.innerHTML = `
+        <p><strong>✅ Файл "${filename}" загружен!</strong></p>
+        <p><strong>Ссылка для скачивания:</strong></p>
+        <input type="text" value="${url}" readonly style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        <button onclick="copyToClipboard(this.previousElementSibling)">Копировать</button>
+        <p><small>Срок действия: ${expiresDate} | Макс. скачиваний: ${maxDownloads}</small></p>
+    `;
+
+    resultDiv.appendChild(linkContainer);
+
+    // Автоисчезновение через 30 сек
+    setTimeout(() => {
+        linkContainer.remove();
+    }, 30000);
+}
+
+// Функция копирования в буфер
+function copyToClipboard(input) {
+    input.select();
+    document.execCommand('copy');
+    alert('✅ Ссылка скопирована!');
 }
 
 async function loadFileList() {
