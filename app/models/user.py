@@ -3,7 +3,6 @@ from sqlalchemy import String, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
-
 class User(Base):
     __tablename__ = "users"
 
@@ -21,7 +20,8 @@ class User(Base):
     )
     is_active: Mapped[bool] = mapped_column(default=True)
 
+    # Раскомментировать и использовать string для File (без импорта класса File)
+    #files = relationship("File", back_populates="user")
+
     def __repr__(self):
         return f"<User {self.username} ({self.role})>"
-    
-    files = relationship("File", back_populates="user")

@@ -6,6 +6,8 @@ from sqlalchemy import pool
 
 from alembic import context
 
+import os  # Добавляем для getenv
+
 # this is the Alembic Config object
 config = context.config
 
@@ -20,8 +22,13 @@ from app.models.user import User
 from app.models.file import File
 from app.models.file_link import FileLink
 
-
 target_metadata = Base.metadata
+
+# Добавляем: берём DATABASE_URL из environment (как в docker-compose или .env)
+# Если не задан, берём дефолт из alembic.ini или fallback
+if not config.get_main_option("sqlalchemy.url"):
+    database_url = os.getenv("DATABASE_URL", "postgresql://smdg_user:password@localhost:5432/smdg")  # Fallback на локальный для dev
+    config.set_main_option("sqlalchemy.url", database_url)
 
 def run_migrations_online():
     connectable = engine_from_config(
@@ -41,7 +48,6 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 # Запускаем только онлайн-режим
 run_migrations_online()

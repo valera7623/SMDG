@@ -1,18 +1,87 @@
-version: '3.8'
-
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: smdg
+      POSTGRES_USER: smdg_user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smdg_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+    networks:
+      - backend
+
   smdg:
     build: .
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"  # больше не публикуем 8000 наружу
     volumes:
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
-      - ./keys:/app/keys
-      - ./certs:/app/certs
-      - ./static:/app/static  
-      - ./audit_logs:/app/audit_logs  
+      - ./keys:/app/keys:ro
+      - ./certs:/app/certs:ro
+      - ./static:/app/static
+      - ./audit_logs:/app/audit_logs
     environment:
-      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123,test-token-123
       - DEV_MODE=true
+      - DATABASE_URL=postgresql+asyncpg://smdg_user:password@db:5432/smdg
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - smdg
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  pgdata:

@@ -14,6 +14,5 @@ services:
       - ./static:/app/static  
       - ./audit_logs:/app/audit_logs  
     environment:
-      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123
-      - DEBUG=false
-      - DEV_MODE=false
+      - API_KEYS=prod-token-abc,admin-token-xyz,doctor-token-123,test-token-123
+      - DEV_MODE=true
