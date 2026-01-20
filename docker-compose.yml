@@ -1,3 +1,9 @@
+# docker-compose.yml
+# ────────────────────────────────────────────────────────────────
+# Основной файл оркестрации сервисов проекта SMDG
+# Автоматическое применение миграций, создание админа, HTTPS через nginx
+# ────────────────────────────────────────────────────────────────
+
 services:
   db:
     image: postgres:15-alpine
@@ -28,7 +34,7 @@ services:
   smdg:
     build: .
     expose:
-      - "8000"  # больше не публикуем 8000 наружу
+      - "8000"                      # Внутренний порт, наружу не публикуем
     volumes:
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
@@ -41,6 +47,7 @@ services:
       - DEV_MODE=true
       - DATABASE_URL=postgresql+asyncpg://smdg_user:password@db:5432/smdg
       - REDIS_URL=redis://redis:6379/0
+      - ADMIN_PASSWORD=strongpass123      # Используется entrypoint.sh для создания админа
     depends_on:
       db:
         condition: service_healthy
@@ -85,3 +92,35 @@ networks:
 
 volumes:
   pgdata:
+
+# ────────────────────────────────────────────────────────────────
+# Дополнительные комментарии и рекомендации
+# ────────────────────────────────────────────────────────────────
+#
+# 1. Автоматизация миграций и админа:
+#    Теперь всё происходит через entrypoint.sh в Dockerfile.
+#    При каждом запуске контейнера smdg:
+#      - alembic upgrade head
+#      - python -m app.cli create_admin (с паролем из ADMIN_PASSWORD)
+#      - запуск uvicorn
+#
+# 2. Как использовать ADMIN_PASSWORD:
+#    - Можно менять в .env или прямо здесь
+#    - Для безопасности в продакшене → docker secrets или .env вне репозитория
+#
+# 3. HTTPS:
+#    - Сертификаты должны лежать в ./certs/localhost+1.pem и localhost+1-key.pem
+#    - Сгенерированы через mkcert localhost 127.0.0.1 ::1
+#
+# 4. Рекомендации по продакшену:
+#    - Заменить ADMIN_PASSWORD на переменную из secrets
+#    - Использовать certbot + Let's Encrypt вместо self-signed
+#    - Добавить depends_on: nginx в другие сервисы, если нужно
+#    - Включить HSTS и CSP в nginx.conf
+#
+# 5. Запуск:
+#    docker compose down
+#    docker compose build
+#    docker compose up -d
+#
+# Удачного деплоя!

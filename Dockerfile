@@ -13,10 +13,9 @@ RUN mkdir -p /app/uploads /app/encrypted /app/decrypted /app/keys /app/certs
 
 EXPOSE 8000
 
-# Если main.py в папке app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-     
-     # Уберите SSL параметры если нет сертификатов
-     # "--ssl-keyfile", "/app/certs/privkey.pem", \
-     # "--ssl-certfile", "/app/certs/fullchain.pem"]
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD []    
