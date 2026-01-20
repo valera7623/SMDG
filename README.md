@@ -59,6 +59,16 @@ SMDG
 ├─ requirements.txt                                               
                                                   
                                       
+## 🚀 Быстрый старт
+
+1. Клонируйте репозиторий:
+```bash
+git clone https://github.com/username/repository.git
+cd repository
+
+cp .env.example .env
+
+
 
 ### Безопасность ключей
 
@@ -73,3 +83,5 @@ SMDG
 chmod +x generate-self-signed.sh
 ./generate-self-signed.sh
 docker-compose up --build  - запуск с самоподписанным сертификатом
+
+
