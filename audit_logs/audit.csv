@@ -902,3 +902,45 @@ timestamp,action,filename,size,user,ip,hash,reason,success
 2026-01-23T17:49:19.314267,GET /admin,,0,api,172.20.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
 2026-01-23T17:49:19.379112,GET /api/list,,0,api,172.20.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
 2026-01-23T17:49:28.450435,GET /api/list,,0,api,172.20.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:17.723312,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-23T19:17:27.736307,GET /,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:27.787007,GET /static/css/style.css,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:27.787580,GET /static/js/main.js,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:27.818509,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:43.908600,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:49.356536,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-01-23T19:17:49.357391,POST /api/auth/login,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:51.384598,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:17:57.910424,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:18:27.908846,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:18:43.908576,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:18:57.908996,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:19:27.908345,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:19:43.908424,GET /api/list,,0,api,172.19.0.5,,"Status: 401, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",False
+2026-01-23T19:19:57.908799,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:20:27.908592,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:20:43.908684,GET /api/list,,0,api,172.19.0.5,,"Status: 401, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",False
+2026-01-23T19:21:25.143291,keys_loaded,age.key,0,system,127.0.0.1,,Существующие ключи загружены при старте,True
+2026-01-23T19:21:27.471957,GET /,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:27.502542,GET /static/css/style.css,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:27.508096,GET /static/js/main.js,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:27.529474,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:41.013004,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-01-23T19:21:41.013594,POST /api/auth/login,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:42.757043,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:57.529158,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:58.199687,upload,Errors.txt,0,admin,127.0.0.1,2945f60e3b73a39c8b93c027e2ad57de9b488193e92340b8e93efa61a52d4e10,Файл успешно загружен и зашифрован,True
+2026-01-23T19:21:58.200995,POST /api/upload,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:21:58.259107,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:17.956684,GET /api/download,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:27.529632,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:36.286615,GET /api/download,,0,api,172.19.0.5,,"Status: 404, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",False
+2026-01-23T19:22:42.748464,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:47.041305,GET /admin,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:47.090690,GET /static/js/admin.js,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:47.118465,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:50.802497,delete,8793b995-cf63-4597-9ecb-214219eda775_Errors.txt.age,83538,admin,127.0.0.1,22fb06c6d0cd275b8e1362f9544fb6dc746118c77314e64c69ad39b62084fcfa,manual_delete,True
+2026-01-23T19:22:50.803269,POST /api/delete,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:51.920639,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:54.041576,GET /,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
+2026-01-23T19:22:54.094587,GET /api/list,,0,api,172.19.0.5,,"Status: 200, UA: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.3",True
