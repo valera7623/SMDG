@@ -3,6 +3,32 @@ set -euo pipefail
 
 echo "🚀 Starting SMDG entrypoint..."
 
+# Читаем секреты
+if [ -f /run/secrets/admin_password ]; then
+    export ADMIN_PASSWORD=$(cat /run/secrets/admin_password)
+else
+    echo "❌ ERROR: /run/secrets/admin_password not found!"
+    exit 1
+fi
+
+if [ -f /run/secrets/jwt_secret_key ]; then
+    export JWT_SECRET_KEY=$(cat /run/secrets/jwt_secret_key)
+else
+    echo "❌ ERROR: /run/secrets/jwt_secret_key not found!"
+    exit 1
+fi
+
+# Для DATABASE_URL нужно сформировать строку с паролем postgres
+if [ -f /run/secrets/postgres_password ]; then
+    POSTGRES_PASS=$(cat /run/secrets/postgres_password)
+    export DATABASE_URL="postgresql+asyncpg://smdg_user:${POSTGRES_PASS}@db:5432/smdg"
+else
+    echo "❌ ERROR: postgres password secret missing"
+    exit 1
+fi
+
+
+
 # Ждём PostgreSQL — проверяем порт 5432
 echo "⏳ Waiting for PostgreSQL port 5432..."
 for i in {1..60}; do

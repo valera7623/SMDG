@@ -24,3 +24,6 @@ keys/*
 logs/
 *.log
 *.csv
+secrets/
+secrets/*
+!secrets/.gitkeep  

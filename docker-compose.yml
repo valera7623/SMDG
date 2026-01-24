@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15-alpine
@@ -5,7 +7,12 @@ services:
     environment:
       POSTGRES_DB: smdg
       POSTGRES_USER: smdg_user
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      # POSTGRES_PASSWORD теперь из секрета
+    secrets:
+      - postgres_password
+    
+      
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,48 +26,44 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
+    # redis обычно не требует пароля в dev, но если нужен — аналогично
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
-    networks:
-      - backend
 
   smdg:
     build: .
     expose:
       - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    secrets:
+      - age_private_key
+      - admin_password
+      - jwt_secret_key          # если хочешь вынести
+      - postgres_password       # если smdg тоже должен знать пароль БД
+    environment:
+      # Эти переменные остаются в .env или задаются явно
+      DEV_MODE: "${DEV_MODE:-true}"
+      #DATABASE_URL: "postgresql+asyncpg://smdg_user@${POSTGRES_PASSWORD_FILE?}/smdg_user@db:5432/smdg"
+      # DATABASE_URL теперь нужно будет формировать в entrypoint.sh
+      REDIS_URL: "redis://redis:6379/0"
+      # JWT_SECRET_KEY и ADMIN_PASSWORD будут читаться из файлов
     volumes:
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
-      - ./keys:/app/keys:ro
-      - ./certs:/app/certs:ro
       - ./static:/app/static
       - ./audit_logs:/app/audit_logs
-    environment:
-      - DEV_MODE=true
-      - DATABASE_URL=postgresql+asyncpg://smdg_user:password@db:5432/smdg
-      - REDIS_URL=redis://redis:6379/0
-      - ADMIN_PASSWORD=admin
-      - POSTGRES_PASSWORD=password
-    depends_on:
-      - db
-      - redis
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # Временный простой healthcheck или без него
-    healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/127.0.0.1/8000' || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 120s
+      # Больше НЕ монтируем ./keys как volume
+      # ./keys:/app/keys:ro   ← УДАЛЯЕМ ЭТУ СТРОКУ
     networks:
       - backend
+
+
 
   nginx:
     image: nginx:alpine
@@ -82,40 +85,18 @@ services:
     networks:
       - backend
 
-networks:
-  backend:
+secrets:
+  age_private_key:
+    file: ./secrets/age.key
+  admin_password:
+    file: ./secrets/admin_password.txt
+  jwt_secret_key:
+    file: ./secrets/jwt_secret.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
 
 volumes:
   pgdata:
 
-# ────────────────────────────────────────────────────────────────
-# Дополнительные комментарии и рекомендации
-# ────────────────────────────────────────────────────────────────
-#
-# 1. Автоматизация миграций и админа:
-#    Теперь всё происходит через entrypoint.sh в Dockerfile.
-#    При каждом запуске контейнера smdg:
-#      - alembic upgrade head
-#      - python -m app.cli create_admin (с паролем из ADMIN_PASSWORD)
-#      - запуск uvicorn
-#
-# 2. Как использовать ADMIN_PASSWORD:
-#    - Можно менять в .env или прямо здесь
-#    - Для безопасности в продакшене → docker secrets или .env вне репозитория
-#
-# 3. HTTPS:
-#    - Сертификаты должны лежать в ./certs/localhost+2.pem и localhost+2-key.pem
-#    - Сгенерированы через mkcert localhost 127.0.0.1 ::1
-#
-# 4. Рекомендации по продакшену:
-#    - Заменить ADMIN_PASSWORD на переменную из secrets
-#    - Использовать certbot + Let's Encrypt вместо self-signed
-#    - Добавить depends_on: nginx в другие сервисы, если нужно
-#    - Включить HSTS и CSP в nginx.conf
-#
-# 5. Запуск:
-#    docker compose down
-#    docker compose build
-#    docker compose up -d
-#
-# Удачного деплоя!
+networks:
+  backend:

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     debug: bool = False
     dev_mode: bool = False
+    jwt_secret_key: str
+    admin_password: str | None = None         
+    database_url: str
 
     # ← Добавляем это!
     database_url: str = "postgresql+asyncpg://smdg_user:password@localhost:5432/smdg"
