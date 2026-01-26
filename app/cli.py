@@ -8,10 +8,10 @@ from sqlalchemy import select
 
 cli = typer.Typer()
 
-@cli.command()
+@cli.command(name="create-admin")
 def create_admin(
-    username: str = "admin",
-    password: str = typer.Option(..., prompt=True, hide_input=True, confirmation_prompt=True)
+    username: str = typer.Argument("admin", help="Имя пользователя (по умолчанию: admin)"),
+    password: str = typer.Argument(..., help="Пароль администратора (без промпта)")
 ):
     """Создаёт или обновляет администратора"""
     async def run():
@@ -27,7 +27,12 @@ def create_admin(
                 user.is_active = True
                 print(f"Админ {username} обновлён.")
             else:
-                user = User(username=username, hashed_password=hashed, role="admin", is_active=True)
+                user = User(
+                    username=username,
+                    hashed_password=hashed,
+                    role="admin",
+                    is_active=True
+                )
                 session.add(user)
                 print(f"Админ {username} создан.")
 
@@ -35,6 +40,3 @@ def create_admin(
             print("Готово. Теперь можно логиниться.")
 
     asyncio.run(run())
-
-if __name__ == "__main__":
-    cli()

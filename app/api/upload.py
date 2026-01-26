@@ -1,16 +1,16 @@
 # app/api/upload.py
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
 from app.models.user import User
-import magic  
+import magic
 import uuid
 
 from app.core import (
     UPLOAD_DIR,
     ENCRYPTED_DIR,
-    crypto_manager,
     audit_logger,
     get_public_key
 )
+from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename, calculate_hash
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
@@ -18,7 +18,7 @@ from app.models.file import File
 from app.models.file_link import FileLink
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter()
 
@@ -27,112 +27,130 @@ ALLOWED_MIME_PREFIXES = [
     "application/pdf",                                           # PDF
     "image/",                                                    # Все изображения (jpeg, png, tiff, dicom и т.д.)
     "text/plain",                                                # Текстовые файлы
-    "application/msword",                                        # .doc
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # .docx
-    "application/vnd.ms-excel",                                  # .xls
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",       # .xlsx
-    "application/dicom"                                          # DICOM файлы
+    "application/msword",                                        # DOC
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",  # DOCX
+    "application/dicom",                                         # DICOM файлы
+    "application/json",                                          # JSON
+    "application/xml"                                            # XML
 ]
 
 @router.post("/upload")
 async def upload_file(
-    request: Request,
-    file: UploadFile,  
-    max_downloads: int = Form(1, ge=1, le=10),
+    file: UploadFile = Form(...),
+    ttl_days: int = Form(30),
+    max_downloads: int = Form(1),
+    request: Request = None,
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
-    
 ):
-    original_filename = sanitize_filename(file.filename)
-
-    # Чтение буфера для MIME (async)
-    buffer = await file.read(2048)
-    mime_type = magic.from_buffer(buffer, mime=True)
-    await file.seek(0)  # async seek назад
-
-    if not any(mime_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
-        raise HTTPException(status_code=400, detail=f"Недопустимый тип файла: {mime_type}")
-
-    temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{original_filename}"
+    """Загрузка и шифрование файла"""
+    temp_upload_path = None  # Инициализируем как None для безопасной очистки в finally
 
     try:
-        with open(temp_upload_path, "wb") as f:
-            while chunk := await file.read(1024 * 1024):  # async read
-                f.write(chunk)
+        original_filename = file.filename
 
-        original_size = temp_upload_path.stat().st_size
+        # Безопасное имя
+        safe_filename = sanitize_filename(original_filename)
 
-        if original_size == 0:
-            raise HTTPException(status_code=400, detail="Пустой файл")
+        # Проверяем MIME-тип
+        mime = magic.Magic(mime=True)
+        file_content = await file.read()
+        MAX_SIZE_MB = 50
+        if len(file_content) > MAX_SIZE_MB * 1024 * 1024:
+            raise HTTPException(413, f"Файл слишком большой (макс. {MAX_SIZE_MB}MB)")
+        mime_type = mime.from_buffer(file_content)
 
-        file_hash = calculate_hash(temp_upload_path)
+        if not any(mime_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
+            raise HTTPException(status_code=400, detail=f"Недопустимый тип файла: {mime_type}")
 
-        final_encrypted_name = f"{uuid.uuid4()}_{original_filename}.age"
-        encrypted_path = ENCRYPTED_DIR / final_encrypted_name
+        # Сохраняем файл во временную директорию
+        temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
+        with open(temp_upload_path, "wb") as buffer:
+            buffer.write(file_content)
 
-        await crypto_manager.encrypt_file(temp_upload_path, encrypted_path, get_public_key())
+        # Уникальное имя для зашифрованного файла
+        final_encrypted_name = f"{uuid.uuid4()}_{safe_filename}.age"
+        final_encrypted_path = ENCRYPTED_DIR / final_encrypted_name
 
-        encrypted_size = encrypted_path.stat().st_size
+        # Шифрование (убеждаемся, что пути - Path)
+        encrypted_hash = await crypto_manager.encrypt_file(
+            input_path=temp_upload_path,
+            public_key=get_public_key(),
+            output_path=final_encrypted_path
+        )
 
-        # Создание записи File в БД
+        # Хэш оригинального файла
+        original_hash = calculate_hash(temp_upload_path)
+
+        # Получаем user_id из БД по current_user.sub (если пользователь авторизован)
         user_id = None
         if current_user:
-            stmt = select(User.id).where(User.username == current_user.sub)
-            result = await db.execute(stmt)
-            user_id = result.scalar_one_or_none()
+            result = await db.execute(select(User).where(User.username == current_user.sub))
+            db_user = result.scalar_one_or_none()
+            if db_user:
+                user_id = db_user.id
+            else:
+                print(f"Предупреждение: пользователь {current_user.sub} не найден в БД")
+                audit_logger.log_operation(
+                    action="upload_warning",
+                    filename=original_filename,
+                    user=current_user.sub,
+                    reason=f"Пользователь {current_user.sub} не найден в БД",
+                    success=True
+                )
 
-            if user_id is None:
-                raise HTTPException(status_code=401, detail="Пользователь не найден в БД")
-
-        file_record = File(
+        # Создаём запись в БД для файла
+        new_file = File(
             user_id=user_id,
             original_name=original_filename,
             encrypted_name=final_encrypted_name,
-            encrypted_path=str(encrypted_path),
-            original_size=original_size,
-            encrypted_size=encrypted_size,
-            original_hash=file_hash,
+            encrypted_path=str(final_encrypted_path),
+            original_size=len(file_content),
+            encrypted_size=final_encrypted_path.stat().st_size,
+            original_hash=original_hash,
             mime_type=mime_type,
-            uploaded_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(days=30)
+            uploaded_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=ttl_days)
         )
-        db.add(file_record)
+        db.add(new_file)
         await db.commit()
-        await db.refresh(file_record)
+        await db.refresh(new_file)
 
-        # Создание FileLink
+        # Создаём одноразовую ссылку
+        token = str(uuid.uuid4())
+        expires_at = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+        
         link = FileLink(
-            file_id=file_record.id,
-            token=str(uuid.uuid4()),
+            token=token,
+            file_id=new_file.id,
             max_downloads=max_downloads,
-            downloads_count=0,
-            expires_at=datetime.utcnow() + timedelta(days=7)
+            expires_at=expires_at
         )
         db.add(link)
         await db.commit()
         await db.refresh(link)
 
+        # Формируем URL для скачивания
+        base_url = request.url_for('download_by_token') if request else "/api/download"
+        download_url = f"{base_url}?token={token}"
+
+        # Логируем успешную загрузку
         audit_logger.log_operation(
             action="upload",
             filename=original_filename,
             user=current_user.sub if current_user else "api_user",
-            reason="Файл успешно загружен и зашифрован",
+            reason="Успешная загрузка и шифрование",
             success=True,
             metadata={
-                "original_name": original_filename,
-                "encrypted_file": final_encrypted_name,
-                "original_size": original_size,
-                "encrypted_size": encrypted_size,
-                "hash": file_hash
+                "mime_type": mime_type,
+                "size": len(file_content),
+                "encrypted_name": final_encrypted_name,
+                "ttl_days": ttl_days
             }
         )
-        
-        base_url = str(request.base_url).rstrip('/')  # https://localhost:8000/
-        download_url = f"{base_url}/api/download?token={link.token}"
 
         return {
-            "status": "success",
-            "file_id": file_record.id,
+            "message": "Файл успешно загружен и зашифрован",
             "original_name": original_filename,
             "encrypted_file": final_encrypted_name,
             "download_url": download_url,
@@ -156,7 +174,7 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
     finally:
-        if temp_upload_path.exists():
+        if temp_upload_path is not None and temp_upload_path.exists():
             try:
                 temp_upload_path.unlink()
             except Exception as cleanup_error:

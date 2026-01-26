@@ -2,12 +2,18 @@
 Secure Medical Data Gateway - Crypto module
 """
 import asyncio
-import shlex
 import subprocess
 from pathlib import Path
 import hashlib
-from typing import Tuple
+from typing import Tuple, List
+import shutil
+import tempfile
+import datetime
+
 from app.core.utils import calculate_hash
+from app.core.constants import ENCRYPTED_DIR, PRIVATE_KEY_PATH
+from app.core import audit_logger
+
 
 class CryptoManager:
     """Менеджер для асинхронной работы с age"""
@@ -29,119 +35,249 @@ class CryptoManager:
     async def generate_keypair(output_path: Path) -> Tuple[str, str]:
         """Генерация ключевой пары age (асинхронно)"""
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        
-        cmd = [
-            "age-keygen",
-            "-o", shlex.quote(str(output_path.absolute()))
-        ]
-        
-        print(f"🔑 Генерация ключей: {' '.join(cmd)}")
-        
+
+        cmd = ["age-keygen", "-o", str(output_path.absolute())]
+
+        print(f"🔑 Генерация ключевой пары → {output_path.name}")
+
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
-        stdout, stderr = await process.communicate()
-        
+        stdout_data, stderr_data = await process.communicate()
+
         if process.returncode != 0:
-            error_msg = stderr.decode('utf-8', errors='replace').strip()
+            error_msg = stderr_data.decode('utf-8', errors='replace').strip()
             raise Exception(f"Ошибка генерации ключей age: {error_msg}")
-        
-        if not output_path.exists():
-            raise FileNotFoundError(f"Файл ключа не создан: {output_path}")
-        
-        with open(output_path, 'r', encoding='utf-8') as f:
-            content = f.read().strip()
-        
+
+        # Публичный ключ в stderr
+        stderr_text = stderr_data.decode('utf-8', errors='replace')
+        lines = stderr_text.splitlines()
+
         public_key = None
-        for line in content.splitlines():
-            if line.startswith("# public key:"):
-                public_key = line.split(": ", 1)[1].strip()
+        for line in lines:
+            line = line.strip()
+            if line.startswith("Public key: "):
+                public_key = line.split(":", 1)[1].strip()
                 break
-        
+            elif line.startswith("# public key: "):
+                public_key = line.split(":", 1)[1].strip()
+                break
+            elif "public key:" in line.lower():
+                parts = line.lower().split("public key:")
+                if len(parts) > 1:
+                    public_key = parts[1].strip()
+                    break
+
         if not public_key:
+            print("Полный stderr для диагностики:")
+            print(stderr_text)
             raise Exception("Не удалось извлечь публичный ключ из вывода age-keygen")
-        
-        private_key = content.splitlines()[0] if content.splitlines() else ""
-        return private_key, public_key
 
-    
-    
+        print(f"   ✅ Ключи сгенерированы. Публичный: {public_key[:20]}...")
+        return public_key, str(output_path.absolute())
 
-    @staticmethod
-    async def encrypt_file(input_path: Path, output_path: Path, public_key: str) -> None:
-        """Шифрование файла с помощью age и публичного ключа (асинхронно)"""
+    async def encrypt(self, input_path: Path, public_key: str, output_path: Path) -> str:
+        """Шифрование файла с использованием публичного ключа"""
         if not input_path.exists():
-            raise FileNotFoundError(f"Исходный файл не найден: {input_path}")
-        
-        input_str = shlex.quote(str(input_path.absolute()))
-        output_str = shlex.quote(str(output_path.absolute()))
-        
+            raise FileNotFoundError(f"Входной файл не найден: {input_path}")
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
         cmd = [
             "age",
             "--encrypt",
             "--recipient", public_key,
-            "--output", output_str,
-            input_str
+            "--output", str(output_path.absolute()),
+            str(input_path.absolute())
         ]
-        
-        print(f"🔒 Шифрование: {' '.join(cmd[:6])} ... {cmd[-1]}")
-        
+
+        print(f"🔒 Шифрование: {' '.join(cmd)}")
+
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
-        
+
         if process.returncode != 0:
             error_msg = stderr.decode('utf-8', errors='replace').strip()
             raise Exception(f"Ошибка шифрования age: {error_msg}")
-        
+
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise Exception(f"Зашифрованный файл не создан или пуст: {output_path}")
-        
+
         print(f"   ✅ Файл успешно зашифрован → {output_path.name}")
 
-    @staticmethod
-    async def decrypt_file(encrypted_path: Path, output_path: Path, private_key_path: Path) -> None:
-        """Расшифровка файла с помощью приватного ключа (асинхронно)"""
+        return calculate_hash(output_path)
+
+    async def decrypt(self, encrypted_path: Path, private_key_path: Path, output_path: Path) -> str:
+        """Расшифровка файла с использованием приватного ключа"""
         if not encrypted_path.exists():
             raise FileNotFoundError(f"Зашифрованный файл не найден: {encrypted_path}")
-        
-        if not private_key_path.exists():
-            raise FileNotFoundError(f"Приватный ключ не найден: {private_key_path}")
-        
-        encrypted_str = shlex.quote(str(encrypted_path.absolute()))
-        output_str = shlex.quote(str(output_path.absolute()))
-        private_key_str = shlex.quote(str(private_key_path.absolute()))
-        
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
         cmd = [
             "age",
             "--decrypt",
-            "--identity", private_key_str,
-            "--output", output_str,
-            encrypted_str
+            "--identity", str(private_key_path.absolute()),
+            "--output", str(output_path.absolute()),
+            str(encrypted_path.absolute())
         ]
-        
-        print(f"🔓 Расшифровка: {' '.join(cmd[:6])} ... {cmd[-1]}")
-        
+
+        print(f"🔓 Расшифровка: {' '.join(cmd)}")
+
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
         stdout, stderr = await process.communicate()
-        
+
         if process.returncode != 0:
             error_msg = stderr.decode('utf-8', errors='replace').strip()
             raise Exception(f"Ошибка расшифровки age: {error_msg}")
-        
+
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise Exception(f"Расшифрованный файл не создан или пуст: {output_path}")
-        
+
         print(f"   ✅ Файл успешно расшифрован → {output_path.name}")
+
+        # Возвращаем хэш расшифрованного файла (если нужно)
+        return calculate_hash(output_path)
+
+    async def generate_new_keypair(self, new_private_path: Path) -> Tuple[Path, str]:
+        """Генерирует новую пару ключей и возвращает путь к приватному + публичный ключ как строку"""
+        new_private_path.parent.mkdir(parents=True, exist_ok=True)
+
+        cmd = ["age-keygen", "-o", str(new_private_path.absolute())]
+
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+
+        if process.returncode != 0:
+            raise RuntimeError(f"age-keygen failed: {stderr.decode()}")
+
+        # age-keygen выводит публичный ключ в stdout в формате # public key: age1...
+        pub_line = stdout.decode().strip()
+        if not pub_line.startswith("# public key: "):
+            raise RuntimeError("Не удалось извлечь публичный ключ из вывода age-keygen")
+
+        public_key = pub_line.split(":", 1)[1].strip()
+        return new_private_path, public_key
+
+    async def reencrypt_file(self, file_path: Path, old_private_key_path: Path, new_public_key: str) -> None:
+        """Перешифровывает один файл: old → plaintext → new"""
+        if not file_path.exists() or not file_path.is_file():
+            return
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_plain = Path(tmpdir) / "plain"
+            tmp_new_enc = Path(tmpdir) / f"{file_path.name}.new"
+
+            # 1. Расшифровываем старым ключом
+            await self.decrypt(file_path, old_private_key_path, tmp_plain)
+
+            # 2. Шифруем новым публичным ключом
+            cmd_encrypt = [
+                "age",
+                "--encrypt",
+                "--recipient", new_public_key,
+                "--output", str(tmp_new_enc.absolute()),
+                str(tmp_plain.absolute())
+            ]
+
+            process = await asyncio.create_subprocess_exec(
+                *cmd_encrypt,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            _, stderr = await process.communicate()
+
+            if process.returncode != 0:
+                raise RuntimeError(f"Перешифровка {file_path.name} провалилась: {stderr.decode()}")
+
+            # 3. Проверяем, что новый файл не пустой
+            if tmp_new_enc.stat().st_size == 0:
+                raise RuntimeError(f"Новый зашифрованный файл пуст: {file_path.name}")
+
+            # 4. Атомарная замена
+            shutil.move(str(tmp_new_enc), str(file_path))
+
+            audit_logger.log_operation(
+                action="key_rotation_reencrypt",
+                filename=file_path.name,
+                user="system",
+                reason="Ротация ключа age",
+                success=True,
+                metadata={"old_key": str(old_private_key_path), "new_pub": new_public_key[:10]+"..."}
+            )
+
+    async def rotate_keys(self, backup_old_key: bool = True) -> str:
+        """Основная функция ротации. Возвращает новый публичный ключ после успешного завершения."""
+        if not ENCRYPTED_DIR.exists():
+            raise RuntimeError("Директория encrypted не найдена")
+
+        old_private = PRIVATE_KEY_PATH
+        if not old_private.exists():
+            raise RuntimeError("Старый приватный ключ не найден — ротация невозможна")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            new_private_tmp = Path(tmp_dir) / "new_age_private.key"
+
+            try:
+                new_private_tmp, new_pub_key_str = await self.generate_new_keypair(new_private_tmp)
+
+                encrypted_files: List[Path] = [p for p in ENCRYPTED_DIR.iterdir() if p.is_file() and p.suffix == ".age"]
+                total = len(encrypted_files)
+                if total == 0:
+                    audit_logger.log_operation("key_rotation", "none", "system", "Нет файлов для перешифровки", True)
+                else:
+                    audit_logger.log_operation("key_rotation_start", f"{total} files", "system", f"Начинаем ротацию: {total} файлов", True)
+                    for i, file_path in enumerate(encrypted_files, 1):
+                        print(f"[{i}/{total}] Перешифровываю {file_path.name} ...")
+                        await self.reencrypt_file(file_path, old_private, new_pub_key_str)
+
+                if backup_old_key:
+                    backup_path = old_private.with_suffix(old_private.suffix + f".bak.{datetime.now():%Y%m%d-%H%M%S}")
+                    shutil.copy(old_private, backup_path)
+                    audit_logger.log_operation("key_rotation_backup", str(backup_path), "system", "Создан бэкап старого ключа", True)
+
+                shutil.move(str(new_private_tmp), str(old_private))
+                old_private.chmod(0o600)
+
+                pub_path = old_private.with_name("age.pub")
+                pub_path.write_text(new_pub_key_str + "\n")
+                pub_path.chmod(0o644)
+
+                audit_logger.log_operation(
+                    "key_rotation_success", "all files", "system",
+                    f"Ротация завершена. Новый pub: {new_pub_key_str[:12]}...", True
+                )
+
+                print("Ротация завершена успешно!")
+                print(f"Новый публичный ключ: {new_pub_key_str}")
+                return new_pub_key_str
+
+            except Exception as e:
+                audit_logger.log_operation("key_rotation_failed", "unknown", "system", str(e), False)
+                raise
+
+    # Совместимость
+    async def encrypt_file(self, input_path: Path, public_key: str, output_path: Path) -> str:
+        """Совместимость с предыдущим кодом upload.py"""
+        return await self.encrypt(input_path, public_key, output_path)
+
+    async def decrypt_file(self, encrypted_path: Path, private_key_path: Path, output_path: Path) -> None:
+        """Совместимость с предыдущим кодом download.py"""
+        await self.decrypt(encrypted_path, private_key_path, output_path)
 
 
 # Глобальный экземпляр менеджера

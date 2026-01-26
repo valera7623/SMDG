@@ -9,9 +9,9 @@ from app.core import (
     ENCRYPTED_DIR,
     DECRYPTED_DIR,
     PRIVATE_KEY_PATH,
-    crypto_manager,
     audit_logger
 )
+from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename
 from app.core.auth import get_current_user, get_current_admin, get_current_doctor
 from pathlib import Path
@@ -48,7 +48,6 @@ async def download_by_token(
 
     print(f"Ссылка найдена: downloads_count={link.downloads_count}/{link.max_downloads}, expires_at={link.expires_at}")
 
-    from datetime import timezone
     if link.expires_at and link.expires_at < datetime.now(timezone.utc):
         print("Ссылка истекла")
         await db.delete(link)
@@ -69,14 +68,15 @@ async def download_by_token(
         print("Файл не найден")
         raise HTTPException(404, "Файл не найден")
 
-    encrypted_path = Path(file.encrypted_path)          # ← исправление здесь
+    encrypted_path = Path(file.encrypted_path)
     decrypted_path = DECRYPTED_DIR / f"{uuid.uuid4()}_{file.original_name}"
     print(f"Расшифровка в {decrypted_path}")
 
+    # ИСПРАВЛЕНИЕ: правильный порядок аргументов
     await crypto_manager.decrypt_file(
-        encrypted_path,
-        decrypted_path,
-        PRIVATE_KEY_PATH                 
+        encrypted_path=encrypted_path,          # 1: зашифрованный файл
+        private_key_path=PRIVATE_KEY_PATH,      # 2: приватный ключ
+        output_path=decrypted_path              # 3: куда писать расшифрованный
     )
 
     link.downloads_count += 1
@@ -129,10 +129,11 @@ async def _download_file(
     decrypted_path = DECRYPTED_DIR / f"dec_{temp_id}_{original_name}"
     
     try:
+        # ИСПРАВЛЕНИЕ: правильный порядок аргументов
         await crypto_manager.decrypt_file(
             encrypted_path=encrypted_path,
-            output_path=decrypted_path,
-            private_key_path=PRIVATE_KEY_PATH
+            private_key_path=PRIVATE_KEY_PATH,
+            output_path=decrypted_path
         )
         
         if not decrypted_path.exists() or decrypted_path.stat().st_size == 0:
