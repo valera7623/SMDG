@@ -10,6 +10,9 @@ from app.core import (
     audit_logger,
     get_public_key
 )
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.rate_limiter import limiter  
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename, calculate_hash
 from app.core.auth import get_current_user, TokenData
@@ -35,11 +38,12 @@ ALLOWED_MIME_PREFIXES = [
 ]
 
 @router.post("/upload")
+@limiter.limit("10/minute")
 async def upload_file(
+    request: Request,
     file: UploadFile = Form(...),
     ttl_days: int = Form(30),
     max_downloads: int = Form(1),
-    request: Request = None,
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -129,6 +133,7 @@ async def upload_file(
         db.add(link)
         await db.commit()
         await db.refresh(link)
+        print(f"Создана ссылка: token={link.token}, file_id={link.file_id}, expires_at={link.expires_at}")
 
         # Формируем URL для скачивания
         base_url = request.url_for('download_by_token') if request else "/api/download"

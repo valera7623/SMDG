@@ -36,7 +36,9 @@ def safe_rate_limit_handler(request: Request, exc: Exception):
     # Если что-то другое (например ConnectionError) — возвращаем 429 с общим сообщением
     return JSONResponse(
         status_code=429,
-        content={"detail": "Слишком много запросов или ошибка сервиса. Попробуйте позже."},
+        content={"detail": "Слишком много запросов или ошибка сервиса. Попробуйте позже.",
+                 "retry_after": "60 секунд"
+        },
         headers={"Retry-After": "60"}
     )
 
@@ -153,7 +155,7 @@ async def create_first_admin():
             print("=" * 60)
             print("🔐 СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
             print("   Логин:    admin")
-            print("   Пароль:   admin123")
+            print("   Пароль:   admin")
             print("   Роль:     admin")
             print("   ВНИМАНИЕ: Измените пароль сразу после первого входа!")
             print("=" * 60)
@@ -253,3 +255,9 @@ async def view_logs():
         return HTMLResponse(content=html)
     except Exception as e:
         return HTMLResponse(content=f"<h1>Ошибка</h1><p>{str(e)}</p>")
+    
+@app.middleware("http")
+async def add_rate_limit_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Можно добавить заголовки X-RateLimit-*
+    return response

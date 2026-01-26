@@ -1,5 +1,5 @@
 # app/api/download.py
-from fastapi import APIRouter, Query, HTTPException, BackgroundTasks, Depends, Form
+from fastapi import APIRouter, Query, HTTPException, BackgroundTasks, Depends, Form, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from fastapi.responses import FileResponse
@@ -11,6 +11,9 @@ from app.core import (
     PRIVATE_KEY_PATH,
     audit_logger
 )
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename
 from app.core.auth import get_current_user, get_current_admin, get_current_doctor
@@ -31,7 +34,9 @@ def delete_file_after_response(path: Path):
         print(f"Ошибка удаления {path}: {e}")
 
 @router.get("/download")
+@limiter.limit("10/minute")
 async def download_by_token(
+    request: Request,
     background_tasks: BackgroundTasks,
     token: str = Query(...),
     db: AsyncSession = Depends(get_db)
@@ -97,7 +102,9 @@ async def download_by_token(
     )
 
 @router.post("/download")
+@limiter.limit("10/minute")
 async def download_file_post(
+    request: Request,
     background_tasks: BackgroundTasks,         
     filename: str = Form(...),                  
     current_user: str = Depends(get_current_doctor)  
