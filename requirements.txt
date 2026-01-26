@@ -19,3 +19,4 @@ slowapi>=0.1.9
 redis>=5.0.0 
 typer
 argon2_cffi
+clamd>=1.0.0

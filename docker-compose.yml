@@ -60,8 +60,7 @@ services:
       - ./decrypted:/app/decrypted
       - ./static:/app/static
       - ./audit_logs:/app/audit_logs
-      # Больше НЕ монтируем ./keys как volume
-      # ./keys:/app/keys:ro   ← УДАЛЯЕМ ЭТУ СТРОКУ
+      
     networks:
       - backend
 
@@ -87,6 +86,26 @@ services:
     networks:
       - backend
 
+  clamav:
+    image: clamav/clamav:latest
+    restart: unless-stopped
+    container_name: clamav
+    ports:
+      - "3310:3310"  # TCP-порт для clamd
+    volumes:
+      - clamav_data:/var/lib/clamav  # для баз сигнатур
+    healthcheck:
+      test: ["CMD", "clamdscan", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - backend
+
+
+   
+
 secrets:
   age_private_key:
     file: ./secrets/age.key
@@ -99,6 +118,7 @@ secrets:
 
 volumes:
   pgdata:
-
+  clamav_data:
 networks:
   backend:
+

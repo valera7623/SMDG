@@ -22,18 +22,31 @@ class Settings(BaseSettings):
 
     # ← Добавляем это!
     database_url: str = "postgresql+asyncpg://smdg_user:password@localhost:5432/smdg"
-
-    # Опционально: можно добавить отдельные поля для удобства
-    # POSTGRES_USER: str = "postgres"
-    # POSTGRES_PASSWORD: str = "postgres"
-    # POSTGRES_DB: str = "smdg"
-    # POSTGRES_HOST: str = "localhost"
-    # POSTGRES_PORT: int = 5432
-
-    # @property
-    # def database_url(self) -> str:
-    #     return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-
     redis_url: str = "redis://localhost:6379/0"
+    
+    # ClamAV
+    CLAMAV_HOST: str = "clamav"  # имя сервиса в docker-compose
+    CLAMAV_PORT: int = 3310
+    CLAMAV_TIMEOUT: int = 60  # секунд на сканирование
+
+    # Максимальный размер файла
+    MAX_UPLOAD_SIZE_MB: int = 50
+
+    # Расширенный список MIME (DICOM + медицинские)
+    ALLOWED_MIME_TYPES: list[str] = [
+        "application/pdf",
+        "image/jpeg", "image/png", "image/tiff", "image/gif",
+        "text/plain", "text/csv",
+        "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/dicom",  # основной для DICOM
+        "application/octet-stream",  # иногда DICOM идёт как octet-stream
+        "application/json", "application/xml"
+    ]
+
+    # DICOM-сигнатуры (первые байты файла)
+    DICOM_MAGIC: bytes = b'\x00\x00\x00\x00DICM'  # offset 128, "DICM"
+
+
     
 settings = Settings()

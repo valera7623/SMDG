@@ -3,7 +3,8 @@ from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
 from app.models.user import User
 import magic
 import uuid
-
+import clamd
+import asyncio
 from app.core import (
     UPLOAD_DIR,
     ENCRYPTED_DIR,
@@ -15,6 +16,7 @@ from slowapi.util import get_remote_address
 from app.core.rate_limiter import limiter  
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename, calculate_hash
+from app.core.config import settings
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
 from app.models.file import File
@@ -47,32 +49,103 @@ async def upload_file(
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    """Загрузка и шифрование файла"""
-    temp_upload_path = None  # Инициализируем как None для безопасной очистки в finally
+    temp_upload_path = None
 
     try:
         original_filename = file.filename
-
-        # Безопасное имя
         safe_filename = sanitize_filename(original_filename)
 
-        # Проверяем MIME-тип
-        mime = magic.Magic(mime=True)
+        # 1. Чтение файла
         file_content = await file.read()
-        MAX_SIZE_MB = 50
-        if len(file_content) > MAX_SIZE_MB * 1024 * 1024:
-            raise HTTPException(413, f"Файл слишком большой (макс. {MAX_SIZE_MB}MB)")
+
+        # 2. Ограничение размера
+        if len(file_content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+            raise HTTPException(413, f"Файл слишком большой (макс. {settings.MAX_UPLOAD_SIZE_MB}MB)")
+
+        # 3. Проверка MIME-типа
+        mime = magic.Magic(mime=True)
         mime_type = mime.from_buffer(file_content)
 
-        if not any(mime_type.startswith(prefix) for prefix in ALLOWED_MIME_PREFIXES):
-            raise HTTPException(status_code=400, detail=f"Недопустимый тип файла: {mime_type}")
+        if mime_type not in settings.ALLOWED_MIME_TYPES:
+            if mime_type.startswith("application/octet-stream"):
+                # Для DICOM иногда mime = octet-stream → проверяем заголовок
+                if len(file_content) > 132 and file_content[128:132] == settings.DICOM_MAGIC:
+                    mime_type = "application/dicom"
+                else:
+                    raise HTTPException(400, f"Недопустимый тип файла: {mime_type}")
+            else:
+                raise HTTPException(400, f"Недопустимый тип файла: {mime_type}")
 
-        # Сохраняем файл во временную директорию
+        # 4. Сохранение во временный файл
         temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
         with open(temp_upload_path, "wb") as buffer:
             buffer.write(file_content)
 
-        # Уникальное имя для зашифрованного файла
+       
+        # 5. Проверка на вирусы через ClamAV
+        # 5. Проверка на вирусы через ClamAV
+        virus_detected = False
+        virus_name = None
+
+        try:
+            import clamd
+            print(f"[ClamAV] Пытаемся подключиться: {settings.CLAMAV_HOST}:{settings.CLAMAV_PORT}")
+
+            cd = clamd.ClamdNetworkSocket(
+                host=settings.CLAMAV_HOST,
+                port=settings.CLAMAV_PORT,
+                timeout=settings.CLAMAV_TIMEOUT
+            )
+
+            # Проверка пинга
+            ping_result = cd.ping()
+            print(f"[ClamAV] ping OK: {ping_result}")
+
+            # Сканируем файл - передаем открытый файл в бинарном режиме
+            loop = asyncio.get_running_loop()
+            with open(temp_upload_path, "rb") as file_to_scan:
+                scan_result = await loop.run_in_executor(None, cd.instream, file_to_scan)
+            print(f"[ClamAV] scan_result: {scan_result}")
+
+            # Обработка результата
+            if scan_result:
+                scan_result = scan_result.get('stream') if isinstance(scan_result, dict) else scan_result
+                if scan_result and len(scan_result) > 0:
+                    result_type = scan_result[0]
+                    if result_type == "FOUND":
+                        virus_name = scan_result[1] if len(scan_result) > 1 else "unknown"
+                        virus_detected = True
+                        print(f"[ClamAV] ВИРУС ОБНАРУЖЕН: {virus_name}")
+                elif result_type == "OK":
+                    print("[ClamAV] Файл чист")
+                else:
+                    print(f"[ClamAV] Неожиданный результат: {scan_result}")
+
+        except Exception as e:
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            print(f"[ClamAV] ОШИБКА СКАНИРОВАНИЯ: {error_msg}")
+            audit_logger.log_operation(
+                action="clamav_error",
+                filename=original_filename,
+                user=current_user.sub if current_user else "system",
+                reason=error_msg,
+                success=False
+            )
+            if not settings.dev_mode:
+                raise HTTPException(503, "Антивирусный сервис временно недоступен. Загрузка запрещена.")
+
+        if virus_detected:
+            audit_logger.log_operation(
+                action="upload_virus_detected",
+                filename=original_filename,
+                user=current_user.sub if current_user else "api_user",
+                reason=f"Обнаружен вирус: {virus_name}",
+                success=False
+            )
+            raise HTTPException(400, f"Обнаружен вредоносный код: {virus_name or 'неизвестный'}")
+        else:
+            print("[ClamAV] Файл чист")
+
         final_encrypted_name = f"{uuid.uuid4()}_{safe_filename}.age"
         final_encrypted_path = ENCRYPTED_DIR / final_encrypted_name
 
