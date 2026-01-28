@@ -4770,3 +4770,23 @@ WHERE file_links.file_id = $1::VARCHAR AND file_links.expires_at > $2::TIMESTAMP
 2026-01-28T08:43:18.189991,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
 2026-01-28T08:44:17.764026,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
 2026-01-28T08:45:17.952043,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:14.973956,GET /,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:15.092296,GET /static/css/style.css,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:15.100325,GET /static/js/main.js,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:15.217952,GET /favicon.ico,,0,api,172.19.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-01-28T18:08:28.144893,login_failed,,0,admin,127.0.0.1,,Неверный пароль,False
+2026-01-28T18:08:28.146352,POST /api/auth/login,,0,api,172.19.0.6,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-01-28T18:08:34.235423,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-01-28T18:08:34.236156,POST /api/auth/login,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:34.820392,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:41.597335,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:45.212678,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:08:51.517856,upload_virus_detected,eicar.com.txt,0,admin,127.0.0.1,,Обнаружен вирус: Eicar-Test-Signature,False
+2026-01-28T18:08:51.518660,POST /api/upload,,0,api,172.19.0.6,,"Status: 400, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-01-28T18:09:02.942951,upload,2 (1).jpg,979733,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-01-28T18:09:02.944067,POST /api/upload,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:09:02.974298,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:09:11.760750,GET /api/download,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:09:15.871234,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:09:45.872682,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-01-28T18:10:15.865255,GET /api/list,,0,api,172.19.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True

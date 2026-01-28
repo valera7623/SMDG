@@ -92,6 +92,50 @@ def test_check_path_exists():
         assert check_path_exists(Path.cwd()) == True
     finally:
         test_file.unlink()
+        
+        
+# tests/test_utils.py (дополнение)
+import pytest
+from pathlib import Path
+import tempfile
+import shutil
+from app.core.utils import calculate_hash
+
+
+class TestCalculateHash:
+    """Тесты для функции calculate_hash"""
+    
+    def test_calculate_hash_empty_file(self):
+        """Тест вычисления хеша пустого файла"""
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp_path = Path(tmp.name)
+        
+        try:
+            hash_value = calculate_hash(tmp_path)
+            # Хеш пустого файла SHA256
+            assert hash_value == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        finally:
+            tmp_path.unlink()
+    
+    def test_calculate_hash_large_file(self):
+        """Тест вычисления хеша большого файла"""
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            # Записываем 2MB данных
+            data = b"x" * (2 * 1024 * 1024)
+            tmp.write(data)
+            tmp_path = Path(tmp.name)
+        
+        try:
+            hash_value = calculate_hash(tmp_path)
+            assert len(hash_value) == 64
+            # Проверяем что функция не падает на больших файлах
+        finally:
+            tmp_path.unlink()
+    
+    def test_calculate_hash_nonexistent_file(self):
+        """Тест вычисления хеша несуществующего файла"""
+        with pytest.raises(FileNotFoundError):
+            calculate_hash(Path("/nonexistent/path/file.txt"))
 
 
 if __name__ == "__main__":
