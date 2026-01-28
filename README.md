@@ -18,25 +18,36 @@ SMDG
 │  │  ├─ auth.py                                                  
 │  │  ├─ cleanup.py  
 |  |  ├─ config.py
+|  |  ├─ constants.py
+|  |  ├─ database.py
 |  |  ├─ middleware.py  
+|  |  ├─ rate_limiter.py
+|  |  ├─ security.py
 |  |  ├─ utils.py                                  
 │  │  └─ storage.py                                               
 │  ├─ crypto                                                      
-│  │  └─ crypto.py                                                
-│  ├─ keys                                                        
-│  │  ├─ age.key                                                  
-│  │  └─ age.pub                                                  
-│  ├─ templates                                                   
-│  │  ├─ error.html                                               
-│  │  ├─ result.html                                              
-│  │  └─ upload.html                                              
-│  ├─ core.py                                                     
-│  └─ main.py                                                     
-├─ decrypted                                                      
-├─ encrypted                                                      
+│  │  └─ crypto.py  
+|  ├─ models
+|  |  ├─ file_link.py
+|  |  ├─ file.py
+|  |  └─ user.py 
+|  ├─ schemas
+|  ├─ cli.py
+|  └─ main.py
+|
+├─ keys                                                        
+│  ├─ age.key                                                  
+│  └─ age.pub                                                                                                
+│ 
+├─ audit_logs/   
+├─ certs/                                                                                                        
+├─ decrypted/                                                      
+├─ encrypted/                                                      
 ├─ keys                                                           
 │  ├─ age.key                                                     
-│  └─ age.pub                                                     
+│  └─ age.pub   
+├─ migrations
+├─ secrets/                                             
 ├─ static                                                         
 │  ├─ css                                                         
 │  │  └─ style.css                                                
@@ -45,43 +56,32 @@ SMDG
 │  │  └─ index.html                                               
 │  └─ js                                                          
 │     ├─ admin.js                                                 
-│     └─ main.js                                                  
-├─ tests                                                          
-├─ uploads                                                         ├─venv                                                                                                    |     
-├─ Dockerfile                                                     
+│     └─ main.js                                                                                                           
+├─ tests
+|   ├─ test_api
+|   |   ├─ test_stats.py
+|   |
+|   ├─ test_app
+|   ├─ test_core
+|   ├─ test_crypto
+|   ├─ test_integration
+|   └─ test_models
+|                                                  
+├─ venv                                   
+├─ .dockerignore
+├─ .env
+├─ .env.example
+├─ .gitignore
+├─ alembic.ini
+├─ Dockerfile  
+├─ entrypoint.sh  
+├─ nginx-https.conf                                                
 ├─ MVP.md                                                         
-├─ README.md                                                      
-├─ clean_project.py                                               
-├─ docker-compose.yml 
-├─ docker_compose.yml(production)                                 
-├─ private_key.key                                                
-├─ public_key.key                                                 
-├─ requirements.txt                                               
+├─ README.md                                                                                                     
+├─ docker-compose.yml                                                  
+└─ requirements.txt                                               
                                                   
                                       
-## 🚀 Быстрый старт
 
-1. Клонируйте репозиторий:
-```bash
-git clone https://github.com/username/repository.git
-cd repository
-
-cp .env.example .env
-
-
-
-### Безопасность ключей
-
-- Никогда не запускайте сервис в production с `DEV_MODE=true`
-- Приватный ключ `keys/age.key` должен быть создан один раз и сохранён в безопасном месте
-- Используйте Docker volumes для сохранения ключей между перезапусками:
-  ```yaml
-  volumes:
-    - ./keys:/app/keys:ro  # или через docker secrets в swarm/kubernetes
-
-
-chmod +x generate-self-signed.sh
-./generate-self-signed.sh
-docker-compose up --build  - запуск с самоподписанным сертификатом
 
 
