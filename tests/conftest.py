@@ -192,7 +192,12 @@ def event_loop():
     yield loop
     loop.close()
     
-
+@pytest.fixture
+def mock_settings():
+    with patch("app.main.settings") as mocked_settings:
+        mocked_settings.dev_mode = True
+        mocked_settings.debug = False
+        yield mocked_settings
 
 @pytest.fixture
 def client():
@@ -209,9 +214,26 @@ def mock_current_user():
 
 @pytest.fixture
 def mock_db_session():
-    """Мок асинхронной сессии БД"""
-    session = AsyncMock()
-    return session
+    """Синхронный mock для большинства операций + правильный async context"""
+    mock_session = MagicMock()  # основной объект — синхронный
+
+    # Результат execute — тоже синхронный
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none = MagicMock(return_value=None)
+    mock_session.execute.return_value = mock_result
+
+    # commit, add, refresh — синхронные
+    mock_session.commit = MagicMock()
+    mock_session.add = MagicMock()
+    mock_session.refresh = MagicMock()
+
+    # Для async with session.begin():
+    mock_transaction = MagicMock()
+    mock_transaction.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_transaction.__aexit__ = AsyncMock(return_value=None)
+    mock_session.begin = MagicMock(return_value=mock_transaction)
+
+    yield mock_session
 
 @pytest.fixture(autouse=True)
 def override_dependencies(mock_current_user, mock_db_session):
