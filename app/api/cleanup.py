@@ -1,4 +1,5 @@
 import datetime
+from datetime import datetime, timezone
 from time import time
 from fastapi import APIRouter, HTTPException, Depends, Query
 from app.core import DECRYPTED_DIR, file_storage, audit_logger
@@ -84,7 +85,7 @@ async def list_temp_files(
                     files.append({
                         "name": file_path.name,
                         "size_bytes": stat.st_size,
-                        "modified_iso": datetime.fromtimestamp(stat.st_mtime, tz=datetime.timezone.utc).isoformat(),
+                        "modified_iso": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
                         "age_hours": round(age_hours, 2)
                     })
                 except (FileNotFoundError, PermissionError) as e:

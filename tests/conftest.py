@@ -76,20 +76,24 @@ from app.core.database import Base, get_db
 # Тестовая БД в памяти
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-@pytest.fixture(scope="session")
-def temp_dirs():
-    """Создает временные директории для тестов"""
-    base_temp = Path(tempfile.mkdtemp(prefix="smdg_test_"))
+@pytest.fixture(scope="function")
+def temp_dirs(tmp_path):
+    base_temp = Path(tmp_path)
     dirs = {
         "base": base_temp,
         "upload": base_temp / "uploads",
-        "encrypted": base_temp / "encrypted", 
+        "encrypted": base_temp / "encrypted",
         "decrypted": base_temp / "decrypted",
         "keys": base_temp / "keys",
     }
     
     for dir_path in dirs.values():
         dir_path.mkdir(parents=True, exist_ok=True)
+    
+    # Очищаем decrypted от старых файлов (на всякий случай)
+    for item in dirs["decrypted"].iterdir():
+        if item.is_file():
+            item.unlink()
     
     # Создаем тестовые ключи
     (dirs["keys"] / "age.key").write_text("test_private_key")
@@ -116,6 +120,13 @@ async def db_engine():
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        
+
+@pytest.fixture
+def mock_time():
+    with patch("app.core.storage.time") as mock_time:
+        mock_time.time.return_value = 1000.0  
+        yield mock_time
 
 @pytest.fixture(scope="function")
 async def db_session(db_engine):
@@ -210,6 +221,13 @@ def mock_current_user():
     user = MagicMock()
     user.sub = "test_doctor"
     user.role = "doctor"
+    return user
+
+@pytest.fixture
+def mock_current_user():
+    user = MagicMock()
+    user.sub = "test_admin"
+    user.role = "admin"
     return user
 
 @pytest.fixture
