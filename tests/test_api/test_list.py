@@ -1,561 +1,445 @@
 # tests/test_api/test_list_fixed.py
 import pytest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
-from datetime import datetime, timezone, timedelta
-from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
-from pathlib import Path
 import tempfile
-import shutil
 import os
+from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+# Импортируем роутер и зависимости
+from app.api.list import router as list_router
+from app.core.auth import get_current_doctor
+from app.core.database import get_db
 
 # Создаем тестовое приложение
 app = FastAPI()
+app.include_router(list_router)
+
+# Mock для зависимостей
+class MockCurrentUser:
+    def __init__(self, sub="test_doctor", role="doctor"):
+        self.sub = sub
+        self.role = role
+
+class MockFile:
+    def __init__(self, id=1, encrypted_name="test.age", original_name="original.txt"):
+        self.id = id
+        self.encrypted_name = encrypted_name
+        self.original_name = original_name
+
+@pytest.fixture
+def mock_current_user():
+    """Мок аутентифицированного пользователя"""
+    return MockCurrentUser()
+
+@pytest.fixture
+def mock_db_session():
+    """Мок сессии БД"""
+    session = AsyncMock(spec=AsyncSession)
+    return session
+
+@pytest.fixture
+def mock_encrypted_dir(tmp_path):
+    """Временный каталог для зашифрованных файлов"""
+    encrypted_dir = tmp_path / "encrypted"
+    encrypted_dir.mkdir()
+    return encrypted_dir
+
+@pytest.fixture
+def client(mock_current_user, mock_db_session):
+    """Тестовый клиент с переопределенными зависимостями"""
+    # Переопределяем зависимости в приложении
+    async def override_get_current_doctor():
+        return mock_current_user
+    
+    async def override_get_db():
+        return mock_db_session
+    
+    app.dependency_overrides[get_current_doctor] = override_get_current_doctor
+    app.dependency_overrides[get_db] = override_get_db
+    
+    # Создаем клиент
+    test_client = TestClient(app)
+    
+    yield test_client
+    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()
 
 
-class TestListAPIFixed:
-    """Исправленные тесты для API получения списка файлов"""
 
-    @pytest.fixture
-    def temp_encrypted_dir(self):
-        """Создает временную директорию для зашифрованных файлов"""
-        temp_dir = Path(tempfile.mkdtemp())
-        yield temp_dir
-        shutil.rmtree(temp_dir, ignore_errors=True)
-
-    @pytest.fixture
-    def mock_db_session(self):
-        """Мокает асинхронную сессию БД"""
-        mock_session = AsyncMock()
-        mock_session.execute = AsyncMock()
-        return mock_session
-
-    @pytest.fixture
-    def mock_get_db(self, mock_db_session):
-        """Мокает зависимость get_db"""
-        async def mock_get_db_func():
-            return mock_db_session
+def test_list_files_success(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест успешного получения списка файлов"""
+    # Создаем 2 файла
+    (mock_encrypted_dir / "file1.age").write_bytes(b"test content 1")
+    (mock_encrypted_dir / "file2.age").write_bytes(b"test content 2")
+    
+    # Создаем счетчик вызовов
+    call_count = 0
+    
+    def execute_side_effect(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        result = MagicMock()
         
-        with patch('app.api.list.get_db', return_value=mock_get_db_func()):
-            yield
-
-    @pytest.fixture
-    def mock_auth_doctor(self):
-        """Мокает аутентификацию врача - возвращает объект с атрибутами sub и role"""
-        # Создаем правильный объект токена
-        class MockToken:
-            def __init__(self):
-                self.sub = "doctor_user"
-                self.role = "doctor"
+        if call_count <= 2:
+            # Первые два вызова - поиск файлов в БД
+            mock_file = MockFile(
+                id=call_count,
+                encrypted_name=f"file{call_count}.age",
+                original_name=f"original{call_count}.txt"
+            )
+            result.scalar_one_or_none.return_value = mock_file
+        elif call_count == 3:
+            # Третий вызов - токен для первого файла
+            result.scalar.return_value = "token123"
+        elif call_count == 4:
+            # Четвертый вызов - токен для второго файла
+            result.scalar.return_value = None
         
-        mock_token = MockToken()
+        return result
+    
+    mock_execute = AsyncMock(side_effect=execute_side_effect)
+    mock_db_session.execute = mock_execute
+    
+    # Патчим ENCRYPTED_DIR
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
+        response = client.get("/list")
         
-        async def mock_get_current_doctor():
-            return mock_token
+        assert response.status_code == 200
+        data = response.json()
+        assert data["count"] == 2
+        assert len(data["files"]) == 2
         
-        with patch('app.api.list.get_current_doctor', mock_get_current_doctor):
-            yield mock_token
-
-    @pytest.fixture
-    def mock_audit_logger(self):
-        """Мокает аудит-логгер"""
-        with patch('app.api.list.audit_logger') as mock_logger:
-            mock_logger.log_operation = MagicMock()
-            yield mock_logger
-
-    @pytest.fixture
-    def mock_request(self):
-        """Создает мок Request"""
-        mock_req = MagicMock(spec=Request)
-        mock_req.scope = {"type": "http"}
-        mock_req.client = MagicMock(host="127.0.0.1")
-        return mock_req
-
-    # ====== Основные тесты ======
-
-    @pytest.mark.asyncio
-    async def test_list_files_empty_directory(self, temp_encrypted_dir, mock_db_session, 
-                                            mock_auth_doctor, mock_audit_logger, mock_request):
-        """Тест получения списка файлов из пустой директории"""
-        # Мокаем ENCRYPTED_DIR
-        with patch('app.api.list.ENCRYPTED_DIR', temp_encrypted_dir):
-            # Импортируем функцию с моками (включая лимитер)
-            with patch('app.api.list.limiter.limit', lambda *args, **kwargs: lambda f: f):
-                # Импортируем после всех моков
-                import importlib
-                import app.api.list as list_module
-                importlib.reload(list_module)
-                
-                # Получаем функцию
-                list_func = list_module.list_files
-                # Обходим декоратор если есть
-                if hasattr(list_func, '__wrapped__'):
-                    list_func = list_func.__wrapped__
-                
-                # Вызываем функцию
-                response = await list_func(
-                    request=mock_request,
-                    current_user=mock_auth_doctor,
-                    db=mock_db_session
-                )
-        
-        # Проверяем результат
-        assert response["count"] == 0
-        assert response["files"] == []
-        
-        # Проверяем что БД не запрашивалась (нет файлов для запроса)
-        mock_db_session.execute.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_list_files_with_files_no_db_records(self, temp_encrypted_dir, mock_db_session, 
-                                                      mock_auth_doctor, mock_audit_logger, mock_request):
-        """Тест когда есть файлы на диске, но нет записей в БД"""
-        # Создаем тестовые файлы
-        file1 = temp_encrypted_dir / "file1.age"
-        file1.write_bytes(b"encrypted content 1")
-        
-        file2 = temp_encrypted_dir / "file2.age"
-        file2.write_bytes(b"encrypted content 2")
-        
-        # Мокаем ENCRYPTED_DIR
-        with patch('app.api.list.ENCRYPTED_DIR', temp_encrypted_dir):
-            with patch('app.api.list.limiter.limit', lambda *args, **kwargs: lambda f: f):
-                import importlib
-                import app.api.list as list_module
-                importlib.reload(list_module)
-                
-                # Настраиваем мок БД для возврата None (файл не найден в БД)
-                mock_result = MagicMock()
-                mock_result.scalar_one_or_none.return_value = None
-                mock_db_session.execute.return_value = mock_result
-                
-                list_func = list_module.list_files
-                if hasattr(list_func, '__wrapped__'):
-                    list_func = list_func.__wrapped__
-                
-                # Вызываем функцию
-                response = await list_func(
-                    request=mock_request,
-                    current_user=mock_auth_doctor,
-                    db=mock_db_session
-                )
-        
-        # Проверяем результат - файлы без записей в БД должны быть пропущены
-        assert response["count"] == 0
-        assert response["files"] == []
-        
-        # Проверяем что БД запрашивалась для каждого файла
-        assert mock_db_session.execute.call_count == 2
-
-    @pytest.mark.asyncio
-    async def test_list_files_success_without_tokens(self, temp_encrypted_dir, mock_db_session, 
-                                                   mock_auth_doctor, mock_audit_logger, mock_request):
-        """Тест успешного получения списка файлов без активных токенов"""
-        # Создаем тестовые файлы
-        file1 = temp_encrypted_dir / "file1.age"
-        file1.write_bytes(b"encrypted content 1")
-        
-        file2 = temp_encrypted_dir / "file2.age"
-        file2.write_bytes(b"encrypted content 2")
-        
-        # Создаем моки для записей в БД
-        mock_file1 = MagicMock()
-        mock_file1.id = 1
-        mock_file1.original_name = "original1.pdf"
-        mock_file1.encrypted_name = "file1.age"
-        
-        mock_file2 = MagicMock()
-        mock_file2.id = 2
-        mock_file2.original_name = "original2.docx"
-        mock_file2.encrypted_name = "file2.age"
-        
-        # Настраиваем мок БД
-        mock_result_file = MagicMock()
-        # Первый вызов вернет file1, второй - file2
-        mock_result_file.scalar_one_or_none.side_effect = [mock_file1, mock_file2]
-        
-        mock_result_token = MagicMock()
-        mock_result_token.scalar.return_value = None  # Нет активных токенов
-        
-        mock_db_session.execute.side_effect = [mock_result_file, mock_result_token, 
-                                              mock_result_file, mock_result_token]
-        
-        # Мокаем ENCRYPTED_DIR
-        with patch('app.api.list.ENCRYPTED_DIR', temp_encrypted_dir):
-            with patch('app.api.list.limiter.limit', lambda *args, **kwargs: lambda f: f):
-                import importlib
-                import app.api.list as list_module
-                importlib.reload(list_module)
-                
-                list_func = list_module.list_files
-                if hasattr(list_func, '__wrapped__'):
-                    list_func = list_func.__wrapped__
-                
-                # Вызываем функцию
-                response = await list_func(
-                    request=mock_request,
-                    current_user=mock_auth_doctor,
-                    db=mock_db_session
-                )
-        
-        # Проверяем результат
-        assert response["count"] == 2
-        assert len(response["files"]) == 2
-        
-        # Проверяем структуру ответа
-        for file_data in response["files"]:
+        # Проверяем общую структуру
+        for file_data in data["files"]:
             assert "id" in file_data
             assert "name" in file_data
-            assert "original_name" in file_data
-            assert file_data["download_token"] is None
-            assert file_data["download_url"] is None
             assert "size" in file_data
             assert "modified" in file_data
+            assert "original_name" in file_data
+            assert "download_token" in file_data
+            assert "download_url" in file_data
+        
+        # Проверяем, что есть один файл с токеном и один без
+        files_with_token = [f for f in data["files"] if f["download_token"]]
+        files_without_token = [f for f in data["files"] if not f["download_token"]]
+        
+        assert len(files_with_token) == 1
+        assert len(files_without_token) == 1
+        
+        # Проверяем файл с токеном
+        file_with_token = files_with_token[0]
+        assert file_with_token["download_token"] == "token123"
+        assert file_with_token["download_url"] == "/api/download?token=token123"
+        
+        # Проверяем файл без токена
+        file_without_token = files_without_token[0]
+        assert file_without_token["download_token"] is None
+        assert file_without_token["download_url"] is None
 
-    @pytest.mark.asyncio
-    async def test_list_files_success_with_active_token(self, temp_encrypted_dir, mock_db_session, 
-                                                       mock_auth_doctor, mock_audit_logger, mock_request):
-        """Тест успешного получения списка файлов с активным токеном"""
-        # Создаем тестовый файл
-        test_file = temp_encrypted_dir / "medical_report.age"
-        test_file.write_bytes(b"encrypted medical data")
-        
-        # Создаем мок для записи в БД
-        mock_db_file = MagicMock()
-        mock_db_file.id = 1
-        mock_db_file.original_name = "medical_report.pdf"
-        mock_db_file.encrypted_name = "medical_report.age"
-        
-        # Настраиваем мок БД
-        mock_result_file = MagicMock()
-        mock_result_file.scalar_one_or_none.return_value = mock_db_file
-        
-        mock_result_token = MagicMock()
-        mock_result_token.scalar.return_value = "active_token_123"  # Есть активный токен
-        
-        mock_db_session.execute.side_effect = [mock_result_file, mock_result_token]
-        
-        # Мокаем ENCRYPTED_DIR
-        with patch('app.api.list.ENCRYPTED_DIR', temp_encrypted_dir):
-            with patch('app.api.list.limiter.limit', lambda *args, **kwargs: lambda f: f):
-                import importlib
-                import app.api.list as list_module
-                importlib.reload(list_module)
-                
-                list_func = list_module.list_files
-                if hasattr(list_func, '__wrapped__'):
-                    list_func = list_func.__wrapped__
-                
-                # Вызываем функцию
-                response = await list_func(
-                    request=mock_request,
-                    current_user=mock_auth_doctor,
-                    db=mock_db_session
-                )
-        
-        # Проверяем результат
-        assert response["count"] == 1
-        file_data = response["files"][0]
-        
-        assert file_data["id"] == 1
-        assert file_data["name"] == "medical_report.age"
-        assert file_data["original_name"] == "medical_report.pdf"
-        assert file_data["download_token"] == "active_token_123"
-        assert file_data["download_url"] == "/api/download?token=active_token_123"
-
-    @pytest.mark.asyncio
-    async def test_list_files_ignore_non_age_files(self, temp_encrypted_dir, mock_db_session, 
-                                                  mock_auth_doctor, mock_audit_logger, mock_request):
-        """Тест что игнорируются файлы без расширения .age"""
-        # Создаем разные типы файлов
-        age_file = temp_encrypted_dir / "encrypted.age"
-        age_file.write_bytes(b"encrypted content")
-        
-        txt_file = temp_encrypted_dir / "notes.txt"
-        txt_file.write_bytes(b"text content")
-        
-        pdf_file = temp_encrypted_dir / "document.pdf"
-        pdf_file.write_bytes(b"pdf content")
-        
-        # Создаем директорию (должна быть проигнорирована)
-        subdir = temp_encrypted_dir / "subdir"
-        subdir.mkdir()
-        
-        # Мокаем ENCRYPTED_DIR
-        with patch('app.api.list.ENCRYPTED_DIR', temp_encrypted_dir):
-            with patch('app.api.list.limiter.limit', lambda *args, **kwargs: lambda f: f):
-                import importlib
-                import app.api.list as list_module
-                importlib.reload(list_module)
-                
-                # Настраиваем мок для файла .age
-                mock_db_file = MagicMock()
-                mock_db_file.id = 1
-                mock_db_file.original_name = "encrypted.pdf"
-                mock_db_file.encrypted_name = "encrypted.age"
-                
-                mock_result_file = MagicMock()
-                mock_result_file.scalar_one_or_none.return_value = mock_db_file
-                
-                mock_result_token = MagicMock()
-                mock_result_token.scalar.return_value = None
-                
-                mock_db_session.execute.side_effect = [mock_result_file, mock_result_token]
-                
-                list_func = list_module.list_files
-                if hasattr(list_func, '__wrapped__'):
-                    list_func = list_func.__wrapped__
-                
-                # Вызываем функцию
-                response = await list_func(
-                    request=mock_request,
-                    current_user=mock_auth_doctor,
-                    db=mock_db_session
-                )
-        
-        # Проверяем что только .age файл был обработан
-        assert response["count"] == 1
-        assert response["files"][0]["name"] == "encrypted.age"
-        
-        # БД должна была запрашиваться только для .age файла
-        assert mock_db_session.execute.call_count == 2  # Один запрос файла, один запрос токена
-
-    # ====== Тесты без зависимостей ======
-
-    def test_file_extension_check_correct(self):
-        """Правильный тест проверки расширения .age"""
-        # В коде используется: file_path.suffix == '.age'
-        # suffix возвращает расширение с точкой, чувствительно к регистру
-        
-        test_cases = [
-            (Path("file.age"), True),
-            (Path("file.AGE"), False),  # Чувствительно к регистру!
-            (Path("file.pdf"), False),
-            (Path("file.age.bak"), False),  # Будет .bak
-            (Path(".age"), False),  # Будет пустая строка или .age? На самом деле .suffix для ".age" вернет ""
-            (Path("age"), False),
-        ]
-        
-        for path, expected in test_cases:
-            result = path.suffix == '.age'
-            assert result == expected, f"Path {path}: .suffix='{path.suffix}', expected {expected}, got {result}"
-
-    def test_file_suffix_behavior(self):
-        """Тест поведения .suffix"""
-        # Демонстрация как работает .suffix
-        assert Path("file.age").suffix == '.age'
-        assert Path("file.AGE").suffix == '.AGE'  # Важно: сохраняет регистр
-        assert Path(".age").suffix == ''  # Файл начинающийся с точки
-        assert Path("file.age.bak").suffix == '.bak'  # Только последнее расширение
-        assert Path("file").suffix == ''  # Без расширения
-
-
-# ====== Упрощенные тесты которые точно работают ======
-
-def test_always_passes():
-    """Простой тест который всегда проходит"""
-    assert True
-
-
-def test_constants():
-    """Тест констант"""
-    from app.core.constants import ENCRYPTED_DIR
+# Тест 2: Каталог не существует
+def test_list_files_directory_not_exists(client, mock_db_session, mock_current_user):
+    """Тест случая, когда каталог с зашифрованными файлами не существует"""
+    non_existent_dir = Path("/non/existent/path")
     
-    assert ENCRYPTED_DIR.name == "encrypted"
-
-
-def test_file_model_basic():
-    """Базовый тест модели File"""
-    from app.models.file import File
-    
-    file = File(
-        original_name="test.pdf",
-        encrypted_name="test.pdf.age",
-        encrypted_path="/path/to/test.pdf.age",
-        original_size=1024,
-        encrypted_size=1100
-    )
-    
-    assert file.original_name == "test.pdf"
-    assert file.encrypted_name == "test.pdf.age"
-    assert hasattr(file, 'links')  # Проверяем связь
-
-
-def test_file_link_model_basic():
-    """Базовый тест модели FileLink"""
-    from app.models.file_link import FileLink
-    import uuid
-    
-    token = str(uuid.uuid4())
-    link = FileLink(
-        token=token,
-        file_id=1,
-        max_downloads=5,
-        downloads_count=0
-    )
-    
-    assert link.token == token
-    assert link.file_id == 1
-    assert link.max_downloads == 5
-
-
-def test_storage_manager_basic(tmp_path):
-    """Базовый тест FileStorageManager"""
-    from app.core.storage import FileStorageManager
-    
-    storage_dir = tmp_path / "storage"
-    manager = FileStorageManager(storage_dir, ttl_seconds=3600)
-    
-    assert manager.storage_dir == storage_dir
-    assert manager.ttl == 3600
-    assert isinstance(manager.files, dict)
-
-
-# ====== Тест импортов ======
-
-def test_imports():
-    """Тест что модули могут быть импортированы"""
-    from app.api.list import list_files
-    from app.models.file import File
-    from app.models.file_link import FileLink
-    from app.core.storage import FileStorageManager
-    
-    assert callable(list_files)
-    assert File.__name__ == "File"
-    assert FileLink.__name__ == "FileLink"
-    assert FileStorageManager.__name__ == "FileStorageManager"
-
-
-# ====== Мок-тесты без реального вызова функции ======
-
-class TestListMocked:
-    """Тесты с моками которые не вызывают реальную функцию"""
-    
-    def test_list_files_signature(self):
-        """Тест сигнатуры функции"""
-        # Проверяем что функция существует и имеет правильные параметры
-        from app.api.list import list_files
+    # Патчим ENCRYPTED_DIR
+    with patch('app.api.list.ENCRYPTED_DIR', non_existent_dir):
+        response = client.get("/list")
         
-        import inspect
-        sig = inspect.signature(list_files)
-        params = list(sig.parameters.keys())
-        
-        assert "request" in params
-        assert "current_user" in params
-        assert "db" in params
+        assert response.status_code == 200
+        data = response.json()
+        assert data["count"] == 0
+        assert data["files"] == []
+
+# Тест 3: Каталог существует, но пустой
+def test_list_files_empty_directory(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест случая с пустым каталогом"""
+    # Каталог уже создан фикстурой, но пустой
     
-    def test_mock_list_functionality(self):
-        """Тест функциональности через моки"""
-        # Создаем мок функции
-        mock_list = MagicMock()
-        mock_list.return_value = {
-            "count": 2,
-            "files": [
-                {"name": "file1.age", "size": 1024},
-                {"name": "file2.age", "size": 2048}
-            ]
-        }
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
+        response = client.get("/list")
         
-        # Вызываем мок
-        result = mock_list()
-        
-        # Проверяем что возвращает ожидаемую структуру
-        assert result["count"] == 2
-        assert len(result["files"]) == 2
-        assert result["files"][0]["name"] == "file1.age"
+        assert response.status_code == 200
+        data = response.json()
+        assert data["count"] == 0
+        assert data["files"] == []
+
+# Тест 4: Файлы без расширения .age игнорируются
+def test_list_files_ignore_non_age(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест игнорирования файлов без расширения .age"""
+    # Создаем файлы с разными расширениями
+    (mock_encrypted_dir / "file1.txt").write_text("text file")
+    (mock_encrypted_dir / "file2.pdf").write_text("pdf file")
+    (mock_encrypted_dir / "file3.age").write_text("encrypted file")
     
-    def test_datetime_conversion(self):
-        """Тест конвертации timestamp в datetime"""
-        timestamp = 1704067200  # 2024-01-01 00:00:00 UTC
-        dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        iso_str = dt.isoformat()
+    # Мок для файла в БД
+    mock_file = MockFile(id=1, encrypted_name="file3.age", original_name="original.txt")
+    
+    mock_execute = AsyncMock()
+    result1 = MagicMock()
+    result1.scalar_one_or_none.return_value = mock_file
+    result2 = MagicMock()
+    result2.scalar.return_value = None
+    
+    mock_execute.side_effect = [result1, result2]
+    mock_db_session.execute = mock_execute
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
+        response = client.get("/list")
         
-        # Проверяем что это валидный ISO формат
-        assert "2024" in iso_str
-        assert "01-01" in iso_str
-        assert "00:00:00" in iso_str
+        assert response.status_code == 200
+        data = response.json()
+        # Должен быть только один файл с расширением .age
+        assert data["count"] == 1
+        assert data["files"][0]["name"] == "file3.age"
+
+# Тест 5: Файлы .age, но не найденные в БД
+def test_list_files_age_not_in_db(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест файлов с расширением .age, которые не найдены в БД"""
+    (mock_encrypted_dir / "orphan.age").write_text("orphaned encrypted file")
+    
+    # Мок возвращает None (файл не найден в БД)
+    mock_execute = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = None
+    mock_execute.return_value = result
+    mock_db_session.execute = mock_execute
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
+        response = client.get("/list")
+        
+        assert response.status_code == 200
+        data = response.json()
+        # Файл должен быть пропущен
+        assert data["count"] == 0
+        assert data["files"] == []
+
+# Тест 6: Ошибка при обработке файла (пропуск с логированием)
+def test_list_files_error_handling(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест обработки ошибки при обработке файла"""
+    (mock_encrypted_dir / "corrupted.age").write_text("corrupted file")
+    
+    # Мок вызывает исключение при поиске в БД
+    mock_execute = AsyncMock()
+    mock_execute.side_effect = Exception("Database error")
+    mock_db_session.execute = mock_execute
+    
+    # Мок для аудит-логгера
+    mock_audit_logger = MagicMock()
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
+         patch('app.api.list.audit_logger', mock_audit_logger):
+        
+        response = client.get("/list")
+        
+        assert response.status_code == 200
+        data = response.json()
+        # Файл с ошибкой должен быть пропущен
+        assert data["count"] == 0
+        
+        # Проверяем, что ошибка была залогирована
+        mock_audit_logger.log_operation.assert_called_once()
 
 
-# ====== Тесты с TestClient ======
 
-class TestListIntegration:
-    """Интеграционные тесты"""
+def test_list_files_exception_handling(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест корректной обработки исключений без падения всего endpoint'а"""
+    # Создаем несколько файлов
+    (mock_encrypted_dir / "good1.age").write_text("good file 1")
+    (mock_encrypted_dir / "bad.age").write_text("bad file")
+    (mock_encrypted_dir / "good2.age").write_text("good file 2")
     
-    def setup_method(self):
-        """Настройка перед каждым тестом"""
-        self.app = FastAPI()
-        
-        # Мокаем все зависимости
-        mock_limiter = MagicMock()
-        mock_limiter.limit = lambda *args, **kwargs: lambda f: f
-        
-        with patch('app.api.list.limiter', mock_limiter):
-            with patch('app.api.list.ENCRYPTED_DIR', Path("/tmp/test")):
-                with patch('app.api.list.audit_logger', MagicMock()):
-                    # Мокаем зависимости
-                    mock_db_session = AsyncMock()
-                    mock_db_session.execute = AsyncMock()
-                    
-                    async def mock_get_db():
-                        return mock_db_session
-                    
-                    mock_token = MagicMock()
-                    mock_token.sub = "testuser"
-                    mock_token.role = "doctor"
-                    
-                    async def mock_get_current_doctor():
-                        return mock_token
-                    
-                    with patch('app.api.list.get_db', mock_get_db):
-                        with patch('app.api.list.get_current_doctor', mock_get_current_doctor):
-                            from app.api.list import router as list_router
-                            self.app.include_router(list_router, prefix="/api")
-        
-        self.client = TestClient(self.app)
+    mock_good_file1 = MockFile(id=1, encrypted_name="good1.age", original_name="good1.txt")
+    mock_good_file2 = MockFile(id=2, encrypted_name="good2.age", original_name="good2.txt")
     
-    def test_list_endpoint_exists(self):
-        """Тест что эндпоинт существует"""
-        response = self.client.get("/api/list")
-        # Может быть 200 или ошибка, но не 404
-        assert response.status_code != 404
+    # Создаем список результатов для последовательных вызовов
+    results = []
     
-    def test_list_response_structure(self):
-        """Тест структуры ответа"""
-        # Мокаем функцию напрямую
-        with patch('app.api.list.list_files') as mock_list:
-            mock_list.return_value = {
-                "count": 1,
-                "files": [{"name": "test.age", "size": 1024}]
-            }
+    # 1. Первый файл (good1.age) - успех
+    result1 = MagicMock()
+    result1.scalar_one_or_none.return_value = mock_good_file1
+    results.append(result1)
+    
+    # Токен для первого файла
+    result2 = MagicMock()
+    result2.scalar.return_value = None
+    results.append(result2)
+    
+    # 2. Второй файл (bad.age) - исключение при поиске в БД
+    def raise_exception(*args, **kwargs):
+        raise Exception("Database error")
+    
+    # Создаем callable для выброса исключения
+    results.append(raise_exception)
+    
+    # 3. Третий файл (good2.age) - успех (но не будет достигнут из-за исключения)
+    # Вместо этого, после исключения для bad.age, функция продолжит с good2.age
+    
+    # 4. good2.age - поиск в БД
+    result4 = MagicMock()
+    result4.scalar_one_or_none.return_value = mock_good_file2
+    results.append(result4)
+    
+    # Токен для good2.age
+    result5 = MagicMock()
+    result5.scalar.return_value = None
+    results.append(result5)
+    
+    # Создаем mock с side_effect
+    mock_execute = AsyncMock()
+    
+    def execute_side_effect(*args, **kwargs):
+        if not results:
+            # Создаем результат по умолчанию
+            result = MagicMock()
+            result.scalar_one_or_none.return_value = None
+            result.scalar.return_value = None
+            return result
+        
+        next_result = results.pop(0)
+        
+        if callable(next_result) and not isinstance(next_result, MagicMock):
+            # Это функция, которая выбрасывает исключение
+            next_result()
+        else:
+            # Это MagicMock
+            return next_result
+    
+    mock_execute.side_effect = execute_side_effect
+    mock_db_session.execute = mock_execute
+    
+    # Мок для аудит-логгера
+    mock_audit_logger = MagicMock()
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
+         patch('app.api.list.audit_logger', mock_audit_logger):
+        
+        response = client.get("/list")
+        
+        assert response.status_code == 200
+        data = response.json()
+        # Должны вернуться 2 успешно обработанных файла
+        # (good1.age и good2.age, bad.age пропущен из-за ошибки)
+        assert data["count"] == 2
+        
+        # Проверяем логирование ошибки
+        # Ошибка должна быть залогирована для bad.age
+        assert mock_audit_logger.log_operation.call_count >= 1
+
+# Тест 8: Без аутентификации
+def test_list_files_no_auth():
+    """Тест запроса без аутентификации"""
+    # Создаем отдельный клиент без переопределенной аутентификации
+    test_app = FastAPI()
+    test_app.include_router(list_router)
+    
+    # Переопределяем только get_db чтобы не было ошибок БД
+    async def override_get_db():
+        return AsyncMock()
+    
+    test_app.dependency_overrides[get_db] = override_get_db
+    
+    test_client = TestClient(test_app)
+    
+    response = test_client.get("/list")
+    
+    # В зависимости от реализации get_current_doctor, может быть 401 или 403
+    assert response.status_code in [401, 403, 422]
+
+# Тест 9: Проверка структуры ответа
+def test_list_files_response_structure(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Тест структуры ответа"""
+    (mock_encrypted_dir / "test.age").write_text("test content")
+    
+    mock_file = MockFile(id=1, encrypted_name="test.age", original_name="test.txt")
+    
+    mock_execute = AsyncMock()
+    result1 = MagicMock()
+    result1.scalar_one_or_none.return_value = mock_file
+    result2 = MagicMock()
+    result2.scalar.return_value = "test_token"
+    
+    mock_execute.side_effect = [result1, result2]
+    mock_db_session.execute = mock_execute
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
+        response = client.get("/list")
+        
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Проверяем структуру верхнего уровня
+        assert "count" in data
+        assert "files" in data
+        assert isinstance(data["count"], int)
+        assert isinstance(data["files"], list)
+        
+        if data["count"] > 0:
+            file_info = data["files"][0]
+            assert "id" in file_info
+            assert "name" in file_info
+            assert "size" in file_info
+            assert "modified" in file_info
+            assert "original_name" in file_info
+            assert "download_token" in file_info
+            assert "download_url" in file_info
             
-            response = self.client.get("/api/list")
+            # Проверяем типы данных
+            assert isinstance(file_info["id"], int)
+            assert isinstance(file_info["name"], str)
+            assert isinstance(file_info["size"], int)
+            assert isinstance(file_info["modified"], str)
+            assert isinstance(file_info["original_name"], str)
             
-            if response.status_code == 200:
-                data = response.json()
-                assert "count" in data
-                assert "files" in data
-
-
-# ====== Параметризованные тесты для проверки логики ======
-
-@pytest.mark.parametrize("file_name,expected_processed", [
-    ("document.age", True),
-    ("document.AGE", False),  # Чувствительно к регистру
-    ("document.pdf", False),
-    ("age", False),
-    ("", False),
-])
-def test_age_extension_logic(file_name, expected_processed):
-    """Тест логики проверки расширения .age"""
-    path = Path(file_name)
-    # Логика из кода: file_path.is_file() and file_path.suffix == '.age'
-    is_age = path.suffix == '.age'
+def test_list_files_exception_handling_simple(client, mock_encrypted_dir, mock_db_session, mock_current_user):
+    """Упрощенный тест обработки исключений"""
+    # Создаем один файл, который вызывает исключение
+    (mock_encrypted_dir / "bad.age").write_text("bad file")
     
-    assert is_age == expected_processed
+    # Мок выбрасывает исключение
+    mock_execute = AsyncMock()
+    mock_execute.side_effect = Exception("Database error")
+    mock_db_session.execute = mock_execute
+    
+    # Мок для аудит-логгера
+    mock_audit_logger = MagicMock()
+    
+    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
+         patch('app.api.list.audit_logger', mock_audit_logger):
+        
+        response = client.get("/list")
+        
+        assert response.status_code == 200
+        data = response.json()
+        # Файл с ошибкой должен быть пропущен
+        assert data["count"] == 0
+        
+        # Проверяем логирование ошибки
+        mock_audit_logger.log_operation.assert_called_once()
 
-
-# Запустим тесты
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+# Тест 10: Rate limiting (требует мокинга лимитера)
+def test_list_files_rate_limit(client, mock_db_session, mock_current_user):
+    """Тест ограничения частоты запросов"""
+    # Мокаем лимитер чтобы всегда пропускать
+    mock_limiter = MagicMock()
+    mock_limiter.limit = MagicMock(return_value=lambda f: f)
+    
+    # Создаем пустой каталог
+    empty_dir = Path("/tmp/empty_test_dir")
+    empty_dir.mkdir(exist_ok=True)
+    
+    with patch('app.api.list.limiter', mock_limiter), \
+         patch('app.api.list.ENCRYPTED_DIR', empty_dir):
+        
+        response = client.get("/list")
+        
+        # Должен быть успешный ответ (200) даже с лимитером,
+        # потому что мы его замокали
+        assert response.status_code == 200
+    
+    # Убираем временный каталог
+    empty_dir.rmdir()

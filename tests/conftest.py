@@ -2,6 +2,7 @@
 import sys
 import os
 from pathlib import Path
+from app.core.auth import get_current_doctor
 
 # Добавляем корень проекта в PYTHONPATH
 project_root = Path(__file__).parent.parent
@@ -190,6 +191,41 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+    
+
+
+@pytest.fixture
+def client():
+    """Фикстура для тестового клиента"""
+    return TestClient(app)
+
+@pytest.fixture
+def mock_current_user():
+    """Мок аутентифицированного пользователя"""
+    user = MagicMock()
+    user.sub = "test_doctor"
+    user.role = "doctor"
+    return user
+
+@pytest.fixture
+def mock_db_session():
+    """Мок асинхронной сессии БД"""
+    session = AsyncMock()
+    return session
+
+@pytest.fixture(autouse=True)
+def override_dependencies(mock_current_user, mock_db_session):
+    """Переопределение зависимостей для всех тестов"""
+    # Переопределяем зависимости FastAPI
+    app.dependency_overrides[get_current_doctor] = lambda: mock_current_user
+    
+    # Можно также переопределить get_db если нужно
+    # app.dependency_overrides[get_db] = lambda: mock_db_session
+    
+    yield
+    
+    # Очищаем переопределения после теста
+    app.dependency_overrides.clear()
 
 # Останавливаем патчи в конце
 def pytest_sessionfinish(session, exitstatus):
