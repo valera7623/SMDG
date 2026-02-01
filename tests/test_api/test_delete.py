@@ -443,3 +443,157 @@ def test_calculate_hash_integration():
         # Очистка
         if tmp_path.exists():
             tmp_path.unlink()
+            
+            
+# tests/test_api/test_delete.py
+"""
+Тесты для роутера /api/delete
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+from unittest.mock import patch, MagicMock, AsyncMock
+from pathlib import Path
+import os
+
+from app.main import app
+from app.api.delete import delete_file, delete_file_get
+from app.core import ENCRYPTED_DIR, audit_logger
+from app.core.auth import get_current_admin
+from app.core.utils import sanitize_filename, calculate_hash
+
+
+@pytest.fixture
+def mock_admin():
+    admin = MagicMock()
+    admin.sub = "test_admin"
+    admin.role = "admin"
+    return admin
+
+
+@pytest.fixture
+def client_with_admin(client, mock_admin):
+    """Client с авторизованным админом"""
+    app.dependency_overrides[get_current_admin] = lambda: mock_admin
+    yield client
+    app.dependency_overrides.clear()
+
+
+def test_delete_file_success(client_with_admin, mock_admin, temp_dirs):
+    """POST /delete — успешное удаление"""
+    filename = "test.age"
+    encrypted_path = temp_dirs["encrypted"] / filename
+    encrypted_path.write_text("fake encrypted content")  # создаём файл
+
+    with patch("app.api.delete.ENCRYPTED_DIR", temp_dirs["encrypted"]):
+        with patch("app.api.delete.sanitize_filename", return_value=filename):
+            with patch("app.api.delete.calculate_hash", return_value="fakehash123"):
+                with patch.object(audit_logger, "log_operation") as mock_log:
+                    response = client_with_admin.post(
+                        "/api/delete",
+                        data={"filename": filename, "confirm": "true", "reason": "Test deletion"}
+                    )
+
+                    assert response.status_code == 200
+                    data = response.json()
+                    assert data["message"] == "✅ Файл успешно удален"
+                    assert data["filename"] == filename
+                    assert not encrypted_path.exists()  # файл удалён
+                    mock_log.assert_any_call(
+                        action="delete",
+                        filename=filename,
+                        user="admin",
+                        reason="Test deletion",
+                        success=True
+                    )
+
+
+def test_delete_file_not_confirmed(client_with_admin, mock_admin, temp_dirs):
+    """POST /delete — без подтверждения (confirm=false)"""
+    filename = "test.age"
+    encrypted_path = temp_dirs["encrypted"] / filename
+    encrypted_path.write_text("fake content")
+
+    with patch("app.api.delete.ENCRYPTED_DIR", temp_dirs["encrypted"]):
+        response = client_with_admin.post(
+            "/api/delete",
+            data={"filename": filename, "confirm": "false", "reason": "Test"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert "Требуется подтверждение удаления" in data["message"]
+        assert data["confirmation_required"] is True
+        assert encrypted_path.exists()  # файл НЕ удалён
+
+
+def test_delete_file_not_found(client_with_admin, mock_admin):
+    """POST /delete — файл не найден → 404"""
+    filename = "nonexistent.age"
+
+    with patch("app.api.delete.ENCRYPTED_DIR", Path("/tmp/fake")):
+        with patch("pathlib.Path.exists", return_value=False):
+            response = client_with_admin.post(
+                "/api/delete",
+                data={"filename": filename, "confirm": "true"}
+            )
+
+            assert response.status_code == 404
+            assert "File not found" in response.json()["detail"]
+
+
+def test_delete_file_error(client_with_admin, mock_admin, temp_dirs):
+    """POST /delete — ошибка удаления → 500 + аудит"""
+    filename = "test.age"
+    encrypted_path = temp_dirs["encrypted"] / filename
+    encrypted_path.write_text("fake content")
+
+    with patch("app.api.delete.ENCRYPTED_DIR", temp_dirs["encrypted"]):
+        with patch("pathlib.Path.unlink", side_effect=OSError("Permission denied")):
+            with patch.object(audit_logger, "log_operation") as mock_log:
+                response = client_with_admin.post(
+                    "/api/delete",
+                    data={"filename": filename, "confirm": "true"}
+                )
+
+                assert response.status_code == 500
+                assert "Delete failed" in response.json()["detail"]
+                mock_log.assert_any_call(
+                    action="delete",
+                    filename=filename,
+                    user="admin",
+                    success=False
+                )
+
+
+def test_delete_file_get_success(client_with_admin, mock_admin, temp_dirs):
+    """GET /delete — успех"""
+    filename = "test.age"
+    encrypted_path = temp_dirs["encrypted"] / filename
+    encrypted_path.write_text("fake content")
+
+    with patch("app.api.delete.ENCRYPTED_DIR", temp_dirs["encrypted"]):
+        with patch("app.api.delete.sanitize_filename", return_value=filename):
+            with patch("app.api.delete.calculate_hash", return_value="fakehash123"):
+                with patch.object(audit_logger, "log_operation") as mock_log:
+                    response = client_with_admin.get(
+                        f"/api/delete?filename={filename}&confirm=true&reason=Test"
+                    )
+
+                    assert response.status_code == 200
+                    data = response.json()
+                    assert data["message"] == "✅ Файл успешно удален"
+                    assert not encrypted_path.exists()
+                    mock_log.assert_any_call(
+                        action="delete",
+                        filename=filename,
+                        user="admin",
+                        reason="Test",
+                        success=True
+                    )
+
+
+def test_delete_file_get_unauthorized(client):
+    """GET /delete — без админа → 401/403"""
+    response = client.get("/api/delete?filename=test.age&confirm=true")
+    assert response.status_code in (401, 403)
