@@ -154,7 +154,11 @@ async def upload_file(
             input_path=temp_upload_path,
             public_key=get_public_key(),
             output_path=final_encrypted_path
-        )
+        )  
+        print("=== AFTER encrypt_file ===")
+        print("Encrypted path exists:", final_encrypted_path.exists()),
+        print("Size:", final_encrypted_path.stat().st_size if final_encrypted_path.exists() else 0)
+        
 
         # Хэш оригинального файла
         original_hash = calculate_hash(temp_upload_path)

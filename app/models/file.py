@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import Optional
 from app.core.database import Base
-
+from sqlalchemy.sql import func
 class File(Base):
     __tablename__ = "files"
 
@@ -38,7 +38,7 @@ class File(Base):
     mime_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     
     # Когда файл был загружен
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="CURRENT_TIMESTAMP")
+    uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.current_timestamp())
     
     # Когда файл будет автоматически удалён (если используешь TTL)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
