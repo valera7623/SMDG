@@ -362,6 +362,17 @@ def test_sanitize_filename_behavior():
     
     print("\n✅ Фактическое поведение задокументировано")
     
+    
+def test_app_starts_with_secrets():
+    """Проверяем, что приложение стартует с Docker Secrets"""
+    from app.main import app
+    from app.core.config import settings
+
+    assert settings.jwt_secret_key is not None
+    assert len(settings.jwt_secret_key) > 30
+    assert settings.admin_password is not None
+    print("Secrets загружены корректно")
+    
 
 @pytest.mark.asyncio
 async def test_full_cycle_upload_download_delete(client, test_db_session, temp_dirs):
