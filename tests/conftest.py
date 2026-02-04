@@ -1,3 +1,4 @@
+# tests/conftest.py
 import sys
 import os
 from pathlib import Path
@@ -10,23 +11,59 @@ sys.path.insert(0, str(project_root))
 
 import pytest
 import asyncio
-import tempfile
 import shutil
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.pool import StaticPool
-from sqlalchemy import delete, text
+from sqlalchemy import text, delete
 
 from app.main import app
 from app.core.database import Base, get_db
 from app.core.auth import TokenData, get_current_user, get_current_doctor, get_current_admin
 
-# Глобальный мок для audit_logger
-mock_audit_logger = MagicMock()
-mock_audit_logger.log_operation = MagicMock()
+# Глобальный мок для audit_logger (применяется ко всем тестам)
+@pytest.fixture(scope="session", autouse=True)
+def patch_audit_logger():
+    """Глобальный патч audit_logger для всех тестов"""
+    from app.core import audit as audit_module
+    
+    mock_audit = MagicMock()
+    mock_audit.log_operation = MagicMock()
+    
+    patched = []
+    modules = [
+        "app.core",
+        "app.main",
+        "app.api.upload",
+        "app.api.download",
+        "app.api.auth",
+        "app.api.list",
+        "app.api.delete",
+        "app.api.stats",
+        "app.core.middleware",
+    ]
+    
+    for mod_path in modules:
+        try:
+            mod = sys.modules.get(mod_path) or __import__(mod_path)
+            if hasattr(mod, "audit_logger"):
+                p = patch(f"{mod_path}.audit_logger", mock_audit)
+                p.start()
+                patched.append(p)
+        except (ImportError, AttributeError):
+            pass
+    
+    yield
+    
+    for p in patched:
+        try:
+            p.stop()
+        except:
+            pass
 
-# Автоматический мок авторизации для ВСЕХ тестов
+
+# Глобальный мок авторизации (doctor по умолчанию)
 @pytest.fixture(autouse=True)
 def mock_current_user_global():
     print("=== ГЛОБАЛЬНЫЙ МОК get_current_user активирован ===")
@@ -34,23 +71,25 @@ def mock_current_user_global():
     app.dependency_overrides[get_current_doctor] = lambda: TokenData(sub="test_doctor", role="doctor")
     app.dependency_overrides[get_current_admin] = lambda: TokenData(sub="test_admin", role="admin")
     yield
-    print("=== ГЛОБАЛЬНЫЙ МОК get_current_user отключён ===")
     app.dependency_overrides.clear()
+    print("=== ГЛОБАЛЬНЫЙ МОК get_current_user отключён ===")
 
-# Глобальный мок subprocess (блокирует age и любые внешние команды)
+
+# Глобальный мок subprocess — блокирует все вызовы age/subprocess
 @pytest.fixture(autouse=True)
 def mock_subprocess_global():
     print("=== ГЛОБАЛЬНЫЙ МОК SUBPROCESS АКТИВИРОВАН ===")
     with patch("asyncio.create_subprocess_exec") as mock_sub:
         mock_process = AsyncMock()
-        mock_process.communicate.return_value = (b"", b"")  # stdout, stderr
-        mock_process.returncode = 0  # успех
+        mock_process.communicate.return_value = (b"", b"")
+        mock_process.returncode = 0
         mock_process.wait.return_value = 0
         mock_sub.return_value = mock_process
         yield
     print("=== ГЛОБАЛЬНЫЙ МОК SUBPROCESS ОТКЛЮЧЁН ===")
 
-# Фикстура временных директорий (для всех тестов)
+
+# Фикстура временных директорий
 @pytest.fixture(scope="function")
 def temp_dirs(tmp_path):
     base_temp = Path(tmp_path)
@@ -62,10 +101,10 @@ def temp_dirs(tmp_path):
         "keys": base_temp / "keys",
     }
     
-    for dir_path in dirs.values():
-        dir_path.mkdir(parents=True, exist_ok=True)
+    for d in dirs.values():
+        d.mkdir(parents=True, exist_ok=True)
     
-    # Создаём тестовые ключи
+    # Тестовые ключи
     (dirs["keys"] / "age.key").write_text("test_private_key")
     (dirs["keys"] / "age.pub").write_text("age1testpublickey123")
     
@@ -73,12 +112,19 @@ def temp_dirs(tmp_path):
     
     shutil.rmtree(base_temp, ignore_errors=True)
 
-# Тестовая БД — SQLite в памяти (для unit-тестов, быстро)
-TEST_SQLITE_URL = "sqlite+aiosqlite:///:memory:"
 
+# Определяем режим CI
+IS_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
+
+
+# SQLite для unit-тестов и CI
 @pytest.fixture(scope="function")
 async def sqlite_engine():
-    engine = create_async_engine(TEST_SQLITE_URL, connect_args={"check_same_thread": False})
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -88,6 +134,7 @@ async def sqlite_engine():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 @pytest.fixture(scope="function")
 async def sqlite_db_session(sqlite_engine):
     async_session = async_sessionmaker(sqlite_engine, class_=AsyncSession, expire_on_commit=False)
@@ -95,11 +142,15 @@ async def sqlite_db_session(sqlite_engine):
     async with async_session() as session:
         yield session
 
-# Тестовая PostgreSQL через testcontainers (для интеграционных тестов)
-from testcontainers.postgres import PostgresContainer
 
+# PostgreSQL через testcontainers (локально) или localhost (если CI)
 @pytest.fixture(scope="session")
 def postgres_container():
+    if IS_GITHUB_ACTIONS:
+        pytest.skip("PostgresContainer skipped in CI - using SQLite")
+    
+    from testcontainers.postgres import PostgresContainer
+    
     postgres = PostgresContainer(
         image="postgres:15-alpine",
         dbname="smdg",
@@ -110,9 +161,13 @@ def postgres_container():
     yield postgres
     postgres.stop()
 
+
 @pytest.fixture(scope="session")
-def postgres_url(postgres_container):
+def postgres_url(postgres_container=None):
+    if IS_GITHUB_ACTIONS:
+        return "sqlite+aiosqlite:///:memory:"
     return postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+
 
 @pytest.fixture(scope="session")
 async def postgres_engine(postgres_url):
@@ -126,51 +181,35 @@ async def postgres_engine(postgres_url):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 @pytest.fixture(scope="function")
 async def postgres_db_session(postgres_engine):
     async_session = async_sessionmaker(postgres_engine, class_=AsyncSession, expire_on_commit=False)
     
     async with async_session() as session:
-        # Очищаем таблицы перед тестом (без TRUNCATE, чтобы не ломать FK)
+        # Очистка таблиц перед тестом
         await session.execute(delete(FileLink))
         await session.execute(delete(pytest.File))
         await session.commit()
         yield session
 
-# Выбор БД в зависимости от теста
+
+# Автоматический выбор БД
 @pytest.fixture
 def db_session(request):
-    """Автоматически выбирает SQLite или PostgreSQL в зависимости от маркера теста"""
-    if "integration" in request.keywords:
+    if "integration" in request.keywords or IS_GITHUB_ACTIONS:
         return request.getfixturevalue("postgres_db_session")
-    else:
-        return request.getfixturevalue("sqlite_db_session")
+    return request.getfixturevalue("sqlite_db_session")
 
-# Тестовый клиент (для всех тестов)
+
+# Тестовый клиент
 @pytest.fixture
 def client(db_session, temp_dirs):
-    """Тестовый клиент с правильными моками путей и БД"""
     with patch("app.core.UPLOAD_DIR", temp_dirs["upload"]), \
          patch("app.core.ENCRYPTED_DIR", temp_dirs["encrypted"]), \
          patch("app.core.DECRYPTED_DIR", temp_dirs["decrypted"]), \
-         patch("app.core.PRIVATE_KEY_PATH", temp_dirs["keys"] / "age.key"), \
-         patch("app.api.upload.UPLOAD_DIR", temp_dirs["upload"]), \
-         patch("app.api.upload.ENCRYPTED_DIR", temp_dirs["encrypted"]), \
-         patch("app.api.download.ENCRYPTED_DIR", temp_dirs["encrypted"]), \
-         patch("app.api.download.DECRYPTED_DIR", temp_dirs["decrypted"]), \
-         patch("app.api.download.PRIVATE_KEY_PATH", temp_dirs["keys"] / "age.key"), \
-         patch("app.core.config.settings") as mock_settings:
+         patch("app.core.PRIVATE_KEY_PATH", temp_dirs["keys"] / "age.key"):
         
-        mock_settings.dev_mode = True
-        mock_settings.debug = True
-        mock_settings.MAX_UPLOAD_SIZE_MB = 100
-        mock_settings.ALLOWED_MIME_TYPES = ["application/pdf", "image/jpeg"]
-        mock_settings.DICOM_MAGIC = b"DICM"
-        mock_settings.CLAMAV_HOST = "localhost"
-        mock_settings.CLAMAV_PORT = 3310
-        mock_settings.CLAMAV_TIMEOUT = 30
-        
-        # Подмена БД
         async def override_get_db():
             yield db_session
         
@@ -181,7 +220,8 @@ def client(db_session, temp_dirs):
         
         app.dependency_overrides.clear()
 
-# Мок crypto_manager (для unit-тестов)
+
+# Мок crypto_manager
 @pytest.fixture
 def mock_crypto():
     with patch("app.crypto.crypto.crypto_manager") as mock:
@@ -190,62 +230,18 @@ def mock_crypto():
         mock.check_age_installed = MagicMock(return_value=True)
         yield mock
 
-# Мок времени (если нужно)
+
+# Мок времени
 @pytest.fixture
 def mock_time():
     with patch("time.time") as mock_time:
         mock_time.return_value = 1000.0
         yield mock_time
 
-# Event loop для async тестов
+
+# Event loop
 @pytest.fixture(scope="session")
 def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
-
-# В conftest.py — заменяем весь блок патчей на это
-
-@pytest.fixture(scope="session", autouse=True)
-def patch_audit_logger():
-    """Глобальный патч audit_logger для всех тестов"""
-    from app.core import audit as audit_module
-    
-    mock_audit = MagicMock()
-    mock_audit.log_operation = MagicMock()
-    
-    # Патчим только существующие модули
-    patched_modules = []
-    
-    modules_to_patch = [
-        "app.core",
-        "app.main",
-        "app.api.upload",
-        "app.api.download",
-        "app.api.auth",
-        "app.api.list",
-        "app.api.delete",
-        "app.api.stats",
-        "app.core.middleware",
-    ]
-    
-    for module_path in modules_to_patch:
-        try:
-            module = sys.modules.get(module_path) or __import__(module_path)
-            if hasattr(module, "audit_logger"):
-                patcher = patch(f"{module_path}.audit_logger", mock_audit)
-                patcher.start()
-                patched_modules.append(patcher)
-                print(f"Патч audit_logger применён для {module_path}")
-        except (ImportError, AttributeError):
-            pass  # модуль не существует или нет audit_logger — пропускаем
-    
-    yield
-    
-    # Автоматическая остановка всех патчей после сессии
-    for patcher in patched_modules:
-        try:
-            patcher.stop()
-            print(f"Патч остановлен для {patcher.target}")
-        except:
-            pass
