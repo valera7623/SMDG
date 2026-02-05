@@ -1,4 +1,7 @@
-SMDG                                                              
+SMDG   
+├─ .github 
+|   └─ workflows 
+|      └─ ci.yml                                                         
 ├─ app                                                            
 │  ├─ api                                                         
 │  │  ├─ __init__.py
@@ -32,12 +35,13 @@ SMDG
 |  |  ├─ file.py
 |  |  └─ user.py 
 |  ├─ schemas
+|  ├─ templates
+|  |  ├─ error.html
+|  |  ├─ result.html
+|  |  └─ upload.html
 |  ├─ cli.py
 |  └─ main.py
-|
-├─ keys                                                        
-│  ├─ age.key                                                  
-│  └─ age.pub                                                                                                
+|                                                                                                
 │ 
 ├─ audit_logs/   
 ├─ certs/                                                                                                        
@@ -59,15 +63,16 @@ SMDG
 │     └─ main.js                                                                                                           
 ├─ tests
 |   ├─ test_api
-|   |   ├─ test_stats.py
-|   |
 |   ├─ test_app
 |   ├─ test_core
 |   ├─ test_crypto
 |   ├─ test_integration
-|   └─ test_models
+|   ├─ test_models
+|   ├─ conftest.py
+|   └─ test_cli.py
 |                                                  
-├─ venv                                   
+├─ venv   
+├─ coverage                              
 ├─ .dockerignore
 ├─ .env
 ├─ .env.example
@@ -77,8 +82,10 @@ SMDG
 ├─ entrypoint.sh  
 ├─ nginx-https.conf                                                
 ├─ MVP.md                                                         
-├─ README.md                                                                                                     
-├─ docker-compose.yml                                                  
+├─ README.md  
+├─ pytest.ini                                                                                                  
+├─ docker-compose.yml     
+├─ setup.cfg                                            
 └─ requirements.txt                                               
                                                   
                                       
