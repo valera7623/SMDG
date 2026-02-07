@@ -1,5 +1,5 @@
 # app/main.py
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, logger
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from fastapi.responses import JSONResponse
@@ -18,10 +18,13 @@ from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
+from app.core import cleanup_manager
 import asyncio
+import logging
 import os
-from app.core.rate_limiter import limiter
+from app.core.rate_limiter import limiter, check_redis_connection, storage_backend
 
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Secure Medical Data Gateway v0.1",
@@ -93,27 +96,33 @@ async def ensure_admin_exists(session: AsyncSession):
 
 
 # Инициализация при запуске
-
 @app.on_event("startup")
 async def startup_event():
     print("🚀 Запуск SMDG v0.1...")
     
-    # Инициализация ключей шифрования
+    # Инициализация ключей
     try:
         await init_keys()
         print("✅ Ключи шифрования инициализированы")
     except Exception as e:
         print(f"❌ Ошибка инициализации ключей: {e}")
-        # Можно добавить критический выход, если ключи обязательны
+
+    # Проверка Redis и rate limiter
+    try:
+        await check_redis_connection()
+        logger.info(f"Rate limiter backend: {storage_backend}")
+    except Exception as e:
+        logger.warning(f"Rate limiter fallback на memory: {e}")
     
-    # Запуск фоновых задач
-    asyncio.create_task(cleanup_manager.start_cleanup_task())
-    print("✅ Фоновая очистка запущена")
-    
-    # ← Новый блок: создание первого админа
+    # Запуск периодической очистки
+    await cleanup_manager.start_cleanup_task()
+    print("✅ Периодическая очистка запущена (каждые 30 мин)")
+
+    # Создание админа
     await create_first_admin()
-
-
+    
+    
+    
 async def create_first_admin():
     """Создаёт первого администратора, если его ещё нет (только в dev-режиме)"""
     if not settings.dev_mode:
