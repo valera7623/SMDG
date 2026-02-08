@@ -1,4 +1,5 @@
 # app/api/upload.py
+from typing import Optional
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
 from app.models.user import User
 import magic
@@ -46,6 +47,8 @@ async def upload_file(
     file: UploadFile = Form(...),
     ttl_days: int = Form(30),
     max_downloads: int = Form(1),
+    patient_id: Optional[str] = Form(None),  
+    medical_metadata_json: Optional[str] = Form(None),
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -181,6 +184,14 @@ async def upload_file(
                 )
 
         # Создаём запись в БД для файла
+        import json
+        medical_metadata_dict = {}
+        if medical_metadata_json:
+            try:
+                medical_metadata_dict = json.loads(medical_metadata_json)
+            except json.JSONDecodeError:
+                raise HTTPException(400, "Некорректный JSON в metadata")
+    
         new_file = File(
             user_id=user_id,
             original_name=original_filename,
@@ -190,6 +201,8 @@ async def upload_file(
             encrypted_size=final_encrypted_path.stat().st_size,
             original_hash=original_hash,
             mime_type=mime_type,
+            patient_id=patient_id,  
+            medical_metadata=medical_metadata_dict,  
             uploaded_at=datetime.now(timezone.utc),
             expires_at=datetime.now(timezone.utc) + timedelta(days=ttl_days)
         )

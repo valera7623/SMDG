@@ -50,12 +50,15 @@ async def list_files(
                     token_result = await db.execute(token_stmt)
                     active_token = token_result.scalar()
                     
+                    # В list.py обновим возвращаемые данные:
                     files.append({
                         "id": db_file.id,
                         "name": file_path.name,
                         "size": stat.st_size,
                         "modified": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
                         "original_name": db_file.original_name,
+                        "patient_id": db_file.patient_id,  
+                        "medical_metadata": db_file.medical_metadata,  
                         "download_token": active_token or None,
                         "download_url": f"/api/download?token={active_token}" if active_token else None
                     })
