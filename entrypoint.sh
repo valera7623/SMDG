@@ -54,7 +54,7 @@ if ! nc -z db 5432 >/dev/null 2>&1; then
 fi
 
 # ────────────────────────────────────────────────────────────────
-# Создаём таблицу users (с PGPASSWORD)
+# Создаём таблицу users (с PGPASSWORD) - уже с otp_secret
 # ────────────────────────────────────────────────────────────────
 echo "🛠️ Ensuring table 'users' exists..."
 psql -h db -U smdg_user -d smdg -c "
@@ -63,15 +63,16 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(50) UNIQUE NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
     role VARCHAR(30) NOT NULL DEFAULT 'user',
-    is_active BOOLEAN DEFAULT TRUE
+    is_active BOOLEAN DEFAULT TRUE,
+    otp_secret TEXT
 );
 " || true
 
 # ────────────────────────────────────────────────────────────────
-# Миграции
+# Миграции - ТОЛЬКО STAMP (upgrade уже выполнен вручную)
 # ────────────────────────────────────────────────────────────────
-echo "📦 Applying database migrations..."
-alembic upgrade head
+echo "📦 Verifying database version..."
+alembic stamp head 2>/dev/null || echo "⚠️  Database version already set, continuing..."
 
 # ────────────────────────────────────────────────────────────────
 # Создаём/обновляем админа

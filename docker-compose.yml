@@ -8,7 +8,7 @@ services:
       POSTGRES_DB: smdg
       POSTGRES_USER: smdg_user
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      # POSTGRES_PASSWORD теперь из секрета
+      
     secrets:
       - postgres_password
     
@@ -86,19 +86,7 @@ services:
     networks:
       - backend
 
-  clamav-freshclam:
-    image: clamav/clamav:latest
-    restart: unless-stopped
-    command: freshclam --daemon --foreground --checks=1
-    volumes:
-      - clamav_data:/var/lib/clamav
-    healthcheck:
-      test: ["CMD", "freshclam", "--version"]
-      interval: 1h
-      timeout: 30s
-      retries: 3
-    networks:
-      - backend
+  
 
   clamav:
     image: clamav/clamav:latest
@@ -108,9 +96,7 @@ services:
       - "3310:3310"
     volumes:
       - clamav_data:/var/lib/clamav
-    depends_on:
-      clamav-freshclam:
-        condition: service_healthy
+  
     healthcheck:
       test: ["CMD", "clamdscan", "--version"]
       interval: 30s
