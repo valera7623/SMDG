@@ -6057,3 +6057,97 @@ WHERE file_links.file_id = $1::VARCHAR AND file_links.expires_at > $2::TIMESTAMP
 2026-02-08T08:49:57.538368,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
 2026-02-08T08:50:03.990924,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
 2026-02-08T08:50:08.240796,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:04:57.241928,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:07.651808,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:05:07.652589,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:08.876482,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:25.389145,upload_virus_detected,eicar.com.txt,0,admin,127.0.0.1,,Обнаружен вирус: Eicar-Test-Signature,False
+2026-02-08T09:05:25.390097,POST /api/upload,,0,api,172.19.0.7,,"Status: 400, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:05:28.048580,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:34.575679,upload,business_idea (5).txt,7497,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-02-08T09:05:34.577980,POST /api/upload,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:34.613990,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:43.557621,GET /api/download,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:05:57.440998,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:06:00.086531,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:06:27.369816,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:06:40.733110,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:08:25.274587,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:25.314556,GET /static/css/style.css,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:25.321919,GET /static/js/main.js,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:25.352420,GET /favicon.ico,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:08:26.298264,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:26.333386,GET /static/css/style.css,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:26.340462,GET /static/js/main.js,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:08:26.360080,GET /favicon.ico,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:08:30.617060,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:09:10.897361,login_failed,,0,admin,127.0.0.1,,Неверный пароль,False
+2026-02-08T09:09:10.899033,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:09:11.030970,login_failed,,0,admin,127.0.0.1,,Неверный пароль,False
+2026-02-08T09:09:11.032395,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:09:29.055082,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:09:29.055867,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:29.137338,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:09:29.138683,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:31.218884,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:32.698429,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:36.127307,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:09:44.487838,GET /api/auth/login,,0,api,172.19.0.7,,"Status: 405, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:09:58.883230,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:58.935185,GET /static/css/style.css,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:58.935616,GET /static/js/main.js,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:09:58.964374,GET /favicon.ico,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:10:07.673220,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:10:07.674051,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:10:07.749540,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:10:07.750416,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:10:09.451664,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:10:10.946511,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:10:13.827938,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.19.0.7,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:10:29.714485,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:10:59.673667,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:11:29.716209,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:11:59.842176,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:12:29.937314,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:12:59.973922,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:13:52.529218,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:14:52.600793,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:15:52.860980,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:16:52.669805,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:17:52.786103,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:18:52.898588,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:19:53.042076,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:20:52.416111,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:21:52.805336,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:22:52.930776,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:23:52.933351,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:24:52.975620,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:25:52.739428,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:26:52.807689,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:27:52.968122,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:28:53.231124,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:29:52.490337,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:30:52.511318,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:31:52.735562,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:32:52.960456,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:07.524743,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:44:07.525742,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:07.652018,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-08T09:44:07.652716,POST /api/auth/login,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:08.263895,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:10.571919,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:20.669608,upload_virus_detected,eicar.com.txt,0,admin,127.0.0.1,,Обнаружен вирус: Eicar-Test-Signature,False
+2026-02-08T09:44:20.670705,POST /api/upload,,0,api,172.19.0.7,,"Status: 400, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",False
+2026-02-08T09:44:28.427693,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:29.618581,upload,План_2.0.txt,3827,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-02-08T09:44:29.620526,POST /api/upload,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:29.640022,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:37.370596,GET /api/download,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:50.170559,GET /admin,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:50.245684,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:52.651757,delete,f9793783-4103-40d7-9384-cf11d4a48b3a_Plan_2.0.txt.age,4027,admin,127.0.0.1,9783b60f517b81ccb8ddfb548e8d3cec96efa4839a336b27601e371c3e577b82,manual_delete,True
+2026-02-08T09:44:52.652366,POST /api/delete,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:53.945419,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:59.294333,GET /,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:59.350222,GET /static/js/main.js,,0,api,172.19.0.7,,"Status: 304, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True
+2026-02-08T09:44:59.361667,GET /api/list,,0,api,172.19.0.7,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Sa",True

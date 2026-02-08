@@ -10,37 +10,65 @@ function getAuthHeaders() {
     return {};
 }
 
-// Выход из системы
+// ==================== ОСНОВНАЯ ФУНКЦИЯ SETUP ====================
+function setupForms() {
+    console.log('Настройка обработчиков форм...');
+    
+    // Форма логина
+    const loginForm = document.querySelector('#loginForm form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    
+    // Форма загрузки файла (используем новый обработчик)
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleFileUpload);
+    }
+    
+    // Форма смены пароля
+    const changePassForm = document.getElementById('changePassForm');
+    if (changePassForm) {
+        changePassForm.addEventListener('submit', handleChangePassword);
+    }
+    
+    // Форма скачивания по имени
+    const downloadForm = document.getElementById('downloadForm');
+    if (downloadForm) {
+        downloadForm.addEventListener('submit', handleDownloadByName);
+    }
+    
+    // Кнопки
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+    
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadFileList);
+    }
+    
+    console.log('Все формы настроены');
+}
+
+// ==================== АУТЕНТИФИКАЦИЯ ====================
 function logout() {
     if (confirm('Вы уверены, что хотите выйти?')) {
-        localStorage.removeItem("token");
+        localStorage.removeItem('token');
         JWT_TOKEN = null;
-
-        document.getElementById('mainApp').style.display = 'none';
-        document.getElementById('loginForm').style.display = 'block';
-
-        // Очищаем список файлов
+        
+        const loginForm = document.getElementById('loginForm');
+        const mainApp = document.getElementById('mainApp');
         const fileList = document.getElementById('fileList');
-        if (fileList) {
-            fileList.innerHTML = '';
-        }
-
+        
+        if (loginForm) loginForm.style.display = 'block';
+        if (mainApp) mainApp.style.display = 'none';
+        if (fileList) fileList.innerHTML = '';
+        
         alert('Вы успешно вышли из системы');
     }
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    if (JWT_TOKEN) {
-        document.getElementById('loginForm').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        loadFileList();
-    } else {
-        document.getElementById('loginForm').style.display = 'block';
-        document.getElementById('mainApp').style.display = 'none';
-    }
-
-    setupForms();
-});
 
 async function handleLogin(event) {
     event.preventDefault();
@@ -67,7 +95,7 @@ async function handleLogin(event) {
 
         const data = await response.json();
         JWT_TOKEN = data.access_token;
-        localStorage.setItem("token", JWT_TOKEN);
+        localStorage.setItem('token', JWT_TOKEN);
 
         alert(`Добро пожаловать, ${data.username}!`);
 
@@ -80,91 +108,7 @@ async function handleLogin(event) {
     }
 }
 
-// Обработчик формы загрузки (обновлённый)
-// Обработчик формы загрузки файла
-document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const fileInput = document.getElementById('fileInput');
-    const file = fileInput.files[0];
-    if (!file) {
-        alert('❌ Выберите файл');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-        const response = await fetch(`${API_BASE}/upload`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: formData
-        });
-
-        if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Ошибка загрузки');
-        }
-
-        const data = await response.json();
-
-        // Показываем блок со ссылкой
-        if (data.download_url) {
-            showDownloadLink(data.download_url, data.original_name, data.expires_at, data.max_downloads);
-        } else {
-            alert('✅ Файл загружен, но ссылка не получена');
-        }
-
-        // Обновляем список файлов
-        loadFileList();
-
-        // Очищаем инпут
-        fileInput.value = '';
-    } catch (error) {
-        alert(`❌ ${error.message}`);
-    }
-});
-
-// Функция показа блока со ссылкой
-function showDownloadLink(url, filename, expiresAt, maxDownloads) {
-    const resultDiv = document.getElementById('uploadResult');
-    if (!resultDiv) {
-        console.warn('Элемент #uploadResult не найден');
-        return;  // Если див не найден, не показываем
-    }
-
-    // Очищаем предыдущий контент
-    resultDiv.innerHTML = '';
-
-    // Форматируем дату
-    const expiresDate = expiresAt ? new Date(expiresAt).toLocaleString('ru-RU') : 'Не указано';
-
-    // Создаём блок
-    const linkContainer = document.createElement('div');
-    linkContainer.className = 'download-link';
-    linkContainer.innerHTML = `
-        <p><strong>✅ Файл "${filename}" загружен!</strong></p>
-        <p><strong>Ссылка для скачивания:</strong></p>
-        <input type="text" value="${url}" readonly style="width: 100%; padding: 8px; margin-bottom: 10px;">
-        <button onclick="copyToClipboard(this.previousElementSibling)">Копировать</button>
-        <p><small>Срок действия: ${expiresDate} | Макс. скачиваний: ${maxDownloads}</small></p>
-    `;
-
-    resultDiv.appendChild(linkContainer);
-
-    // Автоисчезновение через 30 сек
-    setTimeout(() => {
-        linkContainer.remove();
-    }, 30000);
-}
-
-// Функция копирования в буфер
-function copyToClipboard(input) {
-    input.select();
-    document.execCommand('copy');
-    alert('✅ Ссылка скопирована!');
-}
-
+// ==================== УПРАВЛЕНИЕ ФАЙЛАМИ ====================
 async function loadFileList() {
     const fileList = document.getElementById('fileList');
     if (!fileList) return;
@@ -172,7 +116,9 @@ async function loadFileList() {
     fileList.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
 
     try {
-        const response = await fetch(`${API_BASE}/list`, { headers: getAuthHeaders() });
+        const response = await fetch(`${API_BASE}/list`, { 
+            headers: getAuthHeaders() 
+        });
 
         if (!response.ok) {
             const err = await response.json();
@@ -188,7 +134,6 @@ async function loadFileList() {
 
         let html = '';
         data.files.forEach(file => {
-            // file.name — это полное зашифрованное имя (с префиксом и .age) — именно его нужно для скачивания
             const encryptedName = file.name;
             const originalName = file.original_name || encryptedName.replace(/^[a-f0-9]+_/, '').replace('.age$', '');
 
@@ -197,7 +142,7 @@ async function loadFileList() {
                     <div class="file-info">
                         <div class="file-name">📄 ${originalName}</div>
                         <div class="file-size">
-                            📏 ${file.size} байт<br>
+                            📏 ${formatBytes(file.size)}<br>
                             🔐 <small>${encryptedName}</small>
                         </div>
                     </div>
@@ -213,54 +158,105 @@ async function loadFileList() {
     }
 }
 
-async function handleUpload(event) {
+async function handleFileUpload(event) {
     event.preventDefault();
-
+    
     const form = event.target;
-    const fileInput = form.querySelector('input[name="file"]');
-    const btn = form.querySelector('button[type="submit"]');
-
-    if (!fileInput.files.length) {
-        alert('Выберите файл');
+    const fileInput = form.querySelector('input[type="file"]');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    if (!fileInput || !fileInput.files.length) {
+        alert('❌ Выберите файл');
         return;
     }
 
-    const oldText = btn.textContent;
-    btn.textContent = '⏳ Шифрование...';
-    btn.disabled = true;
+    const file = fileInput.files[0];
+    const originalBtnText = submitBtn.textContent;
+    
+    submitBtn.textContent = '⏳ Шифрование...';
+    submitBtn.disabled = true;
 
     try {
-        const formData = new FormData(form);
+        const formData = new FormData();
+        formData.append('file', file);
 
         const response = await fetch(`${API_BASE}/upload`, {
             method: 'POST',
-            body: formData,
-            headers: getAuthHeaders()
+            headers: getAuthHeaders(),
+            body: formData
         });
 
         if (!response.ok) {
             const err = await response.json();
-            throw new Error(err.detail || `Ошибка ${response.status}`);
+            throw new Error(err.detail || 'Ошибка загрузки');
         }
 
-        const result = await response.json();
-        alert(`✅ Успешно загружен: ${result.encrypted_file}`);
-        fileInput.value = '';
+        const data = await response.json();
+        
+        // Показываем результат
+        if (data.download_url) {
+            showUploadResult(data);
+        } else {
+            alert(`✅ Файл "${data.original_name}" успешно загружен!`);
+        }
+
+        // Обновляем список
         loadFileList();
+        
+        // Очищаем поле
+        fileInput.value = '';
 
     } catch (error) {
-        alert(`❌ Ошибка загрузки: ${error.message}`);
+        alert(`❌ ${error.message}`);
     } finally {
-        btn.textContent = oldText;
-        btn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        submitBtn.disabled = false;
     }
+}
+
+function showUploadResult(data) {
+    const resultDiv = document.getElementById('uploadResult');
+    if (!resultDiv) {
+        console.warn('Элемент #uploadResult не найден');
+        return;
+    }
+
+    resultDiv.innerHTML = '';
+    
+    const expiresDate = data.expires_at ? new Date(data.expires_at).toLocaleString('ru-RU') : 'Не указано';
+    
+    const linkContainer = document.createElement('div');
+    linkContainer.className = 'download-link';
+    linkContainer.innerHTML = `
+        <p><strong>✅ Файл "${data.original_name}" загружен!</strong></p>
+        <p><strong>Ссылка для скачивания:</strong></p>
+        <input type="text" value="${data.download_url}" readonly style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        <button onclick="copyToClipboard(this.previousElementSibling)">📋 Копировать</button>
+        <p><small>⏰ Срок действия: ${expiresDate} | 🔢 Макс. скачиваний: ${data.max_downloads || 'Не ограничено'}</small></p>
+    `;
+
+    resultDiv.appendChild(linkContainer);
+    
+    // Автоочистка через 30 секунд
+    setTimeout(() => {
+        if (linkContainer.parentNode) {
+            linkContainer.remove();
+        }
+    }, 30000);
+}
+
+function copyToClipboard(inputElement) {
+    inputElement.select();
+    document.execCommand('copy');
+    alert('✅ Ссылка скопирована в буфер обмена!');
 }
 
 async function downloadFile(encryptedFilename) {
     try {
-        const response = await fetch(`${API_BASE}/download?filename=${encodeURIComponent(encryptedFilename)}`, {
-            headers: getAuthHeaders()
-        });
+        const response = await fetch(
+            `${API_BASE}/download?filename=${encodeURIComponent(encryptedFilename)}`, 
+            { headers: getAuthHeaders() }
+        );
 
         if (!response.ok) {
             const err = await response.json();
@@ -268,34 +264,58 @@ async function downloadFile(encryptedFilename) {
         }
 
         const blob = await response.blob();
+        const originalName = encryptedFilename.replace(/^[a-f0-9]+_/, '').replace('.age$', '');
+        
+        // Создаем и скачиваем файл
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = encryptedFilename.replace(/^[a-f0-9]+_/, '').replace('.age$', '');  // оригинальное имя
+        a.download = originalName;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        a.remove();
-
+        
+        // Очистка
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }, 100);
+        
     } catch (error) {
         alert(`❌ Ошибка скачивания: ${error.message}`);
     }
 }
 
-async function handleDownload(event) {
+async function handleDownloadByName(event) {
     event.preventDefault();
     const input = document.querySelector('#downloadForm input[name="filename"]');
-    const filename = input.value.trim();
+    const filename = input?.value.trim();
+    
     if (filename) {
         await downloadFile(filename);
-        input.value = '';
+        if (input) input.value = '';
     } else {
         alert('Введите имя зашифрованного файла (с .age)');
     }
 }
 
-// static/js/main.js
-async function changePassword(oldPass, newPass) {
+// ==================== СМЕНА ПАРОЛЯ ====================
+async function handleChangePassword(event) {
+    event.preventDefault();
+    
+    const oldPass = document.getElementById('oldPassword')?.value;
+    const newPass = document.getElementById('newPassword')?.value;
+    const confirmPass = document.getElementById('confirmPassword')?.value;
+    
+    if (!oldPass || !newPass) {
+        alert('Заполните все поля');
+        return;
+    }
+    
+    if (newPass !== confirmPass) {
+        alert('Новый пароль и подтверждение не совпадают');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_BASE}/auth/change-password`, {
             method: 'POST',
@@ -315,19 +335,52 @@ async function changePassword(oldPass, newPass) {
         }
 
         alert('✅ Пароль успешно изменён');
+        
+        // Очищаем форму
+        event.target.reset();
+        
     } catch (error) {
         alert(`❌ ${error.message}`);
     }
 }
 
-// Пример вызова из формы
-document.getElementById('changePassForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const oldPass = document.getElementById('oldPassword').value;
-    const newPass = document.getElementById('newPassword').value;
-    await changePassword(oldPass, newPass);
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+document.addEventListener('DOMContentLoaded', function () {
+    // Проверка авторизации
+    if (JWT_TOKEN) {
+        const loginForm = document.getElementById('loginForm');
+        const mainApp = document.getElementById('mainApp');
+        
+        if (loginForm) loginForm.style.display = 'none';
+        if (mainApp) mainApp.style.display = 'block';
+        
+        loadFileList();
+    }
+    
+    // Настройка всех форм
+    setupForms();
 });
 
+// Автообновление списка файлов каждые 30 секунд
 setInterval(() => {
-    if (JWT_TOKEN) loadFileList();
+    if (JWT_TOKEN) {
+        loadFileList();
+    }
 }, 30000);
+
+// Экспорт функций для глобального использования (если нужно)
+window.downloadFile = downloadFile;
+window.copyToClipboard = copyToClipboard;
