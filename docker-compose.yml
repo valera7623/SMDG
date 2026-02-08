@@ -86,14 +86,31 @@ services:
     networks:
       - backend
 
+  clamav-freshclam:
+    image: clamav/clamav:latest
+    restart: unless-stopped
+    command: freshclam --daemon --foreground --checks=1
+    volumes:
+      - clamav_data:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "freshclam", "--version"]
+      interval: 1h
+      timeout: 30s
+      retries: 3
+    networks:
+      - backend
+
   clamav:
     image: clamav/clamav:latest
     restart: unless-stopped
     container_name: clamav
     ports:
-      - "3310:3310"  # TCP-порт для clamd
+      - "3310:3310"
     volumes:
-      - clamav_data:/var/lib/clamav  # для баз сигнатур
+      - clamav_data:/var/lib/clamav
+    depends_on:
+      clamav-freshclam:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "clamdscan", "--version"]
       interval: 30s

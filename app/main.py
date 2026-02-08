@@ -31,6 +31,32 @@ app = FastAPI(
     version="0.1.0"
 )
 
+# ────────────────────────────────────────────────────────────────
+# CORS - разрешаем запросы с фронта
+# ────────────────────────────────────────────────────────────────
+from fastapi.middleware.cors import CORSMiddleware
+
+# Разрешённые origins (добавляй свои реальные домены в продакшене!)
+origins = [
+    "http://localhost",
+    "http://localhost:3000",     # React/Vue dev
+    "http://localhost:5173",     # Vite
+    "http://localhost:8080",     # другой dev фронт
+    "https://fileguardian.com.ru",  # твой домен из .env
+    "*"                          # временно для теста (удали в прод!)
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,          # если используешь куки/auth headers
+    allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+    expose_headers=["X-Total-Count"],  # если возвращаешь пагинацию/кастом headers
+    max_age=86400,                   # кэш preflight на сутки
+)
+
+
 app.state.limiter = limiter
 def safe_rate_limit_handler(request: Request, exc: Exception):
     if isinstance(exc, RateLimitExceeded):
