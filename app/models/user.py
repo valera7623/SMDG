@@ -1,11 +1,12 @@
-# app/models/user.py - окончательная версия
+# app/models/user.py
 from sqlalchemy import String, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 class User(Base):
-    __tablename__ = "users"
-
+    __tablename__ = 'users'
+    __table_args__ = {'extend_existing': True}
+    
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True
     )
@@ -19,7 +20,7 @@ class User(Base):
         String(255), nullable=False
     )
     role: Mapped[str] = mapped_column(
-        String(30), nullable=False, default="user"
+        String(30), nullable=False, default='user'
     )
     is_active: Mapped[bool] = mapped_column(default=True)
     otp_secret: Mapped[str] = mapped_column(
@@ -27,4 +28,4 @@ class User(Base):
     )
 
     def __repr__(self):
-        return f"<User {self.username} ({self.role})>"
+        return f'<User {self.username} ({self.role})>'

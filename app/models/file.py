@@ -1,52 +1,31 @@
 # app/models/file.py
-from sqlalchemy import String, Integer, ForeignKey, DateTime, Text
+from sqlalchemy import String, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 from app.core.database import Base
 from sqlalchemy.sql import func
+
 class File(Base):
-    __tablename__ = "files"
-
+    __tablename__ = 'files'
+    __table_args__ = {'extend_existing': True}
+    
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    
-    # Кто загрузил файл (опционально, если нужна привязка к пользователю)
-    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
-    
-    # Раскомментировать relationship и использовать string для User (без импорта класса User)
-    #user = relationship("User", back_populates="files")
-
-    # Оригинальное имя файла (как было у пользователя)
+    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
     original_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    
-    # Имя зашифрованного файла на диске
     encrypted_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    
-    # Путь к зашифрованному файлу
     encrypted_path: Mapped[str] = mapped_column(String(512), nullable=False)
-    
-    # Размер оригинального файла
     original_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    
-    # Размер зашифрованного файла
     encrypted_size: Mapped[int] = mapped_column(Integer, nullable=False)
-    
-    # Хэш оригинального файла (для проверки целостности)
     original_hash: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
-    
-    # MIME-тип оригинального файла
     mime_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    
-    # Когда файл был загружен
+    patient_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    medical_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, default=dict)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.current_timestamp())
-    
-    # Когда файл будет автоматически удалён (если используешь TTL)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    # Связи с одноразовыми ссылками
-    links = relationship("FileLink", back_populates="file", cascade="all, delete-orphan")
-    
-    #files = relationship("File", back_populates="file")
+    links = relationship('FileLink', back_populates='file', cascade='all, delete-orphan')
 
     def __repr__(self):
-        return f"<File id={self.id} original_name={self.original_name} encrypted_name={self.encrypted_name}>"
+        return f'<File id={self.id} original_name={self.original_name} patient_id={self.patient_id}>'

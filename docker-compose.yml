@@ -48,19 +48,18 @@ services:
       - jwt_secret_key          # если хочешь вынести
       - postgres_password       # если smdg тоже должен знать пароль БД
     environment:
-      # Эти переменные остаются в .env или задаются явно
+      
       DEV_MODE: "${DEV_MODE:-true}"
-      #DATABASE_URL: "postgresql+asyncpg://smdg_user@${POSTGRES_PASSWORD_FILE?}/smdg_user@db:5432/smdg"
-      # DATABASE_URL теперь нужно будет формировать в entrypoint.sh
+      
       REDIS_URL: "redis://redis:6379/0"
-      # JWT_SECRET_KEY и ADMIN_PASSWORD будут читаться из файлов
+      
     volumes:
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
       - ./static:/app/static
       - ./audit_logs:/app/audit_logs
-      
+      - ./app:/app/app:ro
     networks:
       - backend
 
