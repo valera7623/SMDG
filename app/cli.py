@@ -10,13 +10,16 @@ cli = typer.Typer()
 
 @cli.command(name="create-admin")
 def create_admin(
-    username: str = typer.Argument("admin", help="Имя пользователя (по умолчанию: admin)"),
-    password: str = typer.Argument(..., help="Пароль администратора (без промпта)")
+    username: str = typer.Argument("admin", help="Имя пользователя"),
+    password: str = typer.Argument(..., help="Пароль администратора"),
+    email: str = typer.Option("admin@example.com", help="Email администратора")
 ):
     """Создаёт или обновляет администратора"""
     async def run():
         async with AsyncSessionLocal() as session:
-            result = await session.execute(select(User).where(User.username == username))
+            result = await session.execute(
+                select(User).where(User.username == username)
+            )
             user = result.scalar_one_or_none()
 
             hashed = get_password_hash(password)
@@ -25,16 +28,19 @@ def create_admin(
                 user.hashed_password = hashed
                 user.role = "admin"
                 user.is_active = True
+                if not user.email:
+                    user.email = email
                 print(f"Админ {username} обновлён.")
             else:
                 user = User(
                     username=username,
+                    email=email,  # ← ОБЯЗАТЕЛЬНО
                     hashed_password=hashed,
                     role="admin",
                     is_active=True
                 )
                 session.add(user)
-                print(f"Админ {username} создан.")
+                print(f"Админ {username} создан с email {email}.")
 
             await session.commit()
             print("Готово. Теперь можно логиниться.")

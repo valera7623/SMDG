@@ -156,8 +156,7 @@ async def create_first_admin():
         return
 
     async with AsyncSessionLocal() as db:
-        async with db.begin():  # транзакция
-            # Проверяем существование пользователя admin
+        async with db.begin():
             result = await db.execute(
                 select(User).where(User.username == "admin")
             )
@@ -165,12 +164,18 @@ async def create_first_admin():
 
             if existing_admin:
                 print("ℹ️  Пользователь admin уже существует")
+                # Проверим, есть ли email
+                if not existing_admin.email:
+                    existing_admin.email = "admin@example.com"
+                    await db.commit()
+                    print("✅ Email добавлен существующему admin")
                 return
 
-            # Создаём первого админа
+            # Создаём первого админа с email
             admin = User(
                 username="admin",
-                hashed_password=get_password_hash("admin123"),  # ← В ПРОДАКШЕНЕ ИЗМЕНИТЬ!
+                email="admin@example.com",  # ← ОБЯЗАТЕЛЬНО
+                hashed_password=get_password_hash("admin123"),
                 role="admin",
                 is_active=True
             )
@@ -178,23 +183,13 @@ async def create_first_admin():
             db.add(admin)
             await db.commit()
             
-            audit_logger.log_operation(
-                action="system_init",
-                filename="",
-                user="system",
-                reason="Создан первый администратор при запуске в dev-режиме",
-                success=True,
-                metadata={"username": "admin"}
-            )
-            
             print("=" * 60)
             print("🔐 СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
             print("   Логин:    admin")
             print("   Пароль:   admin")
+            print("   Email:    admin@example.com")
             print("   Роль:     admin")
-            print("   ВНИМАНИЕ: Измените пароль сразу после первого входа!")
             print("=" * 60)
-
 
 
 

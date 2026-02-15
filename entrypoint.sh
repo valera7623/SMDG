@@ -4,7 +4,7 @@ set -euo pipefail
 echo "🚀 Starting SMDG entrypoint..."
 
 # ────────────────────────────────────────────────────────────────
-# Чтение секретов — как можно раньше
+# Чтение секретов
 # ────────────────────────────────────────────────────────────────
 echo "⏳ Чтение Docker Secrets..."
 
@@ -25,7 +25,7 @@ fi
 if [ -f /run/secrets/postgres_password ]; then
     POSTGRES_PASS=$(cat /run/secrets/postgres_password | tr -d '\n\r')
     export DATABASE_URL="postgresql+asyncpg://smdg_user:${POSTGRES_PASS}@db:5432/smdg"
-    export PGPASSWORD="$POSTGRES_PASS"   # для psql
+    export PGPASSWORD="$POSTGRES_PASS"
     echo "✅ DATABASE_URL и PGPASSWORD сформированы"
 else
     echo "❌ /run/secrets/postgres_password не найден!" && exit 1
@@ -54,34 +54,19 @@ if ! nc -z db 5432 >/dev/null 2>&1; then
 fi
 
 # ────────────────────────────────────────────────────────────────
-# Создаём таблицу users (с PGPASSWORD) - уже с otp_secret
+# ТОЛЬКО МИГРАЦИИ - никаких ручных созданий таблиц!
 # ────────────────────────────────────────────────────────────────
-echo "🛠️ Ensuring table 'users' exists..."
-psql -h db -U smdg_user -d smdg -c "
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
-    role VARCHAR(30) NOT NULL DEFAULT 'user',
-    is_active BOOLEAN DEFAULT TRUE,
-    otp_secret TEXT
-);
-" || true
+echo "🛠️ Applying database migrations..."
+alembic upgrade head
 
 # ────────────────────────────────────────────────────────────────
-# Миграции - ТОЛЬКО STAMP (upgrade уже выполнен вручную)
-# ────────────────────────────────────────────────────────────────
-echo "📦 Verifying database version..."
-alembic stamp head 2>/dev/null || echo "⚠️  Database version already set, continuing..."
-
-# ────────────────────────────────────────────────────────────────
-# Создаём/обновляем админа
+# Создаём админа (уже через миграции данные должны быть)
 # ────────────────────────────────────────────────────────────────
 echo "👤 Creating/updating admin user..."
-python -m app.cli admin "${ADMIN_PASSWORD}"
+python -m app.cli create-admin admin "${ADMIN_PASSWORD}" --email admin@example.com
 
 # ────────────────────────────────────────────────────────────────
-# Автоматическая ротация ключей (как cron, но на старте)
+# Ротация ключей
 # ────────────────────────────────────────────────────────────────
 echo "Проверка необходимости ротации ключей..."
 
