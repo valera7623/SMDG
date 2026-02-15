@@ -39,28 +39,56 @@ async def get_cleanup_stats(current_user=Depends(get_current_admin)):
 
 @router.post("/force")
 async def force_cleanup(current_user=Depends(get_current_admin)):
-    """Принудительно очистить все временные файлы"""
+    """Принудительно очистить ВСЕ файлы (decrypted + encrypted)"""
+    deleted = {"decrypted": 0, "encrypted": 0}
+    errors = []
+
+    # 1. Очистка decrypted (временные)
     try:
-        result = file_storage.force_cleanup()
-        audit_logger.log_operation(
-            action="cleanup_force",
-            filename="",
-            user=current_user.sub,
-            reason="Принудительная очистка временных файлов",
-            success=True,
-            metadata={"deleted_count": result.get("deleted_count", 0)}
-        )
-        return result
+        result_dec = file_storage.force_cleanup()
+        deleted["decrypted"] = result_dec.get("deleted", 0)
     except Exception as e:
-        logger.error(f"Ошибка принудительной очистки: {e}")
-        audit_logger.log_operation(
-            action="cleanup_force_error",
-            filename="",
-            user=current_user.sub,
-            reason=str(e),
-            success=False
-        )
-        raise HTTPException(500, "Ошибка принудительной очистки")
+        errors.append(f"decrypted: {str(e)}")
+
+    # 2. Очистка encrypted (зашифрованные файлы)
+    encrypted_dir = Path("/app/encrypted")  # или из constants.ENCRYPTED_DIR
+    if encrypted_dir.exists():
+        for file_path in encrypted_dir.iterdir():
+            if file_path.is_file():
+                try:
+                    file_path.unlink()
+                    deleted["encrypted"] += 1
+                    audit_logger.log_operation(
+                        action="force_cleanup_encrypted",
+                        filename=file_path.name,
+                        user=current_user.sub,
+                        reason="Полная очистка encrypted по запросу админа",
+                        success=True
+                    )
+                except Exception as e:
+                    errors.append(f"encrypted/{file_path.name}: {str(e)}")
+                    audit_logger.log_operation(
+                        action="force_cleanup_encrypted_error",
+                        filename=file_path.name,
+                        user=current_user.sub,
+                        reason=str(e),
+                        success=False
+                    )
+
+    audit_logger.log_operation(
+        action="cleanup_force_all",
+        filename="",
+        user=current_user.sub,
+        reason=f"Удалено decrypted: {deleted['decrypted']}, encrypted: {deleted['encrypted']}",
+        success=True,
+        metadata={"deleted": deleted}
+    )
+
+    return {
+        "status": "ok",
+        "deleted": deleted,
+        "errors": errors
+    }
 
 
 @router.get("/files")

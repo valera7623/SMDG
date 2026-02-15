@@ -32,11 +32,7 @@ function setupForms() {
         changePassForm.addEventListener('submit', handleChangePassword);
     }
     
-    // Форма скачивания по имени
-    const downloadForm = document.getElementById('downloadForm');
-    if (downloadForm) {
-        downloadForm.addEventListener('submit', handleDownloadByName);
-    }
+    
     
     // Кнопки
     const logoutBtn = document.getElementById('logoutBtn');
@@ -146,7 +142,7 @@ async function loadFileList() {
                             🔐 <small>${encryptedName}</small>
                         </div>
                     </div>
-                    <button onclick="downloadFile('${encryptedName}')" class="btn-secondary">📥 Скачать</button>
+                    
                 </div>
             `;
         });
@@ -341,6 +337,44 @@ async function handleChangePassword(event) {
         
     } catch (error) {
         alert(`❌ ${error.message}`);
+    }
+}
+
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const progressContainer = document.createElement('div');
+    progressContainer.innerHTML = '<progress value="0" max="100"></progress> <span>0%</span>';
+    document.body.appendChild(progressContainer);
+
+    try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}/upload`, true);
+        xhr.setRequestHeader("Authorization", `Bearer ${JWT_TOKEN}`);
+
+        xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressContainer.querySelector('progress').value = percent;
+                progressContainer.querySelector('span').textContent = `${percent}%`;
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                alert('✅ Файл загружен');
+                loadFileList();
+            } else {
+                alert('❌ Ошибка: ' + xhr.responseText);
+            }
+            progressContainer.remove();
+        };
+
+        xhr.send(formData);
+    } catch (e) {
+        alert('❌ ' + e.message);
+        progressContainer.remove();
     }
 }
 
