@@ -46,3 +46,26 @@ def create_admin(
             print("Готово. Теперь можно логиниться.")
 
     asyncio.run(run())
+    
+@cli.command(name="rotate-keys")
+def rotate_keys(
+    backup_dir: str = typer.Option(
+        "/app/backups/keys",
+        "--backup-dir",
+        help="Директория для бэкапа старого ключа"
+    )
+):
+    """Ротация ключей age с перешифровкой всех файлов"""
+    import asyncio
+    from app.crypto.crypto import crypto_manager
+    
+    print("Запуск ротации ключей...")
+    try:
+        new_pub = asyncio.run(crypto_manager.rotate_keys(backup_old_key=True, backup_dir=backup_dir))
+        print(f"Ротация завершена. Новый публичный ключ: {new_pub}")
+    except Exception as e:
+        print(f"Ошибка ротации: {e}")
+        raise typer.Exit(code=1)
+    
+if __name__ == "__main__":
+    cli()

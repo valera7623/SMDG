@@ -8,7 +8,7 @@ import hashlib
 from typing import Tuple, List
 import shutil
 import tempfile
-import datetime
+from datetime import datetime
 
 from app.core.utils import calculate_hash
 from app.core.constants import ENCRYPTED_DIR, PRIVATE_KEY_PATH
@@ -149,29 +149,50 @@ class CryptoManager:
         # Возвращаем хэш расшифрованного файла (если нужно)
         return calculate_hash(output_path)
 
-    async def generate_new_keypair(self, new_private_path: Path) -> Tuple[Path, str]:
+    @staticmethod
+    async def generate_new_keypair(new_private_path: Path) -> Tuple[Path, str]:
         """Генерирует новую пару ключей и возвращает путь к приватному + публичный ключ как строку"""
         new_private_path.parent.mkdir(parents=True, exist_ok=True)
-
         cmd = ["age-keygen", "-o", str(new_private_path.absolute())]
+        print(f"🔑 Генерация новой пары ключей → {new_private_path.name}")
 
         process = await asyncio.create_subprocess_exec(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
         )
-        stdout, stderr = await process.communicate()
+        stdout_data, stderr_data = await process.communicate()
 
         if process.returncode != 0:
-            raise RuntimeError(f"age-keygen failed: {stderr.decode()}")
+            error_msg = stderr_data.decode('utf-8', errors='replace').strip()
+            raise RuntimeError(f"age-keygen failed: {error_msg}")
 
-        # age-keygen выводит публичный ключ в stdout в формате # public key: age1...
-        pub_line = stdout.decode().strip()
-        if not pub_line.startswith("# public key: "):
+        # Публичный ключ обычно в stdout в новых версиях, но может быть в stderr в старых
+        output_text = (stdout_data + stderr_data).decode('utf-8', errors='replace').strip()
+        lines = [line.strip() for line in output_text.splitlines() if line.strip()]
+
+        public_key = None
+        for line in lines:
+            if line.startswith("age1"):  # новый формат — просто публичный ключ
+                public_key = line
+                break
+            if line.startswith("# public key: "):
+                public_key = line.split(":", 1)[1].strip()
+                break
+            if "public key:" in line.lower():
+                parts = line.lower().split("public key:")
+                if len(parts) > 1:
+                    public_key = parts[1].strip()
+                    break
+
+        if not public_key:
+            print("Полный вывод age-keygen для диагностики:")
+            print(output_text)
             raise RuntimeError("Не удалось извлечь публичный ключ из вывода age-keygen")
 
-        public_key = pub_line.split(":", 1)[1].strip()
+        print(f"✅ Новая пара сгенерирована. Публичный: {public_key[:20]}...")
         return new_private_path, public_key
+    
 
     async def reencrypt_file(self, file_path: Path, old_private_key_path: Path, new_public_key: str) -> None:
         """Перешифровывает один файл: old → plaintext → new"""
@@ -220,36 +241,56 @@ class CryptoManager:
                 metadata={"old_key": str(old_private_key_path), "new_pub": new_public_key[:10]+"..."}
             )
 
-    async def rotate_keys(self, backup_old_key: bool = True) -> str:
-        """Основная функция ротации. Возвращает новый публичный ключ после успешного завершения."""
+    async def rotate_keys(self, backup_old_key: bool = True, backup_dir: str = "/app/backups/keys") -> str:
+        """Ротация ключей с бэкапом старого ключа в указанную директорию"""
         if not ENCRYPTED_DIR.exists():
             raise RuntimeError("Директория encrypted не найдена")
 
         old_private = PRIVATE_KEY_PATH
         if not old_private.exists():
-            raise RuntimeError("Старый приватный ключ не найден — ротация невозможна")
+            raise RuntimeError("Старый приватный ключ не найден")
+
+    # Создаём директорию бэкапов
+        backup_path = Path(backup_dir)
+        backup_path.mkdir(parents=True, exist_ok=True)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             new_private_tmp = Path(tmp_dir) / "new_age_private.key"
-
             try:
                 new_private_tmp, new_pub_key_str = await self.generate_new_keypair(new_private_tmp)
 
-                encrypted_files: List[Path] = [p for p in ENCRYPTED_DIR.iterdir() if p.is_file() and p.suffix == ".age"]
+                encrypted_files = [p for p in ENCRYPTED_DIR.iterdir() if p.is_file() and p.suffix == ".age"]
                 total = len(encrypted_files)
-                if total == 0:
-                    audit_logger.log_operation("key_rotation", "none", "system", "Нет файлов для перешифровки", True)
-                else:
-                    audit_logger.log_operation("key_rotation_start", f"{total} files", "system", f"Начинаем ротацию: {total} файлов", True)
+
+                audit_logger.log_operation(
+                    "key_rotation_start",
+                    f"{total} files",
+                    "system",
+                    f"Начинаем ротацию: {total} файлов",
+                    True
+                )
+
+                if total > 0:
                     for i, file_path in enumerate(encrypted_files, 1):
                         print(f"[{i}/{total}] Перешифровываю {file_path.name} ...")
                         await self.reencrypt_file(file_path, old_private, new_pub_key_str)
 
+                # Бэкап старого ключа с timestamp
                 if backup_old_key:
-                    backup_path = old_private.with_suffix(old_private.suffix + f".bak.{datetime.now():%Y%m%d-%H%M%S}")
-                    shutil.copy(old_private, backup_path)
-                    audit_logger.log_operation("key_rotation_backup", str(backup_path), "system", "Создан бэкап старого ключа", True)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    backup_file = backup_path / f"age.key.bak.{timestamp}"
+                    shutil.copy(old_private, backup_file)
+                    audit_logger.log_operation(
+                        "key_rotation_backup",
+                        str(backup_file),
+                        "system",
+                        f"Создан бэкап старого ключа: {backup_file.name}",
+                        True,
+                        metadata={"backup_path": str(backup_file)}
+                    )
+                    print(f"Бэкап сохранён: {backup_file}")
 
+                # Атомарная замена
                 shutil.move(str(new_private_tmp), str(old_private))
                 old_private.chmod(0o600)
 
@@ -258,8 +299,12 @@ class CryptoManager:
                 pub_path.chmod(0o644)
 
                 audit_logger.log_operation(
-                    "key_rotation_success", "all files", "system",
-                    f"Ротация завершена. Новый pub: {new_pub_key_str[:12]}...", True
+                    "key_rotation_success",
+                    "all files",
+                    "system",
+                    f"Ротация завершена. Новый pub: {new_pub_key_str[:12]}...",
+                    True,
+                    metadata={"backup_dir": str(backup_path)}
                 )
 
                 print("Ротация завершена успешно!")
@@ -267,7 +312,13 @@ class CryptoManager:
                 return new_pub_key_str
 
             except Exception as e:
-                audit_logger.log_operation("key_rotation_failed", "unknown", "system", str(e), False)
+                audit_logger.log_operation(
+                    "key_rotation_failed",
+                    "unknown",
+                    "system",
+                    str(e),
+                    False
+                )
                 raise
 
     # Совместимость

@@ -12,7 +12,8 @@ venv/
 # VSCode
 .vscode/
 *.code-workspace
-
+/app/backups/
+/backups/
 # OS
 .DS_Store
 Thumbs.db

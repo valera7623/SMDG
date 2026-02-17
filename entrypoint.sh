@@ -66,13 +66,11 @@ echo "👤 Creating/updating admin user..."
 python -m app.cli create-admin admin "${ADMIN_PASSWORD}" --email admin@example.com
 
 # ────────────────────────────────────────────────────────────────
-# Ротация ключей
+# Автоматическая ротация ключей (каждые 90 дней)
 # ────────────────────────────────────────────────────────────────
 echo "Проверка необходимости ротации ключей..."
-
 LAST_ROTATION_FILE="/app/keys/last_rotation.txt"
 ROTATION_INTERVAL_DAYS=90
-
 CURRENT_TIME=$(date +%s 2>/dev/null || echo "0")
 
 if [ -f "$LAST_ROTATION_FILE" ]; then
@@ -83,9 +81,14 @@ if [ -f "$LAST_ROTATION_FILE" ]; then
     
     if [ "$DAYS_SINCE" -ge "$ROTATION_INTERVAL_DAYS" ]; then
         echo "Прошло $DAYS_SINCE дней → ротация"
-        python -m app.cli rotate-keys --no-backup >> /app/audit_logs/key_rotation.log 2>&1 \
+        
+        # Создаём директорию бэкапов
+        mkdir -p /app/backups/keys
+        
+        # Запускаем ротацию (без --no-backup)
+        python -m app.cli rotate-keys >> /app/audit_logs/key_rotation.log 2>&1 \
             && echo "Ротация OK" && date --iso-8601=seconds > "$LAST_ROTATION_FILE" \
-            || echo "ОШИБКА ротации (см. /app/audit_logs/key_rotation.log)"
+            || { echo "ОШИБКА ротации (см. /app/audit_logs/key_rotation.log)"; exit 1; }
     else
         echo "Ротация не нужна (прошло $DAYS_SINCE дней)"
     fi
