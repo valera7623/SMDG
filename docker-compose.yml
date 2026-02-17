@@ -94,14 +94,20 @@ services:
     ports:
       - "3310:3310"
     volumes:
-      - clamav_data:/var/lib/clamav
-  
+      - clamav_data:/var/lib/clamav   # ← persistent базы сигнатур
+    command: >
+      sh -c "
+        echo 'Starting freshclam daemon...' &&
+        freshclam --daemon --checks=24 &&
+        echo 'Starting clamd...' &&
+        exec clamd --foreground
+      "
     healthcheck:
       test: ["CMD", "clamdscan", "--version"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 60s
+      retries: 5
+      start_period: 180s   
     networks:
       - backend
 
