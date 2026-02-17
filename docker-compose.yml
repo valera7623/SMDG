@@ -26,10 +26,12 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
-    # redis обычно не требует пароля в dev, но если нужен — аналогично
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     networks:
       - backend
 
@@ -41,7 +43,9 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      clamav:
+        condition: service_healthy
     secrets:
       - age_private_key
       - admin_password

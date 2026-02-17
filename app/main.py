@@ -22,7 +22,7 @@ from app.core import cleanup_manager
 import asyncio
 import logging
 import os
-from app.core.rate_limiter import limiter, check_redis_connection, storage_backend
+from app.core.rate_limiter import limiter, check_redis_connection
 
 logger = logging.getLogger(__name__)
 
@@ -133,12 +133,10 @@ async def startup_event():
     except Exception as e:
         print(f"❌ Ошибка инициализации ключей: {e}")
 
-    # Проверка Redis и rate limiter
-    try:
-        await check_redis_connection()
-        logger.info(f"Rate limiter backend: {storage_backend}")
-    except Exception as e:
-        logger.warning(f"Rate limiter fallback на memory: {e}")
+ 
+    # ← Добавляем проверку Redis
+    await check_redis_connection()
+    print("✅ Rate limiter: Redis проверен")
     
     # Запуск периодической очистки
     await cleanup_manager.start_cleanup_task()
