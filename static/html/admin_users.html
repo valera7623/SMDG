@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMDG - Управление пользователями</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/admin-users.css">
+    <script src="/static/js/admin-users.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1>👥 Управление пользователями SMDG</h1>
+                <p><a href="/admin" class="back-link">← Назад к панели администратора</a></p>
+            </div>
+            <div class="user-info" id="userInfo">
+                <span id="currentAdminUsername"></span>
+                <button onclick="logout()" class="btn-danger btn-small">🚪 Выйти</button>
+            </div>
+        </header>
+
+        <!-- Статистика пользователей -->
+        <section class="section stats-section">
+            <h2>📊 Статистика пользователей</h2>
+            <div class="stats-grid" id="userStats">
+                <div class="stat-card">
+                    <div class="stat-label">Всего</div>
+                    <div class="stat-number" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Активные</div>
+                    <div class="stat-number" id="activeUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Администраторы</div>
+                    <div class="stat-number" id="adminCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Врачи</div>
+                    <div class="stat-number" id="doctorCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Пользователи</div>
+                    <div class="stat-number" id="userCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">2FA включена</div>
+                    <div class="stat-number" id="twofaCount">0</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Фильтры и поиск -->
+        <section class="section filters-section">
+            <div class="filters">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Поиск по логину или email..." oninput="debounceSearch()">
+                </div>
+                <div class="filter-controls">
+                    <select id="roleFilter" onchange="applyFilters()">
+                        <option value="">Все роли</option>
+                        <option value="admin">Администраторы</option>
+                        <option value="doctor">Врачи</option>
+                        <option value="user">Пользователи</option>
+                    </select>
+                    <select id="statusFilter" onchange="applyFilters()">
+                        <option value="">Все статусы</option>
+                        <option value="active">Активные</option>
+                        <option value="inactive">Неактивные</option>
+                    </select>
+                    <button onclick="applyFilters()" class="btn-primary">Применить фильтры</button>
+                    <button onclick="clearFilters()" class="btn-secondary">Сбросить</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Массовые операции -->
+        <section class="section bulk-actions">
+            <div class="bulk-controls">
+                <span id="selectedCount">Выбрано: 0</span>
+                <button onclick="selectAll()" class="btn-secondary btn-small">Выбрать всех</button>
+                <button onclick="clearSelection()" class="btn-secondary btn-small">Сбросить выбор</button>
+                <select id="bulkActionSelect">
+                    <option value="">Массовые действия</option>
+                    <option value="activate">Активировать</option>
+                    <option value="deactivate">Деактивировать</option>
+                    <option value="change_role">Изменить роль</option>
+                    <option value="delete">Удалить</option>
+                </select>
+                <select id="bulkRoleSelect" style="display:none;">
+                    <option value="user">Пользователь</option>
+                    <option value="doctor">Врач</option>
+                    <option value="admin">Администратор</option>
+                </select>
+                <button onclick="executeBulkAction()" class="btn-warning">Выполнить</button>
+            </div>
+        </section>
+
+        <!-- Кнопка создания пользователя -->
+        <section class="section create-user">
+            <button onclick="showCreateUserModal()" class="btn-success">➕ Создать нового пользователя</button>
+        </section>
+
+        <!-- Таблица пользователей -->
+        <section class="section users-table-section">
+            <h2>📋 Список пользователей</h2>
+            <div class="table-container">
+                <table class="users-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes()"></th>
+                            <th>ID</th>
+                            <th>Логин</th>
+                            <th>Email</th>
+                            <th>Роль</th>
+                            <th>Статус</th>
+                            <th>2FA</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="8" class="loading">⏳ Загрузка пользователей...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- Пагинация будет добавлена динамически -->
+            </div>
+        </section>
+    </div>
+
+    <!-- Модальное окно создания/редактирования пользователя -->
+    <div id="userModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserModal()">&times;</span>
+            <h2 id="modalTitle">➕ Создание пользователя</h2>
+            
+            <form id="userForm" onsubmit="handleUserSubmit(event)">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="modalUsername">Логин</label>
+                    <input type="text" id="modalUsername" required minlength="3" maxlength="50" pattern="^[a-zA-Z0-9_]+$">
+                    <small class="field-hint">От 3 до 50 символов, только буквы, цифры и _</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalEmail">Email</label>
+                    <input type="email" id="modalEmail" required>
+                </div>
+
+                <div class="form-group" id="passwordGroup">
+                    <label for="modalPassword">Пароль</label>
+                    <input type="password" id="modalPassword" minlength="8">
+                    <small class="field-hint">Минимум 8 символов (оставьте пустым чтобы не менять)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="modalRole">Роль</label>
+                    <select id="modalRole">
+                        <option value="user">Пользователь</option>
+                        <option value="doctor">Врач</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="modalIsActive" checked>
+                        Активен
+                    </label>
+                </div>
+
+                <div class="form-group checkbox-group" id="reset2faGroup" style="display:none;">
+                    <label>
+                        <input type="checkbox" id="modalReset2fa">
+                        Сбросить двухфакторную аутентификацию
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-success" id="modalSubmitBtn">Создать</button>
+                    <button type="button" onclick="closeUserModal()" class="btn-secondary">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения -->
+    <div id="confirmModal" class="modal" style="display:none;">
+        <div class="modal-content confirm-modal">
+            <h3 id="confirmTitle">Подтверждение</h3>
+            <p id="confirmMessage"></p>
+            <div class="form-actions">
+                <button onclick="confirmAction()" class="btn-danger" id="confirmBtn">Подтвердить</button>
+                <button onclick="closeConfirmModal()" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

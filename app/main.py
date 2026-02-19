@@ -18,6 +18,7 @@ from app.core.security import get_password_hash, verify_password
 from app.core.config import settings
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
+from app.api.admin_users import router as admin_users_router
 from app.core import cleanup_manager
 import asyncio
 import logging
@@ -88,7 +89,7 @@ app.include_router(delete.router, prefix="/api")
 app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
-
+app.include_router(admin_users_router, prefix="/api")
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
@@ -283,6 +284,25 @@ async def view_logs():
         return HTMLResponse(content=html)
     except Exception as e:
         return HTMLResponse(content=f"<h1>Ошибка</h1><p>{str(e)}</p>")
+    
+
+
+
+@app.get("/admin/users", response_class=HTMLResponse)
+async def admin_users():
+    """Страница управления пользователями"""
+    try:
+        with open("static/html/admin_users.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return """
+        <html>
+            <body>
+                <h1>Управление пользователями</h1>
+                <p>Ошибка: не найден файл admin_users.html</p>
+            </body>
+        </html>
+        """
     
 @app.middleware("http")
 async def add_rate_limit_headers(request: Request, call_next):

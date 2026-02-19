@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="/static/js/admin.js" defer></script>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -25,7 +27,17 @@
             </div>
         </section>
 
-        
+        <!-- static/html/admin.html - добавьте после секции управления файлами -->
+
+        <section class="section">
+            <h2>👥 Управление пользователями</h2>
+            <div class="controls">
+                <a href="/admin/users" class="btn-primary">📋 Перейти к управлению пользователями</a>
+            </div>
+            <p>Просмотр, создание, редактирование и удаление пользователей системы.</p>
+        </section>
+
+
 
         <section class="section info">
             <h2>📊 Статистика системы</h2>
@@ -50,9 +62,11 @@
             <div class="danger-zone">
                 <p><strong>Полная очистка системы:</strong></p>
                 <button onclick="purgeAllFiles()" class="btn-danger">🗑️ УДАЛИТЬ ВСЕ ФАЙЛЫ</button>
-                <p class="warning-text"><small>Удалит все зашифрованные файлы. Требуется двойное подтверждение.</small></p>
+                <p class="warning-text"><small>Удалит все зашифрованные файлы. Требуется двойное подтверждение.</small>
+                </p>
             </div>
         </section>
     </div>
 </body>
+
 </html>
