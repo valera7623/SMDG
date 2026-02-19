@@ -19,6 +19,8 @@ from app.core.config import settings
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 from app.api.admin_users import router as admin_users_router
+from app.api.delete_user import router as delete_user_router
+
 from app.core import cleanup_manager
 import asyncio
 import logging
@@ -90,6 +92,7 @@ app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_users_router, prefix="/api")
+app.include_router(delete_user_router, prefix="/api")
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):

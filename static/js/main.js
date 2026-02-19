@@ -654,6 +654,155 @@ async function uploadFile(file) {
     }
 }
 
+// Добавьте эти функции в main.js
+
+// Функция удаления файла
+async function deleteUserFile(filename, originalName) {
+    if (!confirm(`Вы уверены, что хотите удалить файл "${originalName || filename}"?`)) {
+        return;
+    }
+
+    try {
+        const formData = new URLSearchParams();
+        formData.append('filename', filename);
+        formData.append('confirm', 'true');
+
+        const response = await fetch(`${API_BASE}/delete-user-file`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Ошибка удаления');
+        }
+
+        const result = await response.json();
+        showNotification(result.message, 'success');
+
+        // Обновляем список файлов
+        loadFileList();
+
+    } catch (error) {
+        showNotification(`Ошибка: ${error.message}`, 'error');
+    }
+}
+
+// Удаление файла по ID
+async function deleteUserFileById(fileId, originalName) {
+    if (!confirm(`Вы уверены, что хотите удалить файл "${originalName}"?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/delete-user-file/${fileId}?confirm=true`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || 'Ошибка удаления');
+        }
+
+        const result = await response.json();
+        showNotification(result.message, 'success');
+
+        // Обновляем список файлов
+        loadFileList();
+
+    } catch (error) {
+        showNotification(`Ошибка: ${error.message}`, 'error');
+    }
+}
+
+// Обновите функцию loadFileList для отображения кнопок действий
+async function loadFileList() {
+    const fileList = document.getElementById('fileList');
+    if (!fileList) return;
+
+    fileList.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
+
+    try {
+        const response = await fetch(`${API_BASE}/list`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || `Ошибка ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.count === 0) {
+            fileList.innerHTML = '<div class="empty">📭 Нет загруженных файлов</div>';
+            return;
+        }
+
+        let html = '';
+        data.files.forEach(file => {
+            const encryptedName = file.name;
+            const originalName = file.original_name || encryptedName.replace(/^[a-f0-9]+_/, '').replace('.age$', '');
+            const fileId = file.id; // ID из базы данных
+
+            html += `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">📄 ${originalName}</div>
+                        <div class="file-size">📏 ${formatBytes(file.size)}</div>
+                        ${file.patient_id ? `<div class="patient-id">🆔 Пациент: ${file.patient_id}</div>` : ''}
+                        <div class="file-id">🔐 <small>${encryptedName}</small></div>
+                    </div>
+                    <div class="file-actions">
+                        ${file.download_token ? `
+                            <a href="${file.download_url}" target="_blank" class="btn-secondary btn-small">📥 Скачать</a>
+                        ` : `
+                            <button onclick="downloadFile('${encryptedName}')" class="btn-secondary btn-small">📥 Скачать</button>
+                        `}
+                        <button onclick="deleteUserFile('${encryptedName}', '${originalName}')" class="btn-danger btn-small">🗑️ Удалить</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        fileList.innerHTML = html;
+
+    } catch (error) {
+        fileList.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+    }
+}
+
+// Добавьте стили для кнопок в файле
+const additionalStyles = `
+    .file-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 0.9em;
+        min-width: 80px;
+    }
+    
+    .patient-id {
+        font-size: 0.9em;
+        color: #666;
+        margin-top: 4px;
+    }
+`;
+
+// Добавляем стили в head если их нет
+const styleSheet = document.createElement("style");
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
 // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';

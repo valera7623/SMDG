@@ -366,3 +366,124 @@
 2026-02-19T12:47:34.556625,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
 2026-02-19T12:48:04.562934,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
 2026-02-19T12:48:34.560684,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:50:00.567565,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:51:00.563172,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:52:00.551496,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:53:00.563382,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:54:00.558165,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:55:00.551131,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:56:00.549985,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:57:00.562734,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:58:00.563087,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T12:59:00.551796,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:00:00.567296,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:00:42.163458,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:00:58.280556,login_success,,0,doctor,127.0.0.1,,Успешный вход,True
+2026-02-19T13:00:58.281463,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:00:58.333469,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:01:03.698875,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:01:11.551766,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:01:19.667828,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:01:33.690598,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:10.070974,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-19T13:02:10.071709,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:10.125184,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:21.664632,GET /admin,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:21.714645,GET /static/css/style.css,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:21.716149,GET /static/js/admin.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:21.745794,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:26.230391,GET /admin/users,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:26.260759,GET /static/css/admin-users.css,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:26.267817,GET /static/js/admin-users.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:26.287548,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:26.308654,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 3),True
+2026-02-19T13:02:26.309750,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:58.360217,admin_bulk_delete,,0,admin,127.0.0.1,,Массовая операция delete над 2 пользователями,True
+2026-02-19T13:02:58.360741,POST /api/admin/users/bulk,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:58.412633,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-02-19T13:02:58.413254,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:02:58.426346,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:03:16.595840,GET /,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:03:16.644664,GET /static/js/main.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:03:38.041816,user_registered,,0,doctor,127.0.0.1,,Новый пользователь зарегистрирован,True
+2026-02-19T13:03:38.042477,POST /api/auth/register,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:04:24.136866,login_failed,,0,doctor,127.0.0.1,,Требуется код 2FA,False
+2026-02-19T13:04:24.138444,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 400, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:04:42.329648,login_success,,0,doctor,127.0.0.1,,Успешный вход (с 2FA),True
+2026-02-19T13:04:42.330449,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:04:42.380131,GET /api/list,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:04:46.665028,GET /api/list,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:04:59.874644,GET /admin,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:04:59.924257,GET /api/list,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:05:02.658480,GET /admin/users,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:02.693151,GET /static/js/admin-users.js,,0,api,172.18.0.6,,"Status: 304, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:02.706894,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:05:02.718102,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:05:10.683684,GET /,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:10.732428,GET /static/js/main.js,,0,api,172.18.0.6,,"Status: 304, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:17.767154,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-02-19T13:05:17.767960,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:17.781952,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:24.866286,GET /admin,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:24.920820,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:26.642658,GET /admin/users,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:26.681883,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:26.697693,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 2),True
+2026-02-19T13:05:26.698333,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:31.468299,admin_view_user,,0,admin,127.0.0.1,,Просмотр пользователя doctor,True
+2026-02-19T13:05:31.468837,GET /api/admin/users/8,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:47.946253,admin_update_user,,0,admin,127.0.0.1,,Обновлен пользователь doctor,True
+2026-02-19T13:05:47.946871,PUT /api/admin/users/8,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:48.000036,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 2),True
+2026-02-19T13:05:48.000585,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:05:48.012672,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:00.002571,GET /,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:00.052480,GET /static/js/main.js,,0,api,172.18.0.6,,"Status: 304, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:06.674588,login_success,,0,doctor,127.0.0.1,,Успешный вход,True
+2026-02-19T13:06:06.675322,POST /api/auth/login,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:06.692301,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:18.508926,GET /api/download,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:31.246842,POST /api/delete-user-file,,0,api,172.18.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:06:31.253942,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:35.627057,POST /api/delete-user-file,,0,api,172.18.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:06:39.973713,GET /static/css/style.css,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:06:40.024268,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:07:00.080127,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:07:20.851614,POST /api/delete-user-file,,0,api,172.18.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:07:30.071241,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:07:34.042808,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.6,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:08:00.549973,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:08:30.552980,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:09:00.567188,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:00.564243,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:48.832878,GET /,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:48.893980,GET /static/css/style.css,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:48.896809,GET /static/js/main.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:48.938823,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:52.890559,user_delete_file,5b04dfc2-e038-4820-98df-aee0b70af6f4_Errors_(2).txt.age,83538,doctor,127.0.0.1,1ad842ef10bf45507ca770d938991032e2a7578c0b950d6cce1fb1da0b0e943a,Удаление файла пользователем,True
+2026-02-19T13:10:52.891316,POST /api/delete-user-file,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:10:52.901501,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:14.949690,upload,9-2 (1).docx,62270,doctor,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-02-19T13:11:14.950770,POST /api/upload,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:14.965123,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:18.920171,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:35.732750,GET /api/download,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:42.350930,user_delete_file,916dd325-39cd-4ccf-a7b3-7573a12214d8_9-2_(1).docx.age,62470,doctor,127.0.0.1,26a366ce1bbead240fe0d70e058844cfe26c6829458e4a357de493299c92936b,Удаление файла пользователем,True
+2026-02-19T13:11:42.351783,POST /api/delete-user-file,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:42.401989,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:46.127790,GET /admin,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:46.162841,GET /static/js/admin.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:46.176643,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:48.048423,GET /admin/users,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:48.098780,GET /static/css/admin-users.css,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:48.099223,GET /static/js/admin-users.js,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:48.122777,GET /api/admin/users/stats/overview,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:11:48.153659,GET /api/admin/users/,,0,api,172.18.0.6,,"Status: 403, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-02-19T13:11:52.926680,GET /admin,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:11:52.972347,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:12:01.514129,GET /,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:12:01.567424,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:12:32.559724,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:13:02.548256,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:13:32.557208,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-02-19T13:14:01.568483,GET /api/list,,0,api,172.18.0.6,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
