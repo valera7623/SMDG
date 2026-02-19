@@ -390,3 +390,87 @@ async def disable_2fa(
         "message": "2FA успешно отключен",
         "warning": "Рекомендуется немедленно настроить 2FA заново для безопасности"
     }
+    
+# Добавить в конец файла app/api/auth.py
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
+    email: str = Field(..., max_length=255)
+    password: str = Field(..., min_length=8)
+
+
+@router.post("/register", response_model=dict)
+@limiter.limit(
+    "3/hour",
+    key_func=get_remote_address,
+    error_message="Слишком много попыток регистрации. Попробуйте позже."
+)
+async def register(
+    request: Request,
+    user_data: RegisterRequest = Body(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """Регистрация нового пользователя"""
+    
+    # Проверяем уникальность username
+    result = await db.execute(
+        select(User).where(User.username == user_data.username)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пользователь с таким логином уже существует"
+        )
+    
+    # Проверяем уникальность email
+    result = await db.execute(
+        select(User).where(User.email == user_data.email)
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Пользователь с таким email уже существует"
+        )
+    
+    # Генерируем OTP секрет для нового пользователя (опционально)
+    otp_secret = generate_otp_secret()
+    
+    # Создаем нового пользователя
+    new_user = User(
+        username=user_data.username,
+        email=user_data.email,
+        hashed_password=get_password_hash(user_data.password),
+        role="user",  # По умолчанию обычный пользователь
+        is_active=True,
+        otp_secret=otp_secret  # Сохраняем OTP секрет для возможной настройки 2FA
+    )
+    
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    
+    # Логируем успешную регистрацию
+    audit_logger.log_operation(
+        action="user_registered",
+        filename="",
+        user=new_user.username,
+        reason="Новый пользователь зарегистрирован",
+        success=True,
+        metadata={
+            "email": new_user.email,
+            "role": new_user.role,
+            "2fa_available": True
+        }
+    )
+    
+    # Возвращаем данные (но не пароль!)
+    return {
+        "message": "Пользователь успешно зарегистрирован",
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role,
+        "otp_secret": otp_secret,  # Для настройки 2FA
+        "otp_url": get_otp_url(new_user.username, otp_secret),
+        "2fa_available": True,
+        "note": "Рекомендуется настроить двухфакторную аутентификацию"
+    }
