@@ -1,12 +1,16 @@
 SMDG   
 ├─ .github 
 |   └─ workflows 
-|      └─ ci.yml                                                         
+|      └─ ci.yml
+├─ .vscode 
+|   └─ setting.json                                                  
 ├─ app                                                            
 │  ├─ api                                                         
-│  │  ├─ __init__.py
-|  |  ├─ auth.py                                          
-│  │  ├─ cleanup.py                                               
+│  │  ├ __init__.py
+|  |  ├─ auth.py    
+|  |  ├─ admin_users.py                                
+│  │  ├─ cleanup.py 
+|  |  ├─ delete_user.py                                          
 │  │  ├─ delete.py                                                
 │  │  ├─ download.py                                              
 │  │  ├─ list.py                                                  
@@ -53,14 +57,18 @@ SMDG
 ├─ migrations
 ├─ secrets/                                             
 ├─ static                                                         
-│  ├─ css                                                         
+│  ├─ css 
+|  |  ├─ admin-users.css                                                    
 │  │  └─ style.css                                                
-│  ├─ html                                                        
+│  ├─ html 
+|  |  ├─ admin_users.html                                                   
 │  │  ├─ admin.html                                               
 │  │  └─ index.html                                               
-│  └─ js                                                          
+│  └─ js 
+|     ├─ admin-users.js                                                    
 │     ├─ admin.js                                                 
-│     └─ main.js                                                                                                           
+│     └─ main.js
+|                                                                                                          
 ├─ tests
 |   ├─ test_api
 |   ├─ test_app
@@ -70,23 +78,23 @@ SMDG
 |   ├─ test_models
 |   ├─ conftest.py
 |   └─ test_cli.py
-|                                                  
-├─ venv   
-├─ coverage                              
+|                                                                                  
 ├─ .dockerignore
 ├─ .env
 ├─ .env.example
 ├─ .gitignore
 ├─ alembic.ini
 ├─ Dockerfile  
-├─ entrypoint.sh  
+├─ entrypoint.sh 
+├─ generate_cert.sh
 ├─ nginx-https.conf                                                
 ├─ MVP.md                                                         
 ├─ README.md  
 ├─ pytest.ini                                                                                                  
 ├─ docker-compose.yml     
-├─ setup.cfg                                            
-└─ requirements.txt                                               
+├─ setup.cfg   
+├─ pyproject.toml                        
+└─ poetry.lock                                
                                                   
                                       
 
