@@ -1,58 +1,80 @@
 # app/core/auth.py
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from fastapi import Depends, HTTPException, status, Cookie
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials  # пока оставляем, если где-то ещё используется
+from typing import Annotated
 import jwt
 from jwt.exceptions import PyJWTError as JWTError
+from jwt import decode as jwt_decode
 from pydantic import BaseModel
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from .config import settings
+from .auth_utils import TokenData, create_access_token
 
-# Схема Bearer токена
-security = HTTPBearer()
-
+# ──── Определяем модели и константы прямо здесь ────
 class TokenData(BaseModel):
-    sub: str  # username или ID
-    role: str = "user"  # user, doctor, admin
+    sub: str
+    role: str = "user"
 
-# Константы из настроек
+
 SECRET_KEY = settings.jwt_secret_key
 ALGORITHM = settings.jwt_algorithm
-ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_expires_minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_expires_minutes  # если есть в settings
 
-def create_access_token(subject: str, role: str = "user", expires_delta: Optional[timedelta] = None) -> str:
-    """
-    Создаёт JWT access-токен
-    """
-    to_encode = {"sub": subject, "role": role}
-    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+# ──── Базовая зависимость (теперь работает без цикла) ────
+async def get_current_user(
+    access_token: Annotated[str | None, Cookie(alias="access_token")] = None
+) -> TokenData:
     """
-    Зависимость: проверяет Bearer токен и возвращает данные пользователя
+    Проверяет JWT-токен из HttpOnly cookie и возвращает данные пользователя
     """
-    token = credentials.credentials
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован (токен в cookie отсутствует)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt_decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         role: str = payload.get("role", "user")
         if username is None:
-            raise HTTPException(status_code=401, detail="Invalid token: missing subject")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Некорректный токен: отсутствует subject"
+            )
         return TokenData(sub=username, role=role)
-    except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
-async def get_current_doctor(current_user: TokenData = Depends(get_current_user)):
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Недействительный токен: {str(e)}"
+        )
+
+
+# ──── Композиционные зависимости (без изменений) ────
+async def get_current_doctor(
+    current_user: Annotated[TokenData, Depends(get_current_user)]
+) -> TokenData:
     """Только врачи и админы"""
     if current_user.role not in {"doctor", "admin"}:
-        raise HTTPException(status_code=403, detail="Doctor or admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ разрешён только врачам и администраторам"
+        )
     return current_user
 
-async def get_current_admin(current_user: TokenData = Depends(get_current_user)):
+
+async def get_current_admin(
+    current_user: Annotated[TokenData, Depends(get_current_user)]
+) -> TokenData:
     """Только админ"""
     if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Доступ разрешён только администраторам"
+        )
     return current_user

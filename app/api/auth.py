@@ -1,17 +1,21 @@
 # auth.py - обновлённая версия (добавлены изменения)
-from fastapi import APIRouter, Depends, HTTPException, status, Body, Form, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Body, Form, Request, Response, Cookie
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from pydantic import BaseModel, Field
 from typing import Annotated, Optional
-from app.core.auth import create_access_token, get_current_user, TokenData
+from app.core.auth import get_current_user, get_current_admin, get_current_doctor
+from app.core.auth_utils import create_access_token, TokenData
+from app.core.auth import SECRET_KEY, ALGORITHM
 from app.core.database import get_db
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash
 from app.core import audit_logger
 from app.core.rate_limiter import limiter, get_remote_address
 from datetime import timedelta
-import pyotp  # Новая зависимость
+from jwt import decode as jwt_decode, PyJWTError
+import pyotp  
 import base64
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -167,6 +171,31 @@ async def change_password(
         "otp_url": get_otp_url(current_user.sub, new_otp_secret),
         "warning": "Сохраните этот секрет для настройки 2FA!"
     }
+    
+    
+# ──── НОВАЯ ЗАВИСИМОСТЬ ДЛЯ АВТОРИЗАЦИИ ЧЕРЕЗ COOKIE ────
+async def get_current_user_from_cookie(
+    access_token: Annotated[str | None, Cookie(alias="access_token")] = None
+) -> TokenData:
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Не авторизован (токен отсутствует)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    try:
+        payload = jwt_decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        role: str = payload.get("role", "user")
+        if username is None:
+            raise HTTPException(status_code=401, detail="Некорректный токен")
+        return TokenData(sub=username, role=role)
+    except PyJWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Недействительный токен: {str(e)}"
+        )
 
 
 @router.post("/login")
@@ -175,13 +204,14 @@ async def change_password(
     key_func=login_rate_limit_key,
     methods=["POST"],
     error_message="Слишком много попыток входа. Попробуйте через минуту.",
-    exempt_when=lambda: False
+    
 )
 async def login(
+    response: Response,
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    otp_code: Optional[str] = Form(None),  # Новый параметр для 2FA
+    otp_code: Optional[str] = Form(None),  
     db: AsyncSession = Depends(get_db)
 ):
     # Находим пользователя
@@ -253,25 +283,45 @@ async def login(
         expires_delta=timedelta(minutes=60)
     )
 
+    # Ставим HttpOnly cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=False,               # ← в dev ставим False, в проде True (HTTPS)
+        samesite="lax",             # или "strict" — зависит от нужд
+        max_age=60 * 60,            # 1 час
+        path="/",
+        # domain="fileguardian.com.ru"  # раскомменти в проде
+    )
+
     audit_logger.log_operation(
         action="login_success",
         filename="",
         user=username,
         reason="Успешный вход" + (" (с 2FA)" if user.otp_secret else ""),
         success=True,
-        metadata={
-            "2fa_enabled": user.otp_secret is not None
-        }
+        metadata={"2fa_enabled": user.otp_secret is not None}
     )
 
     return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "role": user.role,
+        "message": "Успешный вход",
         "username": user.username,
-        "expires_in": 3600,
-        "2fa_enabled": user.otp_secret is not None
+        "role": user.role,
+        "2fa_enabled": bool(user.otp_secret)
     }
+    
+# ──── НОВЫЙ ЭНДПОИНТ LOGOUT ────
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        secure=False,  # в проде True
+        samesite="lax"
+    )
+    return {"message": "Вы успешно вышли из системы"}
 
 
 @router.post("/setup-2fa", response_model=dict)
@@ -391,7 +441,7 @@ async def disable_2fa(
         "warning": "Рекомендуется немедленно настроить 2FA заново для безопасности"
     }
     
-# Добавить в конец файла app/api/auth.py
+
 
 class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
