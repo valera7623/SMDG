@@ -1,7 +1,7 @@
 // static/js/admin-users.js
 
 const API_BASE = '/api';
-let JWT_TOKEN = localStorage.getItem('token');
+
 let currentUser = null;
 let selectedUsers = new Set();
 let currentPage = 0;
@@ -17,51 +17,25 @@ let actionCallback = null;
 // ==================== Инициализация ====================
 
 document.addEventListener('DOMContentLoaded', async function () {
-    // Проверка токена
-    if (!JWT_TOKEN) {
-        window.location.href = '/';
-        return;
-    }
-
-    // Получаем информацию о текущем пользователе из токена
-    try {
-        const tokenData = parseJwt(JWT_TOKEN);
-        document.getElementById('currentAdminUsername').textContent = tokenData.sub;
-        currentUser = tokenData.sub;
-    } catch (e) {
-        console.error('Ошибка парсинга токена:', e);
-    }
-
-    // Загружаем данные
+    // Пробуем сразу загрузить данные
+    // Если не авторизованы — backend вернёт 401 → редирект на главную
     await loadUserStats();
     await loadUsers();
 });
-
-// Парсинг JWT токена
-function parseJwt(token) {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    } catch (e) {
-        return {};
-    }
-}
 
 // ==================== Загрузка статистики ====================
 
 async function loadUserStats() {
     try {
         const response = await fetch(`${API_BASE}/admin/users/stats/overview`, {
-            headers: {
-                'Authorization': `Bearer ${JWT_TOKEN}`
-            }
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
@@ -105,18 +79,20 @@ async function loadUsers(resetPage = false) {
 
     try {
         const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${JWT_TOKEN}`
-            }
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
         const users = await response.json();
 
-        // Для пагинации нужно общее количество (заголовок X-Total-Count)
+        // Пагинация через заголовок X-Total-Count
         const totalCount = response.headers.get('X-Total-Count') || users.length;
         totalUsers = parseInt(totalCount);
 
@@ -231,11 +207,9 @@ function renderPagination() {
 
     let html = '';
 
-    // Кнопка "Предыдущая"
     html += `<button class="page-btn" onclick="changePage(${currentPage - 1})" 
                     ${currentPage === 0 ? 'disabled' : ''}>←</button>`;
 
-    // Номера страниц
     for (let i = 0; i < totalPages; i++) {
         if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
             html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" 
@@ -245,7 +219,6 @@ function renderPagination() {
         }
     }
 
-    // Кнопка "Следующая"
     html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" 
                     ${currentPage >= totalPages - 1 ? 'disabled' : ''}>→</button>`;
 
@@ -253,6 +226,7 @@ function renderPagination() {
 }
 
 function changePage(page) {
+    if (page < 0 || page >= Math.ceil(totalUsers / pageSize)) return;
     currentPage = page;
     loadUsers();
 }
@@ -293,11 +267,8 @@ function toggleAllCheckboxes() {
     checkboxes.forEach(cb => {
         cb.checked = selectAll;
         const userId = parseInt(cb.value);
-        if (selectAll) {
-            selectedUsers.add(userId);
-        } else {
-            selectedUsers.delete(userId);
-        }
+        if (selectAll) selectedUsers.add(userId);
+        else selectedUsers.delete(userId);
     });
 
     updateSelectedCount();
@@ -313,7 +284,6 @@ function updateSelectedCount() {
 
     document.getElementById('selectedCount').textContent = `Выбрано: ${selectedUsers.size}`;
 
-    // Обновляем состояние чекбокса "Выбрать всех"
     const totalCheckboxes = document.querySelectorAll('.user-checkbox:not(:disabled)').length;
     const checkedCheckboxes = checkboxes.length;
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
@@ -323,7 +293,6 @@ function updateSelectedCount() {
         selectAllCheckbox.indeterminate = checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes;
     }
 
-    // Показываем/скрываем массовые действия
     const bulkControls = document.querySelector('.bulk-controls');
     if (selectedUsers.size > 0) {
         bulkControls.classList.add('has-selection');
@@ -332,30 +301,9 @@ function updateSelectedCount() {
     }
 }
 
-function selectAll() {
-    document.querySelectorAll('.user-checkbox:not(:disabled)').forEach(cb => {
-        cb.checked = true;
-        selectedUsers.add(parseInt(cb.value));
-    });
-    updateSelectedCount();
-}
-
-function clearSelection() {
-    document.querySelectorAll('.user-checkbox').forEach(cb => {
-        cb.checked = false;
-    });
-    selectedUsers.clear();
-    updateSelectedCount();
-
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.checked = false;
-    }
-}
-
 // ==================== Массовые действия ====================
 
-document.getElementById('bulkActionSelect').addEventListener('change', function () {
+document.getElementById('bulkActionSelect')?.addEventListener('change', function () {
     const roleSelect = document.getElementById('bulkRoleSelect');
     if (this.value === 'change_role') {
         roleSelect.style.display = 'inline-block';
@@ -397,18 +345,20 @@ async function executeBulkAction() {
         try {
             const response = await fetch(`${API_BASE}/admin/users/bulk`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${JWT_TOKEN}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     user_ids: Array.from(selectedUsers),
                     action: action,
                     role: role
-                })
+                }),
+                credentials: 'include'
             });
 
             if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = '/';
+                    return;
+                }
                 const error = await response.json();
                 throw new Error(error.detail || 'Ошибка выполнения операции');
             }
@@ -445,12 +395,14 @@ function showCreateUserModal() {
 async function editUser(userId) {
     try {
         const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
-            headers: {
-                'Authorization': `Bearer ${JWT_TOKEN}`
-            }
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error('Ошибка загрузки данных пользователя');
         }
 
@@ -493,7 +445,6 @@ async function handleUserSubmit(event) {
     const userId = document.getElementById('userId').value;
     const isEdit = !!userId;
 
-    // Собираем данные формы
     const formData = {
         username: document.getElementById('modalUsername').value.trim(),
         email: document.getElementById('modalEmail').value.trim(),
@@ -501,7 +452,6 @@ async function handleUserSubmit(event) {
         is_active: document.getElementById('modalIsActive').checked
     };
 
-    // Валидация перед отправкой
     if (!formData.username) {
         showNotification('Логин не может быть пустым', 'error');
         return;
@@ -522,17 +472,13 @@ async function handleUserSubmit(event) {
         return;
     }
 
-    // Простая валидация email
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(formData.email)) {
         showNotification('Неверный формат email', 'error');
         return;
     }
 
-    console.log('Отправляемые данные:', formData);
-
     if (!isEdit) {
-        // Для создания - пароль обязателен
         const password = document.getElementById('modalPassword').value;
         if (!password) {
             showNotification('Введите пароль', 'error');
@@ -544,7 +490,6 @@ async function handleUserSubmit(event) {
         }
         formData.password = password;
     } else {
-        // Для редактирования - пароль опционален
         const password = document.getElementById('modalPassword').value;
         if (password) {
             if (password.length < 8) {
@@ -561,43 +506,23 @@ async function handleUserSubmit(event) {
     }
 
     try {
-        let response;
         const url = isEdit ? `${API_BASE}/admin/users/${userId}` : `${API_BASE}/admin/users/`;
         const method = isEdit ? 'PUT' : 'POST';
 
-        console.log(`${method} запрос к ${url}`);
-        console.log('Тело запроса:', JSON.stringify(formData, null, 2));
-
-        response = await fetch(url, {
+        const response = await fetch(url, {
             method: method,
-            headers: {
-                'Authorization': `Bearer ${JWT_TOKEN}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData),
+            credentials: 'include'
         });
 
-        // Получаем ответ как текст для отладки
-        const responseText = await response.text();
-        console.log('Ответ сервера:', response.status, responseText);
-
         if (!response.ok) {
-            let errorDetail;
-            try {
-                const errorData = JSON.parse(responseText);
-                errorDetail = errorData.detail || JSON.stringify(errorData);
-            } catch {
-                errorDetail = responseText || `HTTP ${response.status}`;
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
             }
-            throw new Error(errorDetail);
-        }
-
-        // Парсим ответ если это JSON
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch {
-            result = { message: 'Успешно' };
+            const errorData = await response.json();
+            throw new Error(errorData.detail || `HTTP ${response.status}`);
         }
 
         showNotification(isEdit ? 'Пользователь обновлен' : 'Пользователь создан', 'success');
@@ -625,14 +550,16 @@ function resetPassword(userId, username) {
             try {
                 const response = await fetch(`${API_BASE}/admin/users/${userId}/reset-password`, {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${JWT_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ new_password: newPassword })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ new_password: newPassword }),
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = '/';
+                        return;
+                    }
                     const error = await response.json();
                     throw new Error(error.detail || 'Ошибка сброса пароля');
                 }
@@ -653,14 +580,16 @@ function reset2FA(userId, username) {
             try {
                 const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${JWT_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ reset_2fa: true })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reset_2fa: true }),
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = '/';
+                        return;
+                    }
                     const error = await response.json();
                     throw new Error(error.detail || 'Ошибка сброса 2FA');
                 }
@@ -682,12 +611,14 @@ function deleteUser(userId, username) {
             try {
                 const response = await fetch(`${API_BASE}/admin/users/${userId}?confirm=true`, {
                     method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${JWT_TOKEN}`
-                    }
+                    credentials: 'include'
                 });
 
                 if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        window.location.href = '/';
+                        return;
+                    }
                     const error = await response.json();
                     throw new Error(error.detail || 'Ошибка удаления');
                 }
@@ -717,9 +648,7 @@ function closeConfirmModal() {
 }
 
 function confirmAction() {
-    if (actionCallback) {
-        actionCallback();
-    }
+    if (actionCallback) actionCallback();
     closeConfirmModal();
 }
 
@@ -766,14 +695,26 @@ function showNotification(message, type = 'info') {
 
 // ==================== Выход ====================
 
-function logout() {
-    if (confirm('Вы уверены, что хотите выйти?')) {
-        localStorage.removeItem('token');
-        window.location.href = '/';
+async function logout() {
+    if (!confirm('Вы уверены, что хотите выйти?')) return;
+
+    try {
+        const response = await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            showNotification('Ошибка выхода', 'error');
+        }
+    } catch (e) {
+        showNotification('Ошибка выхода: ' + e.message, 'error');
     }
 }
 
-// Добавляем стили для уведомлений если их нет
+// Анимации (оставляем)
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {

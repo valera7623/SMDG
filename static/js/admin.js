@@ -1,19 +1,16 @@
 // static/js/admin.js
-const API_KEY = 'test-token-123';
+
 const API_BASE = '/api';
 
-// Заголовки для всех запросов (API-ключ в заголовке)
-const headers = {
-    'Authorization': `Bearer ${localStorage.getItem("token")}`
-};
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
-// Инициализация
 document.addEventListener('DOMContentLoaded', function () {
     loadFiles();
     loadSystemStats();
 });
 
-// Загрузка списка файлов
+// ==================== ЗАГРУЗКА СПИСКА ФАЙЛОВ ====================
+
 async function loadFiles() {
     const fileList = document.getElementById('fileList');
     if (!fileList) return;
@@ -22,10 +19,14 @@ async function loadFiles() {
 
     try {
         const response = await fetch(`${API_BASE}/list`, {
-            headers: headers
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
@@ -56,31 +57,35 @@ async function loadFiles() {
         fileList.innerHTML = html;
 
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('Ошибка загрузки списка файлов:', error);
         fileList.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
     }
 }
 
-// Функция скачивания файла
+// ==================== СКАЧИВАНИЕ ФАЙЛА ====================
+
 async function downloadFile(filename) {
     try {
         const response = await fetch(`${API_BASE}/download?filename=${encodeURIComponent(filename)}`, {
-            headers: headers
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             const error = await response.json();
             throw new Error(error.detail || `Ошибка: ${response.status}`);
         }
 
-        // Создаём blob и скачиваем
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
         a.href = url;
 
-        // Извлекаем оригинальное имя из Content-Disposition
+        // Пытаемся взять оригинальное имя из Content-Disposition
         const contentDisposition = response.headers.get('Content-Disposition');
         let originalName = filename.replace('.age', '');
         if (contentDisposition) {
@@ -100,7 +105,8 @@ async function downloadFile(filename) {
     }
 }
 
-// Удаление файла
+// ==================== УДАЛЕНИЕ ФАЙЛА ====================
+
 async function deleteFile(filename) {
     if (!confirm(`Вы уверены, что хотите удалить файл "${filename}"?`)) {
         return;
@@ -110,17 +116,21 @@ async function deleteFile(filename) {
         const response = await fetch(`${API_BASE}/delete`, {
             method: 'POST',
             headers: {
-                ...headers,
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
             body: new URLSearchParams({
                 filename: filename,
                 confirm: 'true',
                 reason: 'manual_delete'
-            })
+            }),
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             const error = await response.json();
             throw new Error(error.detail || `Ошибка: ${response.status}`);
         }
@@ -135,11 +145,11 @@ async function deleteFile(filename) {
     }
 }
 
-// Загрузка статистики системы
+// ==================== СТАТИСТИКА СИСТЕМЫ ====================
+
 async function loadSystemStats() {
     await showSystemStats();
 
-    // Добавьте кнопку для детальной статистики
     const statsInfo = document.getElementById('statsInfo');
     if (statsInfo) {
         statsInfo.innerHTML += `
@@ -155,7 +165,6 @@ async function loadSystemStats() {
     }
 }
 
-// Показать базовую статистику системы
 async function showSystemStats() {
     const statsInfo = document.getElementById('statsInfo');
     if (!statsInfo) return;
@@ -164,10 +173,14 @@ async function showSystemStats() {
 
     try {
         const response = await fetch(`${API_BASE}/health`, {
-            headers: headers
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
@@ -177,14 +190,12 @@ async function showSystemStats() {
         html += `<p>Статус: ${data.status}</p>`;
         html += `<p>Версия: ${data.version}</p>`;
 
-        // Отображаем фичи
         html += '<h4>Функции:</h4><ul>';
         for (const [key, value] of Object.entries(data.features)) {
             html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
         }
         html += '</ul>';
 
-        // Директории
         html += '<h4>Директории:</h4><ul>';
         for (const [key, value] of Object.entries(data.directories)) {
             html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
@@ -194,64 +205,68 @@ async function showSystemStats() {
         statsInfo.innerHTML = html;
 
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('Ошибка загрузки статуса:', error);
         statsInfo.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
     }
 }
 
-// Показать детальную статистику
 async function showDetailedStats() {
     const statsInfo = document.getElementById('statsInfo');
     if (!statsInfo) return;
 
     try {
         const response = await fetch(`${API_BASE}/stats`, {
-            headers: headers
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Здесь отобразите детальную статистику
-        // Например, добавьте JSON-вьюер или парсите данные
-
         statsInfo.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
     } catch (error) {
-        console.error('Ошибка:', error);
-        alert(`❌ Ошибка получения детальной статистики: ${error.message}`);
+        console.error('Ошибка детальной статистики:', error);
+        alert(`❌ Ошибка: ${error.message}`);
     }
 }
 
-// Проверка статистики очистки
+// ==================== СТАТИСТИКА ОЧИСТКИ ====================
+
 async function getCleanupStats() {
     const cleanupStats = document.getElementById('cleanupStats');
     if (!cleanupStats) return;
 
     try {
         const response = await fetch(`${API_BASE}/cleanup/stats`, {
-            headers: headers
+            credentials: 'include'
         });
 
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             throw new Error(`Ошибка: ${response.status}`);
         }
 
         const data = await response.json();
-
-        // Отобразите данные
         cleanupStats.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
 
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('Ошибка статистики очистки:', error);
         cleanupStats.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
     }
 }
 
-// Очистка всех файлов
+// ==================== ПРИНУДИТЕЛЬНАЯ ОЧИСТКА ВСЕХ ФАЙЛОВ ====================
+
 async function purgeAllFiles() {
     if (!confirm('⚠️ ВНИМАНИЕ!\n\nУдалить ВСЕ зашифрованные файлы?\nНЕОБРАТИМО!\n\nПродолжить?')) return;
 
@@ -261,26 +276,18 @@ async function purgeAllFiles() {
         return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-        alert('❌ Нет токена авторизации. Залогиньтесь заново.');
-        return;
-    }
-
-    console.log('Запуск purgeAllFiles. Token:', token.substring(0, 20) + '...');
-
     try {
         const response = await fetch(`${API_BASE}/cleanup/force`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
         });
 
-        console.log('Ответ сервера:', response.status, response.statusText);
-
         if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.location.href = '/';
+                return;
+            }
             let errData;
             try {
                 errData = await response.json();
@@ -292,10 +299,11 @@ async function purgeAllFiles() {
 
         const result = await response.json();
         alert(`✅ Удалено:\n- временных: ${result.deleted.decrypted}\n- зашифрованных: ${result.deleted.encrypted}`);
-        if (result.errors.length > 0) {
+        if (result.errors?.length > 0) {
             alert(`Ошибок: ${result.errors.join('\n')}`);
         }
         loadFiles();
+
     } catch (error) {
         console.error('Purge error:', error);
         alert(`❌ Ошибка: ${error.message}`);
