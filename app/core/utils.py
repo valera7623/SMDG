@@ -1,8 +1,10 @@
 # app/core/utils.py
 import os
 import re
+import asyncio
 import hashlib
 from pathlib import Path
+from typing import Union
 import unicodedata
 import uuid
 
@@ -61,26 +63,39 @@ def sanitize_filename(filename: str, max_length: int = 200) -> str:
 
     return filename
 
-def calculate_hash(file_path: Path, algorithm: str = "sha256", chunk_size: int = 4096) -> str:
-    
+
+
+def calculate_hash(file_path: Union[str, Path], algorithm: str = "sha256", chunk_size: int = 8192) -> str:
+    """Синхронная версия — для CLI, тестов, где async не нужен"""
+    file_path = Path(file_path)
     if not file_path.exists():
         return f"hash_error: file_not_found ({file_path})"
     
     try:
         hasher = hashlib.new(algorithm)
-        
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(chunk_size), b""):
                 hasher.update(chunk)
-        
         return hasher.hexdigest()
-        
     except PermissionError:
         return f"hash_error: permission_denied ({file_path})"
     except OSError as e:
         return f"hash_error: os_error ({str(e)})"
     except Exception as e:
         return f"hash_error: unknown ({str(e)})"
+
+
+async def calculate_hash_async(file_path: Path, algorithm: str = "sha256") -> str:
+    loop = asyncio.get_running_loop()
+
+    def compute_hash():
+        hasher = hashlib.new(algorithm)
+        with open(file_path, "rb") as f:
+            while chunk := f.read(32768):
+                hasher.update(chunk)
+        return hasher.hexdigest()
+
+    return await loop.run_in_executor(None, compute_hash)
 
 
 def check_path_exists(path: Path) -> bool:

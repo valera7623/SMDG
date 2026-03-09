@@ -17,7 +17,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.core.rate_limiter import limiter  
 from app.crypto.crypto import crypto_manager
-from app.core.utils import sanitize_filename, calculate_hash
+from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.config import settings
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
@@ -273,7 +273,7 @@ async def upload_file(
         
 
         # Хэш оригинального файла
-        original_hash = calculate_hash(temp_upload_path)
+        original_hash = await calculate_hash_async(temp_upload_path)
 
         # Получаем user_id из БД по current_user.sub (если пользователь авторизован)
         user_id = None

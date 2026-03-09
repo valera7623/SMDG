@@ -57,6 +57,7 @@ asgi-lifespan = "2.1.0"
 aiosqlite = "0.22.1"
 nest-asyncio = "1.6.0"
 pyotp = "^2.9.0"
+aiofiles = "^25.1.0"
 
 [tool.poetry.group.dev.dependencies]
 # если захочешь добавить dev-only инструменты позже

@@ -1,11 +1,12 @@
 # app/api/delete_user.py
+import asyncio
 from fastapi import APIRouter, HTTPException, Form, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core import ENCRYPTED_DIR, audit_logger
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
-from app.core.utils import sanitize_filename, calculate_hash
+from app.core.utils import calculate_hash_async, sanitize_filename
 from app.models.file import File
 from pathlib import Path
 import os
@@ -74,13 +75,36 @@ async def delete_user_file(
     else:
         print(f"   ⚠️  Запись в БД не найдена для {safe_filename}")
     
-    # Информация о файле перед удалением
+    # Информация о файле перед удалением (асинхронно)
     file_info = {
         "filename": safe_filename,
-        "size": file_path.stat().st_size,
-        "hash": calculate_hash(file_path),
-        "path": str(file_path)
+        "path": str(file_path),
+        "size": "unknown",
+        "hash": "unknown"
     }
+
+    loop = asyncio.get_running_loop()
+
+    try:
+        # stat() асинхронно
+        stat_result = await loop.run_in_executor(None, file_path.stat)
+        file_info["size"] = stat_result.st_size
+
+        # Хэш асинхронно (самый тяжёлый вызов)
+        file_info["hash"] = await calculate_hash_async(file_path)
+
+    except FileNotFoundError:
+        file_info["size"] = 0
+        file_info["hash"] = "file_not_found_before_delete"
+    except PermissionError:
+        file_info["size"] = "permission_denied"
+        file_info["hash"] = "permission_denied"
+    except Exception as e:
+        file_info["size"] = f"error: {str(e)}"
+        file_info["hash"] = f"error: {str(e)}"
+
+    print(f" Размер файла: {file_info['size']} байт")
+    print(f" Хеш файла: {file_info['hash'][:20]}...")
     
     print(f"   Размер файла: {file_info['size']} байт")
     

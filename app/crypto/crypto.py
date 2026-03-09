@@ -10,7 +10,7 @@ import shutil
 import tempfile
 from datetime import datetime
 
-from app.core.utils import calculate_hash
+from app.core.utils import calculate_hash_async
 from app.core.constants import ENCRYPTED_DIR, PRIVATE_KEY_PATH
 from app.core import audit_logger
 
@@ -111,7 +111,7 @@ class CryptoManager:
 
         print(f"   ✅ Файл успешно зашифрован → {output_path.name}")
 
-        return calculate_hash(output_path)
+        return await calculate_hash_async(output_path)
 
     async def decrypt(self, encrypted_path: Path, private_key_path: Path, output_path: Path) -> str:
         """Расшифровка файла с использованием приватного ключа"""
@@ -147,7 +147,7 @@ class CryptoManager:
         print(f"   ✅ Файл успешно расшифрован → {output_path.name}")
 
         # Возвращаем хэш расшифрованного файла (если нужно)
-        return calculate_hash(output_path)
+        return await calculate_hash_async(output_path)
 
     @staticmethod
     async def generate_new_keypair(new_private_path: Path) -> Tuple[Path, str]:
