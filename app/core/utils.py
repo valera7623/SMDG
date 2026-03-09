@@ -3,18 +3,26 @@ import os
 import re
 import hashlib
 from pathlib import Path
+import unicodedata
+import uuid
 
 
-def sanitize_filename(filename: str) -> str:
+def sanitize_filename(filename: str, max_length: int = 200) -> str:
     """
-    Безопасная очистка имени файла с транслитерацией русских букв.
-    Возвращает безопасное имя без пути, опасных символов и с латинскими буквами.
+    Максимально безопасная очистка имени файла:
+    - транслитерация
+    - удаление опасных символов
+    - ограничение длины
+    - замена на safe если пусто
     """
-    # Берем только имя файла (без пути)
+    if not filename or not filename.strip():
+        return "unnamed_file"
+
+    # Берём только имя (без пути)
     filename = Path(filename).name.strip()
-    
-    if not filename:
-        return "unknown_file"
+
+    # Нормализация Unicode (NFKD → разбивает лигатуры)
+    filename = unicodedata.normalize("NFKD", filename)
     
     # Словарь транслитерации русских букв в латиницу
     translit_map = {
@@ -30,30 +38,27 @@ def sanitize_filename(filename: str) -> str:
         'Ъ': '', 'Ы': 'Y', 'Ь': '', 'Э': 'E', 'Ю': 'Yu', 'Я': 'Ya'
     }
     
-    # Транслитерируем
-    sanitized = []
-    for char in filename:
-        sanitized.append(translit_map.get(char, char))
-    
-    filename = ''.join(sanitized)
-    
-    # Удаляем опасные символы
-    filename = re.sub(r'[<>:"/\\|?*\x00-\x1F]', '_', filename)
-    
-    # Заменяем пробелы и множественные подчёркивания на одно
-    filename = re.sub(r'\s+', '_', filename)
+    filename = ''.join(translit_map.get(c.lower(), c) for c in filename)
+
+    # Оставляем только разрешённые символы
+    filename = re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
+
+    # Убираем множественные подчёркивания и точки
     filename = re.sub(r'_+', '_', filename)
-    
-    # Обрезаем слишком длинное имя (оставляем место для расширения)
-    name, ext = os.path.splitext(filename)
-    if len(name) > 200:
-        name = name[:200]
-    filename = name + ext
-    
-    # Если после всего осталось пустое имя — возвращаем безопасное
-    if not filename.strip('_'):
-        filename = "file" + ext
-    
+    filename = re.sub(r'\.+', '.', filename)
+    filename = filename.strip('_.- ')
+
+    # Ограничение длины (оставляем место для расширения и уникального суффикса)
+    if len(filename) > max_length:
+        name, ext = filename.rsplit('.', 1) if '.' in filename else (filename, '')
+        ext = f".{ext}" if ext else ''
+        trunc_len = max_length - len(ext) - 10  # запас на _uuid
+        filename = name[:trunc_len] + ext
+
+    # Финальная проверка
+    if not filename or filename == '.' or filename == '..':
+        filename = f"file_{uuid.uuid4().hex[:8]}"
+
     return filename
 
 def calculate_hash(file_path: Path, algorithm: str = "sha256", chunk_size: int = 4096) -> str:

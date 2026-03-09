@@ -1,11 +1,12 @@
 # app/api/upload.py
 from typing import Optional
-from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
+from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request, status
 from app.models.user import User
 import magic
 import uuid
 import clamd
 import asyncio
+import json
 from app.core import (
     UPLOAD_DIR,
     ENCRYPTED_DIR,
@@ -25,6 +26,7 @@ from app.models.file_link import FileLink
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 router = APIRouter()
 
@@ -39,6 +41,88 @@ ALLOWED_MIME_PREFIXES = [
     "application/json",                                          # JSON
     "application/xml"                                            # XML
 ]
+
+# Новые константы (можно вынести в config.py или constants.py)
+ALLOWED_EXTENSIONS = {
+    '.pdf', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif',
+    '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.rtf',
+    '.dcm', '.dicom'
+}
+
+DANGEROUS_EXTENSIONS = {
+    '.exe', '.bat', '.cmd', '.scr', '.js', '.vbs', '.ps1', '.dll',
+    '.jar', '.apk', '.msi', '.sh', '.php', '.py', '.pyc', '.pif'
+}
+
+# ────────────────────────────────────────────────────────────────
+# Функция валидации (лучше вынести в utils.py, но для простоты пока здесь)
+# ────────────────────────────────────────────────────────────────
+def validate_file_safety(
+    original_filename: str,
+    content_preview: bytes,          # первые 4-8 КБ
+    full_size: int
+) -> tuple[str, str]:
+    """
+    Возвращает (mime_type, safe_extension) или бросает 400
+    """
+    path = Path(original_filename)
+    orig_ext = path.suffix.lower()
+
+    # 1. Запрещённые расширения
+    if orig_ext in DANGEROUS_EXTENSIONS:
+        raise HTTPException(400, f"Запрещённое расширение: {orig_ext}")
+
+    # 2. Разрешённые расширения
+    if orig_ext and orig_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            400,
+            f"Недопустимое расширение: {orig_ext}. "
+            f"Разрешены: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+        )
+
+    # 3. Проверка через libmagic (только preview — экономим память)
+    mime_detector = magic.Magic(mime=True)
+    detected_mime = mime_detector.from_buffer(content_preview)
+
+    # 4. Специальная проверка DICOM
+    is_dicom_by_header = (
+        len(content_preview) >= 132 and
+        content_preview[128:132] == b'DICM'
+    )
+
+    if orig_ext in {'.dcm', '.dicom'}:
+        if not is_dicom_by_header:
+            raise HTTPException(
+                400,
+                "Файл с расширением .dcm/.dicom не является валидным DICOM (нет сигнатуры DICM на 128 байтах)"
+            )
+        detected_mime = "application/dicom"
+
+    # 5. Если octet-stream → пытаемся угадать по расширению или DICOM
+    if detected_mime == "application/octet-stream":
+        if is_dicom_by_header:
+            detected_mime = "application/dicom"
+        elif orig_ext == '.pdf':
+            detected_mime = "application/pdf"
+        elif orig_ext in {'.jpg', '.jpeg'}:
+            detected_mime = "image/jpeg"
+        # можно добавить ещё несколько популярных
+
+    # 6. Финальная проверка — mime должен быть в разрешённых типах
+    allowed = any(
+        detected_mime == allowed_type or detected_mime.startswith(allowed_type)
+        for allowed_type in settings.ALLOWED_MIME_TYPES
+    )
+
+    if not allowed:
+        raise HTTPException(
+            400,
+            f"Недопустимый тип содержимого: {detected_mime} "
+            f"(обнаружено по содержимому, не соответствует разрешённым типам)"
+        )
+
+    # Возвращаем mime и оригинальное расширение (оно уже проверено)
+    return detected_mime, orig_ext
 
 @router.post("/upload")
 @limiter.limit("10/minute")
@@ -57,6 +141,17 @@ async def upload_file(
     try:
         original_filename = file.filename
         safe_filename = sanitize_filename(original_filename)
+        
+        # Читаем preview для валидации (не весь файл!)
+        preview = await file.read(8192)       
+        await file.seek(0)                       
+
+        # Валидация типа и содержимого
+        mime_type, orig_ext = validate_file_safety(
+            original_filename,
+            preview,
+            0  
+        )
 
         # 1. Чтение файла
         file_content = await file.read()
@@ -69,15 +164,29 @@ async def upload_file(
         mime = magic.Magic(mime=True)
         mime_type = mime.from_buffer(file_content)
 
-        if mime_type not in settings.ALLOWED_MIME_TYPES:
-            if mime_type.startswith("application/octet-stream"):
-                # Для DICOM иногда mime = octet-stream → проверяем заголовок
-                if len(file_content) > 132 and file_content[128:132] == settings.DICOM_MAGIC:
+        # Проверяем, совпадает ли обнаруженный mime с одним из разрешённых
+        allowed = any(
+            mime_type == allowed_type or mime_type.startswith(allowed_type.rstrip('*'))
+            for allowed_type in settings.ALLOWED_MIME_TYPES
+        )
+
+        if not allowed:
+        # Особый случай: octet-stream → пытаемся спасти DICOM или изображения
+            if mime_type == "application/octet-stream":
+                if len(file_content) >= 132 and file_content[128:132] == b'DICM':
                     mime_type = "application/dicom"
-                else:
-                    raise HTTPException(400, f"Недопустимый тип файла: {mime_type}")
-            else:
-                raise HTTPException(400, f"Недопустимый тип файла: {mime_type}")
+                    allowed = True
+                # Можно добавить fallback по расширению для jpg/png и т.п. (опционально)
+                elif file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.tiff')):
+                    mime_type = f"image/{file.filename.split('.')[-1].lower() if '.' in file.filename else 'jpeg'}"
+                    allowed = mime_type in settings.ALLOWED_MIME_TYPES
+
+        if not allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недопустимый тип содержимого файла: {mime_type} "
+                   f"(обнаружено по содержимому, не соответствует разрешённым типам)"
+            )
 
         # 4. Сохранение во временный файл
         temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
@@ -85,7 +194,7 @@ async def upload_file(
             buffer.write(file_content)
 
        
-        # 5. Проверка на вирусы через ClamAV
+        
         # 5. Проверка на вирусы через ClamAV
         virus_detected = False
         virus_name = None
