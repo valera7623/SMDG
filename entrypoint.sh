@@ -15,6 +15,19 @@ else
     echo "❌ /run/secrets/jwt_secret_key не найден!" && exit 1
 fi
 
+
+
+if [ -z "$JWT_SECRET_KEY" ] || [ ${#JWT_SECRET_KEY} -lt 48 ]; then
+    echo "❌ JWT_SECRET_KEY отсутствует или слишком короткий (минимум 48 символов)!"
+    exit 1
+fi
+
+
+if echo "$JWT_SECRET_KEY" | grep -q "change-me"; then
+    echo "❌ JWT_SECRET_KEY выглядит как дефолтный плейсхолдер! Установите настоящий секрет."
+    exit 1
+fi
+
 if [ -f /run/secrets/admin_password ]; then
     export ADMIN_PASSWORD=$(cat /run/secrets/admin_password | tr -d '\n\r')
     echo "✅ ADMIN_PASSWORD прочитан"

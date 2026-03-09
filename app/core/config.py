@@ -1,4 +1,5 @@
 # app/core/config.py
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -7,27 +8,24 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore"
+        extra="ignore",
     )
 
-    # Существующие поля
-    jwt_secret_key: str = "change-me-to-very-strong-secret-256-bits-minimum!!!"
+    # Обязательные поля — без дефолтов!
+    database_url: str
+    redis_url: str
+    jwt_secret_key: str
+
+    # Опциональные с разумными дефолтами (не секретные)
     jwt_access_expires_minutes: int = 60
     jwt_algorithm: str = "HS256"
     debug: bool = False
-    dev_mode: bool = False
-    jwt_secret_key: str
-    admin_password: str | None = None         
-    database_url: str
-
-    # ← Добавляем это!
-    database_url: str = "postgresql+asyncpg://smdg_user:password@localhost:5432/smdg"
-    redis_url: str = "redis://localhost:6379/0"
+    dev_mode: bool = False 
     
     # ClamAV
-    CLAMAV_HOST: str = "clamav"  # имя сервиса в docker-compose
+    CLAMAV_HOST: str = "clamav"  
     CLAMAV_PORT: int = 3310
-    CLAMAV_TIMEOUT: int = 60  # секунд на сканирование
+    CLAMAV_TIMEOUT: int = 60  
 
     # Максимальный размер файла
     MAX_UPLOAD_SIZE_MB: int = 50
