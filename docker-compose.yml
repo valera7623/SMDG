@@ -64,8 +64,11 @@ services:
       - ./static:/app/static
       - ./audit_logs:/app/audit_logs
       - ./app:/app/app:ro
+      - smdg_keys:/app/keys
+      - smdg_backups:/app/backups
     networks:
       - backend
+    restart: unless-stopped
 
 
 
@@ -131,6 +134,12 @@ secrets:
 volumes:
   pgdata:
   clamav_data:
+  smdg_encrypted:
+  smdg_uploads:
+  smdg_decrypted:
+  smdg_keys:
+  smdg_audit_logs:
+  smdg_backups:
 networks:
   backend:
 

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from typing import Annotated, Optional
 from app.core.auth import get_current_user, get_current_admin, get_current_doctor
 from app.core.auth_utils import create_access_token, TokenData
-from app.core.auth import SECRET_KEY, ALGORITHM
+
 from app.core.database import get_db
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash
@@ -173,29 +173,7 @@ async def change_password(
     }
     
     
-# ──── НОВАЯ ЗАВИСИМОСТЬ ДЛЯ АВТОРИЗАЦИИ ЧЕРЕЗ COOKIE ────
-async def get_current_user_from_cookie(
-    access_token: Annotated[str | None, Cookie(alias="access_token")] = None
-) -> TokenData:
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Не авторизован (токен отсутствует)",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    try:
-        payload = jwt_decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        role: str = payload.get("role", "user")
-        if username is None:
-            raise HTTPException(status_code=401, detail="Некорректный токен")
-        return TokenData(sub=username, role=role)
-    except PyJWTError as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Недействительный токен: {str(e)}"
-        )
+
 
 
 @router.post("/login")
