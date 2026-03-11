@@ -38,6 +38,8 @@ class LoginRequest(BaseModel):
     password: str = Field(..., description="Пароль")
     otp_code: Optional[str] = Field(None, min_length=6, max_length=6, description="Код 2FA (опционально, если включён)")
 
+class Verify2FARequest(BaseModel):
+    code: str = Field(..., min_length=6, max_length=6)
 
 def generate_otp_secret():
     """Генерация нового OTP секрета"""
@@ -303,38 +305,30 @@ async def logout(response: Response):
 
 
 @router.post("/setup-2fa", response_model=dict)
-@limiter.limit(
-    "3/minute",
-    key_func=get_remote_address,
-    error_message="Слишком много запросов на настройку 2FA"
-)
+@limiter.limit("3/minute", key_func=get_remote_address)
 async def setup_2fa(
     request: Request,
-    current_user: Annotated[TokenData, Depends(get_current_user)] = None,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Эндпоинт для первоначальной настройки 2FA"""
     result = await db.execute(
         select(User).where(User.username == current_user.sub)
     )
     user = result.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
+        raise HTTPException(404, "Пользователь не найден")
 
-    # Генерируем новый OTP секрет
     new_secret = generate_otp_secret()
-    
-    # Обновляем пользователя
+
     await db.execute(
         update(User)
         .where(User.id == user.id)
         .values(otp_secret=new_secret)
     )
     await db.commit()
+
+    otp_url = get_otp_url(current_user.sub, new_secret)
 
     audit_logger.log_operation(
         action="setup_2fa",
@@ -346,11 +340,55 @@ async def setup_2fa(
     )
 
     return {
-        "otp_secret": new_secret,
-        "otp_url": get_otp_url(current_user.sub, new_secret),
-        "message": "Отсканируйте QR-код в приложении аутентификатора",
-        "instructions": "Сохраните секрет в безопасном месте!"
+        "message": "Отсканируйте QR-код в приложении аутентификатора (Google Authenticator, Authy и т.п.)",
+        "otp_url": otp_url,                  # ← только это отдаём
+        "instructions": [
+            "1. Откройте приложение-аутентификатор",
+            "2. Добавьте новую учётную запись",
+            "3. Отсканируйте QR-код или введите строку вручную",
+            "4. После сканирования введите сгенерированный код для подтверждения"
+        ],
+        "warning": "Сохраните этот QR или строку в безопасном месте. После подтверждения секрет больше не будет показан."
     }
+    
+
+
+@router.post("/verify-2fa-setup")
+@limiter.limit("5/minute", key_func=get_remote_address)
+async def verify_2fa_setup(
+    request: Verify2FARequest,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user or not user.otp_secret:
+        raise HTTPException(400, "2FA ещё не настроена")
+
+    if verify_otp_code(user.otp_secret, request.code):
+        # Можно пометить, что 2FA успешно подтверждён (добавить флаг is_2fa_verified: bool = True)
+        audit_logger.log_operation(
+            action="verify_2fa_success",
+            filename="",
+            user=current_user.sub,
+            reason="Первый код 2FA успешно проверен",
+            success=True
+        )
+        return {"message": "2FA успешно настроена и проверена!"}
+    else:
+        audit_logger.log_operation(
+            action="verify_2fa_failed",
+            filename="",
+            user=current_user.sub,
+            reason="Неверный код при настройке 2FA",
+            success=False
+        )
+        raise HTTPException(400, "Неверный код. Попробуйте снова.")
+    
+
 
 
 @router.post("/disable-2fa", response_model=dict)
@@ -428,11 +466,11 @@ class RegisterRequest(BaseModel):
 
 
 @router.post("/register", response_model=dict)
-@limiter.limit(
-    "3/hour",
-    key_func=get_remote_address,
-    error_message="Слишком много попыток регистрации. Попробуйте позже."
-)
+#@limiter.limit(
+    #"3/hour",
+    #key_func=get_remote_address,
+    #error_message="Слишком много попыток регистрации. Попробуйте позже."
+#)
 async def register(
     request: Request,
     user_data: RegisterRequest = Body(...),
@@ -468,9 +506,9 @@ async def register(
         username=user_data.username,
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
-        role="user",  # По умолчанию обычный пользователь
+        role="user",  
         is_active=True,
-        otp_secret=otp_secret  # Сохраняем OTP секрет для возможной настройки 2FA
+        otp_secret=None
     )
     
     db.add(new_user)
@@ -487,7 +525,7 @@ async def register(
         metadata={
             "email": new_user.email,
             "role": new_user.role,
-            "2fa_available": True
+            "2fa_enebled": False
         }
     )
     
@@ -499,6 +537,6 @@ async def register(
         "role": new_user.role,
         "otp_secret": otp_secret,  # Для настройки 2FA
         "otp_url": get_otp_url(new_user.username, otp_secret),
-        "2fa_available": True,
+        "2fa_enabled": False,
         "note": "Рекомендуется настроить двухфакторную аутентификацию"
     }

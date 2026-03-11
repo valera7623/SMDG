@@ -1,5 +1,7 @@
 # app/main.py
-from fastapi import FastAPI, Request, logger
+from typing import Annotated
+
+from fastapi import Depends, FastAPI, Request, logger
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from fastapi.responses import JSONResponse
@@ -12,6 +14,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.api import upload, download, list, delete, cleanup, stats
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
+from app.core.auth import get_current_user
+from app.core.auth_utils import TokenData
 from app.core.database import engine, AsyncSessionLocal
 from app.models.user import User
 from app.core.security import get_password_hash, verify_password
@@ -312,3 +316,11 @@ async def add_rate_limit_headers(request: Request, call_next):
     response = await call_next(request)
     # Можно добавить заголовки X-RateLimit-*
     return response
+
+@app.get("/api/whoami")
+async def whoami(current_user: Annotated[TokenData, Depends(get_current_user)]):
+    return {
+        "sub": current_user.sub,
+        "role": current_user.role,
+        "token_valid": True
+    }

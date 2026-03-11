@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <script src="/static/js/main.js" defer></script>
+    <script src="/static/js/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -152,12 +153,8 @@
         </div>
 
         <!-- Модальное окно для 2FA настройки -->
-        <div id="otpModal" class="modal" style="display:none;">
-            <div class="modal-content">
-                <span class="close" onclick="closeOtpModal()">&times;</span>
-                <h2>🔐 Настройка двухфакторной аутентификации</h2>
-                <div id="otpSetupContent"></div>
-            </div>
+        <div id="twoFaModal" class="modal" style="display:none;">
+            
         </div>
     </div>
 </body>

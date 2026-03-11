@@ -66,7 +66,8 @@ SMDG
 │  │  └─ index.html                                               
 │  └─ js 
 |     ├─ admin-users.js                                                    
-│     ├─ admin.js                                                 
+│     ├─ admin.js 
+|     ├─ qrcode.min.js                                                
 │     └─ main.js
 |                                                                                                          
 ├─ tests
