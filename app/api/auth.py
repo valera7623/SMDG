@@ -356,20 +356,28 @@ async def setup_2fa(
 @router.post("/verify-2fa-setup")
 @limiter.limit("5/minute", key_func=get_remote_address)
 async def verify_2fa_setup(
-    request: Verify2FARequest,
-    current_user: Annotated[TokenData, Depends(get_current_user)],
-    db: AsyncSession = Depends(get_db)
+    request: Request,
+    current_user: Annotated[TokenData, Depends(get_current_user)],  # обязательный, первый
+    req: Verify2FARequest = Body(...),                              # дефолт
+    db: AsyncSession = Depends(get_db)                              # дефолт
 ):
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub)
-    )
-    user = result.scalar_one_or_none()
+    print(f"[DEBUG] verify-2fa-setup: user={current_user.sub}, code={req.code}")
 
-    if not user or not user.otp_secret:
+    user = (await db.execute(
+        select(User).where(User.username == current_user.sub)
+    )).scalar_one_or_none()
+
+    if not user:
+        print("[DEBUG] Пользователь не найден")
+        raise HTTPException(404, "Пользователь не найден")
+
+    if not user.otp_secret:
+        print("[DEBUG] 2FA не настроена")
         raise HTTPException(400, "2FA ещё не настроена")
 
-    if verify_otp_code(user.otp_secret, request.code):
-        # Можно пометить, что 2FA успешно подтверждён (добавить флаг is_2fa_verified: bool = True)
+    print("[DEBUG] Проверяем код...")
+    if verify_otp_code(user.otp_secret, req.code):
+        print("[DEBUG] Код верный")
         audit_logger.log_operation(
             action="verify_2fa_success",
             filename="",
@@ -379,6 +387,7 @@ async def verify_2fa_setup(
         )
         return {"message": "2FA успешно настроена и проверена!"}
     else:
+        print("[DEBUG] Код неверный")
         audit_logger.log_operation(
             action="verify_2fa_failed",
             filename="",

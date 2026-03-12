@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMDG - Secure Medical Data Gateway</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/static/js/favicon.ico" type="image/x-icon">
     <script src="/static/js/main.js" defer></script>
     <script src="/static/js/qrcode.min.js"></script>
 </head>
@@ -105,6 +105,10 @@
                 </div>
                 <div class="user-info">
                     <span id="currentUsername"></span>
+                    <button id="setup2faDashboardBtn" class="btn btn-outline-primary">
+                        Настроить 2FA
+                    </button>
+
                     <button onclick="logout()" class="btn-danger" style="height: fit-content;">
                         🚪 Выйти
                     </button>
@@ -154,7 +158,7 @@
 
         <!-- Модальное окно для 2FA настройки -->
         <div id="twoFaModal" class="modal" style="display:none;">
-            
+
         </div>
     </div>
 </body>

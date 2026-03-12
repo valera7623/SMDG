@@ -96,7 +96,9 @@ async function loadUsers(resetPage = false) {
         const totalCount = response.headers.get('X-Total-Count') || users.length;
         totalUsers = parseInt(totalCount);
 
+        // ← Вот здесь была проблема — добавляем рендер таблицы
         renderUsersTable(users);
+
         renderPagination();
 
     } catch (error) {
@@ -301,16 +303,54 @@ function updateSelectedCount() {
     }
 }
 
-// ==================== Массовые действия ====================
+// ==================== Выделение ====================
 
-document.getElementById('bulkActionSelect')?.addEventListener('change', function () {
-    const roleSelect = document.getElementById('bulkRoleSelect');
-    if (this.value === 'change_role') {
-        roleSelect.style.display = 'inline-block';
-    } else {
-        roleSelect.style.display = 'none';
+function updateBulkControls() {
+    const bulkActions = document.getElementById('bulkActions');
+    if (!bulkActions) return;
+
+    bulkActions.style.display = selectedUsers.size > 0 ? 'flex' : 'none';
+
+    const selectedCount = document.getElementById('selectedCount');
+    if (selectedCount) {
+        selectedCount.textContent = `Выбрано: ${selectedUsers.size}`;
     }
-});
+
+    const selectAll = document.getElementById('selectAllCheckbox');
+    if (selectAll) {
+        const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+        const checked = document.querySelectorAll('.user-checkbox:checked').length;
+        selectAll.checked = checked === checkboxes.length && checkboxes.length > 0;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
+    }
+}
+
+function toggleUserSelection(id, checkbox) {
+    if (checkbox.checked) {
+        selectedUsers.add(id);
+    } else {
+        selectedUsers.delete(id);
+    }
+    updateBulkControls();
+}
+
+function toggleAllSelection(masterCheckbox) {
+    const checkboxes = document.querySelectorAll('.user-checkbox:not(:disabled)');
+    checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+        toggleUserSelection(parseInt(cb.value), cb);
+    });
+}
+
+function clearSelection() {
+    selectedUsers.clear();
+    document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateBulkControls();
+    console.log('[DEBUG] Выделение очищено');
+}
+
+// ==================== Массовые действия ====================
 
 async function executeBulkAction() {
     const action = document.getElementById('bulkActionSelect').value;
@@ -334,6 +374,10 @@ async function executeBulkAction() {
         confirmMessage = `Деактивировать ${selectedUsers.size} пользователей?`;
     } else if (action === 'change_role') {
         role = document.getElementById('bulkRoleSelect').value;
+        if (!role) {
+            showNotification('Выберите новую роль', 'warning');
+            return;
+        }
         confirmMessage = `Изменить роль ${selectedUsers.size} пользователей на "${getRoleName(role)}"?`;
     } else if (action === 'delete') {
         confirmMessage = `⚠️ УДАЛИТЬ ${selectedUsers.size} пользователей? Это действие необратимо!`;
@@ -347,9 +391,9 @@ async function executeBulkAction() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    user_ids: Array.from(selectedUsers),
                     action: action,
-                    role: role
+                    user_ids: Array.from(selectedUsers),  
+                    ...(role ? { role } : {})
                 }),
                 credentials: 'include'
             });
@@ -359,19 +403,25 @@ async function executeBulkAction() {
                     window.location.href = '/';
                     return;
                 }
-                const error = await response.json();
-                throw new Error(error.detail || 'Ошибка выполнения операции');
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.detail || `HTTP ${response.status}`);
             }
 
             const result = await response.json();
-            showNotification(result.message, 'success');
 
+            showNotification(
+                `${result.message || 'Действие выполнено'} — изменено ${result.affected || selectedUsers.size} пользователей`,
+                'success'
+            );
+
+            // Очищаем выделение и обновляем данные
             clearSelection();
             await loadUsers();
             await loadUserStats();
 
         } catch (error) {
-            showNotification(`Ошибка: ${error.message}`, 'error');
+            console.error('[ERROR] Bulk action failed:', error);
+            showNotification(`Ошибка массового действия: ${error.message}`, 'error');
         }
     });
 }

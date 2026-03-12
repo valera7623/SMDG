@@ -404,6 +404,27 @@ input[type="text"] {
     transform: scale(1.02);
 }
 
+.btn-outline-primary {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  color: #667eea;
+  background: transparent;
+  border: 1px solid #667eea;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-outline-primary:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-outline-primary:active {
+  transform: translateY(0);
+}
+
 /* File list */
 .file-list {
     margin-top: 20px;

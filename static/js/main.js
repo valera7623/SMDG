@@ -63,12 +63,55 @@ function switchAuthTab(tab) {
     }
 }
 
+function add2FAButton() {
+    console.log('[DEBUG] add2FAButton вызвана');
+
+    const userInfo = document.querySelector('.user-info') ||
+        document.getElementById('userInfo') ||
+        document.querySelector('.header') ||
+        document.querySelector('[class*="user"]');
+
+    if (!userInfo) {
+        console.warn('[DEBUG] Контейнер для кнопки НЕ НАЙДЕН');
+        return;
+    }
+
+    console.log('[DEBUG] Контейнер найден:', userInfo);
+
+    // Удаляем старую кнопку, если есть (чтобы не дублировать)
+    const oldBtn = userInfo.querySelector('#setup2faDashboardBtn');
+    if (oldBtn) oldBtn.remove();
+
+    const btn = document.createElement('button');
+    btn.id = 'setup2faDashboardBtn';
+    btn.textContent = 'Настроить 2FA';
+    btn.className = 'btn btn-outline-primary ms-2';
+    btn.style.marginLeft = '10px';
+    btn.style.padding = '8px 16px';
+
+    // Привязываем клик с отладкой
+    btn.onclick = function () {
+        console.log('[DEBUG] Клик по кнопке 2FA — вызываем handleSetup2FA');
+        handleSetup2FA();
+    };
+
+    // Вставляем перед кнопкой "Выйти"
+    const logoutBtn = userInfo.querySelector('.btn-danger, [onclick*="logout"]');
+    if (logoutBtn) {
+        userInfo.insertBefore(btn, logoutBtn);
+    } else {
+        userInfo.appendChild(btn);
+    }
+
+    console.log('[DEBUG] Кнопка добавлена и обработчик привязан');
+}
+
 async function handleLogin(event) {
     event.preventDefault();
 
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const otpCode = document.getElementById('loginOtpCode').value;
+    const otpCode = document.getElementById('loginOtpCode')?.value || '';
 
     if (!username || !password) {
         showNotification('Введите логин и пароль', 'error');
@@ -91,7 +134,7 @@ async function handleLogin(event) {
 
             if (response.status === 400 && err.detail === 'Требуется код 2FA') {
                 document.getElementById('loginOtpGroup').style.display = 'block';
-                showNotification('Введите код двухфакторной аутентификации', 'info');
+                showNotification('Введите код 2FA', 'info');
                 return;
             }
 
@@ -108,9 +151,8 @@ async function handleLogin(event) {
 
         loadFileList();
 
-        if (data['2fa_enabled'] && data['2fa_setup_required']) {
-            showOtpSetup(data['otp_secret'], data['otp_url']);
-        }
+        // Добавляем кнопку 2FA в хедер/дашборд
+        add2FAButton();
 
     } catch (error) {
         showNotification(`Ошибка входа: ${error.message}`, 'error');
@@ -121,28 +163,29 @@ async function handleRegister(event) {
     event.preventDefault();
 
     const username = document.getElementById('registerUsername').value.trim();
-    const email   = document.getElementById('registerEmail').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('registerConfirmPassword').value;
     const agreeTerms = document.getElementById('registerAgreeTerms').checked;
 
+    // Валидация
     if (!username || !email || !password || !confirmPassword) {
         showNotification('Заполните все поля', 'error');
         return;
     }
 
     if (username.length < 3 || username.length > 50) {
-        showNotification('Логин должен быть от 3 до 50 символов', 'error');
+        showNotification('Логин от 3 до 50 символов', 'error');
         return;
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        showNotification('Логин может содержать только буквы, цифры и подчеркивание', 'error');
+        showNotification('Логин: только буквы, цифры, подчёркивание', 'error');
         return;
     }
 
     if (password.length < 8) {
-        showNotification('Пароль должен быть не менее 8 символов', 'error');
+        showNotification('Пароль минимум 8 символов', 'error');
         return;
     }
 
@@ -152,7 +195,7 @@ async function handleRegister(event) {
     }
 
     if (!agreeTerms) {
-        showNotification('Необходимо принять условия использования', 'error');
+        showNotification('Примите условия использования', 'error');
         return;
     }
 
@@ -171,16 +214,48 @@ async function handleRegister(event) {
 
         const data = await response.json();
 
-        showNotification('Регистрация успешна! Теперь вы можете войти.', 'success');
+        showNotification('Регистрация успешна! Теперь войдите.', 'success');
+
+        // Блок с рекомендацией 2FA
+        const successBlock = document.createElement('div');
+        successBlock.className = 'alert alert-success mt-3';
+        successBlock.innerHTML = `
+            <p>Аккаунт создан! Логин: <strong>${data.username}</strong></p>
+            <p>Для безопасности включите 2FA.</p>
+            
+        `;
+
+        // Создаём кнопку отдельно (чтобы сразу иметь ссылку)
+        const setupBtn = document.createElement('button');
+        setupBtn.className = 'btn btn-primary mt-2';
+        setupBtn.textContent = 'Настроить 2FA сейчас';
+
+        // Привязываем обработчик сразу
+        setupBtn.addEventListener('click', async () => {
+            try {
+                const checkResp = await fetch('/api/whoami', { credentials: 'include' });
+                if (!checkResp.ok) {
+                    showNotification('Сначала войдите в аккаунт', 'warning');
+                    switchAuthTab('login');
+                    return;
+                }
+                handleSetup2FA();
+            } catch {
+                showNotification('Сначала войдите в аккаунт', 'warning');
+                switchAuthTab('login');
+            }
+        });
+
+        successBlock.appendChild(setupBtn);
+
+        const registerForm = document.getElementById('registerForm');
+        registerForm.after(successBlock);
+
         switchAuthTab('login');
         document.getElementById('loginUsername').value = username;
 
-        if (data.otp_secret) {
-            showOtpSetup(data.otp_secret, data.otp_url);
-        }
-
     } catch (error) {
-        showNotification(`Ошибка регистрации: ${error.message}`, 'error');
+        showNotification(`Ошибка: ${error.message}`, 'error');
     }
 }
 
@@ -210,6 +285,137 @@ async function logout() {
         }
     } catch (e) {
         showNotification('Ошибка выхода: ' + e.message, 'error');
+    }
+}
+
+// ────────────────────────────────────────────────
+// 2FA модалка — глобальные переменные для элементов
+// ────────────────────────────────────────────────
+let twoFaModal = null;
+let twoFaMsg = null;
+let twoFaInst = null;
+let twoFaCode = null;
+let twoFaQr = null;
+
+// Запуск настройки 2FA
+async function handleSetup2FA() {
+    console.log('[DEBUG] handleSetup2FA запущена');
+
+    try {
+        console.log('[DEBUG] Отправляем запрос на /setup-2fa');
+        const response = await fetch('/api/auth/setup-2fa', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        console.log('[DEBUG] Ответ получен, статус:', response.status);
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                showNotification('Сессия истекла. Войдите заново.', 'error');
+                switchAuthTab('login');
+            } else {
+                const err = await response.json();
+                showNotification(err.detail || 'Ошибка настройки 2FA', 'error');
+            }
+            return;
+        }
+
+        const data = await response.json();
+        console.log('[DEBUG] Данные от сервера:', data);
+
+        show2FASetupModal(data.otp_url, data.message, data.instructions || []);
+
+    } catch (err) {
+        console.error('[DEBUG] Ошибка в handleSetup2FA:', err);
+        showNotification('Ошибка: ' + err.message, 'error');
+    }
+}
+
+// Создание и показ модалки
+function show2FASetupModal(otpUrl, message, instructions) {
+    if (!twoFaModal) {
+        // Создаём модалку один раз
+        twoFaModal = document.createElement('div');
+        twoFaModal.id = 'twoFaModal';
+        twoFaModal.className = 'modal';
+        twoFaModal.innerHTML = `
+             <div class="modal-content">
+                 <span class="close" onclick="close2FAModal()">×</span>
+                 <h2>Настройка 2FA</h2>
+                 <p id="twoFaMsg"></p>
+                 <div id="qrcode" style="margin:20px auto; text-align:center;"></div>
+                 <ul id="twoFaInst"></ul>
+                 <label for="twoFaCode">Код из приложения:</label>
+                 <input type="text" id="twoFaCode" maxlength="6" placeholder="123456" 
+                        style="width:100%; text-align:center; font-size:1.5em; margin:10px 0;">
+                 <button onclick="verify2FACode()" class="btn btn-success" style="width:100%;">
+                     Подтвердить
+                 </button>
+             </div>
+         `;
+        document.body.appendChild(twoFaModal);
+
+        // Сохраняем ссылки на элементы
+        twoFaMsg = document.getElementById('twoFaMsg');
+        twoFaInst = document.getElementById('twoFaInst');
+        twoFaCode = document.getElementById('twoFaCode');
+        twoFaQr = document.getElementById('qrcode');
+    }
+
+    // Заполняем содержимое через сохранённые ссылки
+    twoFaMsg.textContent = message;
+
+    twoFaInst.innerHTML = instructions.map(i => `<li>${i}</li>`).join('');
+
+    twoFaQr.innerHTML = '';
+
+    new QRCode(twoFaQr, {
+        text: otpUrl,
+        width: 240,
+        height: 240,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    twoFaModal.style.display = 'block';
+}
+
+function close2FAModal() {
+    if (twoFaModal) {
+        twoFaModal.style.display = 'none';
+        if (twoFaCode) twoFaCode.value = '';  // очищаем поле
+    }
+}
+
+async function verify2FACode() {
+    const code = twoFaCode?.value.trim();
+
+    if (!code || code.length !== 6 || !/^\d{6}$/.test(code)) {
+        showNotification('Введите 6 цифр', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/auth/verify-2fa-setup', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('2FA успешно настроена!', 'success');
+            close2FAModal();
+        } else {
+            showNotification(data.detail || 'Неверный код', 'error');
+        }
+    } catch (err) {
+        showNotification('Ошибка проверки: ' + err.message, 'error');
     }
 }
 
