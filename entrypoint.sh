@@ -116,4 +116,4 @@ fi
 # Запуск приложения
 # ────────────────────────────────────────────────────────────────
 echo "🖥️ Starting Uvicorn..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --limit-max-requests-size 209715200
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info 
