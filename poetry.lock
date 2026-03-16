@@ -573,6 +573,25 @@ tests = ["pytest (>=3.2.1,!=3.3.0)"]
 typecheck = ["mypy"]
 
 [[package]]
+name = "beartype"
+version = "0.22.9"
+description = "Unbearably fast near-real-time pure-Python runtime-static type-checker."
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "beartype-0.22.9-py3-none-any.whl", hash = "sha256:d16c9bbc61ea14637596c5f6fbff2ee99cbe3573e46a716401734ef50c3060c2"},
+    {file = "beartype-0.22.9.tar.gz", hash = "sha256:8f82b54aa723a2848a56008d18875f91c1db02c32ef6a62319a002e3e25a975f"},
+]
+
+[package.extras]
+dev = ["autoapi (>=0.9.0)", "celery", "click", "coverage (>=5.5)", "docutils (>=0.22.0)", "equinox", "fastmcp", "jax[cpu]", "jaxtyping", "langchain", "mypy (>=0.800)", "nuitka (>=1.2.6)", "numba", "numpy", "pandera (>=0.26.0)", "poetry", "polars", "pydata-sphinx-theme (<=0.7.2)", "pygments", "pyinstaller", "pyright (>=1.1.370)", "pytest (>=6.2.0)", "redis", "rich-click", "setuptools", "sphinx", "sphinx (>=4.2.0,<6.0.0)", "sphinxext-opengraph (>=0.7.5)", "sqlalchemy", "torch", "tox (>=3.20.1)", "typer", "typing-extensions (>=3.10.0.0)", "xarray"]
+doc-ghp = ["mkdocs-material[imaging] (>=9.6.0)", "mkdocstrings-python (>=1.16.0)", "mkdocstrings-python-xref (>=1.16.0)"]
+doc-rtd = ["autoapi (>=0.9.0)", "pydata-sphinx-theme (<=0.7.2)", "setuptools", "sphinx (>=4.2.0,<6.0.0)", "sphinxext-opengraph (>=0.7.5)"]
+test = ["celery", "click", "coverage (>=5.5)", "docutils (>=0.22.0)", "equinox", "fastmcp", "jax[cpu]", "jaxtyping", "langchain", "mypy (>=0.800)", "nuitka (>=1.2.6)", "numba", "numpy", "pandera (>=0.26.0)", "poetry", "polars", "pygments", "pyinstaller", "pyright (>=1.1.370)", "pytest (>=6.2.0)", "redis", "rich-click", "sphinx", "sqlalchemy", "torch", "tox (>=3.20.1)", "typer", "typing-extensions (>=3.10.0.0)", "xarray"]
+test-tox = ["celery", "click", "docutils (>=0.22.0)", "equinox", "fastmcp", "jax[cpu]", "jaxtyping", "langchain", "mypy (>=0.800)", "nuitka (>=1.2.6)", "numba", "numpy", "pandera (>=0.26.0)", "poetry", "polars", "pygments", "pyinstaller", "pyright (>=1.1.370)", "pytest (>=6.2.0)", "redis", "rich-click", "sphinx", "sqlalchemy", "torch", "typer", "typing-extensions (>=3.10.0.0)", "xarray"]
+test-tox-coverage = ["coverage (>=5.5)"]
+
+[[package]]
 name = "certifi"
 version = "2026.2.25"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -836,6 +855,52 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
+
+[[package]]
+name = "coredis"
+version = "6.2.0"
+description = "Fast, async, fully-typed Redis client with support for cluster and sentinel"
+optional = false
+python-versions = ">=3.10"
+files = [
+    {file = "coredis-6.2.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0e8adeca62e902d54da9a15d7eba56deb21920f24c3c4cba9174913dd0368959"},
+    {file = "coredis-6.2.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:cbc052f69048d910c5bbb26f09153cdcb5d86b5cc8dcbacf76d30edca0eb2a3b"},
+    {file = "coredis-6.2.0-cp310-cp310-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:9486ecdc57c11cc1115d7a2f435126f1cb3f3218ad60311ae1d57bc8d34bbf41"},
+    {file = "coredis-6.2.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5cdc9acea158afdd34c0b5f51727035843ace7f63fce39ce69cf2ef74248e567"},
+    {file = "coredis-6.2.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:b33b0ae108c11fea7ff5fc09e5a9e4121ed68b65194962683c49e2809223d890"},
+    {file = "coredis-6.2.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:a2abd22a167d9ecbceeef0844cbbe679d648e3ee768e16a02e6adb63bbae72c1"},
+    {file = "coredis-6.2.0-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bc8adbe24fd64ca6e5529c2fae9c127f2eec7e6f7d658e343821e85edf81c842"},
+    {file = "coredis-6.2.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:79f994ba3eee00c1afbb9121b6bd175c547c5f76872e3610cfa3275d71f04cc6"},
+    {file = "coredis-6.2.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:b6b18a6e1095de436a214706fdc80d24417ed9c07e6c16c90e2ac3a8d7e4e436"},
+    {file = "coredis-6.2.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6b975706a09b9c630d5589282a9a52c9558127b9353233d10973acbd12638603"},
+    {file = "coredis-6.2.0-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4614a8eeddfe9356ebff06da1b0ca838bc6f4cc0483e55e8cc296a9b5027695b"},
+    {file = "coredis-6.2.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0a4561952c22e4fb819909e57e51ec072cfc2477f4f0a3c3c7c58825a8f3b37e"},
+    {file = "coredis-6.2.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:c7310986727b081c2202ccd362329cd57f8409185dde2cd38ba9ac34c1ecd37d"},
+    {file = "coredis-6.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b1171f7a7d9616b79417cb5b97e232309ce867f94b7a821080b49eb5522d804f"},
+    {file = "coredis-6.2.0-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:63e7472772775a1b76ea196690e1083bb10c24a7f250ea39e527d5dbe4b4d790"},
+    {file = "coredis-6.2.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8beb2d7806f4f606a758f80e2816f625cb2f06a2cefb937682963c125dcef6aa"},
+    {file = "coredis-6.2.0-cp314-cp314-macosx_10_13_x86_64.whl", hash = "sha256:9fdb8a41335db816f9b5d5ba0451957bf8b8074837d8f135e7531dd3d51b7d18"},
+    {file = "coredis-6.2.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:306df90b3e6addb1895defcee8e8dbe796b78a52ea2f87faaf69c0e4b4822d66"},
+    {file = "coredis-6.2.0-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1224cd4bc335271b630a611aa6d077a729b8fca6c55cda7476638d987b1cb22d"},
+    {file = "coredis-6.2.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:94c814e8f38d71df9a40a2116cbc3f1c4d481244a027295d9625b27a3b3c1c3b"},
+    {file = "coredis-6.2.0-cp314-cp314t-macosx_10_13_x86_64.whl", hash = "sha256:5ee92eb595a4232330d978a91b6a610f45171bb1676551c0be34059569eea5ea"},
+    {file = "coredis-6.2.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:e418a29aab7432fd769161679faef33b1768ce13ffb7ed9f994928c9c6461ea7"},
+    {file = "coredis-6.2.0-cp314-cp314t-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:58133d082ce49e22a59fb86ff53f9c763064b5832d67dfeaa23ca05764efc6d2"},
+    {file = "coredis-6.2.0-cp314-cp314t-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3e9fea93395db6d13ba5c261bdaa6b845647d4ad2303dd0c09dafa9c0ee0fa49"},
+    {file = "coredis-6.2.0-py3-none-any.whl", hash = "sha256:7430e29bb581eb5d75327d2db57b19b856a94b5773807d792f11ffe1ab7418d0"},
+    {file = "coredis-6.2.0.tar.gz", hash = "sha256:afce8ac180111f6d629e9b9897655834566ea534c0df1ea4b07212c5d9f735fa"},
+]
+
+[package.dependencies]
+anyio = ">=4.11.0"
+beartype = ">=0.20"
+deprecated = ">=1.2"
+exceptiongroup = ">=1.3.0"
+packaging = ">=21,<26"
+typing-extensions = ">=4.13"
+
+[package.extras]
+recipes = ["aiobotocore (>=2.15.2)", "asyncache (>=0.3.1)"]
 
 [[package]]
 name = "coverage"
@@ -1725,13 +1790,13 @@ files = [
 
 [[package]]
 name = "packaging"
-version = "26.0"
+version = "25.0"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "packaging-26.0-py3-none-any.whl", hash = "sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529"},
-    {file = "packaging-26.0.tar.gz", hash = "sha256:00243ae351a257117b6a241061796684b084ed1c516a08c48a3f7e147a9d80b4"},
+    {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
+    {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
 ]
 
 [[package]]
@@ -2656,18 +2721,18 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "setuptools"
-version = "82.0.0"
-description = "Easily download, build, install, upgrade, and uninstall Python packages"
+version = "82.0.1"
+description = "Most extensible Python build backend with support for C/C++ extension modules"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "setuptools-82.0.0-py3-none-any.whl", hash = "sha256:70b18734b607bd1da571d097d236cfcfacaf01de45717d59e6e04b96877532e0"},
-    {file = "setuptools-82.0.0.tar.gz", hash = "sha256:22e0a2d69474c6ae4feb01951cb69d515ed23728cf96d05513d36e42b62b37cb"},
+    {file = "setuptools-82.0.1-py3-none-any.whl", hash = "sha256:a59e362652f08dcd477c78bb6e7bd9d80a7995bc73ce773050228a348ce2e5bb"},
+    {file = "setuptools-82.0.1.tar.gz", hash = "sha256:7d872682c5d01cfde07da7bccc7b65469d3dca203318515ada1de5eda35efbf9"},
 ]
 
 [package.extras]
 check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)", "ruff (>=0.13.0)"]
-core = ["importlib_metadata (>=6)", "jaraco.functools (>=4)", "jaraco.text (>=3.7)", "more_itertools", "more_itertools (>=8.8)", "packaging (>=24.2)", "platformdirs (>=4.2.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
+core = ["importlib_metadata (>=6)", "jaraco.functools (>=4)", "jaraco.text (>=3.7)", "more_itertools", "more_itertools (>=8.8)", "packaging (>=24.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
 cover = ["pytest-cov"]
 doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
 enabler = ["pytest-enabler (>=2.2)"]
@@ -3263,4 +3328,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "1eafa8044de2273e22ae18d1f4a12072f2e9e01628a4551b74597424c1e327d5"
+content-hash = "055b90cba05f22448f833898599b9a1530bc3c0111d62ad1758541c9b0ddc5d3"

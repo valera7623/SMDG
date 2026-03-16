@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 from typing import Annotated, Optional
 from app.core.auth import get_current_user, get_current_admin, get_current_doctor
 from app.core.auth_utils import create_access_token, TokenData
-
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from app.core.database import get_db
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash
@@ -180,7 +181,7 @@ async def change_password(
 
 @router.post("/login")
 @limiter.limit(
-    "10/minute;5/10seconds",
+    "5/minute",
     key_func=login_rate_limit_key,
     methods=["POST"],
     error_message="Слишком много попыток входа. Попробуйте через минуту.",
@@ -475,11 +476,11 @@ class RegisterRequest(BaseModel):
 
 
 @router.post("/register", response_model=dict)
-#@limiter.limit(
-    #"3/hour",
-    #key_func=get_remote_address,
-    #error_message="Слишком много попыток регистрации. Попробуйте позже."
-#)
+@limiter.limit(
+    "3/1minute",
+    key_func=get_remote_address,
+    error_message="Слишком много попыток регистрации. Попробуйте позже."
+)
 async def register(
     request: Request,
     user_data: RegisterRequest = Body(...),

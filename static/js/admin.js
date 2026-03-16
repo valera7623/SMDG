@@ -9,6 +9,31 @@ document.addEventListener('DOMContentLoaded', function () {
     loadSystemStats();
 });
 
+// ==================== Безопасный escape ====================
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '';
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;")
+        .replace(/\//g, "&#x2F;");
+}
+
+// ==================== Форматирование размера файла ====================
+function formatFileSize(bytes) {
+    if (!bytes && bytes !== 0) return '—';
+    const units = ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ'];
+    let size = bytes;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+    }
+    return `${size.toFixed(2)} ${units[unitIndex]}`;
+}
+
 // ==================== ЗАГРУЗКА СПИСКА ФАЙЛОВ ====================
 
 async function loadFiles() {
@@ -37,28 +62,65 @@ async function loadFiles() {
             return;
         }
 
-        let html = '';
-        data.files.forEach(file => {
-            html += `
-                <div class="file-item">
-                    <div class="file-info">
-                        <div class="file-name">📄 ${file.original_name}</div>
-                        <div class="file-size">📏 ${file.size} байт</div>
-                        <div class="file-id">🔐 ${file.name}</div>
-                    </div>
-                    <div class="file-actions">
-                        <button onclick="downloadFile('${file.name}')" class="btn-secondary">📥</button>
-                        <button onclick="deleteFile('${file.name}')" class="btn-danger">🗑️</button>
-                    </div>
-                </div>
-            `;
-        });
+        fileList.innerHTML = ''; // очищаем перед рендером
 
-        fileList.innerHTML = html;
+        data.files.forEach(file => {
+            const item = document.createElement('div');
+            item.className = 'file-item';
+
+            // Информация о файле
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'file-info';
+
+            // Имя файла
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'file-name';
+            nameDiv.textContent = `📄 ${escapeHtml(file.original_name || 'Без имени')}`;
+            infoDiv.appendChild(nameDiv);
+
+            // Размер
+            const sizeDiv = document.createElement('div');
+            sizeDiv.className = 'file-size';
+            sizeDiv.textContent = `📏 ${formatFileSize(file.size)}`;
+            infoDiv.appendChild(sizeDiv);
+
+            // ID / Encrypted name
+            const idDiv = document.createElement('div');
+            idDiv.className = 'file-id';
+            idDiv.textContent = `🔐 ${escapeHtml(file.name || file.encrypted_name || '—')}`;
+            infoDiv.appendChild(idDiv);
+
+            item.appendChild(infoDiv);
+
+            // Кнопки действий
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'file-actions';
+
+            const btnDownload = document.createElement('button');
+            btnDownload.className = 'btn-secondary';
+            btnDownload.textContent = '📥';
+            btnDownload.onclick = () => downloadFile(file.name);
+            actionsDiv.appendChild(btnDownload);
+
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn-danger';
+            btnDelete.textContent = '🗑️';
+            btnDelete.onclick = () => deleteFile(file.name);
+            actionsDiv.appendChild(btnDelete);
+
+            item.appendChild(actionsDiv);
+
+            fileList.appendChild(item);
+        });
 
     } catch (error) {
         console.error('Ошибка загрузки списка файлов:', error);
-        fileList.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
+
+        fileList.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = `❌ Ошибка: ${escapeHtml(error.message || 'Неизвестная ошибка')}`;
+        fileList.appendChild(errorDiv);
     }
 }
 
@@ -75,8 +137,8 @@ async function downloadFile(filename) {
                 window.location.href = '/';
                 return;
             }
-            const error = await response.json();
-            throw new Error(error.detail || `Ошибка: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Ошибка: ${response.status}`);
         }
 
         const blob = await response.blob();
@@ -86,14 +148,14 @@ async function downloadFile(filename) {
         a.href = url;
 
         // Пытаемся взять оригинальное имя из Content-Disposition
-        const contentDisposition = response.headers.get('Content-Disposition');
-        let originalName = filename.replace('.age', '');
-        if (contentDisposition) {
-            const match = contentDisposition.match(/filename="?(.+)"?/i);
-            if (match) originalName = match[1];
+        let originalName = filename.replace(/\.age$/i, '');
+        const disposition = response.headers.get('Content-Disposition');
+        if (disposition) {
+            const match = disposition.match(/filename\*?=(?:UTF-8'')?([^;]+)/i);
+            if (match) originalName = decodeURIComponent(match[1].trim().replace(/^"|"$/g, ''));
         }
-        a.download = originalName;
 
+        a.download = originalName;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -101,14 +163,14 @@ async function downloadFile(filename) {
 
     } catch (error) {
         console.error('Ошибка скачивания:', error);
-        alert(`❌ Ошибка: ${error.message}`);
+        alert(`❌ Ошибка: ${escapeHtml(error.message || 'Не удалось скачать файл')}`);
     }
 }
 
 // ==================== УДАЛЕНИЕ ФАЙЛА ====================
 
 async function deleteFile(filename) {
-    if (!confirm(`Вы уверены, что хотите удалить файл "${filename}"?`)) {
+    if (!confirm(`Вы уверены, что хотите удалить файл "${escapeHtml(filename)}"?`)) {
         return;
     }
 
@@ -131,17 +193,17 @@ async function deleteFile(filename) {
                 window.location.href = '/';
                 return;
             }
-            const error = await response.json();
-            throw new Error(error.detail || `Ошибка: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Ошибка: ${response.status}`);
         }
 
         const result = await response.json();
-        alert(`✅ Файл успешно удалён: ${result.message || 'OK'}`);
+        alert(`✅ Файл успешно удалён: ${escapeHtml(result.message || 'OK')}`);
         loadFiles();
 
     } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert(`❌ Ошибка: ${error.message}`);
+        alert(`❌ Ошибка: ${escapeHtml(error.message || 'Не удалось удалить файл')}`);
     }
 }
 
@@ -151,18 +213,24 @@ async function loadSystemStats() {
     await showSystemStats();
 
     const statsInfo = document.getElementById('statsInfo');
-    if (statsInfo) {
-        statsInfo.innerHTML += `
-            <div style="margin-top: 20px;">
-                <button onclick="showDetailedStats()" class="btn-info">
-                    📈 Показать детальную статистику
-                </button>
-                <button onclick="showSystemStats()" class="btn-secondary">
-                    🔄 Обновить
-                </button>
-            </div>
-        `;
-    }
+    if (!statsInfo) return;
+
+    const actionsDiv = document.createElement('div');
+    actionsDiv.style.marginTop = '20px';
+
+    const btnDetailed = document.createElement('button');
+    btnDetailed.className = 'btn-info';
+    btnDetailed.textContent = '📈 Показать детальную статистику';
+    btnDetailed.onclick = showDetailedStats;
+    actionsDiv.appendChild(btnDetailed);
+
+    const btnRefresh = document.createElement('button');
+    btnRefresh.className = 'btn-secondary';
+    btnRefresh.textContent = '🔄 Обновить';
+    btnRefresh.onclick = showSystemStats;
+    actionsDiv.appendChild(btnRefresh);
+
+    statsInfo.appendChild(actionsDiv);
 }
 
 async function showSystemStats() {
@@ -186,27 +254,55 @@ async function showSystemStats() {
 
         const data = await response.json();
 
-        let html = '<h3>🩺 Статус системы</h3>';
-        html += `<p>Статус: ${data.status}</p>`;
-        html += `<p>Версия: ${data.version}</p>`;
+        statsInfo.innerHTML = ''; // очищаем
 
-        html += '<h4>Функции:</h4><ul>';
-        for (const [key, value] of Object.entries(data.features)) {
-            html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+        const h3 = document.createElement('h3');
+        h3.textContent = '🩺 Статус системы';
+        statsInfo.appendChild(h3);
+
+        const pStatus = document.createElement('p');
+        pStatus.textContent = `Статус: ${data.status || '—'}`;
+        statsInfo.appendChild(pStatus);
+
+        const pVersion = document.createElement('p');
+        pVersion.textContent = `Версия: ${data.version || '—'}`;
+        statsInfo.appendChild(pVersion);
+
+        const h4Features = document.createElement('h4');
+        h4Features.textContent = 'Функции:';
+        statsInfo.appendChild(h4Features);
+
+        const ulFeatures = document.createElement('ul');
+        if (data.features) {
+            Object.entries(data.features).forEach(([key, value]) => {
+                const li = document.createElement('li');
+                li.textContent = `${key}: ${value ? '✅' : '❌'}`;
+                ulFeatures.appendChild(li);
+            });
         }
-        html += '</ul>';
+        statsInfo.appendChild(ulFeatures);
 
-        html += '<h4>Директории:</h4><ul>';
-        for (const [key, value] of Object.entries(data.directories)) {
-            html += `<li>${key}: ${value ? '✅' : '❌'}</li>`;
+        const h4Dirs = document.createElement('h4');
+        h4Dirs.textContent = 'Директории:';
+        statsInfo.appendChild(h4Dirs);
+
+        const ulDirs = document.createElement('ul');
+        if (data.directories) {
+            Object.entries(data.directories).forEach(([key, value]) => {
+                const li = document.createElement('li');
+                li.textContent = `${key}: ${value ? '✅' : '❌'}`;
+                ulDirs.appendChild(li);
+            });
         }
-        html += '</ul>';
-
-        statsInfo.innerHTML = html;
+        statsInfo.appendChild(ulDirs);
 
     } catch (error) {
         console.error('Ошибка загрузки статуса:', error);
-        statsInfo.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
+        statsInfo.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = `❌ Ошибка: ${escapeHtml(error.message || 'Неизвестная ошибка')}`;
+        statsInfo.appendChild(errorDiv);
     }
 }
 
@@ -229,11 +325,13 @@ async function showDetailedStats() {
 
         const data = await response.json();
 
-        statsInfo.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(data, null, 2);
+        statsInfo.appendChild(pre);
 
     } catch (error) {
         console.error('Ошибка детальной статистики:', error);
-        alert(`❌ Ошибка: ${error.message}`);
+        alert(`❌ Ошибка: ${escapeHtml(error.message || 'Не удалось загрузить статистику')}`);
     }
 }
 
@@ -257,11 +355,19 @@ async function getCleanupStats() {
         }
 
         const data = await response.json();
-        cleanupStats.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+        cleanupStats.innerHTML = '';
+        const pre = document.createElement('pre');
+        pre.textContent = JSON.stringify(data, null, 2);
+        cleanupStats.appendChild(pre);
 
     } catch (error) {
         console.error('Ошибка статистики очистки:', error);
-        cleanupStats.innerHTML = `<div class="error">❌ Ошибка: ${error.message}</div>`;
+        cleanupStats.innerHTML = '';
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error';
+        errorDiv.textContent = `❌ Ошибка: ${escapeHtml(error.message || 'Неизвестная ошибка')}`;
+        cleanupStats.appendChild(errorDiv);
     }
 }
 

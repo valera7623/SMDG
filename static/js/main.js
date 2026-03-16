@@ -137,6 +137,10 @@ async function handleLogin(event) {
                 showNotification('Введите код 2FA', 'info');
                 return;
             }
+            if (response.status === 429) {
+                showNotification('Слишком много попыток. Подождите 1 минуту', 'error');
+                return;
+            }
 
             throw new Error(err.detail || 'Ошибка входа');
         }

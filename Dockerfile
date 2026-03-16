@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libmagic1 \
     netcat-openbsd \
     postgresql-client \
+    redis-tools \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

@@ -14,6 +14,18 @@ let currentFilters = {
 };
 let actionCallback = null;
 
+// ==================== Безопасный escape ====================
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') return '';
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;")
+        .replace(/\//g, "&#x2F;");
+}
+
 // ==================== Инициализация ====================
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -53,6 +65,8 @@ async function loadUserStats() {
         showNotification('Ошибка загрузки статистики', 'error');
     }
 }
+
+
 
 // ==================== Загрузка пользователей ====================
 
@@ -96,96 +110,198 @@ async function loadUsers(resetPage = false) {
         const totalCount = response.headers.get('X-Total-Count') || users.length;
         totalUsers = parseInt(totalCount);
 
-        // ← Вот здесь была проблема — добавляем рендер таблицы
         renderUsersTable(users);
-
         renderPagination();
 
     } catch (error) {
         console.error('Ошибка загрузки пользователей:', error);
-        document.getElementById('usersTableBody').innerHTML = `
-            <tr>
-                <td colspan="8" class="error">❌ Ошибка загрузки: ${error.message}</td>
-            </tr>
-        `;
+
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = ''; // очищаем
+
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.className = 'error';
+        td.textContent = `❌ Ошибка загрузки: ${error.message || 'Неизвестная ошибка'}`;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
     }
 }
+
+// ==================== Рендер таблицы пользователей ====================
 
 function renderUsersTable(users) {
     const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = ''; // полностью очищаем перед рендером
 
     if (!users || users.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="empty">📭 Нет пользователей</td>
-            </tr>
-        `;
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 8;
+        td.className = 'empty';
+        td.textContent = '📭 Нет пользователей';
+        tr.appendChild(td);
+        tbody.appendChild(tr);
         return;
     }
 
-    let html = '';
     users.forEach(user => {
         const isCurrentUser = user.username === currentUser;
 
-        html += `
-            <tr>
-                <td>
-                    <input type="checkbox" 
-                           class="user-checkbox" 
-                           value="${user.id}"
-                           onchange="updateSelectedCount()"
-                           ${isCurrentUser ? 'disabled' : ''}>
-                </td>
-                <td>${user.id}</td>
-                <td>${user.username} ${isCurrentUser ? '(вы)' : ''}</td>
-                <td>${user.email}</td>
-                <td>
-                    <span class="role-badge ${user.role}">
-                        ${getRoleName(user.role)}
-                    </span>
-                </td>
-                <td>
-                    <span class="status-badge ${user.is_active ? 'active' : 'inactive'}">
-                        ${user.is_active ? 'Активен' : 'Неактивен'}
-                    </span>
-                </td>
-                <td>
-                    <span class="twofa-badge ${user.otp_secret ? 'enabled' : 'disabled'}" 
-                          title="${user.otp_secret ? '2FA включена' : '2FA отключена'}">
-                        ${user.otp_secret ? '✅' : '❌'}
-                    </span>
-                </td>
-                <td>
-                    <div class="action-buttons">
-                        <button onclick="editUser(${user.id})" 
-                                class="action-btn edit"
-                                ${isCurrentUser ? 'disabled' : ''}>
-                            ✏️
-                        </button>
-                        <button onclick="resetPassword(${user.id}, '${user.username}')" 
-                                class="action-btn reset-password"
-                                ${isCurrentUser ? 'disabled' : ''}>
-                            🔑
-                        </button>
-                        <button onclick="reset2FA(${user.id}, '${user.username}')" 
-                                class="action-btn reset-2fa"
-                                ${isCurrentUser || !user.otp_secret ? 'disabled' : ''}>
-                            🔐
-                        </button>
-                        <button onclick="deleteUser(${user.id}, '${user.username}')" 
-                                class="action-btn delete"
-                                ${isCurrentUser ? 'disabled' : ''}>
-                            🗑️
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+        const tr = document.createElement('tr');
+
+        // Чекбокс
+        const tdCheck = document.createElement('td');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'user-checkbox';
+        checkbox.value = user.id;
+        checkbox.disabled = isCurrentUser;
+        checkbox.onchange = updateSelectedCount;
+        tdCheck.appendChild(checkbox);
+        tr.appendChild(tdCheck);
+
+        // ID
+        const tdId = document.createElement('td');
+        tdId.textContent = user.id;
+        tr.appendChild(tdId);
+
+        // Username + (вы)
+        const tdUsername = document.createElement('td');
+        tdUsername.textContent = user.username;
+        if (isCurrentUser) {
+            const span = document.createElement('span');
+            span.textContent = ' (вы)';
+            tdUsername.appendChild(span);
+        }
+        tr.appendChild(tdUsername);
+
+        // Email
+        const tdEmail = document.createElement('td');
+        tdEmail.textContent = user.email || '';
+        tr.appendChild(tdEmail);
+
+        // Роль
+        const tdRole = document.createElement('td');
+        const roleSpan = document.createElement('span');
+        roleSpan.className = `role-badge ${user.role}`;
+        roleSpan.textContent = getRoleName(user.role);
+        tdRole.appendChild(roleSpan);
+        tr.appendChild(tdRole);
+
+        // Статус
+        const tdStatus = document.createElement('td');
+        const statusSpan = document.createElement('span');
+        statusSpan.className = `status-badge ${user.is_active ? 'active' : 'inactive'}`;
+        statusSpan.textContent = user.is_active ? 'Активен' : 'Неактивен';
+        tdStatus.appendChild(statusSpan);
+        tr.appendChild(tdStatus);
+
+        // 2FA
+        const td2fa = document.createElement('td');
+        const twofaSpan = document.createElement('span');
+        twofaSpan.className = `twofa-badge ${user.otp_secret ? 'enabled' : 'disabled'}`;
+        twofaSpan.title = user.otp_secret ? '2FA включена' : '2FA отключена';
+        twofaSpan.textContent = user.otp_secret ? '✅' : '❌';
+        td2fa.appendChild(twofaSpan);
+        tr.appendChild(td2fa);
+
+        // Кнопки действий
+        const tdActions = document.createElement('td');
+        const divButtons = document.createElement('div');
+        divButtons.className = 'action-buttons';
+
+        // Edit
+        const btnEdit = document.createElement('button');
+        btnEdit.className = 'action-btn edit';
+        btnEdit.textContent = '✏️';
+        btnEdit.disabled = isCurrentUser;
+        btnEdit.onclick = () => editUser(user.id);
+        divButtons.appendChild(btnEdit);
+
+        // Reset password
+        const btnResetPass = document.createElement('button');
+        btnResetPass.className = 'action-btn reset-password';
+        btnResetPass.textContent = '🔑';
+        btnResetPass.disabled = isCurrentUser;
+        btnResetPass.onclick = () => resetPassword(user.id, user.username);
+        divButtons.appendChild(btnResetPass);
+
+        // Reset 2FA
+        const btnReset2fa = document.createElement('button');
+        btnReset2fa.className = 'action-btn reset-2fa';
+        btnReset2fa.textContent = '🔐';
+        btnReset2fa.disabled = isCurrentUser || !user.otp_secret;
+        btnReset2fa.onclick = () => reset2FA(user.id, user.username);
+        divButtons.appendChild(btnReset2fa);
+
+        // Delete
+        const btnDelete = document.createElement('button');
+        btnDelete.className = 'action-btn delete';
+        btnDelete.textContent = '🗑️';
+        btnDelete.disabled = isCurrentUser;
+        btnDelete.onclick = () => deleteUser(user.id, user.username);
+        divButtons.appendChild(btnDelete);
+
+        tdActions.appendChild(divButtons);
+        tr.appendChild(tdActions);
+
+        tbody.appendChild(tr);
     });
 
-    tbody.innerHTML = html;
     updateSelectedCount();
 }
+
+// ==================== Пагинация ====================
+
+function renderPagination() {
+    const totalPages = Math.ceil(totalUsers / pageSize);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = ''; // очищаем
+
+    if (totalPages <= 1) return;
+
+    // Кнопка назад
+    const btnPrev = document.createElement('button');
+    btnPrev.className = 'page-btn';
+    btnPrev.textContent = '←';
+    btnPrev.disabled = currentPage === 0;
+    btnPrev.onclick = () => changePage(currentPage - 1);
+    pagination.appendChild(btnPrev);
+
+    // Страницы
+    for (let i = 0; i < totalPages; i++) {
+        if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            const btn = document.createElement('button');
+            btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+            btn.textContent = i + 1;
+            btn.onclick = () => changePage(i);
+            pagination.appendChild(btn);
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            const span = document.createElement('span');
+            span.className = 'page-dots';
+            span.textContent = '...';
+            pagination.appendChild(span);
+        }
+    }
+
+    // Кнопка вперёд
+    const btnNext = document.createElement('button');
+    btnNext.className = 'page-btn';
+    btnNext.textContent = '→';
+    btnNext.disabled = currentPage >= totalPages - 1;
+    btnNext.onclick = () => changePage(currentPage + 1);
+    pagination.appendChild(btnNext);
+}
+
+function changePage(page) {
+    if (page < 0 || page >= Math.ceil(totalUsers / pageSize)) return;
+    currentPage = page;
+    loadUsers();
+}
+
+// ==================== Вспомогательная функция роли ====================
 
 function getRoleName(role) {
     const roles = {
@@ -194,43 +310,6 @@ function getRoleName(role) {
         'user': 'Пользователь'
     };
     return roles[role] || role;
-}
-
-// ==================== Пагинация ====================
-
-function renderPagination() {
-    const totalPages = Math.ceil(totalUsers / pageSize);
-    const pagination = document.getElementById('pagination');
-
-    if (totalPages <= 1) {
-        pagination.innerHTML = '';
-        return;
-    }
-
-    let html = '';
-
-    html += `<button class="page-btn" onclick="changePage(${currentPage - 1})" 
-                    ${currentPage === 0 ? 'disabled' : ''}>←</button>`;
-
-    for (let i = 0; i < totalPages; i++) {
-        if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
-            html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" 
-                            onclick="changePage(${i})">${i + 1}</button>`;
-        } else if (i === currentPage - 3 || i === currentPage + 3) {
-            html += `<span class="page-dots">...</span>`;
-        }
-    }
-
-    html += `<button class="page-btn" onclick="changePage(${currentPage + 1})" 
-                    ${currentPage >= totalPages - 1 ? 'disabled' : ''}>→</button>`;
-
-    pagination.innerHTML = html;
-}
-
-function changePage(page) {
-    if (page < 0 || page >= Math.ceil(totalUsers / pageSize)) return;
-    currentPage = page;
-    loadUsers();
 }
 
 // ==================== Фильтры и поиск ====================
@@ -392,7 +471,7 @@ async function executeBulkAction() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: action,
-                    user_ids: Array.from(selectedUsers),  
+                    user_ids: Array.from(selectedUsers),
                     ...(role ? { role } : {})
                 }),
                 credentials: 'include'

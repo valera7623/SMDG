@@ -58,6 +58,7 @@ aiosqlite = "0.22.1"
 nest-asyncio = "1.6.0"
 pyotp = "^2.9.0"
 aiofiles = "^25.1.0"
+coredis = "^6.2.0"
 
 [tool.poetry.group.dev.dependencies]
 # если захочешь добавить dev-only инструменты позже

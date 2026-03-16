@@ -1,9 +1,14 @@
 # app/main.py
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, Request, logger
+from fastapi import Depends, FastAPI, Request, logger, HTTPException
+from limits.typing import RedisClient
+from app.core.auth import get_current_user, TokenData
+from app.core.config import settings
+from app.core.rate_limiter import limiter, check_redis_connection
 from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler, Limiter
+from slowapi.util import get_remote_address
 from fastapi.responses import JSONResponse
 from slowapi.middleware import SlowAPIMiddleware
 from redis.asyncio import Redis
@@ -19,7 +24,7 @@ from app.core.auth_utils import TokenData
 from app.core.database import engine, AsyncSessionLocal
 from app.models.user import User
 from app.core.security import get_password_hash, verify_password
-from app.core.config import settings
+
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 from app.api.admin_users import router as admin_users_router
@@ -29,14 +34,17 @@ from app.core import cleanup_manager
 import asyncio
 import logging
 import os
-from app.core.rate_limiter import limiter, check_redis_connection
+
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Secure Medical Data Gateway v0.1",
-    version="0.1.0"
+    version="0.1.0",
+    docs_url="/docs",
+    redoc_url=None
 )
+
 
 # ────────────────────────────────────────────────────────────────
 # CORS - разрешаем запросы с фронта
@@ -64,25 +72,78 @@ app.add_middleware(
 )
 
 
-app.state.limiter = limiter
-def safe_rate_limit_handler(request: Request, exc: Exception):
-    if isinstance(exc, RateLimitExceeded):
-        return _rate_limit_exceeded_handler(request, exc)
+# ────────────────────────────────────────────────────────────────
+# Middleware: добавляем пользователя в scope (должен быть ПЕРВЫМ!)
+# ────────────────────────────────────────────────────────────────
+
+
+# Самый первый middleware
+@app.middleware("http")
+async def set_user_context(request: Request, call_next):
+    user = None
+    try:
+        token = request.cookies.get("access_token")
+        if token:
+            from jwt import decode
+            payload = decode(
+                token,
+                settings.jwt_secret_key,
+                algorithms=[settings.jwt_algorithm],
+                options={"verify_exp": False}
+            )
+            sub = payload.get("sub")
+            role = payload.get("role", "user")
+            if sub:
+                user = TokenData(sub=sub, role=role)
+    except Exception as e:
+        logger.debug(f"Middleware: токен невалидный → user=None ({e})")
+
+    request.scope["user"] = user
+    response = await call_next(request)
+    return response
+
+
+app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(AuditMiddleware) 
+
+# Rate limiter с логами
+def custom_key_func(request: Request) -> str:
+    user = request.scope.get("user")
+    if user and hasattr(user, "sub"):
+        key = f"rate_limit:user:{user.sub}"
+        logger.info(f"Rate limit: пользователь {user.sub} → ключ {key}")
+        return key
     
-    # Если что-то другое (например ConnectionError) — возвращаем 429 с общим сообщением
+    ip = get_remote_address(request)
+    key = f"rate_limit:ip:{ip}"
+    logger.info(f"Rate limit: аноним → ключ {key}")
+    return key
+
+limiter = Limiter(
+    key_func=custom_key_func,
+    storage_uri=settings.redis_url or "redis://redis:6379/0",
+    default_limits=["100/minute"]
+)
+
+app.state.limiter = limiter
+
+# Обработчик 429
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
         status_code=429,
-        content={"detail": "Слишком много запросов или ошибка сервиса. Попробуйте позже.",
-                 "retry_after": "60 секунд"
+        content={
+            "detail": "Слишком много попыток. Попробуйте позже (лимит: 5 попыток в минуту)"
         },
         headers={"Retry-After": "60"}
     )
 
-app.add_exception_handler(RateLimitExceeded, safe_rate_limit_handler)
 
 
-app.add_middleware(AuditMiddleware)
-app.add_middleware(SlowAPIMiddleware)
+
+
+
 
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -149,6 +210,16 @@ async def startup_event():
     # Запуск периодической очистки
     await cleanup_manager.start_cleanup_task()
     print("✅ Периодическая очистка запущена (каждые 30 мин)")
+    
+    print(f"REDIS_URL из настроек: {settings.redis_url}")
+    
+    # В startup_event после check_redis_connection
+    try:
+        await RedisClient.set("test_key", "test_value", ex=10)
+        print("Redis запись прошла успешно")
+    except Exception as e:
+        print(f"Ошибка записи в Redis: {e}")
+   
 
     # Создание админа
     await create_first_admin()
