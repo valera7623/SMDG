@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     CLAMAV_TIMEOUT: int = 60  
 
     # Максимальный размер файла
-    MAX_UPLOAD_SIZE_MB: int = 50
+    MAX_UPLOAD_SIZE_MB: int = 600
 
     # Расширенный список MIME (DICOM + медицинские)
     ALLOWED_MIME_TYPES: list[str] = [
