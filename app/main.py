@@ -1,6 +1,6 @@
 # app/main.py
 from typing import Annotated
-
+from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import Depends, FastAPI, Request, logger, HTTPException
 from limits.typing import RedisClient
 from app.core.auth import get_current_user, TokenData
@@ -45,6 +45,7 @@ app = FastAPI(
     redoc_url=None
 )
 
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 # ────────────────────────────────────────────────────────────────
 # CORS - разрешаем запросы с фронта

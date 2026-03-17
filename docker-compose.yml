@@ -37,6 +37,8 @@ services:
 
   smdg:
     build: .
+    ports:
+      - "8000:8000"
     expose:
       - "8000"
     depends_on:
@@ -160,6 +162,46 @@ services:
     networks:
       - backend
 
+
+  prometheus:
+    image: prom/prometheus:v2.54.1   
+    container_name: smdg-prometheus
+    restart: always
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"   # Prometheus UI
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.4.0   # актуальная на 2026
+    container_name: smdg-grafana
+    restart: always
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123   # меняй в проде!
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true     # для теста, потом отключи
+    ports:
+      - "3000:3000"   # Grafana UI
+    depends_on:
+      - prometheus
+    networks:
+      - backend
+
+
+  
+  
+
  
    
 
@@ -174,6 +216,8 @@ secrets:
     file: ./secrets/postgres_password.txt
 
 volumes:
+  grafana_data:
+  prometheus_data:
   pgdata:
   clamav_data:
   smdg_encrypted:

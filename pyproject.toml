@@ -13,7 +13,7 @@ python = "^3.10"
 fastapi = "^0.135.0"
 uvicorn = "0.40.0"
 starlette = "0.50.0"
-
+prometheus-fastapi-instrumentator = "^7.0.0"
 sqlalchemy = {version = "^2.0.48", extras = ["asyncio"]}
 sqlmodel = "0.0.32"
 asyncpg = "0.31.0"
