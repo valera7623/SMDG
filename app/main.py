@@ -29,7 +29,7 @@ from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 from app.api.admin_users import router as admin_users_router
 from app.api.delete_user import router as delete_user_router
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core import cleanup_manager
 import asyncio
 import logging
@@ -203,26 +203,23 @@ async def startup_event():
     except Exception as e:
         print(f"❌ Ошибка инициализации ключей: {e}")
 
- 
-    # ← Добавляем проверку Redis
+    # Проверка Redis
     await check_redis_connection()
     print("✅ Rate limiter: Redis проверен")
     
-    # Запуск периодической очистки
+    # Запуск авто-очистки (безопасно — повторные вызовы игнорируются)
     await cleanup_manager.start_cleanup_task()
-    print("✅ Периодическая очистка запущена (каждые 30 мин)")
+    print("✅ Авто-очистка старых файлов запущена (APScheduler)")
     
-    print(f"REDIS_URL из настроек: {settings.redis_url}")
-    
-    # В startup_event после check_redis_connection
+    # Отладка Redis (тестовая запись — используем правильный клиент)
     try:
-        await RedisClient.set("test_key", "test_value", ex=10)
-        print("Redis запись прошла успешно")
+        await RedisClient.set("test_key_startup", "test_value", ex=60)
+        value = await RedisClient.get("test_key_startup")
+        print(f"Redis тестовая запись прошла: {value}")
     except Exception as e:
-        print(f"Ошибка записи в Redis: {e}")
-   
-
-    # Создание админа
+        print(f"Ошибка тестовой записи в Redis: {e}")
+    
+    # Создание админа (если dev-режим)
     await create_first_admin()
     
     
