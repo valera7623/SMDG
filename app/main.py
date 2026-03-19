@@ -391,5 +391,5 @@ async def whoami(current_user: Annotated[TokenData, Depends(get_current_user)]):
     return {
         "sub": current_user.sub,
         "role": current_user.role,
-        "token_valid": True
+        "token_valid": True  # nosec b105
     }

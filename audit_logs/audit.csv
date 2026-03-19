@@ -7372,3 +7372,244 @@
 2026-03-19T12:57:41.755685,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
 2026-03-19T12:57:46.071541,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
 2026-03-19T12:58:01.075064,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:58:11.741717,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T12:58:14.612190,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:58:29.611876,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:58:41.685702,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T12:58:43.152574,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:58:58.149665,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:59:13.152987,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:59:26.685575,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:59:41.682411,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T12:59:55.221358,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:00:07.420289,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:00:10.224324,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:00:23.750991,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:00:38.752526,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:00:52.269248,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:01:07.273044,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:01:07.327005,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:01:20.786560,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:01:35.793201,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:01:49.277736,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:02:04.279583,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:02:07.240172,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:02:19.282742,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:02:32.821673,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:02:47.821724,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:03:01.366686,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:03:07.178151,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:03:16.362859,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:03:29.901450,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:03:44.896310,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:03:58.407567,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:04:07.104952,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:04:13.414676,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:04:26.912111,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:04:41.913497,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:04:55.448386,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:05:07.029671,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:05:10.449159,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:05:25.445942,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:05:38.302345,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:05:53.302558,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:06:07.687921,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:06:08.306372,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:06:21.883642,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:06:36.885862,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:06:50.357445,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:07:05.359982,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:07:07.638627,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:07:18.909792,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:07:33.910264,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:07:47.441370,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:08:02.440587,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:08:07.588928,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:08:15.975361,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:08:30.969882,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:08:44.499299,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:08:59.497558,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:09:07.533065,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:09:14.495568,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:09:28.012781,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:09:43.011951,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:09:56.538201,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:10:07.449554,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:10:11.540462,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:10:25.040927,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:10:40.039434,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:10:53.571120,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:11:07.369998,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:11:08.573675,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:11:22.091146,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:11:37.098318,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:11:52.090796,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:12:05.016420,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:12:06.599728,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:12:20.017417,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:12:35.018768,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:12:47.873051,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:13:02.868147,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:13:07.281656,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:13:17.869303,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:13:31.415159,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:13:46.420464,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:13:59.927565,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:14:07.195565,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:14:14.927888,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:14:28.491342,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:14:43.492891,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:14:57.048528,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:15:07.130423,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:15:12.037638,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:15:25.581206,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:15:40.596530,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:15:54.139155,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:16:07.047883,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:16:09.159648,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:16:24.139683,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:16:37.677721,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:16:52.667475,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:17:07.667798,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:17:08.431933,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:17:20.548720,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:17:35.554713,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:17:49.166765,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:18:04.166865,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:18:07.678939,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:18:17.715496,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:18:32.718277,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:18:46.255403,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:19:01.268128,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:19:07.621854,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:19:14.772414,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:19:29.773312,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:19:43.343266,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:19:58.359711,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:20:07.532350,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:20:13.348869,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:20:26.886052,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:20:41.885782,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:20:55.416309,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:21:07.431614,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:21:10.415132,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:21:23.962633,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:21:38.960369,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:21:52.530008,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:22:07.363578,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:22:07.523922,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:22:21.084993,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:22:36.095398,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:22:49.637952,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:23:04.613139,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:23:07.316642,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:23:18.135451,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:23:33.139675,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:23:48.134095,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:24:01.687362,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:24:07.227219,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:24:16.688398,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:24:30.247032,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:24:45.242831,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:24:58.757617,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:25:07.180674,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:25:13.762128,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:25:27.280149,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:25:42.265092,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:25:55.819031,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:26:07.081140,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:26:10.815310,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:26:24.393675,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:26:39.368336,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:26:54.364548,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:27:07.020128,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:27:07.900728,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:27:22.911547,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:27:36.428169,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:27:51.428298,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:28:04.942933,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:28:06.932183,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:28:19.936924,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:28:33.474859,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:28:48.476465,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:29:02.020307,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:29:06.863089,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:29:17.017154,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:29:30.547533,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:29:45.551006,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:29:59.058619,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:30:06.780819,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:30:14.059196,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:30:29.058602,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:30:42.583412,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:30:57.575606,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:31:06.716353,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:31:11.116726,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:31:54.206294,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:32:06.647501,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:32:07.721804,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:32:22.719063,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:32:36.231991,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:32:51.236447,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:33:04.769221,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:33:06.573381,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:33:19.765808,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:33:33.298937,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:33:48.301452,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:34:03.299071,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:34:06.510781,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:34:16.814894,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:34:31.818782,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:34:45.347658,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:35:00.348179,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:35:06.431575,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:35:13.869316,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:35:28.867363,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:35:42.391528,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:35:57.386038,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:36:07.822527,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:36:10.916215,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:36:25.925376,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:37:01.061797,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:37:04.546573,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:37:05.835739,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:05.924730,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:37:12.626671,login_failed,,0,admin,127.0.0.1,,Неверный пароль,False
+2026-03-19T13:37:12.628960,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",False
+2026-03-19T13:37:14.571189,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:37:22.509802,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-03-19T13:37:22.510927,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:22.532751,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:29.566754,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:37:30.849517,GET /admin,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:30.915280,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:33.520209,GET /admin/users,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:33.576715,GET /api/admin/users/stats/overview,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:33.605835,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 3),True
+2026-03-19T13:37:33.607051,GET /api/admin/users/,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:43.102279,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:37:45.343609,admin_view_user,,0,admin,127.0.0.1,,Просмотр пользователя user1,True
+2026-03-19T13:37:45.344491,GET /api/admin/users/2,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:37:58.100989,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:38:11.631193,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:38:26.632977,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:38:41.628648,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:38:55.152411,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:38:57.970822,GET /admin,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:38:58.025951,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:01.883825,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:05.320779,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:05.377081,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:10.150466,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:39:17.829041,upload,1 (3).jpg,1086895,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-03-19T13:39:17.830543,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:17.866453,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:25.151615,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:39:26.552949,GET /api/download,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:36.272890,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:37.731381,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:40.150142,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-19T13:39:48.071347,user_delete_file,d4681e87-8b44-4802-b35c-f73729ca7417_1_3_.jpg.age,1087351,admin,127.0.0.1,ccaaa7400665a6d0024677ba9ea6dbc8824a54827271f6221718fadec6dffab0,Удаление файла пользователем,True
+2026-03-19T13:39:48.072388,POST /api/delete-user-file,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:48.086614,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Sa",True
+2026-03-19T13:39:54.335086,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True

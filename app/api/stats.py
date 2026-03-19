@@ -6,6 +6,7 @@ from app.core import (
     file_storage, cleanup_manager, audit_logger
 )
 from pathlib import Path
+import logging
 import os
 import time
 import hashlib
@@ -13,6 +14,8 @@ from datetime import datetime, timedelta
 import platform
 import psutil
 import json
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -178,7 +181,8 @@ async def _get_directory_stats(directory: Path):
                     total_size += stat.st_size
                     file_count += 1
                     last_modified = max(last_modified, stat.st_mtime)
-                except:
+                except Exception as e:
+                    logger.warning(f"Ошибка обработки файла/статистики: {e}")
                     continue
         
         return {
@@ -212,7 +216,8 @@ async def _get_files_stats():
                         "age_days": (time.time() - stat.st_mtime) / 86400,
                         "extension": file_path.suffix
                     })
-                except:
+                except Exception as e:
+                    logger.warning(f"Ошибка обработки файла/статистики: {e}")
                     continue
     
     # Группировка по расширениям
@@ -264,7 +269,8 @@ async def _get_cleanup_stats():
                                 "size": file_path.stat().st_size,
                                 "age_days": file_age / 86400
                             })
-                    except:
+                    except Exception as e:
+                        logger.warning(f"Ошибка обработки файла/статистики: {e}")
                         continue
         
         return {

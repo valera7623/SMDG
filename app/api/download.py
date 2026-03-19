@@ -1,4 +1,5 @@
 # app/api/download.py
+import logging
 from fastapi import APIRouter, Query, HTTPException, BackgroundTasks, Depends, Form, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
@@ -22,6 +23,8 @@ import uuid
 
 from app.models.file import File
 from app.models.file_link import FileLink
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -175,6 +178,6 @@ async def _download_file(
         if decrypted_path.exists():
             try:
                 decrypted_path.unlink()
-            except:
-                pass
+            except Exception as e:
+                logger.warning(f"Не удалось удалить decrypted файл {decrypted_path}: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка скачивания: {str(e)}")

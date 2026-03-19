@@ -164,7 +164,7 @@ async def change_password(
         success=True,
         metadata={
             "username": current_user.sub,
-            "otp_secret_regenerated": True
+            "otp_secret_regenerated": True  # nosec B105
         }
     )
 

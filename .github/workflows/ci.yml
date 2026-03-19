@@ -1,4 +1,4 @@
-name: CI - Tests, Coverage & Docker Build
+name: CI - Tests, Coverage, Security & Docker Build
 
 on:
   push:
@@ -10,11 +10,14 @@ permissions:
   contents: read
   checks: write
   pull-requests: write
-  actions: write  # для upload artifact
+  actions: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
 
     services:
       postgres:
@@ -35,26 +38,34 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
-          pip install pytest pytest-asyncio pytest-cov pytest-mock anyio respx
-
-      - name: Run tests
-        run: pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
+          poetry config virtualenvs.in-project true
+          poetry install --with dev --no-root
 
       - name: Run tests with coverage
         env:
@@ -62,16 +73,17 @@ jobs:
           REDIS_URL: redis://localhost:6379/0
           DEV_MODE: true
         run: |
-          pytest tests/ -v \
+          poetry run pytest tests/ \
+            -v \
             --cov=app \
             --cov-report=xml:coverage.xml \
             --cov-report=term-missing \
-            --cov-fail-under=80  # CI провалится, если coverage < 80%
+            --cov-fail-under=80
 
-      - name: Upload coverage artifact
+      - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: coverage-report-python-${{ matrix.python-version }}
           path: coverage.xml
           retention-days: 7
 
@@ -79,7 +91,7 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: MishaKav/pytest-coverage-comment@v1
         with:
-          title: Coverage Report
+          title: Coverage Report (Python ${{ matrix.python-version }})
           report_file: coverage.xml
           badge: true
           hide_summary: false
@@ -89,13 +101,45 @@ jobs:
           path_prefix: app/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-docker:
+  security-scan:
     runs-on: ubuntu-latest
     needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Install Bandit
+        run: poetry add --group dev bandit
+
+      - name: Run Bandit security scan
+        run: poetry run bandit -r app/ --format json -o bandit-report.json --exit-zero
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 7
+
+  build-docker:
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -111,3 +155,5 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/smdg:latest
             ${{ secrets.DOCKER_USERNAME }}/smdg:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
