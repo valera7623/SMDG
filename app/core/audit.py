@@ -1,9 +1,13 @@
 # app/audit/audit.py
 import json
 import csv
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AuditLogger:
     """Логирование всех операций с файлами + ротация CSV по размеру"""
@@ -31,6 +35,40 @@ class AuditLogger:
                     'timestamp', 'action', 'filename', 'size',
                     'user', 'ip', 'hash', 'reason', 'success'
                 ])
+                
+    def _rotate_and_archive_csv(self):
+        """Ротация + архивация старого CSV"""
+        if not self.csv_log.exists():
+            self._init_csv()
+            return
+
+        if self.csv_log.stat().st_size <= self.MAX_CSV_SIZE:
+            return
+
+        ctime = datetime.fromtimestamp(self.csv_log.stat().st_ctime)
+        date_str = ctime.strftime("%Y-%m-%d_%H-%M-%S")
+        archive_csv = self.log_dir / f"audit_{date_str}.csv"
+        archive_zip = self.log_dir / f"audit_{date_str}.zip"
+
+        # Переименовываем CSV
+        self.csv_log.rename(archive_csv)
+        logger.info(f"CSV ротирован: audit.csv → {archive_csv.name} (было {self.csv_log.stat().st_size / 1024 / 1024:.2f} МБ)")
+
+        # Архивируем в .zip
+        try:
+            with zipfile.ZipFile(archive_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                zipf.write(archive_csv, arcname=archive_csv.name)
+            logger.info(f"Старый CSV архивирован: {archive_zip.name} (сжато с {archive_csv.stat().st_size / 1024 / 1024:.2f} МБ)")
+
+            # Удаляем оригинальный CSV после архивации
+            archive_csv.unlink()
+            logger.info(f"Исходный CSV удалён после архивации: {archive_csv.name}")
+        except Exception as e:
+            logger.error(f"Ошибка архивации {archive_csv}: {e}")
+            # Если архив не создался — оставляем CSV как есть (не удаляем)
+
+        # Создаём новый пустой audit.csv
+        self._init_csv()
 
     def _rotate_csv_if_needed(self):
         """Ротация CSV, если размер превысил лимит"""
