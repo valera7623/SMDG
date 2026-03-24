@@ -7,7 +7,7 @@
     <title>SMDG - Панель администратора</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="/static/js/admin.js" defer></script>
+    <script type="module" src="/static/js/admin.js"></script>
 </head>
 
 <body>
@@ -23,12 +23,9 @@
                 <button onclick="loadFiles()" class="btn-secondary">🔄 Обновить список</button>
                 <button onclick="getCleanupStats()" class="btn-warning">🚮 Проверить очистку</button>
             </div>
-            <div id="fileList" class="file-list admin">
-                <!-- Список файлов -->
-            </div>
+            <div id="fileList" class="file-list admin"></div>
+            <div id="cleanupStats"></div>
         </section>
-
-        <!-- static/html/admin.html - добавьте после секции управления файлами -->
 
         <section class="section">
             <h2>👥 Управление пользователями</h2>
@@ -38,24 +35,9 @@
             <p>Просмотр, создание, редактирование и удаление пользователей системы.</p>
         </section>
 
-
-
         <section class="section info">
             <h2>📊 Статистика системы</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Файлы</h3>
-                    <p id="fileCount">Загрузка...</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Логи</h3>
-                    <p id="logCount">Загрузка...</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Здоровье</h3>
-                    <p id="healthStatus">Загрузка...</p>
-                </div>
-            </div>
+            <div id="statsInfo"></div>
         </section>
 
         <section class="section danger">
@@ -63,7 +45,8 @@
             <div class="danger-zone">
                 <p><strong>Полная очистка системы:</strong></p>
                 <button onclick="purgeAllFiles()" class="btn-danger">🗑️ УДАЛИТЬ ВСЕ ФАЙЛЫ</button>
-                <p class="warning-text"><small>Удалит все зашифрованные файлы. Требуется двойное подтверждение.</small>
+                <p class="warning-text">
+                    <small>Удалит все зашифрованные файлы. Требуется двойное подтверждение.</small>
                 </p>
             </div>
         </section>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,9 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/admin-users.css">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="/static/js/admin-users.js" defer></script>
+    <script type="module" src="/static/js/admin-users.js"></script>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -22,7 +24,7 @@
             </div>
         </header>
 
-        <!-- Статистика пользователей -->
+        <!-- Статистика -->
         <section class="section stats-section">
             <h2>📊 Статистика пользователей</h2>
             <div class="stats-grid" id="userStats">
@@ -53,11 +55,12 @@
             </div>
         </section>
 
-        <!-- Фильтры и поиск -->
+        <!-- Фильтры -->
         <section class="section filters-section">
             <div class="filters">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="🔍 Поиск по логину или email..." oninput="debounceSearch()">
+                    <input type="text" id="searchInput" placeholder="🔍 Поиск по логину или email..."
+                        oninput="debounceSearch()">
                 </div>
                 <div class="filter-controls">
                     <select id="roleFilter" onchange="applyFilters()">
@@ -71,7 +74,7 @@
                         <option value="active">Активные</option>
                         <option value="inactive">Неактивные</option>
                     </select>
-                    <button onclick="applyFilters()" class="btn-primary">Применить фильтры</button>
+                    <button onclick="applyFilters()" class="btn-primary">Применить</button>
                     <button onclick="clearFilters()" class="btn-secondary">Сбросить</button>
                 </div>
             </div>
@@ -99,19 +102,23 @@
             </div>
         </section>
 
-        <!-- Кнопка создания пользователя -->
+        <!-- Создание -->
         <section class="section create-user">
-            <button onclick="showCreateUserModal()" class="btn-success">➕ Создать нового пользователя</button>
+            <button onclick="showCreateUserModal()" class="btn-success">
+                ➕ Создать нового пользователя
+            </button>
         </section>
 
-        <!-- Таблица пользователей -->
+        <!-- Таблица -->
         <section class="section users-table-section">
             <h2>📋 Список пользователей</h2>
             <div class="table-container">
                 <table class="users-table" id="usersTable">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes()"></th>
+                            <th>
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes()">
+                            </th>
                             <th>ID</th>
                             <th>Логин</th>
                             <th>Email</th>
@@ -128,24 +135,23 @@
                     </tbody>
                 </table>
             </div>
-            <div class="pagination" id="pagination">
-                <!-- Пагинация будет добавлена динамически -->
-            </div>
+            <div class="pagination" id="pagination"></div>
         </section>
     </div>
 
-    <!-- Модальное окно создания/редактирования пользователя -->
+    <!-- Модальное окно создания/редактирования -->
     <div id="userModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" onclick="closeUserModal()">&times;</span>
             <h2 id="modalTitle">➕ Создание пользователя</h2>
-            
-            <form id="userForm" onsubmit="handleUserSubmit(event)">
+
+            <form id="userForm">
                 <input type="hidden" id="userId">
-                
+
                 <div class="form-group">
                     <label for="modalUsername">Логин</label>
-                    <input type="text" id="modalUsername" required minlength="3" maxlength="50" pattern="^[a-zA-Z0-9_]+$">
+                    <input type="text" id="modalUsername" required minlength="3" maxlength="50"
+                        pattern="^[a-zA-Z0-9_]+$">
                     <small class="field-hint">От 3 до 50 символов, только буквы, цифры и _</small>
                 </div>
 
@@ -157,7 +163,7 @@
                 <div class="form-group" id="passwordGroup">
                     <label for="modalPassword">Пароль</label>
                     <input type="password" id="modalPassword" minlength="8">
-                    <small class="field-hint">Минимум 8 символов (оставьте пустым чтобы не менять)</small>
+                    <small class="field-hint">Минимум 8 символов (оставьте пустым, чтобы не менять)</small>
                 </div>
 
                 <div class="form-group">
@@ -197,10 +203,11 @@
             <h3 id="confirmTitle">Подтверждение</h3>
             <p id="confirmMessage"></p>
             <div class="form-actions">
-                <button onclick="confirmAction()" class="btn-danger" id="confirmBtn">Подтвердить</button>
+                <button onclick="confirmAction()" class="btn-danger">Подтвердить</button>
                 <button onclick="closeConfirmModal()" class="btn-secondary">Отмена</button>
             </div>
         </div>
     </div>
 </body>
+
 </html>

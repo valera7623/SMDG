@@ -7,14 +7,15 @@
     <title>SMDG - Secure Medical Data Gateway</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="/static/js/main.js" defer></script>
-    <script src="/static/js/qrcode.min.js"></script>
+    <!-- qrcode должен быть загружен до main.js, который его использует -->
+    <script src="/static/js/vendors/qrcode.min.js"></script>
+    <script type="module" src="/static/js/main.js"></script>
 </head>
 
 <body>
     <div class="container">
 
-        <!-- Форма входа/регистрации — видимая по умолчанию -->
+        <!-- Форма входа/регистрации -->
         <div id="authForm" style="display: none;">
             <header>
                 <h1>🔐 Secure Medical Data Gateway</h1>
@@ -28,47 +29,40 @@
             </div>
 
             <!-- Форма входа -->
-            <form id="loginForm" onsubmit="handleLogin(event)" style="display: block;">
+            <form id="loginForm" style="display: block;">
                 <div class="form-group">
                     <label for="loginUsername">Логин</label>
                     <input type="text" id="loginUsername" placeholder="Введите логин" required>
                 </div>
-
                 <div class="form-group">
                     <label for="loginPassword">Пароль</label>
                     <input type="password" id="loginPassword" placeholder="Введите пароль" required>
                 </div>
-
-                <!-- Опциональное поле для 2FA кода -->
                 <div class="form-group" id="loginOtpGroup" style="display: none;">
                     <label for="loginOtpCode">Код 2FA</label>
                     <input type="text" id="loginOtpCode" placeholder="6-значный код" maxlength="6" pattern="[0-9]{6}">
                 </div>
-
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Войти</button>
                 </div>
-
                 <div class="form-footer">
                     <a href="#" onclick="showForgotPassword()">Забыли пароль?</a>
                 </div>
             </form>
 
             <!-- Форма регистрации -->
-            <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
+            <form id="registerForm" style="display: none;">
                 <div class="form-group">
                     <label for="registerUsername">Логин</label>
                     <input type="text" id="registerUsername" placeholder="Придумайте логин" required minlength="3"
                         maxlength="50">
                     <small class="field-hint">От 3 до 50 символов, только буквы и цифры</small>
                 </div>
-
                 <div class="form-group">
                     <label for="registerEmail">Email</label>
                     <input type="email" id="registerEmail" placeholder="Ваш email" required>
                     <small class="field-hint">Используется для восстановления пароля</small>
                 </div>
-
                 <div class="form-group">
                     <label for="registerPassword">Пароль</label>
                     <input type="password" id="registerPassword" placeholder="Придумайте пароль" required minlength="8">
@@ -77,26 +71,23 @@
                     </div>
                     <small class="field-hint">Минимум 8 символов</small>
                 </div>
-
                 <div class="form-group">
                     <label for="registerConfirmPassword">Подтверждение пароля</label>
                     <input type="password" id="registerConfirmPassword" placeholder="Повторите пароль" required>
                 </div>
-
                 <div class="form-group checkbox-group">
                     <label>
                         <input type="checkbox" id="registerAgreeTerms" required>
                         Я согласен с <a href="#" onclick="showTerms()">условиями использования</a>
                     </label>
                 </div>
-
                 <div class="form-actions">
                     <button type="submit" class="btn-success">Зарегистрироваться</button>
                 </div>
             </form>
         </div>
 
-        <!-- Основной интерфейс приложения — скрыт до входа -->
+        <!-- Основной интерфейс -->
         <div id="mainApp" style="display: block;">
             <header style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -105,10 +96,8 @@
                 </div>
                 <div class="user-info">
                     <span id="currentUsername"></span>
-                    <button id="setup2faDashboardBtn" class="btn btn-outline-primary">
-                        Настроить 2FA
-                    </button>
-
+                    <button id="setup2faDashboardBtn" class="btn btn-outline-primary"
+                        onclick="handleSetup2FA()">Настроить 2FA</button>
                     <button onclick="logout()" class="btn-danger" style="height: fit-content;">
                         🚪 Выйти
                     </button>
@@ -122,21 +111,17 @@
 
             <section class="section">
                 <h2>📤 Загрузка файла</h2>
-                <form id="uploadForm" onsubmit="return false;">
+                <form id="uploadForm">
                     <input type="file" id="fileInput" required><br><br>
                     <button type="submit" class="btn-primary">Загрузить файл</button>
                 </form>
-
-                <!-- Здесь будет отображаться блок со ссылкой после загрузки -->
                 <div id="uploadResult"></div>
             </section>
 
             <section class="section">
                 <h2>📋 Список файлов</h2>
-                <button onclick="loadFileList()" class="btn-secondary">🔄 Обновить список</button>
-                <div id="fileList" class="file-list">
-                    <!-- Файлы появятся здесь -->
-                </div>
+                <button id="refreshBtn" class="btn-secondary">🔄 Обновить список</button>
+                <div id="fileList" class="file-list"></div>
             </section>
 
             <nav class="nav-links">
@@ -154,11 +139,6 @@
                     <li>API: /health, /docs, /admin</li>
                 </ul>
             </footer>
-        </div>
-
-        <!-- Модальное окно для 2FA настройки -->
-        <div id="twoFaModal" class="modal" style="display:none;">
-
         </div>
     </div>
 </body>
