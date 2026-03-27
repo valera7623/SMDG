@@ -1,7 +1,8 @@
 # app/main.py
+from contextlib import asynccontextmanager
+from fastapi import Depends, FastAPI, Request, logger, HTTPException
 from typing import Annotated
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi import Depends, FastAPI, Request, logger, HTTPException
 from limits.typing import RedisClient
 from app.core.auth import get_current_user, TokenData
 from app.core.config import settings
@@ -38,11 +39,48 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager для управления жизненным циклом приложения"""
+    print("🚀 Запуск SMDG v0.1...")
+    
+    # Startup
+    try:
+        await init_keys()
+        print("✅ Ключи шифрования инициализированы")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации ключей: {e}")
+
+    await check_redis_connection()
+    print("✅ Rate limiter: Redis проверен")
+    
+    await cleanup_manager.start_cleanup_task()
+    print("✅ Авто-очистка старых файлов запущена (APScheduler)")
+    
+    try:
+        await RedisClient.set("test_key_startup", "test_value", ex=60)
+        value = await RedisClient.get("test_key_startup")
+        print(f"Redis тестовая запись прошла: {value}")
+    except Exception as e:
+        print(f"Ошибка тестовой записи в Redis: {e}")
+    
+    await create_first_admin()
+    
+    yield  # Здесь приложение работает
+    
+    # Shutdown (если нужно)
+    print("🛑 Завершение работы SMDG...")
+    await cleanup_manager.stop_cleanup_task()
+    await RedisClient.close()
+    print("✅ Ресурсы освобождены")
+
+# Создаём приложение с lifespan
 app = FastAPI(
-    title="Secure Medical Data Gateway v0.1",
-    version="0.1.0",
-    docs_url="/docs",
-    redoc_url=None
+    title="SMDG",
+    version="0.1",
+    lifespan=lifespan  
 )
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
@@ -141,11 +179,6 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 
-
-
-
-
-
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -191,39 +224,6 @@ async def ensure_admin_exists(session: AsyncSession):
 
 
 
-# Инициализация при запуске
-@app.on_event("startup")
-async def startup_event():
-    print("🚀 Запуск SMDG v0.1...")
-    
-    # Инициализация ключей
-    try:
-        await init_keys()
-        print("✅ Ключи шифрования инициализированы")
-    except Exception as e:
-        print(f"❌ Ошибка инициализации ключей: {e}")
-
-    # Проверка Redis
-    await check_redis_connection()
-    print("✅ Rate limiter: Redis проверен")
-    
-    # Запуск авто-очистки (безопасно — повторные вызовы игнорируются)
-    await cleanup_manager.start_cleanup_task()
-    print("✅ Авто-очистка старых файлов запущена (APScheduler)")
-    
-    # Отладка Redis (тестовая запись — используем правильный клиент)
-    try:
-        await RedisClient.set("test_key_startup", "test_value", ex=60)
-        value = await RedisClient.get("test_key_startup")
-        print(f"Redis тестовая запись прошла: {value}")
-    except Exception as e:
-        print(f"Ошибка тестовой записи в Redis: {e}")
-    
-    # Создание админа (если dev-режим)
-    await create_first_admin()
-    
-    
-    
 async def create_first_admin():
     """Создаёт первого администратора, если его ещё нет (только в dev-режиме)"""
     if not settings.dev_mode:

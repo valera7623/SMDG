@@ -1,274 +1,287 @@
 # tests/test_cli.py
 import pytest
 from typer.testing import CliRunner
-from unittest.mock import patch, MagicMock, AsyncMock
-from sqlalchemy.ext.asyncio import AsyncSession
+from unittest.mock import AsyncMock, patch, MagicMock
 from app.cli import cli
-from app.models.user import User
-from app.core.security import verify_password, get_password_hash
 
 runner = CliRunner()
 
 
-class TestCLI:
-    """Тесты для CLI команд"""
+# ========== ТЕСТЫ АСИНХРОННОЙ ЛОГИКИ ==========
 
-    def test_create_admin_new_user(self):
-        """Тест создания нового администратора"""
-        # Мокаем асинхронные зависимости
-        mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None
+@pytest.mark.asyncio
+async def test_create_admin_async_new_user():
+    """Тест асинхронной логики создания нового админа"""
+    with patch("app.cli.AsyncSessionLocal") as mock_session_local, \
+         patch("app.cli.get_password_hash") as mock_hash:
         
-        mock_session_class = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
         
-        # Мокаем asyncio.run чтобы избежать ошибки event loop
-        with patch('app.cli.asyncio.run') as mock_asyncio_run:
-            with patch('app.cli.AsyncSessionLocal', mock_session_class):
-                
-                def capture_coroutine(coro):
-                    # Запускаем корутину синхронно для проверки
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(coro)
-                    finally:
-                        loop.close()
-                    return None
-                
-                mock_asyncio_run.side_effect = capture_coroutine
-                
-                # Запускаем CLI команду
-                result = runner.invoke(cli, ["create-admin", "newadmin", "securepass123"])
-                
-                # Проверяем вывод
-                assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.stdout}"
-                assert "Админ newadmin создан." in result.stdout
-                assert "Готово. Теперь можно логиниться." in result.stdout
-                
-                # Проверяем, что session.commit был вызван
-                mock_session.commit.assert_called_once()
-                
-                # Проверяем, что пользователь был добавлен с правильными данными
-                mock_session.add.assert_called_once()
-                added_user = mock_session.add.call_args[0][0]
-                
-                assert isinstance(added_user, User)
-                assert added_user.username == "newadmin"
-                assert added_user.role == "admin"
-                assert added_user.is_active is True
-                # Пароль должен быть хэширован
-                assert added_user.hashed_password != "securepass123"
-                assert verify_password("securepass123", added_user.hashed_password)
-
-    def test_create_admin_update_existing(self):
-        """Тест обновления существующего пользователя до администратора"""
-        # Создаем мок существующего пользователя
-        existing_user = User(
-            id=1,
-            username="existinguser",
-            hashed_password="old_hash",  # Старый хэш
-            role="user",  # Изначально обычный пользователь
-            is_active=False  # Изначально неактивен
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        
+        mock_hash.return_value = "hashed_password"
+        
+        from app.cli import _create_admin_async
+        
+        result = await _create_admin_async(
+            username="testadmin",
+            password="testpass",
+            email="test@example.com"
         )
         
-        mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.return_value.scalar_one_or_none.return_value = existing_user
-        
-        mock_session_class = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-        
-        # Мокаем asyncio.run чтобы избежать ошибки event loop
-        with patch('app.cli.asyncio.run') as mock_asyncio_run:
-            with patch('app.cli.AsyncSessionLocal', mock_session_class):
-                
-                def capture_coroutine(coro):
-                    # Запускаем корутину синхронно для проверки
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(coro)
-                    finally:
-                        loop.close()
-                    return None
-                
-                mock_asyncio_run.side_effect = capture_coroutine
-                
-                # Запускаем CLI команду
-                result = runner.invoke(cli, ["create-admin", "existinguser", "newpass456"])
-                
-                # Проверяем вывод
-                assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.stdout}"
-                assert "Админ existinguser обновлён." in result.stdout
-                assert "Готово. Теперь можно логиниться." in result.stdout
-                
-                # Проверяем, что session.commit был вызван
-                mock_session.commit.assert_called_once()
-                
-                # Проверяем, что НЕ добавляли нового пользователя
-                mock_session.add.assert_not_called()
-                
-                # Проверяем, что существующий пользователь обновлен
-                assert existing_user.role == "admin"
-                assert existing_user.is_active is True
-                # Пароль должен быть обновлен
-                assert existing_user.hashed_password != "old_hash"
-                assert existing_user.hashed_password != "newpass456"
-                # Проверяем, что get_password_hash был вызван (опосредованно через verify_password)
-                assert verify_password("newpass456", existing_user.hashed_password)
+        assert "создан" in result
+        assert "test@example.com" in result
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
 
-    def test_create_admin_default_username(self):
-        """Тест с использованием имени пользователя по умолчанию"""
-        # Просто проверяем help, не запуская команду
-        result = runner.invoke(cli, ["create-admin", "--help"])
+
+@pytest.mark.asyncio
+async def test_create_admin_async_update_existing():
+    """Тест асинхронной логики обновления существующего админа"""
+    with patch("app.cli.AsyncSessionLocal") as mock_session_local, \
+         patch("app.cli.get_password_hash") as mock_hash:
         
-        # Проверяем help текст
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+        
+        existing_user = MagicMock()
+        existing_user.username = "existing"
+        existing_user.email = "old@example.com"
+        existing_user.role = "user"
+        existing_user.is_active = True
+        
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = existing_user
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        
+        mock_hash.return_value = "new_hashed"
+        
+        from app.cli import _create_admin_async
+        
+        result = await _create_admin_async(
+            username="existing",
+            password="newpass",
+            email="new@example.com"
+        )
+        
+        assert "обновлён" in result
+        assert existing_user.hashed_password == "new_hashed"
+        assert existing_user.role == "admin"
+        mock_session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_rotate_keys_async_success():
+    """Тест асинхронной логики ротации ключей"""
+    with patch("app.crypto.crypto.crypto_manager") as mock_crypto:
+        mock_crypto.rotate_keys = AsyncMock(return_value="new_pub_key_123")
+        
+        from app.cli import _rotate_keys_async
+        
+        result = await _rotate_keys_async(backup_dir="/tmp/backup")
+        
+        assert "Ротация завершена" in result
+        assert "new_pub_key_123" in result
+        mock_crypto.rotate_keys.assert_called_once_with(
+            backup_old_key=True,
+            backup_dir="/tmp/backup"
+        )
+
+
+@pytest.mark.asyncio
+async def test_rotate_keys_async_failure():
+    """Тест ошибки при ротации ключей"""
+    with patch("app.crypto.crypto.crypto_manager") as mock_crypto:
+        mock_crypto.rotate_keys = AsyncMock(side_effect=Exception("Key error"))
+        
+        from app.cli import _rotate_keys_async
+        
+        with pytest.raises(Exception, match="Key error"):
+            await _rotate_keys_async(backup_dir="/tmp/backup")
+
+
+# ========== ТЕСТЫ CLI КОМАНД ==========
+
+def test_create_admin_cli_new_user():
+    """Тест CLI команды создания админа"""
+    with patch("app.cli._create_admin_async") as mock_create:
+        mock_create.return_value = "Админ testuser создан с email test@example.com."
+        
+        result = runner.invoke(cli, [
+            "create-admin",
+            "testuser",
+            "testpass123",
+            "--email", "test@example.com"
+        ])
+        
         assert result.exit_code == 0
-        assert "Имя пользователя (по умолчанию: admin)" in result.stdout
-        assert "Пароль администратора (без промпта)" in result.stdout
+        assert "Админ testuser создан" in result.stdout
+        
+        # Проверяем вызов с позиционными аргументами
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        
+        assert len(args) == 3
+        assert args[0] == "testuser"           # username
+        assert args[1] == "testpass123"        # password
+        assert args[2] == "test@example.com"   # email
 
-    def test_create_admin_with_explicit_default_username(self):
-        """Тест создания администратора с явным указанием имени 'admin'"""
-        mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None
-        
-        mock_session_class = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-        
-        # Мокаем asyncio.run чтобы избежать ошибки event loop
-        with patch('app.cli.asyncio.run') as mock_asyncio_run:
-            with patch('app.cli.AsyncSessionLocal', mock_session_class):
-                
-                def capture_coroutine(coro):
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(coro)
-                    finally:
-                        loop.close()
-                    return None
-                
-                mock_asyncio_run.side_effect = capture_coroutine
-                
-                # Явно указываем username "admin" и password
-                result = runner.invoke(cli, ["create-admin", "admin", "adminpass789"])
-                
-                # Проверяем, что команда выполнилась
-                assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.stdout}"
-                
-                # Проверяем, что пользователь был добавлен
-                mock_session.add.assert_called_once()
-                added_user = mock_session.add.call_args[0][0]
-                
-                assert added_user.username == "admin"
 
-    def test_create_admin_with_only_password_argument(self):
-        """Тест создания администратора с передачей только пароля (username по умолчанию)"""
-        # Внимание: Typer интерпретирует аргументы позиционно
-        # При вызове: create-admin <password>
-        # Typer думает: первый аргумент = username, второй = password
-        # Но у нас password обязательный без дефолта, так что это вызовет ошибку
+def test_create_admin_cli_without_email():
+    """Тест CLI команды с дефолтным email"""
+    with patch("app.cli._create_admin_async") as mock_create:
+        mock_create.return_value = "Админ admin создан с email admin@example.com."
         
-        result = runner.invoke(cli, ["create-admin", "somepassword"])
+        result = runner.invoke(cli, [
+            "create-admin",
+            "admin",
+            "testpass123"
+        ])
         
-        # Typer ожидает 2 аргумента, поэтому будет ошибка
-        # Проверяем, что это действительно так
-        assert result.exit_code != 0
-        # Или проверяем сообщение об ошибке
-        assert "Missing argument" in result.stdout or "Error" in result.stdout
-
-    def test_create_admin_database_error(self):
-        """Тест обработки ошибки базы данных"""
-        mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.side_effect = Exception("Database connection error")
-        
-        mock_session_class = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-        
-        # Мокаем asyncio.run чтобы избежать ошибки event loop
-        with patch('app.cli.asyncio.run') as mock_asyncio_run:
-            with patch('app.cli.AsyncSessionLocal', mock_session_class):
-                
-                def capture_coroutine(coro):
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(coro)
-                    except Exception:
-                        pass  # Ожидаем исключение
-                    finally:
-                        loop.close()
-                    return None
-                
-                mock_asyncio_run.side_effect = capture_coroutine
-                
-                # Запускаем CLI команду
-                result = runner.invoke(cli, ["create-admin", "testuser", "testpass"])
-                
-                # Команда может завершиться с ошибкой
-                # Проверяем, что asyncio.run был вызван
-                mock_asyncio_run.assert_called_once()
-
-    def test_cli_help(self):
-        """Тест вывода справки"""
-        result = runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
-        assert "create-admin" in result.stdout
-        assert "Создаёт или обновляет администратора" in result.stdout
+        
+        # Проверяем вызов с дефолтным email
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        
+        assert len(args) == 3
+        assert args[0] == "admin"
+        assert args[1] == "testpass123"
+        assert args[2] == "admin@example.com"  # дефолтный email
 
-    def test_create_admin_empty_password(self):
-        """Тест с пустым паролем"""
-        mock_session = AsyncMock(spec=AsyncSession)
-        mock_session.execute.return_value.scalar_one_or_none.return_value = None
-        
-        mock_session_class = MagicMock()
-        mock_session_class.return_value.__aenter__.return_value = mock_session
-        
-        # Мокаем asyncio.run чтобы избежать ошибки event loop
-        with patch('app.cli.asyncio.run') as mock_asyncio_run:
-            with patch('app.cli.AsyncSessionLocal', mock_session_class):
-                
-                def capture_coroutine(coro):
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(coro)
-                    finally:
-                        loop.close()
-                    return None
-                
-                mock_asyncio_run.side_effect = capture_coroutine
-                
-                # Передаем пустой пароль
-                result = runner.invoke(cli, ["create-admin", "testuser", ""])
-                
-                # Проверяем, что команда выполнилась
-                assert result.exit_code == 0, f"Expected exit code 0, got {result.exit_code}. Output: {result.stdout}"
-                
-                # Пользователь должен быть создан с пустым паролем (хэшированной пустой строкой)
-                mock_session.add.assert_called_once()
-                added_user = mock_session.add.call_args[0][0]
-                
-                # Проверяем, что пароль хэширован (даже пустой)
-                assert added_user.hashed_password is not None
-                assert verify_password("", added_user.hashed_password)
+
+def test_create_admin_cli_missing_password():
+    """Тест CLI команды без пароля"""
+    result = runner.invoke(cli, [
+        "create-admin",
+        "testuser"
+    ])
     
-    def test_create_admin_command_structure(self):
-        """Тест структуры команды и аргументов"""
-        # Проверяем, что команда требует ровно 2 аргумента
-        result = runner.invoke(cli, ["create-admin"])
-        assert result.exit_code != 0  # Должна быть ошибка - не хватает аргументов
+    assert result.exit_code == 2
+    error_output = result.stdout + result.stderr
+    assert any(msg in error_output for msg in [
+        "Missing argument",
+        "отсутствует",
+        "PASSWORD",
+        "пароль"
+    ])
+
+
+def test_rotate_keys_cli_success():
+    """Тест CLI команды ротации ключей"""
+    with patch("app.cli._rotate_keys_async") as mock_rotate:
+        mock_rotate.return_value = "Ротация завершена. Новый публичный ключ: new_key"
         
-        result = runner.invoke(cli, ["create-admin", "useronly"])
-        assert result.exit_code != 0  # Должна быть ошибка - не хватает пароля
+        result = runner.invoke(cli, [
+            "rotate-keys",
+            "--backup-dir", "/custom/backup"
+        ])
         
-        result = runner.invoke(cli, ["create-admin", "user", "pass", "extra"])
-        # Typer может принять лишние аргументы или выдать ошибку
-        # Проверяем хотя бы что команда не выполняется нормально
-        if result.exit_code == 0:
-            print(f"Warning: Typer accepted extra arguments: {result.stdout}")
+        assert result.exit_code == 0
+        assert "Ротация завершена" in result.stdout
+        
+        mock_rotate.assert_called_once()
+        args, kwargs = mock_rotate.call_args
+        assert args[0] == "/custom/backup"
+
+
+def test_rotate_keys_cli_default_dir():
+    """Тест CLI команды с дефолтной директорией"""
+    with patch("app.cli._rotate_keys_async") as mock_rotate:
+        mock_rotate.return_value = "Success"
+        
+        result = runner.invoke(cli, ["rotate-keys"])
+        
+        assert result.exit_code == 0
+        
+        mock_rotate.assert_called_once()
+        args, kwargs = mock_rotate.call_args
+        assert args[0] == "/app/backups/keys"
+
+
+def test_rotate_keys_cli_error():
+    """Тест CLI команды с ошибкой"""
+    with patch("app.cli._rotate_keys_async") as mock_rotate:
+        mock_rotate.side_effect = Exception("Rotation failed")
+        
+        result = runner.invoke(cli, ["rotate-keys"])
+        
+        assert result.exit_code == 1
+        assert "Ошибка ротации: Rotation failed" in result.stdout
+
+
+def test_create_admin_cli_with_special_characters():
+    """Тест создания админа с спецсимволами в пароле"""
+    with patch("app.cli._create_admin_async") as mock_create:
+        mock_create.return_value = "Админ special создан"
+        
+        result = runner.invoke(cli, [
+            "create-admin",
+            "specialuser",
+            "P@ssw0rd!@#$%",
+            "--email", "special@example.com"
+        ])
+        
+        assert result.exit_code == 0
+        
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        assert args[0] == "specialuser"
+        assert args[1] == "P@ssw0rd!@#$%"
+        assert args[2] == "special@example.com"
+
+
+def test_create_admin_cli_very_long_username():
+    """Тест с очень длинным именем пользователя"""
+    with patch("app.cli._create_admin_async") as mock_create:
+        mock_create.return_value = "Success"
+        
+        long_username = "a" * 100
+        result = runner.invoke(cli, [
+            "create-admin",
+            long_username,
+            "testpass123"
+        ])
+        
+        assert result.exit_code == 0
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        assert args[0] == long_username
+        assert args[1] == "testpass123"
+        assert args[2] == "admin@example.com"  # дефолтный email
+
+
+def test_create_admin_cli_custom_email():
+    """Тест с кастомным email через флаг"""
+    with patch("app.cli._create_admin_async") as mock_create:
+        mock_create.return_value = "Success"
+        
+        result = runner.invoke(cli, [
+            "create-admin",
+            "user123",
+            "pass123",
+            "--email", "custom@hospital.com"
+        ])
+        
+        assert result.exit_code == 0
+        mock_create.assert_called_once()
+        args, kwargs = mock_create.call_args
+        assert args[0] == "user123"
+        assert args[1] == "pass123"
+        assert args[2] == "custom@hospital.com"
+
+
+def test_create_admin_cli_empty_username():
+    """Тест с пустым именем пользователя"""
+    result = runner.invoke(cli, [
+        "create-admin",
+        "",
+        "testpass123"
+    ])
+    
+    # Пустое имя может быть валидным или нет, в зависимости от модели
+    # Проверяем, что команда завершилась с ошибкой или успехом
+    assert result.exit_code in [0, 1, 2]

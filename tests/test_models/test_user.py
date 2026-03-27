@@ -1,52 +1,65 @@
-# tests/test_models/test_user_corrected.py
+# tests/test_models/test_user.py
 import pytest
-import sys
-from pathlib import Path
+from tests.factories import UserFactory
+from sqlalchemy.exc import IntegrityError
 
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
 
-def test_user_model():
-    """Тест модели User - исправленная версия"""
-    from app.models.user import User
+@pytest.mark.asyncio
+async def test_create_user(db_session):
+    """Тест создания обычного пользователя"""
+    user = await UserFactory.create_async()
     
-    # Проверяем что модель создается
-    user = User(
-        username="testuser",
-        hashed_password="hashed_password_123",
-        role="user",  # Явно указываем
-        is_active=True
-    )
-    
-    assert user.username == "testuser"
-    assert user.hashed_password == "hashed_password_123"
+    assert user.id is not None
+    assert isinstance(user.id, int)
     assert user.role == "user"
     assert user.is_active is True
 
-def test_user_defaults_correct():
-    """Правильная проверка значений по умолчанию"""
-    from app.models.user import User
-    
-    # Создаем пользователя только с обязательными полями
-    user = User(
+
+@pytest.mark.asyncio
+async def test_create_doctor(db_session):
+    """Тест создания врача"""
+    doctor = await UserFactory.create_async(doctor=True)
+    assert doctor.role == "doctor"
+
+
+@pytest.mark.asyncio
+async def test_create_admin_user(db_session):
+    """Тест создания администратора"""
+    admin = await UserFactory.create_async(admin=True)
+    assert admin.role == "admin"
+    assert admin.username == "admin"
+
+
+@pytest.mark.asyncio
+async def test_create_user_with_custom_password(db_session):
+    """Тест создания пользователя с кастомным паролем"""
+    user = await UserFactory.create_async(
+        email="test@example.com",
         username="testuser",
-        hashed_password="hash"
+        set_password="mysecurepass123"
     )
     
-    # В модели Mapped[str] без default, так что role будет None
-    # Это нормально - проверим что мы можем установить роль позже
-    user.role = "user"
-    assert user.role == "user"
-    
-    # is_active должно быть True по умолчанию из mapped_column(default=True)
-    assert user.is_active is True
+    from app.core.security import verify_password
+    assert verify_password("mysecurepass123", user.hashed_password) is True
 
-def test_user_repr():
-    """Тест строкового представления"""
-    from app.models.user import User
+
+@pytest.mark.asyncio
+async def test_create_batch_users(db_session):
+    """Тест создания нескольких пользователей"""
+    users = await UserFactory.create_batch_async(3, doctor=True)
+    assert len(users) == 3
+    assert all(u.role == "doctor" for u in users)
+
+
+@pytest.mark.asyncio
+async def test_user_unique_constraints(db_session):
+    """Тест уникальности email и username"""
+    await UserFactory.create_async(email="unique@example.com", username="unique")
     
-    user = User(username="doctor", role="doctor")
-    repr_str = repr(user)
+    with pytest.raises(IntegrityError):
+        await UserFactory.create_async(email="unique@example.com", username="another")
     
-    assert "User" in repr_str
-    assert "doctor" in repr_str
+    await db_session.rollback()
+    
+    with pytest.raises(IntegrityError):
+        await UserFactory.create_async(email="another@example.com", username="unique")

@@ -71,6 +71,7 @@ qrcode = "7.4.2"
 pillow = "10.4.0"
 aiocache = "^0.12.3"
 bandit = "^1.9.4"
+factory-boy = {extras = ["sqlalchemy"], version = "^3.3.3"}
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
