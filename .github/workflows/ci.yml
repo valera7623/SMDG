@@ -67,6 +67,15 @@ jobs:
           poetry config virtualenvs.in-project true
           poetry install --with dev --no-root
 
+      # === НОВЫЙ ШАГ: установка age для тестов crypto ===
+      - name: Install age encryption tool
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+          echo "✅ age installed:"
+          age --version
+          age-keygen --version
+
       - name: Run tests with coverage
         env:
           DATABASE_URL: postgresql+asyncpg://smdg_user:password@localhost:5432/smdg
@@ -101,6 +110,7 @@ jobs:
           path_prefix: app/
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  # security-scan и build-docker без изменений
   security-scan:
     runs-on: ubuntu-latest
     needs: test

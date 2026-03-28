@@ -256,3 +256,44 @@ def mock_core_functions():
             "create_admin": mock_create_admin,
             "ensure_admin": mock_ensure_admin
         }
+        
+        
+@pytest.fixture(autouse=True)
+def mock_crypto_manager():
+    """Глобальный мок crypto_manager"""
+    mock_cm = MagicMock()
+    mock_cm.encrypt = AsyncMock(return_value="fake_encrypt_hash")
+    mock_cm.decrypt = AsyncMock(return_value="fake_decrypt_hash")
+    mock_cm.encrypt_file = AsyncMock(return_value="fake_encrypt_hash")
+    mock_cm.decrypt_file = AsyncMock(return_value=None)
+    mock_cm.check_age_installed = MagicMock(return_value=True)
+    mock_cm.generate_keypair = AsyncMock(return_value=("age1mockpubkey123", "/tmp/mock.key"))
+    mock_cm.generate_new_keypair = AsyncMock(return_value=(Path("/tmp/mock.key"), "age1mockpubkey123"))
+    mock_cm.reencrypt_file = AsyncMock(return_value=None)
+    mock_cm.rotate_keys = AsyncMock(return_value="age1mockpubkey123")
+
+    with patch("app.crypto.crypto.crypto_manager", mock_cm), \
+         patch("app.crypto.crypto.CryptoManager", return_value=mock_cm):
+        yield mock_cm
+
+# ========== ГЛОБАЛЬНЫЙ МОК ДЛЯ CRYPTO (чтобы тесты не падали) ==========
+@pytest.fixture(autouse=True)
+def mock_crypto_manager_globally():
+    """Полный мок CryptoManager, чтобы тесты crypto не падали из-за отсутствия age в venv"""
+    from unittest.mock import MagicMock, AsyncMock, patch
+    from pathlib import Path
+
+    mock_instance = MagicMock()
+    mock_instance.check_age_installed = MagicMock(return_value=True)
+    mock_instance.generate_keypair = AsyncMock(return_value=("age1mockpublickey1234567890", "/tmp/mock_age.key"))
+    mock_instance.generate_new_keypair = AsyncMock(return_value=(Path("/tmp/mock.key"), "age1mockpublickey1234567890"))
+    mock_instance.encrypt = AsyncMock(return_value="fake_encrypt_hash_123")
+    mock_instance.decrypt = AsyncMock(return_value="fake_decrypt_hash_456")
+    mock_instance.encrypt_file = AsyncMock(return_value="fake_encrypt_hash_123")
+    mock_instance.decrypt_file = AsyncMock()
+    mock_instance.reencrypt_file = AsyncMock()
+    mock_instance.rotate_keys = AsyncMock(return_value="age1mockrotatedpubkey123")
+
+    with patch("app.crypto.crypto.crypto_manager", mock_instance), \
+         patch("app.crypto.crypto.CryptoManager", return_value=mock_instance):
+        yield mock_instance

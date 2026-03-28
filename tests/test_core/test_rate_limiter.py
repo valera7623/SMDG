@@ -1,23 +1,38 @@
+# tests/test_core/test_rate_limiter.py
 import pytest
 import asyncio
 from unittest.mock import Mock, patch, AsyncMock
 from app.core.rate_limiter import (
     limiter, 
-    get_remote_address, 
+    custom_key_func,  # изменено: get_remote_address -> custom_key_func
     reset_rate_limit_cache,
-    storage_backend,
-    wait_for_rate_limit_reset
+    # storage_backend - удаляем, его нет в модуле
 )
+from slowapi.errors import RateLimitExceeded
 
 
-def test_get_remote_address():
-    """Тест функции получения удаленного адреса"""
+def test_custom_key_func_with_user():
+    """Тест функции получения ключа с авторизованным пользователем"""
     mock_request = Mock()
     mock_request.client.host = "192.168.1.100"
+    mock_request.scope = {"user": Mock(sub="user123")}
     
-    result = get_remote_address(mock_request)
+    result = custom_key_func(mock_request)
     
-    assert result == "192.168.1.100"
+    assert result == "rate_limit:user:user123"
+
+
+def test_custom_key_func_without_user():
+    """Тест функции получения ключа без авторизованного пользователя"""
+    mock_request = Mock()
+    mock_request.client.host = "192.168.1.100"
+    mock_request.scope = {}
+    
+    # Мокаем get_remote_address через патч
+    with patch('app.core.rate_limiter.get_remote_address', return_value="192.168.1.100"):
+        result = custom_key_func(mock_request)
+    
+    assert result == "rate_limit:ip:192.168.1.100"
 
 
 def test_limiter_initialization():
@@ -27,72 +42,34 @@ def test_limiter_initialization():
     assert hasattr(limiter, 'key_func')
     
     # Проверяем лимиты по умолчанию
-    assert limiter._default_limits == ["300/day"]
+    assert limiter._default_limits == ["100/minute"]
 
 
 @pytest.mark.asyncio
-async def test_reset_rate_limit_cache_redis():
-    """Тест сброса кеша для Redis"""
-    with patch('app.core.rate_limiter.storage_backend', 'redis'):
-        with patch('app.core.rate_limiter.redis_client') as mock_redis:
-            mock_redis.flushdb = AsyncMock()
-            
-            await reset_rate_limit_cache()
-            
-            mock_redis.flushdb.assert_called_once()
-
-
-@pytest.mark.asyncio
-async def test_reset_rate_limit_cache_memory():
-    """Тест сброса кеша для памяти"""
-    with patch('app.core.rate_limiter.storage_backend', 'memory'):
-        # Мокаем хранилище
-        mock_storage = Mock()
-        mock_storage.storage = {}
+async def test_reset_rate_limit_cache():
+    """Тест сброса кеша Redis (только Redis, rate limiter in-memory)"""
+    with patch('app.core.rate_limiter.redis_client') as mock_redis:
+        mock_redis.flushdb = AsyncMock()
         
-        with patch('app.core.rate_limiter.limiter._storage', mock_storage):
-            await reset_rate_limit_cache()
-            
-            # Проверяем что storage был очищен
-            assert mock_storage.storage == {}
+        await reset_rate_limit_cache()
+        
+        mock_redis.flushdb.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_reset_rate_limit_cache_error():
     """Тест ошибки при сбросе кеша"""
-    with patch('app.core.rate_limiter.storage_backend', 'redis'):
-        with patch('app.core.rate_limiter.redis_client') as mock_redis:
-            mock_redis.flushdb = AsyncMock()
-            mock_redis.flushdb.side_effect = Exception("Redis error")
-            
-            # Не должно вызывать исключение
-            await reset_rate_limit_cache()
-
-
-@pytest.mark.asyncio
-async def test_wait_for_rate_limit_reset():
-    """Тест ожидания сброса rate limit"""
-    with patch('asyncio.sleep') as mock_sleep:
-        with patch('sys.stdout.write') as mock_stdout:
-            await wait_for_rate_limit_reset(seconds=3)
-            
-            # Проверяем что sleep вызывался нужное количество раз
-            assert mock_sleep.call_count == 3
-            
-            # Проверяем вывод
-            assert mock_stdout.call_count > 0
-
-
-def test_storage_backend():
-    """Тест переменной storage_backend"""
-    assert storage_backend in ['memory', 'redis']
+    with patch('app.core.rate_limiter.redis_client') as mock_redis:
+        mock_redis.flushdb = AsyncMock()
+        mock_redis.flushdb.side_effect = Exception("Redis error")
+        
+        # Не должно вызывать исключение (ошибка логируется)
+        await reset_rate_limit_cache()
 
 
 @pytest.mark.asyncio
 async def test_rate_limiter_integration():
-    """Интеграционный тест rate limiter"""
-    from slowapi.errors import RateLimitExceeded
-    
+    """Интеграционный тест rate limiter (in-memory)"""
     # Создаем простую функцию с лимитом
     @limiter.limit("5/minute")
     async def limited_function(request):
@@ -100,40 +77,31 @@ async def test_rate_limiter_integration():
     
     mock_request = Mock()
     mock_request.client.host = "192.168.1.100"
+    mock_request.scope = {}
     
-    # Вызываем несколько раз
-    for i in range(5):
-        try:
+    # Патчим custom_key_func для теста
+    with patch('app.core.rate_limiter.custom_key_func', return_value="test_key"):
+        # Вызываем 5 раз - должно быть успешно
+        for i in range(5):
             result = await limited_function(mock_request)
             assert result["message"] == "success"
-        except RateLimitExceeded:
-            # На 6-м вызове должен превысить лимит
-            if i == 5:
-                assert True
-            else:
-                assert False, f"Rate limit exceeded too early at call {i}"
+        
+        # 6-й вызов должен превысить лимит
+        with pytest.raises(RateLimitExceeded):
+            await limited_function(mock_request)
     
-    # Сбрасываем кеш
+    # Сбрасываем кеш Redis (не влияет на rate limiter, т.к. он in-memory)
     await reset_rate_limit_cache()
-    
-    # Теперь снова должно работать
-    try:
-        result = await limited_function(mock_request)
-        assert result["message"] == "success"
-    except RateLimitExceeded:
-        assert False, "Should work after reset"
 
 
 def test_limiter_configuration():
     """Тест конфигурации лимитера"""
-    # Проверяем что стратегия установлена
-    assert hasattr(limiter, '_strategy')
-    
     # Проверяем key_func
-    assert limiter._key_func == get_remote_address
+    assert limiter._key_func == custom_key_func
     
-    # Проверяем обработку ошибок
-    assert hasattr(limiter, '_in_memory_fallback_on_error')
+    # Проверяем что используется MemoryStorage
+    storage_type = type(limiter._storage).__name__
+    assert "Memory" in storage_type or "InMemory" in storage_type
 
 
 @pytest.mark.asyncio
@@ -146,22 +114,56 @@ async def test_concurrent_rate_limiting():
     
     mock_request = Mock()
     mock_request.client.host = "192.168.1.100"
+    mock_request.scope = {}
     
-    # Запускаем несколько конкурентных вызовов
-    tasks = []
-    for i in range(15):
-        task = concurrent_function(mock_request)
-        tasks.append(task)
+    # Патчим custom_key_func для теста
+    with patch('app.core.rate_limiter.custom_key_func', return_value="test_key"):
+        # Запускаем несколько конкурентных вызовов
+        tasks = [concurrent_function(mock_request) for _ in range(15)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Подсчитываем успешные и неудачные
+        successes = sum(1 for r in results if not isinstance(r, Exception))
+        failures = sum(1 for r in results if isinstance(r, Exception))
+        
+        # Должно быть не больше 10 успешных (из-за лимита)
+        assert successes <= 10
+        assert failures >= 5
+
+
+@pytest.mark.asyncio
+async def test_rate_limiter_different_keys():
+    """Тест rate limiter с разными ключами"""
+    @limiter.limit("3/minute")
+    async def limited_function(request):
+        return {"message": "success"}
     
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Создаем два разных запроса с разными ключами
+    mock_request1 = Mock()
+    mock_request1.client.host = "192.168.1.100"
+    mock_request1.scope = {}
     
-    # Подсчитываем успешные и неудачные
-    successes = sum(1 for r in results if not isinstance(r, Exception))
-    failures = sum(1 for r in results if isinstance(r, Exception))
+    mock_request2 = Mock()
+    mock_request2.client.host = "192.168.1.101"
+    mock_request2.scope = {}
     
-    # Должно быть не больше 10 успешных (из-за лимита)
-    assert successes <= 10
-    assert failures >= 5
+    with patch('app.core.rate_limiter.custom_key_func') as mock_key_func:
+        # Для первого запроса возвращаем ключ1
+        mock_key_func.side_effect = lambda req: f"test_key_{req.client.host}"
+        
+        # Вызываем 3 раза для первого IP
+        for i in range(3):
+            result = await limited_function(mock_request1)
+            assert result["message"] == "success"
+        
+        # 4-й вызов для первого IP должен превысить лимит
+        with pytest.raises(RateLimitExceeded):
+            await limited_function(mock_request1)
+        
+        # Для второго IP должно быть успешно (разные ключи)
+        for i in range(3):
+            result = await limited_function(mock_request2)
+            assert result["message"] == "success"
 
 
 if __name__ == "__main__":
