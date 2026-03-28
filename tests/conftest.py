@@ -84,28 +84,28 @@ async def db_session(setup_test_db) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 async def test_user(db_session):
     """Создаёт тестового обычного пользователя"""
-    user = await UserFactory.create()
+    user = UserFactory.create()
     return user
 
 
 @pytest.fixture
 async def test_doctor(db_session):
     """Создаёт тестового врача"""
-    user = await UserFactory.create(doctor=True)
+    user = UserFactory.create(doctor=True)
     return user
 
 
 @pytest.fixture
 async def test_admin(db_session):
     """Создаёт тестового администратора"""
-    user = await UserFactory.create(admin=True)
+    user = UserFactory.create(admin=True)
     return user
 
 
 @pytest.fixture
 async def test_inactive_user(db_session):
     """Создаёт неактивного пользователя"""
-    user = await UserFactory.create(inactive=True)
+    user = UserFactory.create(inactive=True)
     return user
 
 
@@ -193,23 +193,36 @@ def mock_async_session():
         mock_session_local.return_value.__aenter__.return_value = mock_session
         yield mock_session
         
-# tests/conftest.py (добавьте в конец файла)
+
 
 # Глобальный мок Redis для всех тестов
+
 @pytest.fixture(autouse=True)
 def mock_redis_global():
-    """Глобальный мок Redis для предотвращения ошибок подключения"""
+    """Глобальный мок Redis + правильный close для lifespan"""
     mock_instance = AsyncMock()
     mock_instance.get = AsyncMock(return_value=None)
     mock_instance.set = AsyncMock(return_value=True)
     mock_instance.incr = AsyncMock(return_value=1)
     mock_instance.expire = AsyncMock(return_value=True)
-    mock_instance.close = AsyncMock()
-    
-    with patch("app.main.RedisClient", return_value=mock_instance), \
-         patch("app.core.rate_limiter.redis_client", mock_instance):
-        yield mock_instance
+    mock_instance.close = AsyncMock()                    # awaitable close
 
+    # Патчим как класс (для RedisClient(...) ) и как инстанс
+    with patch("app.main.RedisClient", return_value=mock_instance), \
+         patch("app.core.rate_limiter.redis_client", mock_instance), \
+         patch("app.main.RedisClient.close", new_callable=AsyncMock) as mock_close:  
+        yield mock_instance
+        
+
+@pytest.fixture(autouse=True)
+def mock_cleanup_manager():
+    mock_instance = MagicMock()
+    mock_instance.start_cleanup_task = AsyncMock()
+    mock_instance.stop_cleanup_task = AsyncMock()        # ← обязательно AsyncMock
+    mock_instance.get_cleanup_stats = MagicMock(return_value={"cleaned": 0, "errors": 0})
+    
+    with patch("app.main.cleanup_manager", mock_instance):
+        yield mock_instance
 
 # Глобальный мок cleanup_manager
 @pytest.fixture(autouse=True)
@@ -218,6 +231,7 @@ def mock_cleanup_manager():
     # Создаём мок инстанса FileCleanupManager
     mock_instance = MagicMock()
     mock_instance.start_cleanup_task = AsyncMock()
+    mock_instance.stop_cleanup_task = AsyncMock()
     mock_instance.get_cleanup_stats = MagicMock(return_value={"cleaned": 0, "errors": 0})
     
     # Патчим импорт cleanup_manager в main.py
