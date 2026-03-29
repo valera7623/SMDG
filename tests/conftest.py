@@ -1,5 +1,9 @@
 # tests/conftest.py - обновлённая версия
 import os
+from dotenv import load_dotenv
+load_dotenv(".env.test", override=True)
+from app.core.rate_limiter import limiter
+limiter.enabled = False
 import sys
 from pathlib import Path
 from typing import AsyncGenerator, Generator
@@ -8,8 +12,9 @@ import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 from dotenv import load_dotenv
 from typer.testing import CliRunner
+
 # Загружаем переменные окружения ДО импорта приложения
-load_dotenv('.env.test')
+
 
 # Добавляем корень проекта в PYTHONPATH
 project_root = Path(__file__).parent.parent
@@ -41,6 +46,7 @@ test_engine = create_async_engine(
     settings.database_url,
     echo=False,
     poolclass=NullPool,
+    connect_args={"ssl": False},
 )
 
 TestingSessionLocal = async_sessionmaker(

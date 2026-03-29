@@ -1,119 +1,198 @@
 timestamp,action,filename,size,user,ip,hash,reason,success
-2026-03-29T00:08:13.152257,POST /api/delete,,0,api,testclient,,"Status: 404, UA: testclient",False
-2026-03-29T00:08:13.514833,GET /api/delete,,0,api,testclient,,"Status: 422, UA: testclient",False
-2026-03-29T00:08:13.583113,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:13.621962,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 403, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:13.763394,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:13.807597,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:13.853841,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:13.897417,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:13.942031,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:13.987868,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.036308,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.083256,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.131359,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.180613,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.227190,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.268707,DELETE /api/delete-user-file/9999,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:14.313453,DELETE /api/delete-user-file/5,,0,api,127.0.0.1,,"Status: 403, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:14.350715,DELETE /api/delete-user-file/7,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:14.390301,DELETE /api/delete-user-file/10,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.426616,DELETE /api/delete-user-file/20,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.562747,DELETE /api/delete-user-file/30,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
-2026-03-29T00:08:14.599793,DELETE /api/delete-user-file/50,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:14.636446,DELETE /api/delete-user-file/60,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
-2026-03-29T00:08:17.136550,GET /api/stats,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.167757,GET /api/stats,,0,api,testclient,,"Status: 500, UA: testclient",False
-2026-03-29T00:08:17.201039,GET /api/stats/summary,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.234709,GET /api/stats/summary,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.265241,GET /api/stats/summary,,0,api,testclient,,"Status: 500, UA: testclient",False
-2026-03-29T00:08:17.297004,GET /api/stats/summary,,0,api,testclient,,"Status: 500, UA: testclient",False
-2026-03-29T00:08:17.330618,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.366631,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.399203,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.434230,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.467612,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:17.497310,GET /api/stats,,0,api,testclient,,"Status: 401, UA: testclient",False
-2026-03-29T00:08:17.506762,GET /api/stats/summary,,0,api,testclient,,"Status: 401, UA: testclient",False
-2026-03-29T00:08:17.515589,GET /api/stats/health,,0,api,testclient,,"Status: 401, UA: testclient",False
-2026-03-29T00:08:17.545470,GET /api/stats,,0,api,testclient,,"Status: 403, UA: testclient",False
-2026-03-29T00:08:17.573899,GET /api/stats/summary,,0,api,testclient,,"Status: 403, UA: testclient",False
-2026-03-29T00:08:18.653313,GET /api/stats,,0,api,testclient,,"Status: 500, UA: testclient",False
-2026-03-29T00:08:18.685699,GET /api/stats,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:19.504576,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:20.876355,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.004876,GET /admin,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.120946,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.245389,GET /logs,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.362859,GET /admin/users,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.487326,GET /api/whoami,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.624662,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.765138,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:21.887161,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:22.687067,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:22.801605,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:22.914778,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-29T00:08:23.164147,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
-2026-03-28T17:08:27.953785,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:08:43.770393,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:08:58.769686,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:09:14.741283,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:09:29.743017,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:09:45.747524,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:10:00.749351,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:10:16.763396,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:10:31.763932,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:10:46.762342,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:11:03.013212,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:11:18.012286,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:11:33.014355,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:11:58.917720,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:12:14.889234,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:12:20.356297,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:20.702203,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
-2026-03-28T17:12:29.889079,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:12:33.208630,login_success,,0,admin,127.0.0.1,,Успешный вход,True
-2026-03-28T17:12:33.209714,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:33.232847,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:36.746728,GET /admin,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:36.830492,GET /api/health,,0,api,172.18.0.9,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
-2026-03-28T17:12:36.836174,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:38.350658,GET /admin/users,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:38.402017,GET /api/admin/users/stats/overview,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:38.433694,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
-2026-03-28T17:12:38.436277,GET /api/admin/users/,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:43.500726,GET /admin,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:43.554310,GET /api/health,,0,api,172.18.0.9,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
-2026-03-28T17:12:43.558517,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:45.936523,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:12:46.319617,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:46.371350,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:12:57.256180,upload,Plan (1) (1) (1).txt,0,admin,127.0.0.1,,Upload failed: 'Settings' object has no attribute 'ALLOWED_MIME_TYPES',False
-2026-03-28T17:12:57.257784,POST /api/upload,,0,api,172.18.0.9,,"Status: 500, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
-2026-03-28T17:13:00.939095,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:13:16.442220,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:13:17.041849,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:13:32.040046,GET /metrics,,0,api,172.18.0.3,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:14:07.943260,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:14:14.909292,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:14:22.929597,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:14:38.842906,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:14:46.441748,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:14:53.839992,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:15:09.593490,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:15:16.057487,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:24.594149,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:15:39.595465,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:15:46.421555,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:48.967703,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:49.015613,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:49.805473,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:49.855913,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:55.738288,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:15:58.174345,upload,2 (3) (1).txt,55238,admin,127.0.0.1,,Успешная загрузка и шифрование,True
-2026-03-28T17:15:58.176394,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:15:58.309842,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:16:07.999830,GET /api/download,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:16:10.739222,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
-2026-03-28T17:16:19.114631,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
-2026-03-28T17:16:25.736493,GET /metrics,,0,api,172.18.0.2,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-03-29T19:15:27.067742,GET /api/cleanup/files,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:27.392189,GET /api/cleanup/stats,,0,api,testclient,,"Status: 403, UA: testclient",False
+2026-03-29T19:15:27.520847,POST /api/cleanup/force,,0,api,testclient,,"Status: 403, UA: testclient",False
+2026-03-29T19:15:27.570797,POST /api/delete,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:27.606736,POST /api/delete,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:27.644547,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:27.680534,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:27.717087,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:27.855238,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:27.896950,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:27.962916,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.019699,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.071137,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.111825,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.164472,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.210158,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.256544,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.300114,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.345614,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.384815,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.421423,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.458937,POST /api/delete,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.493656,POST /api/delete,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.526772,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.561354,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.596342,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.627354,POST /api/delete,,0,api,127.0.0.1,,"Status: 422, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.660025,POST /api/delete,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.695591,POST /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.722929,GET /api/delete,,0,api,127.0.0.1,,"Status: 422, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.747758,GET /api/delete,,0,api,127.0.0.1,,"Status: 422, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.776522,GET /api/delete,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:28.808528,GET /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.930496,GET /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:28.965966,GET /api/delete,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.004633,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.040298,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 403, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.076761,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.117455,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.159922,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.199163,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.238616,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.278713,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.319030,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.359466,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.399901,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.441204,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.570154,POST /api/delete-user-file,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.600765,DELETE /api/delete-user-file/9999,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.628930,DELETE /api/delete-user-file/5,,0,api,127.0.0.1,,"Status: 403, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.661343,DELETE /api/delete-user-file/7,,0,api,127.0.0.1,,"Status: 404, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.691130,DELETE /api/delete-user-file/10,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.725556,DELETE /api/delete-user-file/20,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.759106,DELETE /api/delete-user-file/30,,0,api,127.0.0.1,,"Status: 500, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:29.792433,DELETE /api/delete-user-file/50,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:29.824731,DELETE /api/delete-user-file/60,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:31.787462,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:32.055066,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:32.324716,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:32.500502,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:32.687730,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:32.870566,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:33.073267,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:33.288542,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:33.475189,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:33.657646,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:33.834509,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.023288,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.052777,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:15:34.231480,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.410406,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.591335,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.771720,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:34.963521,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:15:35.000872,GET /api/stats,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.029022,GET /api/stats,,0,api,testclient,,"Status: 500, UA: testclient",False
+2026-03-29T19:15:35.063713,GET /api/stats/summary,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.092972,GET /api/stats/summary,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.124398,GET /api/stats/summary,,0,api,testclient,,"Status: 500, UA: testclient",False
+2026-03-29T19:15:35.152048,GET /api/stats/summary,,0,api,testclient,,"Status: 500, UA: testclient",False
+2026-03-29T19:15:35.187637,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.220015,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.253095,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.286165,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.318982,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:35.453829,GET /api/stats,,0,api,testclient,,"Status: 401, UA: testclient",False
+2026-03-29T19:15:35.464106,GET /api/stats/summary,,0,api,testclient,,"Status: 401, UA: testclient",False
+2026-03-29T19:15:35.474902,GET /api/stats/health,,0,api,testclient,,"Status: 401, UA: testclient",False
+2026-03-29T19:15:35.507667,GET /api/stats,,0,api,testclient,,"Status: 403, UA: testclient",False
+2026-03-29T19:15:35.544203,GET /api/stats/summary,,0,api,testclient,,"Status: 403, UA: testclient",False
+2026-03-29T19:15:36.525635,GET /api/stats,,0,api,testclient,,"Status: 500, UA: testclient",False
+2026-03-29T19:15:36.557645,GET /api/stats,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:37.250342,GET /api/stats/health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:38.663108,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:38.785872,GET /admin,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:38.907534,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.027734,GET /logs,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.147301,GET /admin/users,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.276474,GET /api/whoami,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.400757,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.519494,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:39.641832,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:40.444578,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:40.582593,GET /,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:40.715184,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:15:40.971737,GET /health,,0,api,testclient,,"Status: 200, UA: testclient",True
+2026-03-29T19:18:11.400883,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:11.707033,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.068742,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.280302,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.380007,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.589337,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.801918,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:12.994008,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:13.254898,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:13.485862,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:13.732948,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:13.932368,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:13.968164,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:18:14.184059,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:14.380938,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:14.570272,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:14.786841,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:18:15.012849,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:40.229710,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:40.500794,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:40.843666,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.028119,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.122334,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.318102,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.562301,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.762877,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:41.951273,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:42.159773,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:42.345324,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:42.536749,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:42.566922,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:20:42.748400,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:42.933015,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:43.115152,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:43.303550,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:20:43.493407,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:52.889662,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:53.158377,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:53.551673,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:53.733261,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:53.825867,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.011525,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.200439,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.384470,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.580783,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.809547,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:54.999078,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:55.191328,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:55.223693,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:22:55.409938,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:55.603451,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:55.794579,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:55.984870,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:22:56.175419,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:18.986625,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:19.264898,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:19.606238,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:19.784426,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:19.878639,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:20.069488,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:20.257733,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:20.441454,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:20.634459,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:20.842201,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.047803,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.237511,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.268550,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:33:21.449744,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.634466,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.813668,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:21.996239,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:33:22.191461,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:47:35.110850,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:47.136043,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:47.408005,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:47.780366,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:47.965953,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.052455,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.234722,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.413303,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.590373,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.768270,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:48.946466,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:49.121200,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:49.300781,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:49.333533,GET /api/list,,0,api,127.0.0.1,,"Status: 401, UA: python-httpx/0.28.1",False
+2026-03-29T19:51:49.501710,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:49.680374,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:49.862886,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:50.047325,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True
+2026-03-29T19:51:50.253279,GET /api/list,,0,api,127.0.0.1,,"Status: 200, UA: python-httpx/0.28.1",True

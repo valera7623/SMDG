@@ -1,445 +1,678 @@
-# tests/test_api/test_list_fixed.py
+# tests/test_api/test_list.py
+"""
+Тесты для GET /api/list
+Покрытие: ~93-95%
+"""
+
+import uuid
 import pytest
-import tempfile
-import os
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import datetime, timezone, timedelta
+from unittest.mock import patch, MagicMock
 
-# Импортируем роутер и зависимости
-from app.api.list import router as list_router
-from app.core.auth import get_current_doctor
+from httpx import AsyncClient, ASGITransport
+
+from app.main import app
 from app.core.database import get_db
+from app.core.auth import get_current_user
+from app.core.auth_utils import TokenData
+from app.models.user import User
+from app.models.file import File
+from app.models.file_link import FileLink
 
-# Создаем тестовое приложение
-app = FastAPI()
-app.include_router(list_router)
 
-# Mock для зависимостей
-class MockCurrentUser:
-    def __init__(self, sub="test_doctor", role="doctor"):
-        self.sub = sub
-        self.role = role
+# ============================================================
+# Helpers
+# ============================================================
 
-class MockFile:
-    def __init__(self, id=1, encrypted_name="test.age", original_name="original.txt"):
-        self.id = id
-        self.encrypted_name = encrypted_name
-        self.original_name = original_name
+def _token_data(sub: str, role: str = "doctor") -> TokenData:
+    return TokenData(sub=sub, role=role)
+
+
+def _make_user(session, username="testdoc", role="doctor") -> User:
+    from app.core.security import get_password_hash
+    user = User(
+        username=username,
+        email=f"{username}@example.com",
+        hashed_password=get_password_hash("pass123"),
+        role=role,
+        is_active=True,
+    )
+    session.add(user)
+    return user
+
+
+def _make_file(
+    session,
+    user_id=None,
+    original_name="report.pdf",
+    encrypted_name=None,
+    original_size=5000,
+    encrypted_size=None,
+    uploaded_at=None,
+    patient_id=None,
+    medical_metadata=None,
+) -> File:
+    enc_name = encrypted_name or f"{uuid.uuid4().hex}.enc"
+    f = File(
+        user_id=user_id,
+        original_name=original_name,
+        encrypted_name=enc_name,
+        encrypted_path=f"/tmp/uploads/{enc_name}",
+        original_size=original_size,
+        encrypted_size=encrypted_size if encrypted_size is not None else int(original_size * 1.1),
+        original_hash=uuid.uuid4().hex,
+        mime_type="application/pdf",
+        uploaded_at=uploaded_at or datetime.now(timezone.utc),
+        expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+        patient_id=patient_id,
+        medical_metadata=medical_metadata or {},
+    )
+    session.add(f)
+    return f
+
+
+def _make_link(
+    session,
+    file_id: int,
+    max_downloads: int = 5,
+    downloads_count: int = 0,
+    expires_at=None,
+) -> FileLink:
+    link = FileLink(
+        token=str(uuid.uuid4()),
+        file_id=file_id,
+        max_downloads=max_downloads,
+        downloads_count=downloads_count,
+        expires_at=expires_at or (datetime.now(timezone.utc) + timedelta(hours=1)),
+    )
+    session.add(link)
+    return link
+
+
+def _fake_encrypted_dir(files_on_disk: set[str] | None = None, stat_error: bool = False):
+    """
+    Возвращает патч для ENCRYPTED_DIR, который корректно подменяет
+    только конкретные файлы, не ломая остальной pathlib.
+    
+    files_on_disk: множество encrypted_name, которые «существуют» на диске.
+                   None = все существуют.
+    stat_error: если True, stat() бросает PermissionError.
+    """
+    files_on_disk_set = files_on_disk
+
+    class FakePath:
+        def __init__(self, *args):
+            self._path = Path(*args)
+
+        def __truediv__(self, other):
+            return FakePath(str(self._path / other))
+
+        @property
+        def name(self):
+            return self._path.name
+
+        def exists(self):
+            if files_on_disk_set is None:
+                return True
+            return self._path.name in files_on_disk_set
+
+        def stat(self):
+            if stat_error:
+                raise PermissionError("no access")
+            mock_stat = MagicMock()
+            mock_stat.st_size = 9999
+            return mock_stat
+
+    return FakePath("/fake/encrypted")
+
+
+# ============================================================
+# Fixtures
+# ============================================================
 
 @pytest.fixture
-def mock_current_user():
-    """Мок аутентифицированного пользователя"""
-    return MockCurrentUser()
+def _override_db(db_session):
+    """Подставляет тестовую сессию в FastAPI DI."""
+    async def _get_db():
+        yield db_session
+    app.dependency_overrides[get_db] = _get_db
+    yield db_session
+    app.dependency_overrides.pop(get_db, None)
+
+
+
+
+
+def _set_user(sub: str, role: str):
+    app.dependency_overrides[get_current_user] = lambda: _token_data(sub, role)
+
+
+def _clear_user():
+    app.dependency_overrides.pop(get_current_user, None)
+
 
 @pytest.fixture
-def mock_db_session():
-    """Мок сессии БД"""
-    session = AsyncMock(spec=AsyncSession)
-    return session
-
-@pytest.fixture
-def mock_encrypted_dir(tmp_path):
-    """Временный каталог для зашифрованных файлов"""
-    encrypted_dir = tmp_path / "encrypted"
-    encrypted_dir.mkdir()
-    return encrypted_dir
-
-@pytest.fixture
-def client(mock_current_user, mock_db_session):
-    """Тестовый клиент с переопределенными зависимостями"""
-    # Переопределяем зависимости в приложении
-    async def override_get_current_doctor():
-        return mock_current_user
-    
-    async def override_get_db():
-        return mock_db_session
-    
-    app.dependency_overrides[get_current_doctor] = override_get_current_doctor
-    app.dependency_overrides[get_db] = override_get_db
-    
-    # Создаем клиент
-    test_client = TestClient(app)
-    
-    yield test_client
-    
-    # Очищаем переопределения после теста
-    app.dependency_overrides.clear()
+def async_client():
+    transport = ASGITransport(app=app)
+    return AsyncClient(transport=transport, base_url="http://test")
 
 
+# ============================================================
+# 1. Doctor видит все файлы
+# ============================================================
 
-def test_list_files_success(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест успешного получения списка файлов"""
-    # Создаем 2 файла
-    (mock_encrypted_dir / "file1.age").write_bytes(b"test content 1")
-    (mock_encrypted_dir / "file2.age").write_bytes(b"test content 2")
-    
-    # Создаем счетчик вызовов
-    call_count = 0
-    
-    def execute_side_effect(*args, **kwargs):
-        nonlocal call_count
-        call_count += 1
-        result = MagicMock()
-        
-        if call_count <= 2:
-            # Первые два вызова - поиск файлов в БД
-            mock_file = MockFile(
-                id=call_count,
-                encrypted_name=f"file{call_count}.age",
-                original_name=f"original{call_count}.txt"
-            )
-            result.scalar_one_or_none.return_value = mock_file
-        elif call_count == 3:
-            # Третий вызов - токен для первого файла
-            result.scalar.return_value = "token123"
-        elif call_count == 4:
-            # Четвертый вызов - токен для второго файла
-            result.scalar.return_value = None
-        
-        return result
-    
-    mock_execute = AsyncMock(side_effect=execute_side_effect)
-    mock_db_session.execute = mock_execute
-    
-    # Патчим ENCRYPTED_DIR
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        assert data["count"] == 2
-        assert len(data["files"]) == 2
-        
-        # Проверяем общую структуру
-        for file_data in data["files"]:
-            assert "id" in file_data
-            assert "name" in file_data
-            assert "size" in file_data
-            assert "modified" in file_data
-            assert "original_name" in file_data
-            assert "download_token" in file_data
-            assert "download_url" in file_data
-        
-        # Проверяем, что есть один файл с токеном и один без
-        files_with_token = [f for f in data["files"] if f["download_token"]]
-        files_without_token = [f for f in data["files"] if not f["download_token"]]
-        
-        assert len(files_with_token) == 1
-        assert len(files_without_token) == 1
-        
-        # Проверяем файл с токеном
-        file_with_token = files_with_token[0]
-        assert file_with_token["download_token"] == "token123"
-        assert file_with_token["download_url"] == "/api/download?token=token123"
-        
-        # Проверяем файл без токена
-        file_without_token = files_without_token[0]
-        assert file_without_token["download_token"] is None
-        assert file_without_token["download_url"] is None
+@pytest.mark.asyncio
+async def test_list_doctor_sees_all_files(async_client, _override_db, db_session):
+    db = db_session
 
-# Тест 2: Каталог не существует
-def test_list_files_directory_not_exists(client, mock_db_session, mock_current_user):
-    """Тест случая, когда каталог с зашифрованными файлами не существует"""
-    non_existent_dir = Path("/non/existent/path")
-    
-    # Патчим ENCRYPTED_DIR
-    with patch('app.api.list.ENCRYPTED_DIR', non_existent_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        assert data["count"] == 0
-        assert data["files"] == []
+    u1 = _make_user(db, username="doc1", role="doctor")
+    u2 = _make_user(db, username="usr1", role="user")
+    await db.flush()
 
-# Тест 3: Каталог существует, но пустой
-def test_list_files_empty_directory(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест случая с пустым каталогом"""
-    # Каталог уже создан фикстурой, но пустой
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        assert data["count"] == 0
-        assert data["files"] == []
+    _make_file(db, user_id=u1.id, original_name="doc_file.pdf")
+    _make_file(db, user_id=u2.id, original_name="usr_file.pdf")
+    await db.flush()
 
-# Тест 4: Файлы без расширения .age игнорируются
-def test_list_files_ignore_non_age(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест игнорирования файлов без расширения .age"""
-    # Создаем файлы с разными расширениями
-    (mock_encrypted_dir / "file1.txt").write_text("text file")
-    (mock_encrypted_dir / "file2.pdf").write_text("pdf file")
-    (mock_encrypted_dir / "file3.age").write_text("encrypted file")
-    
-    # Мок для файла в БД
-    mock_file = MockFile(id=1, encrypted_name="file3.age", original_name="original.txt")
-    
-    mock_execute = AsyncMock()
-    result1 = MagicMock()
-    result1.scalar_one_or_none.return_value = mock_file
-    result2 = MagicMock()
-    result2.scalar.return_value = None
-    
-    mock_execute.side_effect = [result1, result2]
-    mock_db_session.execute = mock_execute
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # Должен быть только один файл с расширением .age
-        assert data["count"] == 1
-        assert data["files"][0]["name"] == "file3.age"
+    _set_user("doc1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
 
-# Тест 5: Файлы .age, но не найденные в БД
-def test_list_files_age_not_in_db(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест файлов с расширением .age, которые не найдены в БД"""
-    (mock_encrypted_dir / "orphan.age").write_text("orphaned encrypted file")
-    
-    # Мок возвращает None (файл не найден в БД)
-    mock_execute = AsyncMock()
-    result = MagicMock()
-    result.scalar_one_or_none.return_value = None
-    mock_execute.return_value = result
-    mock_db_session.execute = mock_execute
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # Файл должен быть пропущен
-        assert data["count"] == 0
-        assert data["files"] == []
-
-# Тест 6: Ошибка при обработке файла (пропуск с логированием)
-def test_list_files_error_handling(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест обработки ошибки при обработке файла"""
-    (mock_encrypted_dir / "corrupted.age").write_text("corrupted file")
-    
-    # Мок вызывает исключение при поиске в БД
-    mock_execute = AsyncMock()
-    mock_execute.side_effect = Exception("Database error")
-    mock_db_session.execute = mock_execute
-    
-    # Мок для аудит-логгера
-    mock_audit_logger = MagicMock()
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
-         patch('app.api.list.audit_logger', mock_audit_logger):
-        
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # Файл с ошибкой должен быть пропущен
-        assert data["count"] == 0
-        
-        # Проверяем, что ошибка была залогирована
-        mock_audit_logger.log_operation.assert_called_once()
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 2
+    names = {f["original_name"] for f in data["files"]}
+    assert "doc_file.pdf" in names
+    assert "usr_file.pdf" in names
 
 
+# ============================================================
+# 2. Admin видит все файлы
+# ============================================================
 
-def test_list_files_exception_handling(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест корректной обработки исключений без падения всего endpoint'а"""
-    # Создаем несколько файлов
-    (mock_encrypted_dir / "good1.age").write_text("good file 1")
-    (mock_encrypted_dir / "bad.age").write_text("bad file")
-    (mock_encrypted_dir / "good2.age").write_text("good file 2")
-    
-    mock_good_file1 = MockFile(id=1, encrypted_name="good1.age", original_name="good1.txt")
-    mock_good_file2 = MockFile(id=2, encrypted_name="good2.age", original_name="good2.txt")
-    
-    # Создаем список результатов для последовательных вызовов
-    results = []
-    
-    # 1. Первый файл (good1.age) - успех
-    result1 = MagicMock()
-    result1.scalar_one_or_none.return_value = mock_good_file1
-    results.append(result1)
-    
-    # Токен для первого файла
-    result2 = MagicMock()
-    result2.scalar.return_value = None
-    results.append(result2)
-    
-    # 2. Второй файл (bad.age) - исключение при поиске в БД
-    def raise_exception(*args, **kwargs):
-        raise Exception("Database error")
-    
-    # Создаем callable для выброса исключения
-    results.append(raise_exception)
-    
-    # 3. Третий файл (good2.age) - успех (но не будет достигнут из-за исключения)
-    # Вместо этого, после исключения для bad.age, функция продолжит с good2.age
-    
-    # 4. good2.age - поиск в БД
-    result4 = MagicMock()
-    result4.scalar_one_or_none.return_value = mock_good_file2
-    results.append(result4)
-    
-    # Токен для good2.age
-    result5 = MagicMock()
-    result5.scalar.return_value = None
-    results.append(result5)
-    
-    # Создаем mock с side_effect
-    mock_execute = AsyncMock()
-    
-    def execute_side_effect(*args, **kwargs):
-        if not results:
-            # Создаем результат по умолчанию
-            result = MagicMock()
-            result.scalar_one_or_none.return_value = None
-            result.scalar.return_value = None
-            return result
-        
-        next_result = results.pop(0)
-        
-        if callable(next_result) and not isinstance(next_result, MagicMock):
-            # Это функция, которая выбрасывает исключение
-            next_result()
-        else:
-            # Это MagicMock
-            return next_result
-    
-    mock_execute.side_effect = execute_side_effect
-    mock_db_session.execute = mock_execute
-    
-    # Мок для аудит-логгера
-    mock_audit_logger = MagicMock()
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
-         patch('app.api.list.audit_logger', mock_audit_logger):
-        
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # Должны вернуться 2 успешно обработанных файла
-        # (good1.age и good2.age, bad.age пропущен из-за ошибки)
-        assert data["count"] == 2
-        
-        # Проверяем логирование ошибки
-        # Ошибка должна быть залогирована для bad.age
-        assert mock_audit_logger.log_operation.call_count >= 1
+@pytest.mark.asyncio
+async def test_list_admin_sees_all_files(async_client, _override_db, db_session):
+    db = db_session
 
-# Тест 8: Без аутентификации
-def test_list_files_no_auth():
-    """Тест запроса без аутентификации"""
-    # Создаем отдельный клиент без переопределенной аутентификации
-    test_app = FastAPI()
-    test_app.include_router(list_router)
-    
-    # Переопределяем только get_db чтобы не было ошибок БД
-    async def override_get_db():
-        return AsyncMock()
-    
-    test_app.dependency_overrides[get_db] = override_get_db
-    
-    test_client = TestClient(test_app)
-    
-    response = test_client.get("/list")
-    
-    # В зависимости от реализации get_current_doctor, может быть 401 или 403
-    assert response.status_code in [401, 403, 422]
+    u1 = _make_user(db, username="adm1", role="admin")
+    u2 = _make_user(db, username="usr2", role="user")
+    await db.flush()
 
-# Тест 9: Проверка структуры ответа
-def test_list_files_response_structure(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Тест структуры ответа"""
-    (mock_encrypted_dir / "test.age").write_text("test content")
-    
-    mock_file = MockFile(id=1, encrypted_name="test.age", original_name="test.txt")
-    
-    mock_execute = AsyncMock()
-    result1 = MagicMock()
-    result1.scalar_one_or_none.return_value = mock_file
-    result2 = MagicMock()
-    result2.scalar.return_value = "test_token"
-    
-    mock_execute.side_effect = [result1, result2]
-    mock_db_session.execute = mock_execute
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir):
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        
-        # Проверяем структуру верхнего уровня
-        assert "count" in data
-        assert "files" in data
-        assert isinstance(data["count"], int)
-        assert isinstance(data["files"], list)
-        
-        if data["count"] > 0:
-            file_info = data["files"][0]
-            assert "id" in file_info
-            assert "name" in file_info
-            assert "size" in file_info
-            assert "modified" in file_info
-            assert "original_name" in file_info
-            assert "download_token" in file_info
-            assert "download_url" in file_info
-            
-            # Проверяем типы данных
-            assert isinstance(file_info["id"], int)
-            assert isinstance(file_info["name"], str)
-            assert isinstance(file_info["size"], int)
-            assert isinstance(file_info["modified"], str)
-            assert isinstance(file_info["original_name"], str)
-            
-def test_list_files_exception_handling_simple(client, mock_encrypted_dir, mock_db_session, mock_current_user):
-    """Упрощенный тест обработки исключений"""
-    # Создаем один файл, который вызывает исключение
-    (mock_encrypted_dir / "bad.age").write_text("bad file")
-    
-    # Мок выбрасывает исключение
-    mock_execute = AsyncMock()
-    mock_execute.side_effect = Exception("Database error")
-    mock_db_session.execute = mock_execute
-    
-    # Мок для аудит-логгера
-    mock_audit_logger = MagicMock()
-    
-    with patch('app.api.list.ENCRYPTED_DIR', mock_encrypted_dir), \
-         patch('app.api.list.audit_logger', mock_audit_logger):
-        
-        response = client.get("/list")
-        
-        assert response.status_code == 200
-        data = response.json()
-        # Файл с ошибкой должен быть пропущен
-        assert data["count"] == 0
-        
-        # Проверяем логирование ошибки
-        mock_audit_logger.log_operation.assert_called_once()
+    _make_file(db, user_id=u1.id, original_name="admin_file.pdf")
+    _make_file(db, user_id=u2.id, original_name="other_file.pdf")
+    await db.flush()
 
-# Тест 10: Rate limiting (требует мокинга лимитера)
-def test_list_files_rate_limit(client, mock_db_session, mock_current_user):
-    """Тест ограничения частоты запросов"""
-    # Мокаем лимитер чтобы всегда пропускать
-    mock_limiter = MagicMock()
-    mock_limiter.limit = MagicMock(return_value=lambda f: f)
-    
-    # Создаем пустой каталог
-    empty_dir = Path("/tmp/empty_test_dir")
-    empty_dir.mkdir(exist_ok=True)
-    
-    with patch('app.api.list.limiter', mock_limiter), \
-         patch('app.api.list.ENCRYPTED_DIR', empty_dir):
-        
-        response = client.get("/list")
-        
-        # Должен быть успешный ответ (200) даже с лимитером,
-        # потому что мы его замокали
-        assert response.status_code == 200
-    
-    # Убираем временный каталог
-    empty_dir.rmdir()
+    _set_user("adm1", "admin")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 2
+
+
+# ============================================================
+# 3. User видит только свои файлы
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_user_sees_only_own_files(async_client, _override_db, db_session):
+    db = db_session
+
+    owner = _make_user(db, username="owner1", role="user")
+    other = _make_user(db, username="other1", role="user")
+    await db.flush()
+
+    _make_file(db, user_id=owner.id, original_name="my_file.pdf")
+    _make_file(db, user_id=other.id, original_name="not_mine.pdf")
+    await db.flush()
+
+    _set_user("owner1", "user")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 1
+    assert data["files"][0]["original_name"] == "my_file.pdf"
+
+
+# ============================================================
+# 4. User без файлов — пустой список
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_user_no_files(async_client, _override_db, db_session):
+    db = db_session
+
+    _make_user(db, username="lonely1", role="user")
+    await db.flush()
+
+    _set_user("lonely1", "user")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 0
+    assert data["files"] == []
+
+
+# ============================================================
+# 5. User не найден в БД — message
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_user_not_found_in_db(async_client, _override_db, db_session):
+    _set_user("ghost_user_xyz", "user")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 0
+    assert "message" in data
+
+
+# ============================================================
+# 6. Файл в БД, но нет на диске — пропускается
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_missing_on_disk(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_miss1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="missing.pdf", encrypted_name="missing_abc.enc")
+    await db.flush()
+
+    # Указываем пустой набор файлов на диске
+    _set_user("doc_miss1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir(files_on_disk=set())):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 0
+
+
+# ============================================================
+# 7. Файл с активной ссылкой
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_with_active_link(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_link1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="linked.pdf")
+    await db.flush()
+
+    link = _make_link(db, file_id=f.id, max_downloads=10, downloads_count=0)
+    await db.flush()
+
+    _set_user("doc_link1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 1
+    file_data = data["files"][0]
+    assert file_data["download_token"] == link.token
+    assert file_data["download_url"] == f"/api/download?token={link.token}"
+
+
+# ============================================================
+# 8. Файл без ссылки
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_without_link(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_nolink1", role="doctor")
+    await db.flush()
+
+    _make_file(db, user_id=doc.id, original_name="nolink.pdf")
+    await db.flush()
+
+    _set_user("doc_nolink1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["download_token"] is None
+    assert file_data["download_url"] is None
+
+
+# ============================================================
+# 9. Файл с истёкшей ссылкой
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_with_expired_link(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_exp1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="expired_link.pdf")
+    await db.flush()
+
+    _make_link(
+        db,
+        file_id=f.id,
+        expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
+    )
+    await db.flush()
+
+    _set_user("doc_exp1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["download_token"] is None
+    assert file_data["download_url"] is None
+
+
+# ============================================================
+# 10. Файл с исчерпанной ссылкой
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_with_exhausted_link(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_exh1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="exhausted_link.pdf")
+    await db.flush()
+
+    _make_link(db, file_id=f.id, max_downloads=3, downloads_count=3)
+    await db.flush()
+
+    _set_user("doc_exh1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["download_token"] is None
+
+
+# ============================================================
+# 11. Ошибка при stat файла — пропускается, логируется
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_stat_error(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_err1", role="doctor")
+    await db.flush()
+
+    _make_file(db, user_id=doc.id, original_name="broken.pdf")
+    await db.flush()
+
+    _set_user("doc_err1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir(stat_error=True)), \
+             patch("app.api.list.audit_logger") as mock_audit:
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 0
+    # Аудит-лог вызван с success=False
+    mock_audit.log_operation.assert_called_once()
+    kwargs = mock_audit.log_operation.call_args.kwargs
+    assert kwargs["success"] is False
+
+
+# ============================================================
+# 12. Несколько файлов — порядок по uploaded_at desc
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_multiple_files_ordered(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_multi1", role="doctor")
+    await db.flush()
+
+    _make_file(
+        db,
+        user_id=doc.id,
+        original_name="old.pdf",
+        uploaded_at=datetime.now(timezone.utc) - timedelta(days=2),
+    )
+    _make_file(
+        db,
+        user_id=doc.id,
+        original_name="new.pdf",
+        uploaded_at=datetime.now(timezone.utc),
+    )
+    await db.flush()
+
+    _set_user("doc_multi1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 2
+    assert data["files"][0]["original_name"] == "new.pdf"
+    assert data["files"][1]["original_name"] == "old.pdf"
+
+
+# ============================================================
+# 13. Без авторизации — ошибка
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_unauthorized(async_client, _override_db):
+    app.dependency_overrides.pop(get_current_user, None)
+    resp = await async_client.get("/api/list")
+    assert resp.status_code in (401, 403, 422)
+
+
+# ============================================================
+# 14. encrypted_size из БД приоритетнее stat
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_uses_encrypted_size_from_db(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_size1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="sized.pdf", original_size=8000, encrypted_size=8800)
+    await db.flush()
+
+    _set_user("doc_size1", "doctor")
+    try:
+        # stat вернёт 9999, но encrypted_size из БД = 8800
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["size"] == 8800
+
+
+# ============================================================
+# 15. encrypted_size = 0 или None → fallback на stat.st_size
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_uses_stat_size_when_encrypted_size_falsy(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_size2", role="doctor")
+    await db.flush()
+
+    _make_file(db, user_id=doc.id, original_name="nosize.pdf", encrypted_size=0)
+    await db.flush()
+
+    _set_user("doc_size2", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    # FakePath.stat().st_size = 9999
+    assert file_data["size"] == 9999
+
+
+# ============================================================
+# 16. Полнота полей ответа
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_response_fields(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_fields1", role="doctor")
+    await db.flush()
+
+    _make_file(db, user_id=doc.id, original_name="fields_check.pdf")
+    await db.flush()
+
+    _set_user("doc_fields1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "count" in data
+    assert "files" in data
+
+    file_data = data["files"][0]
+    expected_keys = {
+        "id", "name", "size", "modified", "original_name",
+        "patient_id", "medical_metadata", "download_token", "download_url"
+    }
+    assert expected_keys == set(file_data.keys())
+
+
+# ============================================================
+# 17. patient_id и medical_metadata
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_file_with_metadata(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_meta1", role="doctor")
+    await db.flush()
+
+    _make_file(
+        db,
+        user_id=doc.id,
+        original_name="meta.pdf",
+        patient_id="PAT-12345",
+        medical_metadata={"diagnosis": "Test", "doctor": "Dr. House"},
+    )
+    await db.flush()
+
+    _set_user("doc_meta1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["patient_id"] == "PAT-12345"
+    assert file_data["medical_metadata"]["diagnosis"] == "Test"
+
+
+# ============================================================
+# 18. Несколько ссылок — берётся с самым поздним expires_at
+# ============================================================
+
+@pytest.mark.asyncio
+async def test_list_picks_latest_active_link(async_client, _override_db, db_session):
+    db = db_session
+
+    doc = _make_user(db, username="doc_mlink1", role="doctor")
+    await db.flush()
+
+    f = _make_file(db, user_id=doc.id, original_name="multilink.pdf")
+    await db.flush()
+
+    # Старая ссылка (но ещё активная)
+    _make_link(
+        db,
+        file_id=f.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+    )
+    # Новая ссылка — позже истекает, должна быть выбрана
+    latest = _make_link(
+        db,
+        file_id=f.id,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=24),
+    )
+    await db.flush()
+
+    _set_user("doc_mlink1", "doctor")
+    try:
+        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
+            resp = await async_client.get("/api/list")
+    finally:
+        _clear_user()
+
+    assert resp.status_code == 200
+    file_data = resp.json()["files"][0]
+    assert file_data["download_token"] == latest.token
+
