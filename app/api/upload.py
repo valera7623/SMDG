@@ -200,7 +200,7 @@ async def upload_file(
         virus_name = None
 
         try:
-            import clamd
+            
             print(f"[ClamAV] Пытаемся подключиться: {settings.CLAMAV_HOST}:{settings.CLAMAV_PORT}")
 
             cd = clamd.ClamdNetworkSocket(
@@ -221,17 +221,18 @@ async def upload_file(
 
             # Обработка результата
             if scan_result:
-                scan_result = scan_result.get('stream') if isinstance(scan_result, dict) else scan_result
-                if scan_result and len(scan_result) > 0:
-                    result_type = scan_result[0]
+                stream_result = scan_result.get('stream') if isinstance(scan_result, dict) else scan_result
+                if stream_result and len(stream_result) > 0:
+                    result_type = stream_result[0]
                     if result_type == "FOUND":
-                        virus_name = scan_result[1] if len(scan_result) > 1 else "unknown"
+                        virus_name = stream_result[1] if len(stream_result) > 1 else "unknown"
                         virus_detected = True
                         print(f"[ClamAV] ВИРУС ОБНАРУЖЕН: {virus_name}")
-                elif result_type == "OK":
-                    print("[ClamAV] Файл чист")
-                else:
-                    print(f"[ClamAV] Неожиданный результат: {scan_result}")
+                    elif result_type == "OK":
+                        print("[ClamAV] Файл чист")
+                    else:
+                        print(f"[ClamAV] Неожиданный результат: {stream_result}")
+
 
         except Exception as e:
             error_msg = f"{type(e).__name__}: {str(e)}"

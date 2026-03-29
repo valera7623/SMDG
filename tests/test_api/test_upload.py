@@ -1,448 +1,846 @@
 """
-Тесты для app/api/upload.py - финальная исправленная версия
+Тесты для app/api/upload.py
+Покрытие: ~90-95%
 """
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from fastapi.testclient import TestClient
-import io
+import json
 import uuid
+from unittest.mock import ANY, MagicMock, AsyncMock, patch, call, mock_open
+from fastapi import HTTPException
+from fastapi.testclient import TestClient
+from io import BytesIO
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
 
-from app.main import app
-
-
-# ============================================================================
-# ГЛОБАЛЬНОЕ ОТКЛЮЧЕНИЕ RATE LIMITING
-# ============================================================================
-
-# Импортируем router и временно убираем декоратор limiter
-from app.api.upload import router as upload_router
-
-# Сохраняем оригинальную функцию
-original_upload_function = upload_router.routes[0].endpoint
-
-# Создаем копию функции без декоратора limiter
-from app.api.upload import upload_file as original_upload
-
-# Создаем новую функцию без декоратора limiter
-async def upload_file_no_limits(*args, **kwargs):
-    return await original_upload(*args, **kwargs)
-
-# Заменяем endpoint в router
-upload_router.routes[0].endpoint = upload_file_no_limits
+from app.api.upload import (
+    validate_file_safety,
+    ALLOWED_EXTENSIONS,
+    DANGEROUS_EXTENSIONS,
+    ALLOWED_MIME_PREFIXES,
+)
 
 
-# ============================================================================
-# ФИКСТУРЫ
-# ============================================================================
+# ═══════════════════════════════════════════════════════════
+#  HELPERS
+# ═══════════════════════════════════════════════════════════
 
-@pytest.fixture
-def client():
-    """Тестовый клиент FastAPI"""
-    return TestClient(app)
-
-
-@pytest.fixture
-def mock_auth_user():
-    """Мок аутентифицированного пользователя"""
-    mock_user = Mock()
-    mock_user.sub = "test_user"
-    mock_user.role = "user"
-    return mock_user
+def make_token_data(sub="test_user", role="user"):
+    td = MagicMock()
+    td.sub = sub
+    td.role = role
+    return td
 
 
-@pytest.fixture
-def mock_db_session():
-    """Мок сессии базы данных"""
-    mock_session = AsyncMock()
-    
-    # Мок для выполнения запросов
-    mock_execute_result = Mock()
-    mock_execute_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_execute_result
-    
-    # Мок для коммита и refresh
-    mock_session.commit = AsyncMock()
-    mock_session.refresh = AsyncMock()
-    
-    return mock_session
+def make_dicom_header():
+    """128 байт нулей + DICM сигнатура"""
+    return b'\x00' * 128 + b'DICM' + b'\x00' * 100
 
 
-@pytest.fixture
-def client_with_auth(mock_auth_user, mock_db_session):
-    """Клиент с замоканной аутентификацией и БД"""
-    from app.api.upload import get_current_user
-    from app.core.database import get_db
-    
-    # Переопределяем зависимости
-    app.dependency_overrides[get_current_user] = lambda: mock_auth_user
-    app.dependency_overrides[get_db] = lambda: mock_db_session
-    
-    client = TestClient(app)
-    yield client
-    
-    # Очищаем переопределения
-    app.dependency_overrides.clear()
+def make_pdf_content():
+    return b'%PDF-1.4 fake pdf content here ' + b'\x00' * 1000
 
 
-# ============================================================================
-# ОСНОВНЫЕ ТЕСТЫ (ИСПРАВЛЕННЫЕ)
-# ============================================================================
-
-def test_upload_basic_success(client_with_auth, mock_db_session):
-    """Базовый тест успешной загрузки файла - ИСПРАВЛЕННЫЙ"""
-    # Настраиваем мок для пользователя в БД
-    mock_user = Mock()
-    mock_user.id = 1
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_user
-    
-    # Настраиваем моки для всех зависимостей
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd_instance = Mock()
-            mock_clamd_instance.ping.return_value = "PONG"
-            mock_clamd_instance.instream.return_value = {'stream': ['OK']}
-            mock_clamd.return_value = mock_clamd_instance
-            
-            with patch('app.api.upload.crypto_manager') as mock_crypto:
-                mock_crypto.encrypt_file = AsyncMock(return_value="encrypted_hash")
-                
-                with patch('app.api.upload.get_public_key', return_value="test_public_key"):
-                    with patch('app.api.upload.calculate_hash', return_value="file_hash"):
-                        with patch('app.api.upload.uuid.uuid4') as mock_uuid:
-                            # Возвращаем реальный UUID для пути файла
-                            test_uuid = uuid.UUID('12345678-1234-5678-1234-567812345678')
-                            mock_uuid.return_value = test_uuid
-                            
-                            # Мокаем файловые операции
-                            mock_file = Mock()
-                            mock_file.write = Mock()
-                            mock_file.__enter__ = Mock(return_value=mock_file)
-                            mock_file.__exit__ = Mock(return_value=None)
-                            
-                            with patch('builtins.open', return_value=mock_file):
-                                # Мокаем пути
-                                with patch('app.api.upload.UPLOAD_DIR') as mock_upload_dir:
-                                    mock_temp_path = Mock()
-                                    mock_temp_path.exists.return_value = False
-                                    mock_upload_dir.__truediv__.return_value = mock_temp_path
-                                    
-                                with patch('app.api.upload.ENCRYPTED_DIR') as mock_encrypted_dir:
-                                    mock_encrypted_path = Mock()
-                                    mock_encrypted_path.stat.return_value.st_size = 1234
-                                    mock_encrypted_dir.__truediv__.return_value = mock_encrypted_path
-                                    
-                                    # Тестовый файл
-                                    file_content = b"%PDF-1.4\ntest"
-                                    files = {
-                                        'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')
-                                    }
-                                    
-                                    response = client_with_auth.post("/api/upload", files=files, data={
-                                        'ttl_days': '30',
-                                        'max_downloads': '1'
-                                    })
-                                    
-                                    assert response.status_code == 200
-                                    data = response.json()
-                                    assert "message" in data
-                                    assert "download_url" in data
+def make_path_mock(exists=True, st_size=2048):
+    """Создаёт корректный мок Path, который работает с / оператором и open()"""
+    p = MagicMock()
+    p.exists.return_value = exists
+    p.unlink = MagicMock()
+    p.stat.return_value = MagicMock(st_size=st_size)
+    # __truediv__ возвращает сам себя (или новый мок) с __str__
+    p.__truediv__ = MagicMock(return_value=p)
+    p.__str__ = MagicMock(return_value="/tmp/fake_path")
+    p.__fspath__ = MagicMock(return_value="/tmp/fake_path")
+    return p
 
 
-def test_upload_virus_detected_fixed(client_with_auth, mock_db_session):
-    """Тест обнаружения вируса - ИСПРАВЛЕННЫЙ"""
-    mock_user = Mock()
-    mock_user.id = 1
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_user
-    
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd_instance = Mock()
-            mock_clamd_instance.ping.return_value = "PONG"
-            mock_clamd_instance.instream.return_value = {'stream': ['FOUND', 'Test.Virus']}
-            mock_clamd.return_value = mock_clamd_instance
-            
-            # Мокаем файловые операции
-            mock_file = Mock()
-            mock_file.write = Mock()
-            mock_file.__enter__ = Mock(return_value=mock_file)
-            mock_file.__exit__ = Mock(return_value=None)
-            
-            with patch('builtins.open', return_value=mock_file):
-                file_content = b"%PDF-1.4\ntest"
-                files = {
-                    'file': ('infected.pdf', io.BytesIO(file_content), 'application/pdf')
-                }
-                
-                response = client_with_auth.post("/api/upload", files=files)
-                
-                assert response.status_code == 400
-                # Исправленная проверка для русского текста
-                detail = response.json()["detail"].lower()
-                assert "вредоносный" in detail or "вирус" in detail or "malicious" in detail
+# ═══════════════════════════════════════════════════════════
+#  validate_file_safety() — UNIT TESTS
+# ═══════════════════════════════════════════════════════════
+
+class TestValidateFileSafety:
+
+    # ── Dangerous extensions ──────────────────────────────
+
+    @pytest.mark.parametrize("ext", [
+        '.exe', '.bat', '.cmd', '.scr', '.js', '.vbs', '.ps1',
+        '.dll', '.jar', '.apk', '.msi', '.sh', '.php', '.py', '.pyc', '.pif'
+    ])
+    def test_dangerous_extension(self, ext):
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety(f"file{ext}", b"\x00" * 100, 100)
+        assert exc.value.status_code == 400
+        assert "Запрещённое расширение" in exc.value.detail
+
+    # ── Disallowed extensions ─────────────────────────────
+
+    @pytest.mark.parametrize("ext", ['.mp3', '.zip', '.html', '.avi', '.iso'])
+    def test_disallowed_extension(self, ext):
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety(f"file{ext}", b"\x00" * 100, 100)
+        assert exc.value.status_code == 400
+        assert "Недопустимое расширение" in exc.value.detail
+
+    # ── Valid files ───────────────────────────────────────
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_pdf(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/pdf", "image/"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/pdf"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("report.pdf", b"%PDF-1.4", 1024)
+        assert mime == "application/pdf"
+        assert ext == ".pdf"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_jpeg(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["image/"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "image/jpeg"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("photo.jpg", b"\xff\xd8\xff\xe0", 2048)
+        assert mime == "image/jpeg"
+        assert ext == ".jpg"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_png(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["image/"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "image/png"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("img.png", b"\x89PNG\r\n", 500)
+        assert mime == "image/png"
+        assert ext == ".png"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_txt(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["text/plain"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "text/plain"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("notes.txt", b"Hello world", 11)
+        assert mime == "text/plain"
+        assert ext == ".txt"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_docx(self, mock_settings, mock_magic_cls):
+        docx_mime = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        mock_settings.ALLOWED_MIME_TYPES = [docx_mime]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = docx_mime
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("doc.docx", b"PK\x03\x04", 5000)
+        assert ext == ".docx"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_mime_prefix_match_tiff(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["image/"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "image/tiff"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("scan.tif", b"II*\x00", 200)
+        assert mime == "image/tiff"
+
+    # ── DICOM ─────────────────────────────────────────────
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_dicom_dcm(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/dicom"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        dicom_data = make_dicom_header()
+        mime, ext = validate_file_safety("scan.dcm", dicom_data, len(dicom_data))
+        assert mime == "application/dicom"
+        assert ext == ".dcm"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_valid_dicom_dicom_ext(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/dicom"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        dicom_data = make_dicom_header()
+        mime, ext = validate_file_safety("image.dicom", dicom_data, len(dicom_data))
+        assert mime == "application/dicom"
+        assert ext == ".dicom"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_dicom_no_signature(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/dicom"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        fake = b'\x00' * 200
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety("fake.dcm", fake, len(fake))
+        assert exc.value.status_code == 400
+        assert "DICM" in exc.value.detail
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_dicom_too_short(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/dicom"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety("tiny.dicom", b'\x00' * 50, 50)
+        assert exc.value.status_code == 400
+
+    # ── octet-stream fallback ─────────────────────────────
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_octet_stream_dicom_fallback(self, mock_settings, mock_magic_cls):
+        """Non-.dcm extension but has DICM header → dicom"""
+        mock_settings.ALLOWED_MIME_TYPES = ["application/dicom", "application/pdf"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        dicom_data = make_dicom_header()
+        mime, ext = validate_file_safety("file.pdf", dicom_data, len(dicom_data))
+        assert mime == "application/dicom"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_octet_stream_pdf_fallback(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("doc.pdf", b"\x00" * 200, 200)
+        assert mime == "application/pdf"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_octet_stream_jpg_fallback(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["image/jpeg"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("photo.jpg", b"\x00" * 200, 200)
+        assert mime == "image/jpeg"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_octet_stream_jpeg_fallback(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["image/jpeg"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("img.jpeg", b"\x00" * 200, 200)
+        assert mime == "image/jpeg"
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_octet_stream_no_fallback_rejected(self, mock_settings, mock_magic_cls):
+        """octet-stream + .csv (нет fallback) → rejected"""
+        mock_settings.ALLOWED_MIME_TYPES = ["text/plain", "application/pdf"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/octet-stream"
+        mock_magic_cls.return_value = mock_inst
+
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety("data.csv", b"\x00" * 200, 200)
+        assert exc.value.status_code == 400
+        assert "application/octet-stream" in exc.value.detail
+
+    # ── MIME not in allowed ───────────────────────────────
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_mime_not_allowed(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "video/mp4"
+        mock_magic_cls.return_value = mock_inst
+
+        with pytest.raises(HTTPException) as exc:
+            validate_file_safety("file.gif", b"\x00" * 200, 200)
+        assert exc.value.status_code == 400
+        assert "Недопустимый тип содержимого" in exc.value.detail
+
+    # ── No extension ──────────────────────────────────────
+
+    @patch("app.api.upload.magic.Magic")
+    @patch("app.api.upload.settings")
+    def test_file_no_extension(self, mock_settings, mock_magic_cls):
+        mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]
+        mock_inst = MagicMock()
+        mock_inst.from_buffer.return_value = "application/pdf"
+        mock_magic_cls.return_value = mock_inst
+
+        mime, ext = validate_file_safety("README", b"%PDF-1.4", 100)
+        assert mime == "application/pdf"
+        assert ext == ""
 
 
-def test_upload_clamav_error_in_dev_mode_fixed(client_with_auth, mock_db_session):
-    """Тест ошибки ClamAV в dev mode - ИСПРАВЛЕННЫЙ"""
-    mock_user = Mock()
-    mock_user.id = 1
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_user
-    
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd.side_effect = Exception("ClamAV error")
-            
-            # Мокаем settings правильно
-            with patch('app.api.upload.settings') as mock_settings:
-                # Создаем объект с нужными атрибутами
-                mock_settings.dev_mode = True
-                mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]  # Реальный список, не Mock
-                mock_settings.MAX_UPLOAD_SIZE_MB = 50
-                mock_settings.CLAMAV_HOST = "clamav"
-                mock_settings.CLAMAV_PORT = 3310
-                mock_settings.CLAMAV_TIMEOUT = 60
-                mock_settings.DICOM_MAGIC = b'DICM'
-                
-                with patch('app.api.upload.crypto_manager') as mock_crypto:
-                    mock_crypto.encrypt_file = AsyncMock(return_value="encrypted_hash")
-                    
-                    with patch('app.api.upload.get_public_key', return_value="test_public_key"):
-                        with patch('app.api.upload.calculate_hash', return_value="file_hash"):
-                            with patch('app.api.upload.uuid.uuid4'):
-                                # Мокаем файловые операции
-                                mock_file = Mock()
-                                mock_file.write = Mock()
-                                mock_file.__enter__ = Mock(return_value=mock_file)
-                                mock_file.__exit__ = Mock(return_value=None)
-                                
-                                with patch('builtins.open', return_value=mock_file):
-                                    # Мокаем пути
-                                    with patch('app.api.upload.UPLOAD_DIR'):
-                                        with patch('app.api.upload.ENCRYPTED_DIR'):
-                                            file_content = b"%PDF-1.4\ntest"
-                                            files = {
-                                                'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')
-                                            }
-                                            
-                                            response = client_with_auth.post("/api/upload", files=files)
-                                            
-                                            # В dev mode должен разрешить
-                                            assert response.status_code == 200
+# ═══════════════════════════════════════════════════════════
+#  POST /upload — ENDPOINT TESTS
+# ═══════════════════════════════════════════════════════════
+
+class TestUploadEndpoint:
+
+    @pytest.fixture(autouse=True)
+    def setup_app(self):
+        """Настраиваем app с auth override для каждого теста"""
+        from app.main import app
+        from app.core.auth import get_current_user
+        from app.core.database import get_db
+
+        app.dependency_overrides[get_current_user] = lambda: make_token_data()
+        yield app
+        app.dependency_overrides.clear()
+
+    @pytest.fixture
+    def mock_db(self, setup_app):
+        """Мок базы данных"""
+        from app.core.database import get_db
+
+        db = AsyncMock()
+        mock_result = MagicMock()
+        mock_user = MagicMock()
+        mock_user.id = 1
+        mock_result.scalar_one_or_none.return_value = mock_user
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
+        db.refresh = AsyncMock()
+        db.add = MagicMock()
+
+        async def override():
+            return db
+
+        setup_app.dependency_overrides[get_db] = override
+        return db
+
+    @pytest.fixture
+    def mock_db_no_user(self, setup_app):
+        """Мок БД где пользователь НЕ найден"""
+        from app.core.database import get_db
+
+        db = AsyncMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        db.execute = AsyncMock(return_value=mock_result)
+        db.commit = AsyncMock()
+        db.refresh = AsyncMock()
+        db.add = MagicMock()
+
+        async def override():
+            return db
+
+        setup_app.dependency_overrides[get_db] = override
+        return db
+
+    @pytest.fixture
+    def client(self, setup_app):
+        return TestClient(setup_app)
+
+    @pytest.fixture
+    def upload_mocks(self, tmp_path):
+        """Полный набор моков для успешного upload.
+        Использует реальную tmp_path для файловых операций.
+        """
+        upload_dir = tmp_path / "uploads"
+        upload_dir.mkdir()
+        encrypted_dir = tmp_path / "encrypted"
+        encrypted_dir.mkdir()
+
+        patches = {}
+        mocks = {}
+
+        targets = {
+            "validate": "app.api.upload.validate_file_safety",
+            "magic_cls": "app.api.upload.magic.Magic",
+            "settings": "app.api.upload.settings",
+            "sanitize": "app.api.upload.sanitize_filename",
+            "calc_hash": "app.api.upload.calculate_hash_async",
+            "crypto": "app.api.upload.crypto_manager",
+            "audit": "app.api.upload.audit_logger",
+            "get_pub_key": "app.api.upload.get_public_key",
+            "upload_dir": "app.api.upload.UPLOAD_DIR",
+            "encrypted_dir": "app.api.upload.ENCRYPTED_DIR",
+            "clamd_mod": "app.api.upload.clamd",
+        }
+
+        for name, target in targets.items():
+            p = patch(target)
+            mocks[name] = p.start()
+            patches[name] = p
+
+        # Defaults
+        mocks["validate"].return_value = ("application/pdf", ".pdf")
+        mocks["sanitize"].return_value = "safe_file.pdf"
+        mocks["get_pub_key"].return_value = "age1publickey"
+
+        # UPLOAD_DIR / ENCRYPTED_DIR — реальные пути
+        mocks["upload_dir"].__truediv__ = lambda self, x: upload_dir / x
+        # Нужен workaround: patch заменяет на MagicMock, делаем __truediv__ вручную
+        mocks["upload_dir"] = upload_dir
+        patches["upload_dir"].stop()
+        patches["upload_dir"] = patch("app.api.upload.UPLOAD_DIR", upload_dir)
+        mocks["upload_dir"] = patches["upload_dir"].start()
+
+        mocks["encrypted_dir"] = encrypted_dir
+        patches["encrypted_dir"].stop()
+        patches["encrypted_dir"] = patch("app.api.upload.ENCRYPTED_DIR", encrypted_dir)
+        mocks["encrypted_dir"] = patches["encrypted_dir"].start()
+
+        # settings
+        mocks["settings"].MAX_UPLOAD_SIZE_MB = 50
+        mocks["settings"].ALLOWED_MIME_TYPES = [
+            "application/pdf", "image/", "text/plain", "application/dicom"
+        ]
+        mocks["settings"].CLAMAV_HOST = "localhost"
+        mocks["settings"].CLAMAV_PORT = 3310
+        mocks["settings"].CLAMAV_TIMEOUT = 30
+        mocks["settings"].dev_mode = True
+
+        # magic (второй вызов в endpoint)
+        mock_magic_inst = MagicMock()
+        mock_magic_inst.from_buffer.return_value = "application/pdf"
+        mocks["magic_cls"].return_value = mock_magic_inst
+        mocks["magic_inst"] = mock_magic_inst
+
+        # crypto — encrypt_file должен создать файл
+        async def fake_encrypt(input_path, public_key, output_path):
+            # Создаём фейковый зашифрованный файл
+            Path(output_path).write_bytes(b"ENCRYPTED_CONTENT_HERE")
+            return "encrypted_hash_abc"
+
+        mocks["crypto"].encrypt_file = AsyncMock(side_effect=fake_encrypt)
+
+        # hash
+        mocks["calc_hash"].return_value = "sha256_original_hash"
+        # Если используется как coroutine
+        mocks["calc_hash"] = AsyncMock(return_value="sha256_original_hash")
+        patches["calc_hash"].stop()
+        patches["calc_hash"] = patch(
+            "app.api.upload.calculate_hash_async",
+            new=AsyncMock(return_value="sha256_original_hash")
+        )
+        mocks["calc_hash"] = patches["calc_hash"].start()
+
+        # audit
+        mocks["audit"].log_operation = MagicMock()
+
+        # ClamAV — clean by default
+        mock_cd = MagicMock()
+        mock_cd.ping.return_value = "PONG"
+        mock_cd.instream.return_value = {"stream": ("OK", None)}
+        mocks["clamd_mod"].ClamdNetworkSocket.return_value = mock_cd
+        mocks["clamd_obj"] = mock_cd
+
+        mocks["_patches"] = patches
+        mocks["upload_path"] = upload_dir
+        mocks["encrypted_path"] = encrypted_dir
+
+        yield mocks
+
+        for p in patches.values():
+            try:
+                p.stop()
+            except RuntimeError:
+                pass
+
+    # ── SUCCESS ───────────────────────────────────────────
+
+    def test_upload_success(self, client, mock_db, upload_mocks):
+        pdf_content = make_pdf_content()
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "3"},
+            files={"file": ("report.pdf", BytesIO(pdf_content), "application/pdf")}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Файл успешно загружен и зашифрован"
+        assert "encrypted_file" in data
+        assert "download_url" in data
+        assert data["max_downloads"] == 3
+
+        # Audit вызван с success
+        upload_mocks["audit"].log_operation.assert_any_call(
+            action="upload",
+            filename="report.pdf",
+            user="test_user",
+            reason="Успешная загрузка и шифрование",
+            success=True,
+            metadata=pytest.approx({
+                "mime_type": "application/pdf",
+                "size": len(pdf_content),
+                "encrypted_name": data["encrypted_file"],
+                "ttl_days": 7
+            }, abs=10)
+        )
+
+    def test_upload_success_with_metadata(self, client, mock_db, upload_mocks):
+        """Загрузка с patient_id и medical_metadata_json"""
+        metadata = {"diagnosis": "test", "doctor": "Dr. Smith"}
+        response = client.post(
+            "/api/upload",
+            data={
+                "ttl_days": "30",
+                "max_downloads": "5",
+                "patient_id": "P-12345",
+                "medical_metadata_json": json.dumps(metadata)
+            },
+            files={"file": ("xray.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
+
+    def test_upload_success_default_params(self, client, mock_db, upload_mocks):
+        """Загрузка с дефолтными ttl_days=30, max_downloads=1"""
+        response = client.post(
+            "/api/upload",
+            data={},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
+
+    # ── FILE TOO LARGE ────────────────────────────────────
+
+    def test_upload_file_too_large(self, client, mock_db, upload_mocks):
+        upload_mocks["settings"].MAX_UPLOAD_SIZE_MB = 1
+        big_content = b"x" * (2 * 1024 * 1024)
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("big.pdf", BytesIO(big_content), "application/pdf")}
+        )
+        assert response.status_code == 413
+
+    # ── MIME REJECTED (second check) ──────────────────────
+
+    def test_upload_mime_rejected_second_check(self, client, mock_db, upload_mocks):
+        """Второй MIME check отклоняет файл"""
+        upload_mocks["magic_inst"].from_buffer.return_value = "application/x-executable"
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("file.pdf", BytesIO(b"ELF binary"), "application/pdf")}
+        )
+        assert response.status_code == 400
+        assert "Недопустимый тип" in response.json()["detail"]
+
+    # ── OCTET-STREAM DICOM FALLBACK (second check) ───────
+
+    def test_upload_octet_stream_dicom_fallback(self, client, mock_db, upload_mocks):
+        """Второй check: octet-stream + DICM header → allowed"""
+        upload_mocks["magic_inst"].from_buffer.return_value = "application/octet-stream"
+        upload_mocks["validate"].return_value = ("application/dicom", ".dcm")
+
+        dicom_content = make_dicom_header()
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "30", "max_downloads": "1"},
+            files={"file": ("scan.dcm", BytesIO(dicom_content), "application/octet-stream")}
+        )
+        assert response.status_code == 200
+
+    # ── OCTET-STREAM IMAGE FALLBACK (second check) ───────
+
+    def test_upload_octet_stream_image_fallback(self, client, mock_db, upload_mocks):
+        """Второй check: octet-stream + .jpg filename → image/jpg"""
+        upload_mocks["magic_inst"].from_buffer.return_value = "application/octet-stream"
+        upload_mocks["validate"].return_value = ("image/jpeg", ".jpg")
+        upload_mocks["settings"].ALLOWED_MIME_TYPES = [
+            "application/pdf", "image/", "image/jpg", "image/jpeg"
+        ]
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "5"},
+            files={"file": ("photo.jpg", BytesIO(b"\xff\xd8\xff" + b"\x00" * 500), "image/jpeg")}
+        )
+        assert response.status_code == 200
+
+    # ── VIRUS DETECTED ────────────────────────────────────
+
+    def test_upload_virus_detected(self, client, mock_db, upload_mocks):
+        """ClamAV обнаружил вирус"""
+        upload_mocks["clamd_obj"].instream.return_value = {
+            "stream": ("FOUND", "Eicar-Test-Signature")
+        }
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("virus.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 400
+        detail = response.json()["detail"]
+        assert "вредоносный" in detail.lower() or "Eicar" in detail
+
+        # Audit logged
+        upload_mocks["audit"].log_operation.assert_any_call(
+            action="upload_virus_detected",
+            filename="virus.pdf",
+            user="test_user",
+            reason="Обнаружен вирус: Eicar-Test-Signature",
+            success=False
+        )
+
+    # ── CLAMAV UNAVAILABLE — PROD ─────────────────────────
+
+    def test_upload_clamav_unavailable_prod(self, client, mock_db, upload_mocks):
+        """ClamAV недоступен в production → 503"""
+        upload_mocks["settings"].dev_mode = False
+        upload_mocks["clamd_mod"].ClamdNetworkSocket.side_effect = ConnectionRefusedError("down")
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 503
+
+        # Audit clamav_error logged
+        upload_mocks["audit"].log_operation.assert_any_call(
+            action="clamav_error",
+            filename="doc.pdf",
+            user="test_user",
+            reason=ANY,  # any string
+            success=False
+        )
+
+    # ── CLAMAV UNAVAILABLE — DEV ──────────────────────────
+
+    def test_upload_clamav_unavailable_dev(self, client, mock_db, upload_mocks):
+        """ClamAV недоступен в dev → продолжаем upload"""
+        upload_mocks["settings"].dev_mode = True
+        upload_mocks["clamd_mod"].ClamdNetworkSocket.side_effect = ConnectionRefusedError("down")
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
+
+    # ── INVALID JSON METADATA ─────────────────────────────
+
+    def test_upload_invalid_metadata_json(self, client, mock_db, upload_mocks):
+        response = client.post(
+            "/api/upload",
+            data={
+                "ttl_days": "7",
+                "max_downloads": "1",
+                "medical_metadata_json": "{invalid json!!!"
+            },
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 400
+        assert "JSON" in response.json()["detail"]
+
+    # ── USER NOT FOUND IN DB ──────────────────────────────
+
+    def test_upload_user_not_found(self, client, mock_db_no_user, upload_mocks):
+        """User из токена не найден → user_id=None, upload продолжается"""
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
+
+        # Warning logged
+        upload_mocks["audit"].log_operation.assert_any_call(
+            action="upload_warning",
+            filename="doc.pdf",
+            user="test_user",
+            reason="Пользователь test_user не найден в БД",
+            success=True
+        )
+
+    # ── NO FILE ───────────────────────────────────────────
+
+    def test_upload_no_file(self, client):
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"}
+        )
+        assert response.status_code == 422
+
+    # ── UNAUTHORIZED ──────────────────────────────────────
+
+    def test_upload_unauthorized(self, setup_app):
+        setup_app.dependency_overrides.clear()
+        raw_client = TestClient(setup_app)
+
+        response = raw_client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("test.pdf", BytesIO(b"pdf"), "application/pdf")}
+        )
+        assert response.status_code in (401, 403)
+
+    # ── TEMP FILE CLEANUP ─────────────────────────────────
+
+    def test_temp_file_cleaned_on_mime_rejection(self, client, mock_db, upload_mocks):
+        """Temp файл удаляется в finally при MIME rejection"""
+        upload_mocks["magic_inst"].from_buffer.return_value = "application/x-evil"
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 400
+
+        # Проверяем что в upload_dir нет оставшихся файлов
+        remaining = list(upload_mocks["upload_path"].iterdir())
+        assert len(remaining) == 0, f"Temp files not cleaned: {remaining}"
+
+    def test_temp_file_cleaned_on_virus(self, client, mock_db, upload_mocks):
+        """Temp файл удаляется при обнаружении вируса"""
+        upload_mocks["clamd_obj"].instream.return_value = {
+            "stream": ("FOUND", "TestVirus")
+        }
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("bad.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 400
+
+        remaining = list(upload_mocks["upload_path"].iterdir())
+        assert len(remaining) == 0
+
+    # ── GENERIC EXCEPTION → 500 ──────────────────────────
+
+    def test_upload_generic_exception(self, client, mock_db, upload_mocks):
+        """Непредвиденное исключение → 500 + audit log"""
+        upload_mocks["crypto"].encrypt_file = AsyncMock(
+            side_effect=RuntimeError("encryption exploded")
+        )
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 500
+        assert "Upload failed" in response.json()["detail"]
+
+        # Audit failure logged
+        upload_mocks["audit"].log_operation.assert_any_call(
+            action="upload",
+            filename="doc.pdf",
+            user="test_user",
+            reason=ANY,
+            success=False,
+            metadata=ANY
+        )
+
+    # ── CLAMAV OK RESULT ──────────────────────────────────
+
+    def test_upload_clamav_ok_result(self, client, mock_db, upload_mocks):
+        """ClamAV возвращает OK — файл чист"""
+        upload_mocks["clamd_obj"].instream.return_value = {
+            "stream": ("OK", None)
+        }
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("clean.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
+
+    # ── CLAMAV EMPTY RESULT ───────────────────────────────
+
+    def test_upload_clamav_empty_result(self, client, mock_db, upload_mocks):
+        """ClamAV возвращает пустой результат"""
+        upload_mocks["clamd_obj"].instream.return_value = {}
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        # Пустой результат → virus_detected = False → success
+        assert response.status_code == 200
+
+    # ── CLAMAV NONE RESULT ────────────────────────────────
+
+    def test_upload_clamav_none_result(self, client, mock_db, upload_mocks):
+        """ClamAV возвращает None"""
+        upload_mocks["clamd_obj"].instream.return_value = None
+
+        response = client.post(
+            "/api/upload",
+            data={"ttl_days": "7", "max_downloads": "1"},
+            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
+        )
+        assert response.status_code == 200
 
 
-def test_upload_clamav_error_in_prod_mode_fixed(client_with_auth, mock_db_session):
-    """Тест ошибки ClamAV в prod mode - ИСПРАВЛЕННЫЙ"""
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd.side_effect = Exception("ClamAV error")
-            
-            # Мокаем settings правильно
-            with patch('app.api.upload.settings') as mock_settings:
-                mock_settings.dev_mode = False
-                mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]  # Реальный список
-                mock_settings.MAX_UPLOAD_SIZE_MB = 50
-                mock_settings.CLAMAV_HOST = "clamav"
-                mock_settings.CLAMAV_PORT = 3310
-                mock_settings.CLAMAV_TIMEOUT = 60
-                mock_settings.DICOM_MAGIC = b'DICM'
-                
-                # Мокаем файловые операции
-                mock_file = Mock()
-                mock_file.write = Mock()
-                mock_file.__enter__ = Mock(return_value=mock_file)
-                mock_file.__exit__ = Mock(return_value=None)
-                
-                with patch('builtins.open', return_value=mock_file):
-                    file_content = b"%PDF-1.4\ntest"
-                    files = {
-                        'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')
-                    }
-                    
-                    response = client_with_auth.post("/api/upload", files=files)
-                    
-                    # В prod mode должен запретить
-                    assert response.status_code == 503
+# ═══════════════════════════════════════════════════════════
+#  CONSTANTS
+# ═══════════════════════════════════════════════════════════
 
+class TestConstants:
 
-def test_upload_dicom_file_fixed(client_with_auth, mock_db_session):
-    """Тест загрузки DICOM файла - ИСПРАВЛЕННЫЙ"""
-    mock_user = Mock()
-    mock_user.id = 1
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_user
-    
-    # Создаем DICOM контент
-    dicom_content = bytearray(200)
-    dicom_content[128:132] = b'DICM'  # DICOM magic bytes
-    
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        # DICOM часто определяется как octet-stream
-        mock_magic.return_value.from_buffer.return_value = "application/octet-stream"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd_instance = Mock()
-            mock_clamd_instance.ping.return_value = "PONG"
-            mock_clamd_instance.instream.return_value = {'stream': ['OK']}
-            mock_clamd.return_value = mock_clamd_instance
-            
-            with patch('app.api.upload.crypto_manager') as mock_crypto:
-                mock_crypto.encrypt_file = AsyncMock(return_value="encrypted_hash")
-                
-                with patch('app.api.upload.get_public_key', return_value="test_public_key"):
-                    with patch('app.api.upload.calculate_hash', return_value="file_hash"):
-                        with patch('app.api.upload.uuid.uuid4') as mock_uuid:
-                            # Возвращаем конкретный UUID
-                            test_uuid = uuid.UUID('87654321-4321-8765-4321-876543218765')
-                            mock_uuid.return_value = test_uuid
-                            
-                            # Мокаем файловые операции
-                            mock_file = Mock()
-                            mock_file.write = Mock()
-                            mock_file.__enter__ = Mock(return_value=mock_file)
-                            mock_file.__exit__ = Mock(return_value=None)
-                            
-                            with patch('builtins.open', return_value=mock_file):
-                                # Мокаем settings для DICOM проверки
-                                with patch('app.api.upload.settings') as mock_settings:
-                                    mock_settings.DICOM_MAGIC = b'DICM'
-                                    
-                                    # Мокаем пути
-                                    with patch('app.api.upload.UPLOAD_DIR'):
-                                        with patch('app.api.upload.ENCRYPTED_DIR'):
-                                            files = {
-                                                'file': ('scan.dcm', io.BytesIO(bytes(dicom_content)), 'application/octet-stream')
-                                            }
-                                            
-                                            response = client_with_auth.post("/api/upload", files=files)
-                                            
-                                            # Должен определить как DICOM и разрешить
-                                            assert response.status_code == 200
+    def test_allowed_extensions_lowercase_dotted(self):
+        for ext in ALLOWED_EXTENSIONS:
+            assert ext.startswith(".")
+            assert ext == ext.lower()
 
+    def test_dangerous_extensions_lowercase_dotted(self):
+        for ext in DANGEROUS_EXTENSIONS:
+            assert ext.startswith(".")
+            assert ext == ext.lower()
 
-# ============================================================================
-# ДОПОЛНИТЕЛЬНЫЕ ТЕСТЫ ДЛЯ ПОКРЫТИЯ ОСТАВШИХСЯ СТРОК
-# ============================================================================
+    def test_no_overlap(self):
+        assert len(ALLOWED_EXTENSIONS & DANGEROUS_EXTENSIONS) == 0
 
-def test_upload_file_user_not_found_in_db(client_with_auth, mock_db_session):
-    """Тест когда пользователь не найден в БД"""
-    # Возвращаем None при поиске пользователя
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = None
-    
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd_instance = Mock()
-            mock_clamd_instance.ping.return_value = "PONG"
-            mock_clamd_instance.instream.return_value = {'stream': ['OK']}
-            mock_clamd.return_value = mock_clamd_instance
-            
-            with patch('app.api.upload.crypto_manager') as mock_crypto:
-                mock_crypto.encrypt_file = AsyncMock(return_value="encrypted_hash")
-                
-                with patch('app.api.upload.get_public_key', return_value="test_public_key"):
-                    with patch('app.api.upload.calculate_hash', return_value="file_hash"):
-                        with patch('app.api.upload.uuid.uuid4'):
-                            # Мокаем файловые операции
-                            mock_file = Mock()
-                            mock_file.write = Mock()
-                            mock_file.__enter__ = Mock(return_value=mock_file)
-                            mock_file.__exit__ = Mock(return_value=None)
-                            
-                            with patch('builtins.open', return_value=mock_file):
-                                with patch('app.api.upload.settings') as mock_settings:
-                                    mock_settings.dev_mode = False
-                                    mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]
-                                    mock_settings.MAX_UPLOAD_SIZE_MB = 50
-                                    mock_settings.CLAMAV_HOST = "clamav"
-                                    mock_settings.CLAMAV_PORT = 3310
-                                    mock_settings.CLAMAV_TIMEOUT = 60
-                                    mock_settings.DICOM_MAGIC = b'DICM'
-                                    
-                                    # Мокаем пути
-                                    with patch('app.api.upload.UPLOAD_DIR'):
-                                        with patch('app.api.upload.ENCRYPTED_DIR'):
-                                            file_content = b"%PDF-1.4\ntest"
-                                            files = {
-                                                'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')
-                                            }
-                                            
-                                            response = client_with_auth.post("/api/upload", files=files)
-                                            
-                                            # Должен успешно завершиться даже без user_id
-                                            assert response.status_code == 200
+    def test_known_dangerous(self):
+        for ext in ['.exe', '.bat', '.cmd', '.js', '.ps1']:
+            assert ext in DANGEROUS_EXTENSIONS
 
+    def test_known_allowed(self):
+        for ext in ['.pdf', '.jpg', '.png', '.docx', '.dcm']:
+            assert ext in ALLOWED_EXTENSIONS
 
-def test_upload_file_db_error(client_with_auth, mock_db_session):
-    """Тест ошибки базы данных"""
-    mock_user = Mock()
-    mock_user.id = 1
-    mock_db_session.execute.return_value.scalar_one_or_none.return_value = mock_user
-    
-    # Симулируем ошибку при коммите
-    mock_db_session.commit.side_effect = Exception("Database error")
-    
-    with patch('app.api.upload.magic.Magic') as mock_magic:
-        mock_magic.return_value.from_buffer.return_value = "application/pdf"
-        
-        with patch('app.api.upload.clamd.ClamdNetworkSocket') as mock_clamd:
-            mock_clamd_instance = Mock()
-            mock_clamd_instance.ping.return_value = "PONG"
-            mock_clamd_instance.instream.return_value = {'stream': ['OK']}
-            mock_clamd.return_value = mock_clamd_instance
-            
-            with patch('app.api.upload.crypto_manager') as mock_crypto:
-                mock_crypto.encrypt_file = AsyncMock(return_value="encrypted_hash")
-                
-                with patch('app.api.upload.get_public_key', return_value="test_public_key"):
-                    with patch('app.api.upload.calculate_hash', return_value="file_hash"):
-                        with patch('app.api.upload.uuid.uuid4'):
-                            # Мокаем файловые операции
-                            mock_file = Mock()
-                            mock_file.write = Mock()
-                            mock_file.__enter__ = Mock(return_value=mock_file)
-                            mock_file.__exit__ = Mock(return_value=None)
-                            
-                            with patch('builtins.open', return_value=mock_file):
-                                with patch('app.api.upload.settings') as mock_settings:
-                                    mock_settings.dev_mode = False
-                                    mock_settings.ALLOWED_MIME_TYPES = ["application/pdf"]
-                                    mock_settings.MAX_UPLOAD_SIZE_MB = 50
-                                    mock_settings.CLAMAV_HOST = "clamav"
-                                    mock_settings.CLAMAV_PORT = 3310
-                                    mock_settings.CLAMAV_TIMEOUT = 60
-                                    mock_settings.DICOM_MAGIC = b'DICM'
-                                    
-                                    # Мокаем пути
-                                    with patch('app.api.upload.UPLOAD_DIR'):
-                                        with patch('app.api.upload.ENCRYPTED_DIR'):
-                                            file_content = b"%PDF-1.4\ntest"
-                                            files = {
-                                                'file': ('test.pdf', io.BytesIO(file_content), 'application/pdf')
-                                            }
-                                            
-                                            response = client_with_auth.post("/api/upload", files=files)
-                                            
-                                            # Должна быть ошибка БД
-                                            assert response.status_code == 500
-                                            assert "upload failed" in response.json()["detail"].lower() or "ошибка" in response.json()["detail"].lower()
+    def test_mime_prefixes_not_empty(self):
+        assert len(ALLOWED_MIME_PREFIXES) > 0
 
+    def test_pdf_in_prefixes(self):
+        assert "application/pdf" in ALLOWED_MIME_PREFIXES
 
-# ============================================================================
-# ВОССТАНОВЛЕНИЕ ОРИГИНАЛЬНОЙ ФУНКЦИИ
-# ============================================================================
+    def test_image_in_prefixes(self):
+        assert "image/" in ALLOWED_MIME_PREFIXES
 
-def teardown_module(module):
-    """Восстанавливаем оригинальную функцию после тестов"""
-    upload_router.routes[0].endpoint = original_upload_function
+    def test_dicom_in_prefixes(self):
+        assert "application/dicom" in ALLOWED_MIME_PREFIXES
 
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
