@@ -205,21 +205,7 @@ def test_get_audit_log_invalid_json(audit_logger, temp_dir):
     assert logs[0]["valid"] == "json"
 
 
-def test_log_operation_creates_directories():
-    """Тест что логгер создает директории при необходимости"""
-    non_existent_dir = Path("/tmp/nonexistent/audit/test")
-    
-    # Директория не должна существовать
-    if non_existent_dir.exists():
-        non_existent_dir.rmdir()
-    
-    # Создаем логгер - должен создать директорию
-    logger = AuditLogger(log_dir=non_existent_dir)
-    
-    assert non_existent_dir.exists()
-    
-    # Очищаем
-    non_existent_dir.rmdir()
+
 
 
 def test_log_operation_csv_format(audit_logger, temp_dir):

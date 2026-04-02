@@ -29,37 +29,42 @@ def test_create_access_token():
 @pytest.mark.asyncio
 async def test_get_current_user_valid():
     """Тест получения пользователя из валидного токена"""
-    from app.core.auth import get_current_user, TokenData
-    from fastapi.security import HTTPAuthorizationCredentials
-    
-    # Создаем валидный токен
-    from app.core.auth import create_access_token
+    from app.core.auth import get_current_user, create_access_token, TokenData
+
+    # Создаём валидный токен
     token = create_access_token("testuser", "admin")
-    
-    # Мокаем credentials
-    mock_credentials = MagicMock(spec=HTTPAuthorizationCredentials)
-    mock_credentials.credentials = token
-    
-    user = await get_current_user(mock_credentials)
-    
+
+    # get_current_user принимает строку из Cookie, не HTTPAuthorizationCredentials
+    user = await get_current_user(access_token=token)
+
     assert isinstance(user, TokenData)
     assert user.sub == "testuser"
     assert user.role == "admin"
+
 
 @pytest.mark.asyncio
 async def test_get_current_user_invalid():
     """Тест получения пользователя из невалидного токена"""
     from app.core.auth import get_current_user
     from fastapi import HTTPException
-    from fastapi.security import HTTPAuthorizationCredentials
-    
-    mock_credentials = MagicMock(spec=HTTPAuthorizationCredentials)
-    mock_credentials.credentials = "invalid_token"
-    
+
     with pytest.raises(HTTPException) as exc_info:
-        await get_current_user(mock_credentials)
-    
+        await get_current_user(access_token="invalid_token")
+
     assert exc_info.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_no_token():
+    """Тест без токена — должен вернуть 401"""
+    from app.core.auth import get_current_user
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(access_token=None)
+
+    assert exc_info.value.status_code == 401
+
 
 def test_token_data_model():
     """Тест модели TokenData"""
