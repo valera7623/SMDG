@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     jwt_secret_key: str
-
+    admin_password: str= "default_admin_password"
+    
     # Опциональные с разумными дефолтами (не секретные)
     jwt_access_expires_minutes: int = 60
     jwt_algorithm: str = "HS256"
