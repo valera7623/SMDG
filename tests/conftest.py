@@ -14,8 +14,15 @@ from dotenv import load_dotenv
 from typer.testing import CliRunner
 
 # Загружаем переменные окружения ДО импорта приложения
+TEST_AUDIT_DIR = Path(tempfile.mkdtemp(prefix="smdg_test_audit_"))
+TEST_AUDIT_DIR.mkdir(exist_ok=True)
 
+os.environ["AUDIT_LOG_DIR"] = str(TEST_AUDIT_DIR)
 
+sys.path.insert(0, '.')
+
+with patch.dict('sys.modules', {'app.core.audit': None}):
+    pass
 # Добавляем корень проекта в PYTHONPATH
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
