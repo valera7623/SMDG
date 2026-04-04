@@ -305,47 +305,46 @@ class TestDownloadAPI:
     # ====== Тесты для download_file_post (POST с авторизацией) ======
 
     @pytest.mark.asyncio
-    async def test_download_file_post_success(
-        self,
-        mock_auth_doctor,
-        mock_crypto_manager,
-        temp_dirs,
-        mock_audit_logger,
-        mock_background_tasks,
-        mock_request,
-    ):
+    async def test_download_file_post_success(self, mock_auth_doctor, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_background_tasks, mock_request):
         """Тест успешного скачивания через POST"""
         encrypted_dir, decrypted_dir = temp_dirs
-
+        
+        # Создаем тестовый зашифрованный файл
         test_filename = "medical_report.pdf.age"
-    
-        # Создаём реальный зашифрованный файл
         encrypted_file = encrypted_dir / test_filename
         encrypted_file.write_bytes(b"encrypted medical data")
-
-        # mock_crypto_manager.decrypt_file не пишет файл на диск —
-        # создаём расшифрованный файл вручную ДО вызова, используя side_effect
-        original_name = "medical_report.pdf"
-
-        async def fake_decrypt(encrypted_path, private_key_path, output_path):
-            """Симулируем расшифровку: создаём выходной файл"""
-            Path(output_path).write_bytes(b"decrypted medical data")
-
-        mock_crypto_manager.decrypt_file.side_effect = fake_decrypt
-
-        with patch("app.api.download.limiter.limit", lambda x: lambda f: f):
+        
+        # Временно убираем декоратор лимитера
+        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
             from app.api.download import download_file_post
+            
+            # Мокаем uuid для предсказуемого имени файла
+            with patch('app.api.download.uuid.uuid4') as mock_uuid:
+                mock_uuid.return_value.hex = "abc123def456"
+                
+                # Мокаем crypto_manager
+                mock_crypto_manager.decrypt_file.return_value = None
+                
+                # Мокаем exists/is_file/stat для decrypted_path
+                import stat as stat_module
+                mock_stat_result = MagicMock()
+                mock_stat_result.st_size = 1024
+                mock_stat_result.st_mode = stat_module.S_IFREG | 0o644
 
-            response = await download_file_post(
-                request=mock_request,
-                background_tasks=mock_background_tasks,
-                filename=test_filename,
-                current_user=MagicMock(sub="doctor_user", role="doctor"),
-            )
+                with patch.object(Path, 'exists', return_value=True), \
+                     patch.object(Path, 'is_file', return_value=True), \
+                     patch.object(Path, 'stat', return_value=mock_stat_result):
 
-        # Проверяем вызов decrypt
+                    response = await download_file_post(
+                        request=mock_request,
+                        background_tasks=mock_background_tasks,
+                        filename=test_filename,
+                        current_user=MagicMock(sub="doctor_user", role="doctor")
+                    )
+        
+        # Проверяем вызовы
         mock_crypto_manager.decrypt_file.assert_called_once()
-
+        
         # Проверяем аудит-логирование
         mock_audit_logger.log_operation.assert_called_once_with(
             action="download",
@@ -353,16 +352,15 @@ class TestDownloadAPI:
             user="api_user",
             reason="Успешное скачивание и расшифровка",
             success=True,
-            metadata={"original_name": original_name},
+            metadata={"original_name": "medical_report.pdf"}
         )
-
+        
         # Проверяем что задача на удаление добавлена
         mock_background_tasks.add_task.assert_called_once()
-
+        
         # Проверяем ответ
-        assert hasattr(response, "filename")
-        assert response.filename == original_name
-
+        assert hasattr(response, 'filename')
+        assert response.filename == "medical_report.pdf"
 
     @pytest.mark.asyncio
     async def test_download_file_post_missing_extension(self, mock_auth_doctor, mock_request):
@@ -532,31 +530,36 @@ class TestDownloadAPI:
     # ====== Тесты для _download_file (внутренняя функция) ======
 
     @pytest.mark.asyncio
-    async def test_download_file_internal_success(
-        self, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_background_tasks
-    ):
+    async def test_download_file_internal_success(self, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_background_tasks):
         """Тест внутренней функции _download_file"""
         encrypted_dir, decrypted_dir = temp_dirs
-
+        
+        # Создаем тестовый файл
         test_filename = "test.pdf.age"
         encrypted_file = encrypted_dir / test_filename
         encrypted_file.write_bytes(b"encrypted content")
-
-        # side_effect создаёт реальный расшифрованный файл
-        async def fake_decrypt(encrypted_path, private_key_path, output_path):
-            Path(output_path).write_bytes(b"decrypted content")
-
-        mock_crypto_manager.decrypt_file.side_effect = fake_decrypt
-
+        
+        # Импортируем функцию
         from app.api.download import _download_file
-
-        response = await _download_file(
-            filename=test_filename,
-            background_tasks=mock_background_tasks,
-        )
-
+        
+        # Мокаем crypto_manager
+        mock_crypto_manager.decrypt_file.return_value = None
+        
+        # Мокаем stat().st_size чтобы возвращал ненулевой размер
+        mock_stat = MagicMock()
+        mock_stat.st_size = 1024
+        
+        # Мокаем Path.exists и Path.is_file
+        with patch.object(Path, 'exists', return_value=True):
+            with patch.object(Path, 'is_file', return_value=True):
+                with patch.object(Path, 'stat', return_value=mock_stat):
+                    response = await _download_file(
+                        filename=test_filename,
+                        background_tasks=mock_background_tasks
+                    )
+        
+        # Проверяем что функция работает
         assert response.filename == "test.pdf"
-
 
 
 # Упрощенные тесты которые точно работают
@@ -669,6 +672,34 @@ def client_with_admin(client, mock_admin):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def mock_db_session():
+    """Мок асинхронной сессии БД (уровень модуля)"""
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock()
+    mock_session.delete = AsyncMock()
+    mock_session.commit = AsyncMock()
+    return mock_session
+
+
+@pytest.fixture
+def temp_dirs():
+    """Временные директории для тестов (уровень модуля)"""
+    tmpdir = Path(tempfile.mkdtemp())
+    dirs = {
+        "encrypted": tmpdir / "encrypted",
+        "decrypted": tmpdir / "decrypted",
+        "keys": tmpdir / "keys",
+    }
+    for d in dirs.values():
+        d.mkdir(parents=True, exist_ok=True)
+    (dirs["keys"] / "age.key").write_text("test-key")
+
+    yield dirs
+
+    shutil.rmtree(tmpdir, ignore_errors=True)
+
+
 @pytest.mark.asyncio
 async def test_download_by_token_success(mock_user, mock_db_session, temp_dirs):
     """GET /download?token=... — успех"""
@@ -750,6 +781,7 @@ async def test_download_by_token_limit_reached(mock_user, mock_db_session):
     mock_link.token = token
     mock_link.downloads_count = 5
     mock_link.max_downloads = 5
+    mock_link.expires_at = datetime.now(timezone.utc) + timedelta(days=10)
 
     with patch.object(mock_db_session, "execute") as mock_execute:
         mock_execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=mock_link))
@@ -784,11 +816,14 @@ def test_download_file_post_success(client_with_doctor, mock_user, temp_dirs):
     encrypted_path = temp_dirs["encrypted"] / filename
     encrypted_path.write_text("fake encrypted")
 
-    decrypted_path = temp_dirs["decrypted"] / f"dec_{uuid.uuid4().hex[:12]}_test"
-
     with patch("app.api.download.ENCRYPTED_DIR", temp_dirs["encrypted"]):
         with patch("app.api.download.DECRYPTED_DIR", temp_dirs["decrypted"]):
-            with patch.object(crypto_manager, "decrypt_file", AsyncMock()):
+            # side_effect создаёт файл, имитируя реальную расшифровку
+            async def fake_decrypt(encrypted_path, private_key_path, output_path):
+                output_path.write_bytes(b"decrypted content")
+
+            with patch("app.api.download.crypto_manager") as mock_cm:
+                mock_cm.decrypt_file = fake_decrypt
                 with patch.object(audit_logger, "log_operation") as mock_log:
                     response = client_with_doctor.post(
                         "/api/download",
@@ -802,5 +837,6 @@ def test_download_file_post_success(client_with_doctor, mock_user, temp_dirs):
                         filename=filename,
                         user="api_user",
                         reason="Успешное скачивание и расшифровка",
-                        success=True
+                        success=True,
+                        metadata={"original_name": "test"}
                     )
