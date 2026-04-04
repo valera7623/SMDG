@@ -23,6 +23,8 @@ keys/*
 *.db
 *.sqlite3
 logs/
+audit_logs/
+certs/
 *.log
 *.csv
 secrets/

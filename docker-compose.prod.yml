@@ -1,0 +1,241 @@
+# =============================================================================
+# docker-compose.prod.yml — Production overrides
+# Использование:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # База данных — усиленные ограничения в prod
+  # ---------------------------------------------------------------------------
+  db:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+        reservations:
+          memory: 256m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Redis — добавляем пароль и ограничения
+  # ---------------------------------------------------------------------------
+  redis:
+    restart: always
+    command: >
+      redis-server
+      --requirepass "${REDIS_PASSWORD}"
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+      --appendonly no
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Основное приложение
+  # ---------------------------------------------------------------------------
+  smdg:
+    # В prod используем собранный образ из Docker Hub (не build: .)
+    image: "${DOCKER_USERNAME}/smdg:${IMAGE_TAG:-latest}"
+    build: null  # отключаем локальную сборку
+    restart: always
+    ports: !reset []        # убираем прямой доступ — только через Nginx
+    expose:
+      - "8000"
+    environment:
+      DEV_MODE: "false"
+      REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/0"
+      LOG_LEVEL: "WARNING"
+    volumes:
+      # В prod НЕ монтируем исходники (./app) — образ уже содержит код
+      - smdg_uploads:/app/uploads
+      - smdg_encrypted:/app/encrypted
+      - smdg_decrypted:/app/decrypted
+      - ./static:/app/static:ro
+      - smdg_audit_logs:/app/audit_logs
+      - smdg_keys:/app/keys
+      - smdg_backups:/app/backups
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  # ---------------------------------------------------------------------------
+  # Nginx — только prod-конфиг
+  # ---------------------------------------------------------------------------
+  nginx:
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ---------------------------------------------------------------------------
+  # ClamAV — убираем внешний порт, ограничиваем память
+  # ---------------------------------------------------------------------------
+  clamav:
+    ports: !reset []        # порт 3310 закрыт снаружи
+    expose:
+      - "3310"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1500m     # ClamAV жадный — нужно достаточно памяти
+          cpus: "1.0"
+        reservations:
+          memory: 512m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Бэкапы — исправляем PGPASSWORD + добавляем ограничения
+  # ---------------------------------------------------------------------------
+  backups:
+    restart: always
+    command: >
+      sh -c '
+        echo "Установка пакетов..."
+        apk add --no-cache postgresql-client rsync dcron
+
+        echo "Читаем пароль БД из Docker secret..."
+        export PGPASSWORD=$(cat /run/secrets/postgres_password)
+
+        echo "Очищаем и добавляем задачи в crontab..."
+        > /etc/crontabs/root
+
+        {
+          echo "0 3 * * * (pg_dump -h db -U smdg_user -d smdg | gzip > /app/backups/smdg_\$(date +%Y%m%d_%H%M).sql.gz 2>> /app/backups/backup_errors.log) && echo \"[\$(date +\"+%Y-%m-%d %H:%M:%S\")] pg_dump OK\" >> /app/backups/backup.log || echo \"[\$(date +\"+%Y-%m-%d %H:%M:%S\")] pg_dump FAILED\" >> /app/backups/backup.log"
+          echo "15 3 * * * rsync -a --delete /app/encrypted/ /app/backups/encrypted/"
+          echo "30 3 * * * find /app/backups -name \"*.sql.gz\" -mtime +30 -print -delete"
+          echo "35 3 * * * find /app/backups/encrypted -mtime +30 -print -delete"
+          echo "0 4 * * * df -h /app/backups >> /app/backups/backup_space.log"
+        } >> /etc/crontabs/root
+
+        echo "Запуск cron..."
+        crond -f -l 8
+      '
+    environment:
+      # убираем PGPASSWORD_FILE — читаем из secret напрямую в скрипте выше
+      PGPASSWORD_FILE: null
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Prometheus — убираем внешний порт (доступ только через Nginx + Basic Auth)
+  # ---------------------------------------------------------------------------
+  prometheus:
+    ports: !reset []        # порт 9090 закрыт снаружи
+    expose:
+      - "9090"
+    restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.external-url=/prometheus/'   # если проксируешь через Nginx
+      - '--web.route-prefix=/'
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # Grafana — закрываем анонимный доступ, пароль из secret
+  # ---------------------------------------------------------------------------
+  grafana:
+    ports: !reset []        # порт 3000 закрыт снаружи
+    expose:
+      - "3000"
+    restart: always
+    secrets:
+      - grafana_password
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: null                              # сбрасываем дефолт из base
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_password
+      GF_SECURITY_ADMIN_USER: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "true"
+      GF_SERVER_ROOT_URL: "https://${DOMAIN}/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_LOG_LEVEL: "warn"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =============================================================================
+# Добавляем секрет для Grafana
+# =============================================================================
+secrets:
+  age_private_key:
+    file: ./secrets/age.key
+  admin_password:
+    file: ./secrets/admin_password.txt
+  jwt_secret_key:
+    file: ./secrets/jwt_secret.txt
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  grafana_password:
+    file: ./secrets/grafana_password.txt   # создай: echo "StrongPass123!" > secrets/grafana_password.txt

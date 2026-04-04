@@ -1,12 +1,12 @@
 # app/core/config.py
-
+import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8",
+        env_file_encoding="utf-8" if os.getenv("DEV_MODE", "false").lower() == "true" else None,
         case_sensitive=False,
         extra="ignore",
     )
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     jwt_secret_key: str
-    admin_password: str= "default_admin_password"
+    admin_password: str
     
     # Опциональные с разумными дефолтами (не секретные)
     jwt_access_expires_minutes: int = 60
