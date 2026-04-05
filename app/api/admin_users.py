@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import List, Optional, Annotated
 import re
 
@@ -14,7 +14,8 @@ from app.core import audit_logger
 
 router = APIRouter(prefix="/admin/users", tags=["Admin Users"])
 
-# ==================== Pydantic схемы ====================
+
+# ==================== Pydantic схемы (Pydantic V2) ====================
 
 class UserResponse(BaseModel):
     """Модель пользователя для ответа API"""
@@ -24,9 +25,8 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     otp_secret: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreateRequest(BaseModel):
@@ -36,9 +36,10 @@ class UserCreateRequest(BaseModel):
     password: str = Field(..., min_length=8)
     role: str = Field("user", pattern="^(user|doctor|admin)$")
     is_active: bool = True
-    
-    @validator('email')
-    def validate_email(cls, v):
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(pattern, v):
             raise ValueError('Неверный формат email')
@@ -53,9 +54,10 @@ class UserUpdateRequest(BaseModel):
     reset_password: Optional[bool] = False
     new_password: Optional[str] = Field(None, min_length=8)
     reset_2fa: Optional[bool] = False
-    
-    @validator('email')
-    def validate_email(cls, v):
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
         if v is None:
             return v
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -99,46 +101,34 @@ async def get_all_users(
     role: Optional[str] = Query(None, pattern="^(user|doctor|admin)$"),
     active_only: bool = Query(False)
 ):
-    """
-    Получить список всех пользователей (только для админа)
-    С возможностью фильтрации и поиска
-    """
     query = select(User)
-    
-    # Фильтрация
+
     if search:
         query = query.where(
-            (User.username.ilike(f"%{search}%")) | 
+            (User.username.ilike(f"%{search}%")) |
             (User.email.ilike(f"%{search}%"))
         )
-    
+
     if role:
         query = query.where(User.role == role)
-    
+
     if active_only:
         query = query.where(User.is_active == True)
-    
-    # Пагинация
+
     query = query.offset(skip).limit(limit).order_by(User.id)
-    
+
     result = await db.execute(query)
     users = result.scalars().all()
-    
+
     audit_logger.log_operation(
         action="admin_view_users",
         filename="",
         user=current_admin.sub,
         reason=f"Админ просмотрел список пользователей (найдено: {len(users)})",
         success=True,
-        metadata={
-            "filters": {
-                "search": search,
-                "role": role,
-                "active_only": active_only
-            }
-        }
+        metadata={"filters": {"search": search, "role": role, "active_only": active_only}}
     )
-    
+
     return users
 
 
@@ -148,18 +138,12 @@ async def get_user(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить информацию о конкретном пользователе"""
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     audit_logger.log_operation(
         action="admin_view_user",
         filename="",
@@ -167,7 +151,7 @@ async def get_user(
         reason=f"Просмотр пользователя {user.username}",
         success=True
     )
-    
+
     return user
 
 
@@ -177,37 +161,19 @@ async def create_user(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Создать нового пользователя (только для админа)"""
-    
     print(f"=== СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ ===")
-    print(f"Получены данные: {user_data.dict()}")
-    print(f"От админа: {current_admin.sub}")
-    
+    print(f"Получены данные: {user_data.model_dump()}")
+
     # Проверка уникальности username
-    result = await db.execute(
-        select(User).where(User.username == user_data.username)
-    )
+    result = await db.execute(select(User).where(User.username == user_data.username))
     if result.scalar_one_or_none():
-        print(f"❌ Логин {user_data.username} уже существует")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким логином уже существует"
-        )
-    
+        raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
+
     # Проверка уникальности email
-    result = await db.execute(
-        select(User).where(User.email == user_data.email)
-    )
+    result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
-        print(f"❌ Email {user_data.email} уже существует")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким email уже существует"
-        )
-    
-    print(f"✅ Данные валидны, создаем пользователя...")
-    
-    # Создание пользователя
+        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
+
     new_user = User(
         username=user_data.username,
         email=user_data.email,
@@ -215,25 +181,20 @@ async def create_user(
         role=user_data.role,
         is_active=user_data.is_active
     )
-    
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    
-    print(f"✅ Пользователь создан: ID={new_user.id}, username={new_user.username}")
-    
+
     audit_logger.log_operation(
         action="admin_create_user",
         filename="",
         user=current_admin.sub,
         reason=f"Создан пользователь {new_user.username}",
         success=True,
-        metadata={
-            "created_user_id": new_user.id,
-            "created_user_role": new_user.role
-        }
+        metadata={"created_user_id": new_user.id, "created_user_role": new_user.role}
     )
-    
+
     return new_user
 
 
@@ -244,64 +205,44 @@ async def update_user(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Обновить данные пользователя"""
-    
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    
-    # Нельзя изменять самого себя через этот эндпоинт (для безопасности)
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     if user.username == current_admin.sub:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя изменять свою учётную запись через этот эндпоинт. Используйте /auth/change-password"
-        )
-    
+        raise HTTPException(status_code=400, detail="Нельзя изменять свою учётную запись через этот эндпоинт")
+
     changes = {}
-    
-    # Обновление полей
+
     if update_data.email and update_data.email != user.email:
-        # Проверка уникальности email
-        result = await db.execute(
-            select(User).where(User.email == update_data.email, User.id != user_id)
-        )
+        result = await db.execute(select(User).where(User.email == update_data.email, User.id != user_id))
         if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Пользователь с таким email уже существует"
-            )
+            raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
         user.email = update_data.email
         changes["email"] = True
-    
+
     if update_data.role and update_data.role != user.role:
         user.role = update_data.role
         changes["role"] = update_data.role
-    
+
     if update_data.is_active is not None and update_data.is_active != user.is_active:
         user.is_active = update_data.is_active
         changes["is_active"] = update_data.is_active
-    
-    # Сброс пароля
+
     if update_data.reset_password and update_data.new_password:
         user.hashed_password = get_password_hash(update_data.new_password)
         changes["password_reset"] = True
-    
-    # Сброс 2FA
+
     if update_data.reset_2fa and user.otp_secret:
         user.otp_secret = None
         changes["2fa_reset"] = True
-    
+
     if changes:
         await db.commit()
         await db.refresh(user)
-        
+
         audit_logger.log_operation(
             action="admin_update_user",
             filename="",
@@ -310,7 +251,7 @@ async def update_user(
             success=True,
             metadata=changes
         )
-    
+
     return user
 
 
@@ -321,48 +262,28 @@ async def delete_user(
     db: AsyncSession = Depends(get_db),
     confirm: bool = Query(False)
 ):
-    """Удалить пользователя (только для админа)"""
-    
     if not confirm:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Требуется подтверждение удаления (confirm=true)"
-        )
-    
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+        raise HTTPException(status_code=400, detail="Требуется подтверждение удаления (confirm=true)")
+
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    
-    # Нельзя удалить самого себя
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     if user.username == current_admin.sub:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя удалить свою учётную запись"
-        )
-    
-    # Нельзя удалить последнего админа
+        raise HTTPException(status_code=400, detail="Нельзя удалить свою учётную запись")
+
     if user.role == "admin":
-        result = await db.execute(
-            select(User).where(User.role == "admin")
-        )
+        result = await db.execute(select(User).where(User.role == "admin"))
         admins = result.scalars().all()
         if len(admins) <= 1:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя удалить последнего администратора"
-            )
-    
+            raise HTTPException(status_code=400, detail="Нельзя удалить последнего администратора")
+
     username = user.username
     await db.delete(user)
     await db.commit()
-    
+
     audit_logger.log_operation(
         action="admin_delete_user",
         filename="",
@@ -370,7 +291,7 @@ async def delete_user(
         reason=f"Удален пользователь {username}",
         success=True
     )
-    
+
     return {"message": f"Пользователь {username} успешно удален"}
 
 
@@ -381,28 +302,18 @@ async def reset_user_password(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Сбросить пароль пользователя"""
-    
-    result = await db.execute(
-        select(User).where(User.id == user_id)
-    )
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
-    
+
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
-    
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
     if user.username == current_admin.sub:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Используйте /auth/change-password для смены своего пароля"
-        )
-    
+        raise HTTPException(status_code=400, detail="Используйте /auth/change-password для смены своего пароля")
+
     user.hashed_password = get_password_hash(reset_data.new_password)
     await db.commit()
-    
+
     audit_logger.log_operation(
         action="admin_reset_password",
         filename="",
@@ -410,7 +321,7 @@ async def reset_user_password(
         reason=f"Сброшен пароль пользователя {user.username}",
         success=True
     )
-    
+
     return {"message": f"Пароль пользователя {user.username} успешно сброшен"}
 
 
@@ -420,131 +331,59 @@ async def bulk_user_actions(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Массовые операции с пользователями"""
-    
     if not action_data.user_ids:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Не указаны пользователи"
-        )
-    
-    # Проверяем, не пытается ли админ изменить себя
+        raise HTTPException(status_code=400, detail="Не указаны пользователи")
+
+    # Запрещаем массовые операции над самим собой
     result = await db.execute(
-        select(User).where(
-            User.id.in_(action_data.user_ids),
-            User.username == current_admin.sub
-        )
+        select(User).where(User.id.in_(action_data.user_ids), User.username == current_admin.sub)
     )
     if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Нельзя применять массовые операции к своей учётной записи"
-        )
-    
+        raise HTTPException(status_code=400, detail="Нельзя применять массовые операции к своей учётной записи")
+
     affected_count = 0
-    
+
     if action_data.action == "activate":
-        result = await db.execute(
-            update(User)
-            .where(User.id.in_(action_data.user_ids))
-            .values(is_active=True)
-        )
+        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(is_active=True))
         affected_count = result.rowcount
-        
+
     elif action_data.action == "deactivate":
-        # Проверяем, что не деактивируем админов
-        result = await db.execute(
-            select(User).where(
-                User.id.in_(action_data.user_ids),
-                User.role == "admin"
-            )
-        )
-        admins_affected = result.scalars().all()
-        
-        if admins_affected:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя деактивировать администраторов"
-            )
-        
-        result = await db.execute(
-            update(User)
-            .where(User.id.in_(action_data.user_ids))
-            .values(is_active=False)
-        )
+        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Нельзя деактивировать администраторов")
+        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(is_active=False))
         affected_count = result.rowcount
-        
+
     elif action_data.action == "change_role":
         if not action_data.role:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Не указана новая роль"
-            )
-        
-        # Проверяем, что не меняем роль админов
-        result = await db.execute(
-            select(User).where(
-                User.id.in_(action_data.user_ids),
-                User.role == "admin"
-            )
-        )
-        admins_affected = result.scalars().all()
-        
-        if admins_affected:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя изменить роль администраторов"
-            )
-        
-        result = await db.execute(
-            update(User)
-            .where(User.id.in_(action_data.user_ids))
-            .values(role=action_data.role)
-        )
+            raise HTTPException(status_code=400, detail="Не указана новая роль")
+        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Нельзя изменить роль администраторов")
+        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(role=action_data.role))
         affected_count = result.rowcount
-        
+
     elif action_data.action == "delete":
-        # Проверяем, что не удаляем админов
-        result = await db.execute(
-            select(User).where(
-                User.id.in_(action_data.user_ids),
-                User.role == "admin"
-            )
-        )
-        admins_affected = result.scalars().all()
-        
-        if admins_affected:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Нельзя удалять администраторов"
-            )
-        
-        result = await db.execute(
-            delete(User).where(User.id.in_(action_data.user_ids))
-        )
+        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        if result.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Нельзя удалять администраторов")
+        result = await db.execute(delete(User).where(User.id.in_(action_data.user_ids)))
         affected_count = result.rowcount
-        
+
     else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Неизвестное действие: {action_data.action}"
-        )
-    
+        raise HTTPException(status_code=400, detail=f"Неизвестное действие: {action_data.action}")
+
     await db.commit()
-    
+
     audit_logger.log_operation(
         action=f"admin_bulk_{action_data.action}",
         filename="",
         user=current_admin.sub,
         reason=f"Массовая операция {action_data.action} над {affected_count} пользователями",
         success=True,
-        metadata={
-            "action": action_data.action,
-            "user_ids": action_data.user_ids,
-            "affected_count": affected_count
-        }
+        metadata={"action": action_data.action, "user_ids": action_data.user_ids, "affected_count": affected_count}
     )
-    
+
     return {
         "message": f"Операция '{action_data.action}' выполнена над {affected_count} пользователями",
         "affected_count": affected_count
@@ -556,12 +395,9 @@ async def get_user_stats(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    """Получить статистику по пользователям"""
-    
-    # Общее количество
     result = await db.execute(select(User))
     all_users = result.scalars().all()
-    
+
     total = len(all_users)
     active = sum(1 for u in all_users if u.is_active)
     inactive = total - active
@@ -569,7 +405,7 @@ async def get_user_stats(
     doctors = sum(1 for u in all_users if u.role == "doctor")
     regular = sum(1 for u in all_users if u.role == "user")
     with_2fa = sum(1 for u in all_users if u.otp_secret)
-    
+
     return UserStatsResponse(
         total_users=total,
         active_users=active,

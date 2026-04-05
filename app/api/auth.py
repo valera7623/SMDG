@@ -1,54 +1,65 @@
-# auth.py - обновлённая версия (добавлены изменения)
+# app/api/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Body, Form, Request, Response, Cookie
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 from typing import Annotated, Optional
-from app.core.auth import get_current_user, get_current_admin, get_current_doctor
+import re
+
+from app.core.auth import get_current_user, get_current_admin
 from app.core.auth_utils import create_access_token, TokenData
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 from app.core.database import get_db
 from app.models.user import User
 from app.core.security import verify_password, get_password_hash
 from app.core import audit_logger
 from app.core.rate_limiter import limiter, get_remote_address
 from datetime import timedelta
-from jwt import decode as jwt_decode, PyJWTError
-import pyotp  
-import base64
+import pyotp
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# Упрощённый key_func для логина (только IP, чтобы избежать async проблем с form)
-def login_rate_limit_key(request: Request):
-    ip = get_remote_address(request)
-    return f"login:{ip}"
-
+# ==================== Pydantic V2 Models ====================
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str = Field(..., min_length=1, description="Текущий пароль")
-    new_password: str = Field(..., min_length=8, description="Новый пароль (мин. 8 символов)")
-    otp_code: Optional[str] = Field(None, min_length=6, max_length=6, description="Код 2FA (опционально, если включён)")
+    old_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
+    otp_code: Optional[str] = Field(None, min_length=6, max_length=6)
 
+    @field_validator('new_password')
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError('Пароль должен быть не менее 8 символов')
+        return v
 
-class LoginRequest(BaseModel):
-    username: str = Field(..., description="Имя пользователя")
-    password: str = Field(..., description="Пароль")
-    otp_code: Optional[str] = Field(None, min_length=6, max_length=6, description="Код 2FA (опционально, если включён)")
 
 class Verify2FARequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6)
 
-def generate_otp_secret():
-    """Генерация нового OTP секрета"""
+
+class RegisterRequest(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
+    email: str = Field(..., max_length=255)
+    password: str = Field(..., min_length=8)
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, v):
+            raise ValueError('Неверный формат email')
+        return v
+
+
+# ==================== Утилиты ====================
+
+def generate_otp_secret() -> str:
     return pyotp.random_base32()
 
 
-def get_otp_url(username: str, secret: str, issuer_name: str = "SMDG System"):
-    """Генерация URL для QR-кода"""
+def get_otp_url(username: str, secret: str, issuer_name: str = "SMDG System") -> str:
     return pyotp.totp.TOTP(secret).provisioning_uri(
         name=username,
         issuer_name=issuer_name
@@ -56,233 +67,126 @@ def get_otp_url(username: str, secret: str, issuer_name: str = "SMDG System"):
 
 
 def verify_otp_code(secret: str, code: str) -> bool:
-    """Верификация OTP кода"""
     if not secret or not code:
         return False
-    
     totp = pyotp.TOTP(secret)
-    return totp.verify(code, valid_window=1)  # valid_window=1 для небольшого запаса
+    return totp.verify(code, valid_window=1)
 
 
-@router.post("/change-password", response_model=dict)
-@limiter.limit(
-    "5/minute",
-    key_func=get_remote_address,
-    error_message="Слишком много попыток смены пароля. Подождите минуту."
-)
+# ==================== Эндпоинты ====================
+
+@router.post("/change-password")
+@limiter.limit("5/minute", key_func=get_remote_address)
 async def change_password(
-    request: Request,  # ← обязательно для slowapi!
+    request: Request,
     request_body: ChangePasswordRequest = Body(...),
     current_user: Annotated[TokenData, Depends(get_current_user)] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub)
-    )
+    result = await db.execute(select(User).where(User.username == current_user.sub))
     user = result.scalar_one_or_none()
 
     if not user:
-        audit_logger.log_operation(
-            action="change_password_failed",
-            filename="",
-            user=current_user.sub,
-            reason="Пользователь не найден",
-            success=False
-        )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    # 2. Проверяем старый пароль
     if not verify_password(request_body.old_password, user.hashed_password):
-        audit_logger.log_operation(
-            action="change_password_failed",
-            filename="",
-            user=current_user.sub,
-            reason="Неверный старый пароль",
-            success=False
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный текущий пароль",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        raise HTTPException(status_code=401, detail="Неверный текущий пароль")
 
-    # 3. Проверяем 2FA если включён
     if user.otp_secret:
-        if not request_body.otp_code:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Требуется код 2FA"
-            )
-        
-        if not verify_otp_code(user.otp_secret, request_body.otp_code):
-            audit_logger.log_operation(
-                action="change_password_failed",
-                filename="",
-                user=current_user.sub,
-                reason="Неверный код 2FA",
-                success=False
-            )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный код 2FA"
-            )
+        if not request_body.otp_code or not verify_otp_code(user.otp_secret, request_body.otp_code):
+            raise HTTPException(status_code=401, detail="Неверный код 2FA")
 
-    # 4. Проверяем, что новый пароль ≠ старому
     if verify_password(request_body.new_password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Новый пароль не должен совпадать со старым"
-        )
+        raise HTTPException(status_code=400, detail="Новый пароль не должен совпадать со старым")
 
-    # 5. Генерируем новый OTP секрет при смене пароля
     new_otp_secret = generate_otp_secret()
-
-    # 6. Обновляем пароль и OTP секрет
     new_hash = get_password_hash(request_body.new_password)
 
     await db.execute(
         update(User)
         .where(User.id == user.id)
-        .values(
-            hashed_password=new_hash,
-            otp_secret=new_otp_secret  # Генерируем новый секрет
-        )
+        .values(hashed_password=new_hash, otp_secret=new_otp_secret)
     )
     await db.commit()
 
-    # 7. Логируем успех
     audit_logger.log_operation(
         action="change_password",
         filename="",
         user=current_user.sub,
-        reason="Пароль успешно изменён, OTP секрет обновлён",
-        success=True,
-        metadata={
-            "username": current_user.sub,
-            "otp_secret_regenerated": True  # nosec B105
-        }
+        reason="Пароль успешно изменён",
+        success=True
     )
 
     return {
         "message": "Пароль успешно изменён",
         "otp_secret": new_otp_secret,
-        "otp_url": get_otp_url(current_user.sub, new_otp_secret),
-        "warning": "Сохраните этот секрет для настройки 2FA!"
+        "otp_url": get_otp_url(current_user.sub, new_otp_secret)
     }
-    
-    
-
 
 
 @router.post("/login")
-@limiter.limit(
-    "5/minute",
-    key_func=login_rate_limit_key,
-    methods=["POST"],
-    error_message="Слишком много попыток входа. Попробуйте через минуту.",
-    
-)
+@limiter.limit("10/minute;5/10seconds", key_func=get_remote_address)
 async def login(
     response: Response,
     request: Request,
     username: str = Form(...),
     password: str = Form(...),
-    otp_code: Optional[str] = Form(None),  
+    otp_code: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
-    # Находим пользователя
+    print(f"[LOGIN] Попытка входа: username={username}, otp_provided={bool(otp_code)}")
+
+    # Поиск пользователя
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
-        audit_logger.log_operation(
-            action="login_failed",
-            filename="",
-            user=username,
-            reason="Пользователь не найден или отключён",
-            success=False
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя пользователя или пароль",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        print(f"[LOGIN] ❌ Пользователь не найден или неактивен")
+        raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
+    # Проверка пароля
     if not verify_password(password, user.hashed_password):
-        audit_logger.log_operation(
-            action="login_failed",
-            filename="",
-            user=username,
-            reason="Неверный пароль",
-            success=False
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверное имя пользователя или пароль",
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        print("[LOGIN] ❌ Неверный пароль")
+        raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
-    # Проверка 2FA если секрет установлен
+    # === ОБРАБОТКА 2FA ===
     if user.otp_secret:
         if not otp_code:
-            # Если 2FA включён, но код не предоставлен
-            audit_logger.log_operation(
-                action="login_failed",
-                filename="",
-                user=username,
-                reason="Требуется код 2FA",
-                success=False
-            )
+            # Это ключевой момент — фронтенд ждёт именно 400
+            print("[LOGIN] ⚠️  2FA включена, но код не передан → показываем форму")
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Требуется код 2FA",
-                headers={"WWW-Authenticate": "Bearer"}
+                status_code=400,
+                detail="Требуется код 2FA"
             )
-        
         if not verify_otp_code(user.otp_secret, otp_code):
-            audit_logger.log_operation(
-                action="login_failed",
-                filename="",
-                user=username,
-                reason="Неверный код 2FA",
-                success=False
-            )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Неверный код 2FA",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
+            print("[LOGIN] ❌ Неверный код 2FA")
+            raise HTTPException(status_code=401, detail="Неверный код 2FA")
+        print("[LOGIN] ✅ Код 2FA верный")
+    else:
+        print("[LOGIN] 2FA отключена — вход без кода")
 
-    access_token = create_access_token(
-        subject=user.username,
-        role=user.role,
-        expires_delta=timedelta(minutes=60)
-    )
+    # Создание токена
+    access_token = create_access_token(subject=user.username, role=user.role)
 
-    # Ставим HttpOnly cookie
+    # Установка cookie
     response.set_cookie(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,               # ← в dev ставим False, в проде True (HTTPS)
-        samesite="lax",             # или "strict" — зависит от нужд
-        max_age=60 * 60,            # 1 час
-        path="/",
-        # domain="fileguardian.com.ru"  # раскомменти в проде
+        secure=False,          # В продакшене → True
+        samesite="lax",
+        max_age=3600,
+        path="/"
     )
+
+    print(f"[LOGIN] ✅ Успешный вход пользователя {username}")
 
     audit_logger.log_operation(
         action="login_success",
         filename="",
         user=username,
-        reason="Успешный вход" + (" (с 2FA)" if user.otp_secret else ""),
-        success=True,
-        metadata={"2fa_enabled": user.otp_secret is not None}
+        reason="Успешный вход",
+        success=True
     )
 
     return {
@@ -291,34 +195,26 @@ async def login(
         "role": user.role,
         "2fa_enabled": bool(user.otp_secret)
     }
-    
-# ──── НОВЫЙ ЭНДПОИНТ LOGOUT ────
+
+
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie(
-        key="access_token",
-        path="/",
-        httponly=True,
-        secure=False,  # в проде True
-        samesite="lax"
-    )
+    response.delete_cookie(key="access_token", path="/", httponly=True, samesite="lax")
     return {"message": "Вы успешно вышли из системы"}
 
 
-@router.post("/setup-2fa", response_model=dict)
+@router.post("/setup-2fa")
 @limiter.limit("3/minute", key_func=get_remote_address)
 async def setup_2fa(
     request: Request,
     current_user: Annotated[TokenData, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub)
-    )
+    result = await db.execute(select(User).where(User.username == current_user.sub))
     user = result.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(404, "Пользователь не найден")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     new_secret = generate_otp_secret()
 
@@ -329,224 +225,102 @@ async def setup_2fa(
     )
     await db.commit()
 
-    otp_url = get_otp_url(current_user.sub, new_secret)
-
-    audit_logger.log_operation(
-        action="setup_2fa",
-        filename="",
-        user=current_user.sub,
-        reason="Настройка 2FA",
-        success=True,
-        metadata={"username": current_user.sub}
-    )
-
     return {
-        "message": "Отсканируйте QR-код в приложении аутентификатора (Google Authenticator, Authy и т.п.)",
-        "otp_url": otp_url,                  # ← только это отдаём
+        "message": "Отсканируйте QR-код в приложении аутентификатора",
+        "otp_url": get_otp_url(current_user.sub, new_secret),
         "instructions": [
             "1. Откройте приложение-аутентификатор",
             "2. Добавьте новую учётную запись",
             "3. Отсканируйте QR-код или введите строку вручную",
-            "4. После сканирования введите сгенерированный код для подтверждения"
-        ],
-        "warning": "Сохраните этот QR или строку в безопасном месте. После подтверждения секрет больше не будет показан."
+            "4. Введите сгенерированный код для подтверждения"
+        ]
     }
-    
 
 
 @router.post("/verify-2fa-setup")
 @limiter.limit("5/minute", key_func=get_remote_address)
 async def verify_2fa_setup(
     request: Request,
-    current_user: Annotated[TokenData, Depends(get_current_user)],  # обязательный, первый
-    req: Verify2FARequest = Body(...),                              # дефолт
-    db: AsyncSession = Depends(get_db)                              # дефолт
-):
-    print(f"[DEBUG] verify-2fa-setup: user={current_user.sub}, code={req.code}")
-
-    user = (await db.execute(
-        select(User).where(User.username == current_user.sub)
-    )).scalar_one_or_none()
-
-    if not user:
-        print("[DEBUG] Пользователь не найден")
-        raise HTTPException(404, "Пользователь не найден")
-
-    if not user.otp_secret:
-        print("[DEBUG] 2FA не настроена")
-        raise HTTPException(400, "2FA ещё не настроена")
-
-    print("[DEBUG] Проверяем код...")
-    if verify_otp_code(user.otp_secret, req.code):
-        print("[DEBUG] Код верный")
-        audit_logger.log_operation(
-            action="verify_2fa_success",
-            filename="",
-            user=current_user.sub,
-            reason="Первый код 2FA успешно проверен",
-            success=True
-        )
-        return {"message": "2FA успешно настроена и проверена!"}
-    else:
-        print("[DEBUG] Код неверный")
-        audit_logger.log_operation(
-            action="verify_2fa_failed",
-            filename="",
-            user=current_user.sub,
-            reason="Неверный код при настройке 2FA",
-            success=False
-        )
-        raise HTTPException(400, "Неверный код. Попробуйте снова.")
-    
-
-
-
-@router.post("/disable-2fa", response_model=dict)
-@limiter.limit(
-    "3/minute",
-    key_func=get_remote_address,
-    error_message="Слишком много запросов на отключение 2FA"
-)
-async def disable_2fa(
-    request: Request,
-    otp_code: str = Form(...),  # Требуется код для отключения
-    current_user: Annotated[TokenData, Depends(get_current_user)] = None,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    req: Verify2FARequest = Body(...),
     db: AsyncSession = Depends(get_db)
 ):
-    """Эндпоинт для отключения 2FA"""
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub)
-    )
+    result = await db.execute(select(User).where(User.username == current_user.sub))
     user = result.scalar_one_or_none()
 
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Пользователь не найден"
-        )
+    if not user or not user.otp_secret:
+        raise HTTPException(status_code=400, detail="2FA ещё не настроена")
 
-    if not user.otp_secret:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="2FA не включен"
-        )
+    if verify_otp_code(user.otp_secret, req.code):
+        audit_logger.log_operation("verify_2fa_success", "", current_user.sub, success=True)
+        return {"message": "2FA успешно настроена и проверена!"}
+    else:
+        raise HTTPException(status_code=400, detail="Неверный код")
 
-    # Проверяем код перед отключением
+
+@router.post("/disable-2fa")
+@limiter.limit("3/minute", key_func=get_remote_address)
+async def disable_2fa(
+    request: Request,
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    otp_code: str = Form(...),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(User).where(User.username == current_user.sub))
+    user = result.scalar_one_or_none()
+
+    if not user or not user.otp_secret:
+        raise HTTPException(status_code=400, detail="2FA не включена")
+
     if not verify_otp_code(user.otp_secret, otp_code):
-        audit_logger.log_operation(
-            action="disable_2fa_failed",
-            filename="",
-            user=current_user.sub,
-            reason="Неверный код 2FA",
-            success=False
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный код 2FA"
-        )
+        raise HTTPException(status_code=401, detail="Неверный код 2FA")
 
-    # Отключаем 2FA
-    await db.execute(
-        update(User)
-        .where(User.id == user.id)
-        .values(otp_secret=None)
-    )
+    await db.execute(update(User).where(User.id == user.id).values(otp_secret=None))
     await db.commit()
 
-    audit_logger.log_operation(
-        action="disable_2fa",
-        filename="",
-        user=current_user.sub,
-        reason="Отключение 2FA",
-        success=True,
-        metadata={"username": current_user.sub}
-    )
+    audit_logger.log_operation("disable_2fa", "", current_user.sub, success=True)
 
-    return {
-        "message": "2FA успешно отключен",
-        "warning": "Рекомендуется немедленно настроить 2FA заново для безопасности"
-    }
-    
+    return {"message": "2FA успешно отключен"}
 
 
-class RegisterRequest(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
-    email: str = Field(..., max_length=255)
-    password: str = Field(..., min_length=8)
-
-
-@router.post("/register", response_model=dict)
-@limiter.limit(
-    "3/1minute",
-    key_func=get_remote_address,
-    error_message="Слишком много попыток регистрации. Попробуйте позже."
-)
+@router.post("/register")
 async def register(
     request: Request,
     user_data: RegisterRequest = Body(...),
     db: AsyncSession = Depends(get_db)
 ):
-    """Регистрация нового пользователя"""
-    
-    # Проверяем уникальность username
-    result = await db.execute(
-        select(User).where(User.username == user_data.username)
-    )
+    result = await db.execute(select(User).where(User.username == user_data.username))
     if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким логином уже существует"
-        )
-    
-    # Проверяем уникальность email
-    result = await db.execute(
-        select(User).where(User.email == user_data.email)
-    )
+        raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
+
+    result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Пользователь с таким email уже существует"
-        )
-    
-    # Генерируем OTP секрет для нового пользователя (опционально)
-    otp_secret = generate_otp_secret()
-    
-    # Создаем нового пользователя
+        raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
+
     new_user = User(
         username=user_data.username,
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
-        role="user",  
-        is_active=True,
-        otp_secret=None
+        role="user",
+        is_active=True
     )
-    
+
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    
-    # Логируем успешную регистрацию
+
     audit_logger.log_operation(
         action="user_registered",
         filename="",
         user=new_user.username,
         reason="Новый пользователь зарегистрирован",
-        success=True,
-        metadata={
-            "email": new_user.email,
-            "role": new_user.role,
-            "2fa_enebled": False
-        }
+        success=True
     )
-    
-    # Возвращаем данные (но не пароль!)
+
     return {
         "message": "Пользователь успешно зарегистрирован",
         "username": new_user.username,
         "email": new_user.email,
         "role": new_user.role,
-        "otp_secret": otp_secret,  # Для настройки 2FA
-        "otp_url": get_otp_url(new_user.username, otp_secret),
-        "2fa_enabled": False,
-        "note": "Рекомендуется настроить двухфакторную аутентификацию"
+        "2fa_enabled": False
     }

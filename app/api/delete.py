@@ -1,159 +1,131 @@
 # app/api/delete.py
-import asyncio
+from fastapi import APIRouter, HTTPException, Form, Query, Request, Depends, status
+from pydantic import BaseModel, Field, ConfigDict
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from fastapi import APIRouter, HTTPException, Form, Query, Request, Depends
 from app.core import ENCRYPTED_DIR, audit_logger
-from app.core.auth import TokenData, get_current_admin
+from app.core.auth import get_current_admin, TokenData
 from app.core.utils import calculate_hash_async, sanitize_filename
+from app.core.database import get_db
 from pathlib import Path
 import os
-import hashlib
 
 router = APIRouter()
 
-@router.post("/delete")
-async def delete_file(
-    filename: str = Form(...), 
-    current_user: TokenData = Depends(get_current_admin), 
-    
-    confirm: str = Form("false"),  # Изменим на строку для простоты
-    reason: str = Form("")
+
+# ==================== Pydantic V2 Модель ====================
+
+class DeleteRequest(BaseModel):
+    filename: str = Field(..., min_length=1)
+    confirm: bool = Field(False, description="Подтверждение удаления")
+    reason: str = Field("", description="Причина удаления (опционально)")
+
+    model_config = ConfigDict(extra='ignore')
+
+
+# ==================== Общая логика удаления ====================
+
+async def _delete_file(
+    filename: str,
+    confirm: bool,
+    reason: str,
+    current_user: TokenData
 ):
-    """Удалить зашифрованный файл"""
-    print(f"🗑️  Запрос на удаление файла: {filename}")
-    print(f"   API Key: {get_current_admin}")
-    print(f"   Confirm: {confirm}")
-    print(f"   Reason: {reason}")
-    
-    
-    
-    # Безопасное имя файла
+    print(f"🗑️ Запрос на удаление: {filename} от {current_user.sub} ({current_user.role})")
+
     safe_filename = sanitize_filename(filename)
     file_path = ENCRYPTED_DIR / safe_filename
-    
-    print(f"   Безопасное имя: {safe_filename}")
-    print(f"   Путь к файлу: {file_path}")
-    print(f"   Файл существует: {file_path.exists()}")
-    
-    if not file_path.exists():
-        # Попробуем найти файл без .age расширения если нужно
-        if not safe_filename.endswith('.age'):
-            file_path_with_age = ENCRYPTED_DIR / f"{safe_filename}.age"
-            if file_path_with_age.exists():
-                file_path = file_path_with_age
-                safe_filename = f"{safe_filename}.age"
-                print(f"   ⚠️  Файл найден с .age: {safe_filename}")
-            else:
-                print(f"   ❌ Файл не найден: {safe_filename}")
-                raise HTTPException(status_code=404, detail=f"File not found: {safe_filename}")
-        else:
-            print(f"   ❌ Файл не найден: {safe_filename}")
-            raise HTTPException(status_code=404, detail=f"File not found: {safe_filename}")
-    
-    # Информация о файле перед удалением (асинхронно)
+
+    # Автоматически добавляем .age, если не указано
+    if not file_path.exists() and not safe_filename.endswith('.age'):
+        file_path = ENCRYPTED_DIR / f"{safe_filename}.age"
+        safe_filename = f"{safe_filename}.age"
+
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
+
+    # Информация для аудита
     file_info = {
         "filename": safe_filename,
         "path": str(file_path),
-        "size": "unknown",
+        "size": 0,
         "hash": "unknown"
     }
 
-    loop = asyncio.get_running_loop()
-
     try:
-        # stat() асинхронно
-        stat_result = await loop.run_in_executor(None, file_path.stat)
-        file_info["size"] = stat_result.st_size
-
-        # Хэш асинхронно (самый тяжёлый вызов)
+        stat = file_path.stat()
+        file_info["size"] = stat.st_size
         file_info["hash"] = await calculate_hash_async(file_path)
-
-    except FileNotFoundError:
-        file_info["size"] = 0
-        file_info["hash"] = "file_not_found_before_delete"
-    except PermissionError:
-        file_info["size"] = "permission_denied"
-        file_info["hash"] = "permission_denied"
     except Exception as e:
-        file_info["size"] = f"error: {str(e)}"
-        file_info["hash"] = f"error: {str(e)}"
+        print(f"⚠️ Не удалось получить информацию о файле: {e}")
 
-    print(f" Размер файла: {file_info['size']} байт")
-    print(f" Хеш файла: {file_info['hash'][:20]}...")
-    
-    print(f"   Размер файла: {file_info['size']} байт")
-    print(f"   Хеш файла: {file_info['hash'][:20]}...")
-    
-    # Преобразуем confirm в boolean
-    is_confirmed = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
-    
-    # Требуется подтверждение для удаления
-    if not is_confirmed:
-        print(f"   ⚠️  Требуется подтверждение")
+    # Требуется подтверждение
+    if not confirm:
         return {
             "message": "⚠️ Требуется подтверждение удаления",
             "file_info": {
                 "name": safe_filename,
                 "size": file_info["size"],
-                "hash": file_info["hash"][:20] + "...",
                 "requires_confirmation": True
             },
             "confirmation_required": True
         }
-    
+
     try:
-        # Сохраняем хеш для аудита
-        file_hash = file_info["hash"]
-        
-        print(f"   🗑️  Удаление файла...")
-        # Удаляем файл
         os.remove(file_path)
-        print(f"   ✅ Файл удален")
-        
-        # Логируем успешное удаление
+
         audit_logger.log_operation(
             action="delete",
             filename=safe_filename,
-            user="admin",
+            user=current_user.sub,
             reason=reason or "Ручное удаление администратором",
             metadata=file_info,
             success=True
         )
-        print(f"   📝 Операция залогирована")
-        
+
         return {
             "message": "✅ Файл успешно удален",
             "filename": safe_filename,
-            "hash": file_hash,
-            "size": file_info["size"],
-            "audit_logged": True,
-            "timestamp": os.path.getmtime(str(file_path)) if os.path.exists(str(file_path)) else None
+            "size": file_info["size"]
         }
-        
+
     except Exception as e:
-        print(f"   ❌ Ошибка удаления: {str(e)}")
-        # Логируем неудачное удаление
         audit_logger.log_operation(
             action="delete",
             filename=safe_filename,
-            user="admin",
-            reason=reason or "Ручное удаление",
+            user=current_user.sub,
+            reason=f"Ошибка удаления: {str(e)}",
             metadata=file_info,
             success=False
         )
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
 
+
+# ==================== Эндпоинты ====================
+
+@router.post("/delete")
+async def delete_file(
+    filename: str = Form(...),
+    confirm: str = Form("false"),
+    reason: str = Form(""),
+    current_user: TokenData = Depends(get_current_admin)
+):
+    """Удаление файла администратором (POST)"""
+    confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
+    return await _delete_file(filename, confirm_bool, reason, current_user)
+
+
 @router.get("/delete")
 async def delete_file_get(
     filename: str = Query(...),
-    api_key: str = Query(..., alias="x-api-key"),
     confirm: str = Query("false"),
-    reason: str = Query("")
+    reason: str = Query(""),
+    current_user: TokenData = Depends(get_current_admin)
 ):
-    """Удалить зашифрованный файл (GET версия)"""
-    print(f"🗑️  GET запрос на удаление: {filename}")
-    # Используем ту же логику что и в POST
-    return await delete_file(filename, api_key, confirm, reason)
+    """Удаление файла администратором (GET — для совместимости)"""
+    confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
+    return await _delete_file(filename, confirm_bool, reason, current_user)
 
 
 

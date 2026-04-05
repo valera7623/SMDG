@@ -1,183 +1,114 @@
-SMDG   
-├─ .github 
-|   └─ workflows 
-|      └─ ci.yml
-├─ .vscode 
-|   └─ setting.json                                                  
-├─ app                                                            
-│  ├─ api                                                         
-│  │  ├ __init__.py
-|  |  ├─ auth.py    
-|  |  ├─ admin_users.py                                
-│  │  ├─ cleanup.py 
-|  |  ├─ delete_user.py                                          
-│  │  ├─ delete.py                                                
-│  │  ├─ download.py                                              
-│  │  ├─ list.py                                                  
-│  │  ├─ stats.py                                                 
-│  │  └─ upload.py                                                
-│  ├─ audit                                                       
-│  │  └─ audit.py                                                 
-|  |                                              
-│  ├─ core                                                        
-│  │  ├─ __init__.py                                              
-│  │  ├─ audit.py                                                 
-│  │  ├─ auth.py                                                  
-│  │  ├─ cleanup.py  
-|  |  ├─ config.py
-|  |  ├─ constants.py
-|  |  ├─ database.py
-|  |  ├─ middleware.py  
-|  |  ├─ rate_limiter.py
-|  |  ├─ security.py
-|  |  ├─ utils.py                                  
-│  │  └─ storage.py                                               
-│  ├─ crypto                                                      
-│  │  └─ crypto.py  
-|  ├─ models
-|  |  ├─ file_link.py
-|  |  ├─ file.py
-|  |  └─ user.py 
-|  ├─ schemas
-|  ├─ templates
-|  |  ├─ error.html
-|  |  ├─ result.html
-|  |  └─ upload.html
-|  ├─ cli.py
-|  └─ main.py
-├── grafana
-│   └── provisioning
-│       ├── dashboards
-│       └── datasources
-│           └── prometheus.yml
-|                                                                                               
-│ 
-├── audit_logs
-│   ├── audit.csv
-│   ├── audit_2026-03-24.log
-│   ├── audit_2026-03-27.log
-│   ├── audit_2026-03-28.log
-│   ├── audit_2026-03-29.log
-│   ├── audit_2026-03-31.log
-│   ├── audit_2026-04-01.log
-│   ├── audit_2026-04-02.log
-│   ├── audit_2026-04-03.log
-│   ├── audit_2026-04-04.log
-│   └── test.log   
-├── certs
-│   ├── localhost-key.pem
-│   └── localhost.pem
-|                                                                                                        
-├─ decrypted/                                                      
-├─ encrypted/                                                      
-├─ keys                                                           
-│  ├─ age.key                                                     
-│  └─ age.pub   
-├── migrations
-│   ├── README
-│   ├── env.py
-│   ├── script.py.mako
-│   └── versions
-│       └── 001_initial_schema.py
-├── prometheus
-│   └── prometheus.yml
-├── secrets
-│   ├── admin_password.txt
-│   ├── age.key
-│   ├── jwt_secret.txt
-│   └── postgres_password.txt                                             
-├── static
-│   ├── css
-│   │   ├── admin-users.css
-│   │   └── style.css
-│   ├── favicon.ico
-│   ├── html
-│   │   ├── admin.html
-│   │   ├── admin_users.html
-│   │   └── index.html
-│   └── js
-│       ├── admin-users.js
-│       ├── admin.js
-│       ├── core
-│       │   ├── api.js
-│       │   ├── config.js
-│       │   └── state.js
-│       ├── main.js
-│       ├── modules
-│       │   ├── admin-files.js
-│       │   ├── admin-users.js
-│       │   ├── auth.js
-│       │   └── files.js
-│       ├── utils
-│       │   ├── dom.js
-│       │   ├── formats.js
-│       │   ├── modals.js
-│       │   ├── notifications.js
-│       │   └── validators.js
-│       └── vendors
-│           └── qrcode.min.js
-|                                                                                                          
-├── tests
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── factories.py
-│   ├── test_api
-│   │   ├── __init__.py
-│   │   ├── test_admin_user.py
-│   │   ├── test_api_auth.py
-│   │   ├── test_auth.py
-│   │   ├── test_cleanup.py
-│   │   ├── test_delete.py
-│   │   ├── test_delete_user.py
-│   │   ├── test_download.py
-│   │   ├── test_list.py
-│   │   ├── test_stats.py
-│   │   └── test_upload.py
-│   ├── test_app
-│   │   ├── __init__.py
-│   │   └── test_main.py
-│   ├── test_cli.py
-│   ├── test_core
-│   │   ├── __init__.py
-│   │   ├── test_audit.py
-│   │   ├── test_auth.py
-│   │   ├── test_cleanup.py
-│   │   ├── test_config.py
-│   │   ├── test_database.py
-│   │   ├── test_init.py
-│   │   ├── test_middleware.py
-│   │   ├── test_rate_limiter.py
-│   │   ├── test_security.py
-│   │   ├── test_storage.py
-│   │   └── test_utils.py
-│   ├── test_crypto
-│   │   ├── __init__.py
-│   │   └── test_crypto.py
-│   └── test_models
-│       ├── __init__.py
-│       ├── test_file.py
-│       ├── test_file_link.py
-│       └── test_user.py
-|                                                                                  
-├─ .dockerignore
-├─ .env
-├─ .env.example
-├─ .env.test
-├─ .gitignore
-├─ alembic.ini
-├─ Dockerfile  
-├─ entrypoint.sh 
-├─ generate_cert.sh
-├─ nginx-https.conf                                                
-├─ MVP.md                                                         
-├─ README.md  
-├─ pytest.ini                                                                                                  
-├─ docker-compose.yml     
-├─ setup.cfg   
-├─ pyproject.toml                        
-└─ poetry.lock                                
-                                                  
-                                      
+# Secure Medical Data Gateway (SMDG)
+
+**Безопасная передача медицинских файлов с end-to-end шифрованием**
+
+SMDG — это self-hosted решение для безопасного обмена медицинскими данными между врачами, клиниками и пациентами. Все файлы шифруются на сервере, имеют временные защищённые ссылки и полный аудит действий.
+
+---
+
+## ✨ Основные возможности
+
+- **Полное шифрование файлов** с помощью **age** (asymmetric encryption)
+- **Временные одноразовые ссылки** (TTL + ограничение по количеству скачиваний)
+- **Антивирусная проверка** через ClamAV перед сохранением
+- **Двухфакторная аутентификация** (2FA / TOTP + QR-код)
+- **Ролевая модель доступа**: `admin` | `doctor` | `user`
+- **Полный аудит всех операций** (JSON + CSV)
+- **Автоматическая очистка** старых файлов (APScheduler)
+- **Ротация ключей шифрования** с перешифровкой всех файлов
+- **Удобный веб-интерфейс** (пользовательский + админ-панель)
+- **Rate limiting** и защита от brute-force
+- Полная поддержка Docker + Docker Secrets
+
+---
+
+## 🛠️ Технологический стек
+
+- **Backend**: FastAPI + Uvicorn
+- **База данных**: PostgreSQL + SQLAlchemy 2 + SQLModel
+- **Кэш и rate limiting**: Redis
+- **Шифрование**: [age](https://github.com/FiloSottile/age)
+- **Антивирус**: ClamAV
+- **Аутентификация**: JWT (HttpOnly cookies) + Argon2
+- **2FA**: pyotp
+- **Задачи**: APScheduler
+- **Контейнеризация**: Docker + docker-compose
+- **Фронтенд**: Vanilla JS + HTML + CSS
+
+---
+
+## 🚀 Быстрый старт
+
+### 1. Локальный запуск (Development)
+
+```bash
+# 1. Клонируйте репозиторий
+git clone <ваш-репозиторий>
+cd smdg
+
+# 2. Скопируйте переменные окружения
+cp .env.example .env
+
+# 3. Запустите через Docker Compose
+docker compose up --build
+
+Приложение будет доступно по адресу: http://localhost
+
+2. Production запуск
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# Создать/обновить администратора
+poetry run python -m app.cli create-admin admin StrongPass123! admin@example.com
+
+# Ротация ключей шифрования (с перешифровкой всех файлов)
+poetry run python -m app.cli rotate-keys --backup-dir /app/backups/keys
+
+smdg/
+├── app/                    # Основной код приложения
+│   ├── api/                # Эндпоинты (upload, download, auth, admin и т.д.)
+│   ├── core/               # Конфигурация, БД, security, cleanup, audit
+│   ├── crypto/             # Работа с age
+│   ├── models/             # Модели БД (User, File, FileLink)
+│   ├── static/             # Фронтенд (HTML, JS, CSS)
+│   └── main.py
+├── encrypted/              # Зашифрованные файлы
+├── decrypted/              # Временные расшифрованные файлы
+├── keys/                   # age.key и age.pub
+├── audit_logs/             # Логи аудита
+├── migrations/             # Alembic миграции
+├── docker-compose.yml
+├── docker-compose.prod.yml
+├── Dockerfile
+├── entrypoint.sh
+└── pyproject.toml
+
+🔐 Безопасность
+
+Все файлы шифруются до записи на диск
+Пароли хранятся только в Argon2
+2FA (TOTP) для всех пользователей
+Rate limiting на все критичные эндпоинты
+Полный аудит действий (кто, что, когда, зачем)
+Docker Secrets для хранения чувствительных данных
+Автоматическая ротация ключей шифрования
+
+
+📊 Доступные интерфейсы
+
+Главная страница: http://localhost
+Панель администратора: http://localhost/admin
+Управление пользователями: http://localhost/admin/users
+Здоровье системы: http://localhost/health
+Метрики Prometheus: http://localhost/metrics
+
+
+📄 Лицензия
+Проект распространяется под лицензией MIT.
+Автор: Валерий Попов
+
+SMDG — ваш безопасный шлюз для медицинских данных.
+
+
 
 
 
