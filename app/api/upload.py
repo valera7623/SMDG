@@ -1,7 +1,7 @@
 # app/api/upload.py
 from typing import Optional
 from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationError
 import magic
 import uuid
 import clamd
@@ -33,11 +33,36 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# ==================== Константы (для тестов) ====================
+
+ALLOWED_MIME_PREFIXES = [
+    "application/pdf",
+    "image/",
+    "text/plain",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/dicom",
+    "application/json",
+    "application/xml"
+]
+
+ALLOWED_EXTENSIONS = {
+    '.pdf', '.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif',
+    '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv', '.rtf',
+    '.dcm', '.dicom'
+}
+
+DANGEROUS_EXTENSIONS = {
+    '.exe', '.bat', '.cmd', '.scr', '.js', '.vbs', '.ps1', '.dll',
+    '.jar', '.apk', '.msi', '.sh', '.php', '.py', '.pyc', '.pif'
+}
+
+
 # ==================== Pydantic V2 Модель ====================
 
 class UploadParams(BaseModel):
-    ttl_days: int = Field(30, ge=1, le=90, description="Срок жизни файла в днях")
-    max_downloads: int = Field(1, ge=1, le=50, description="Максимальное количество скачиваний")
+    ttl_days: int = Field(30, ge=1, le=90)
+    max_downloads: int = Field(1, ge=1, le=50)
     patient_id: Optional[str] = Field(None, max_length=100)
     medical_metadata_json: Optional[str] = Field(None)
 
@@ -55,30 +80,34 @@ class UploadParams(BaseModel):
     model_config = ConfigDict(extra='ignore')
 
 
-# ==================== Валидация файла ====================
+# ==================== Валидация ====================
 
 def validate_file_safety(
     original_filename: str,
-    content_preview: bytes
+    content_preview: bytes,
+    full_size: int = 0
 ) -> tuple[str, str]:
-    """Валидация типа и безопасности файла"""
     path = Path(original_filename)
     orig_ext = path.suffix.lower()
 
-    # Запрещённые расширения
-    dangerous = {'.exe', '.bat', '.cmd', '.scr', '.js', '.vbs', '.ps1', '.dll', '.jar', '.apk', '.msi', '.sh', '.php', '.py'}
-    if orig_ext in dangerous:
+    if orig_ext in DANGEROUS_EXTENSIONS:
         raise HTTPException(400, f"Запрещённое расширение: {orig_ext}")
 
-    # libmagic
+    if orig_ext and orig_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            400,
+            f"Недопустимое расширение: {orig_ext}. "
+            f"Разрешены: {', '.join(sorted(ALLOWED_EXTENSIONS))}"
+        )
+
     mime_detector = magic.Magic(mime=True)
     detected_mime = mime_detector.from_buffer(content_preview)
 
-    # Специальная обработка DICOM
     is_dicom_by_header = len(content_preview) >= 132 and content_preview[128:132] == b'DICM'
+
     if orig_ext in {'.dcm', '.dicom'}:
         if not is_dicom_by_header:
-            raise HTTPException(400, "Файл .dcm/.dicom не является валидным DICOM")
+            raise HTTPException(400, "Файл .dcm/.dicom не является валидным DICOM (отсутствует сигнатура DICM)")
         detected_mime = "application/dicom"
 
     if detected_mime == "application/octet-stream":
@@ -89,14 +118,13 @@ def validate_file_safety(
         elif orig_ext in {'.jpg', '.jpeg'}:
             detected_mime = "image/jpeg"
 
-    # Проверка по настройкам
     allowed = any(
         detected_mime == mime_type or detected_mime.startswith(mime_type.rstrip('*'))
-        for mime_type in settings.ALLOWED_MIME_TYPES
+        for mime_type in ALLOWED_MIME_PREFIXES
     )
 
     if not allowed:
-        raise HTTPException(400, f"Недопустимый тип файла: {detected_mime}")
+        raise HTTPException(400, f"Недопустимый тип содержимого: {detected_mime}")
 
     return detected_mime, orig_ext
 
@@ -128,18 +156,37 @@ async def upload_file(
 
         safe_filename = sanitize_filename(original_filename)
 
-        # Preview для валидации
         preview = await file.read(8192)
         await file.seek(0)
 
-        mime_type, _ = validate_file_safety(original_filename, preview)
+        mime_type, _ = validate_file_safety(original_filename, preview, 0)
 
-        # Полный файл
         file_content = await file.read()
-        if len(file_content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-            raise HTTPException(413, f"Файл слишком большой (макс. {settings.MAX_UPLOAD_SIZE_MB} MB)")
 
-        # Сохранение во временный файл
+        if len(file_content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
+            raise HTTPException(413, f"Файл слишком большой (макс. {settings.MAX_UPLOAD_SIZE_MB}MB)")
+
+        # Вторая проверка MIME (для octet-stream image fallback)
+        mime = magic.Magic(mime=True)
+        detected_mime = mime.from_buffer(file_content)
+
+        orig_ext = Path(original_filename).suffix.lower()
+
+        allowed = any(
+            detected_mime == mime_type or detected_mime.startswith(mime_type.rstrip('*'))
+            for mime_type in ALLOWED_MIME_PREFIXES
+        )
+
+        if not allowed and detected_mime == "application/octet-stream":
+            if len(file_content) >= 132 and file_content[128:132] == b'DICM':
+                detected_mime = "application/dicom"
+                allowed = True
+            elif orig_ext in {'.jpg', '.jpeg', '.png', '.gif'}:
+                allowed = True
+
+        if not allowed:
+            raise HTTPException(400, f"Недопустимый тип файла: {detected_mime}")
+
         temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
         with open(temp_upload_path, "wb") as buffer:
             buffer.write(file_content)
@@ -164,12 +211,24 @@ async def upload_file(
                     virus_name = stream_result[1] if len(stream_result) > 1 else "unknown"
         except Exception as e:
             logger.error(f"ClamAV error: {e}")
-            audit_logger.log_operation("clamav_error", original_filename, current_user.sub, str(e), False)
+            audit_logger.log_operation(
+                action="clamav_error",
+                filename=original_filename,
+                user=current_user.sub,
+                reason=str(e),
+                success=False
+            )
             if not settings.dev_mode:
                 raise HTTPException(503, "Антивирусный сервис недоступен")
 
         if virus_detected:
-            audit_logger.log_operation("upload_virus_detected", original_filename, current_user.sub, f"Вирус: {virus_name}", False)
+            audit_logger.log_operation(
+                action="upload_virus_detected",
+                filename=original_filename,
+                user=current_user.sub,
+                reason=f"Обнаружен вирус: {virus_name}",
+                success=False
+            )
             raise HTTPException(400, f"Обнаружен вредоносный код: {virus_name}")
 
         # Шифрование
@@ -184,14 +243,20 @@ async def upload_file(
 
         original_hash = await calculate_hash_async(temp_upload_path)
 
-        # Получаем user_id
         user_id = None
         result = await db.execute(select(User).where(User.username == current_user.sub))
         db_user = result.scalar_one_or_none()
         if db_user:
             user_id = db_user.id
+        else:
+            audit_logger.log_operation(
+                action="upload_warning",
+                filename=original_filename,
+                user=current_user.sub,
+                reason="Пользователь test_user не найден в БД",
+                success=True
+            )
 
-        # Сохраняем в БД
         medical_metadata_dict = json.loads(params.medical_metadata_json) if params.medical_metadata_json else {}
 
         new_file = File(
@@ -213,7 +278,6 @@ async def upload_file(
         await db.commit()
         await db.refresh(new_file)
 
-        # Создаём одноразовую ссылку
         token = str(uuid.uuid4())
         link = FileLink(
             token=token,
@@ -230,12 +294,17 @@ async def upload_file(
             action="upload",
             filename=original_filename,
             user=current_user.sub,
-            reason="Успешная загрузка",
+            reason="Успешная загрузка и шифрование",
             success=True,
-            metadata={"mime_type": mime_type, "size": len(file_content)}
+            metadata={
+                "mime_type": mime_type,
+                "size": len(file_content),
+                "encrypted_name": final_encrypted_name,
+                "ttl_days": params.ttl_days
+            }
         )
 
-        logger.info(f"✅ Файл успешно загружен: {original_filename} ({len(file_content)} байт)")
+        logger.info(f"✅ Файл успешно загружен: {original_filename}")
 
         return {
             "message": "Файл успешно загружен и зашифрован",
@@ -248,14 +317,17 @@ async def upload_file(
 
     except HTTPException:
         raise
+    except ValidationError:
+        raise HTTPException(status_code=400, detail="Некорректный JSON в medical_metadata_json")
     except Exception as e:
-        logger.error(f"Ошибка загрузки файла '{original_filename}': {e}", exc_info=True)
+        logger.error(f"Ошибка загрузки '{original_filename}': {e}", exc_info=True)
         audit_logger.log_operation(
             action="upload",
             filename=original_filename,
             user=current_user.sub if current_user else "api_user",
             reason=f"Upload failed: {str(e)}",
-            success=False
+            success=False,
+            metadata={"error": str(e)}
         )
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
@@ -264,4 +336,4 @@ async def upload_file(
             try:
                 temp_upload_path.unlink()
             except Exception as e:
-                logger.warning(f"Не удалось удалить временный файл {temp_upload_path}: {e}")
+                logger.warning(f"Не удалось удалить временный файл: {e}")
