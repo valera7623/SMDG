@@ -39,6 +39,12 @@ class Verify2FARequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6)
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+    otp_code: Optional[str] = Field(None, min_length=6, max_length=6)
+
+
 class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
     email: str = Field(..., max_length=255)
@@ -94,6 +100,8 @@ async def change_password(
 
     if user.otp_secret:
         if not request_body.otp_code or not verify_otp_code(user.otp_secret, request_body.otp_code):
+            if not request_body.otp_code:
+                raise HTTPException(status_code=400, detail="Требуется код 2FA")
             raise HTTPException(status_code=401, detail="Неверный код 2FA")
 
     if verify_password(request_body.new_password, user.hashed_password):
@@ -248,7 +256,10 @@ async def verify_2fa_setup(
     result = await db.execute(select(User).where(User.username == current_user.sub))
     user = result.scalar_one_or_none()
 
-    if not user or not user.otp_secret:
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if not user.otp_secret:
         raise HTTPException(status_code=400, detail="2FA ещё не настроена")
 
     if verify_otp_code(user.otp_secret, req.code):
@@ -269,7 +280,10 @@ async def disable_2fa(
     result = await db.execute(select(User).where(User.username == current_user.sub))
     user = result.scalar_one_or_none()
 
-    if not user or not user.otp_secret:
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    if not user.otp_secret:
         raise HTTPException(status_code=400, detail="2FA не включена")
 
     if not verify_otp_code(user.otp_secret, otp_code):
@@ -280,7 +294,7 @@ async def disable_2fa(
 
     audit_logger.log_operation("disable_2fa", "", current_user.sub, success=True)
 
-    return {"message": "2FA успешно отключен"}
+    return {"message": "2FA успешно отключен", "warning": "Ваша учётная запись теперь защищена только паролем"}
 
 
 @router.post("/register")
@@ -317,10 +331,14 @@ async def register(
         success=True
     )
 
+    new_otp_secret = generate_otp_secret()
+
     return {
         "message": "Пользователь успешно зарегистрирован",
         "username": new_user.username,
         "email": new_user.email,
         "role": new_user.role,
+        "otp_secret": new_otp_secret,
+        "otp_url": get_otp_url(new_user.username, new_otp_secret),
         "2fa_enabled": False
     }

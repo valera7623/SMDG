@@ -2,7 +2,7 @@
 name = "smdg"
 version = "1.0.0"
 description = "Проект для шифрования и безопасной передачи файлов (Secure Medical Data Gateway)"
-authors = ["Валерий <valera7623@gmail.com>"]  
+authors = ["Валерий Попов <valera7623@gmail.com>"]  
 license = "MIT"
 readme = "README.md"
 packages = [{include = "app"}]  
@@ -79,11 +79,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 
-python_paths = "."
+
 testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 
 [tool.bandit]
-skips = ["B404"]  # subprocess trusted
+skips = ["B404"]  

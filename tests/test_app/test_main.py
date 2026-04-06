@@ -77,20 +77,21 @@ def test_whoami(client, mock_current_user):
 
 # ====================== MIDDLEWARE set_user_context ======================
 def test_set_user_context_valid_token(client):
-    """Тест middleware set_user_context с валидным токеном"""
     token = jwt.encode(
         {"sub": "123", "role": "doctor"},
         settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
     )
-    response = client.get("/", cookies={"access_token": token})
+    client.cookies.set("access_token", token)
+    response = client.get("/")
+    client.cookies.clear()  # чистим после теста
     assert response.status_code == 200
-
-
+    
 def test_set_user_context_invalid_token(client):
-    """Тест middleware с невалидным токеном"""
-    response = client.get("/", cookies={"access_token": "invalid.token.here"})
-    assert response.status_code == 200  # должен gracefully деградировать
+    client.cookies.set("access_token", "invalid.token.here")
+    response = client.get("/")
+    client.cookies.clear()
+    assert response.status_code == 200
 
 
 def test_set_user_context_no_token(client):
@@ -169,15 +170,15 @@ def test_admin_fallback_when_file_missing(client, monkeypatch):
         
 # ====================== CUSTOM RATE LIMIT KEY FUNC ======================
 def test_custom_key_func_with_user(client, monkeypatch):
-    """Покрывает custom_key_func когда есть пользователь в scope"""
     token = jwt.encode(
         {"sub": "999", "role": "doctor"},
         settings.jwt_secret_key,
         algorithm=settings.jwt_algorithm,
     )
-    # Патчим logger.info чтобы не мешал
+    client.cookies.set("access_token", token)
     with patch("app.main.logger.info"):
-        response = client.get("/", cookies={"access_token": token})
+        response = client.get("/")
+    client.cookies.clear()
     assert response.status_code == 200
 
 

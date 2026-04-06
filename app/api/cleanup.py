@@ -3,6 +3,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from pathlib import Path
+from time import time
 
 from app.core import DECRYPTED_DIR, file_storage, audit_logger, cleanup_manager
 from app.core.auth import get_current_admin, TokenData
@@ -78,12 +80,12 @@ async def list_temp_files(
             if file_path.is_file():
                 try:
                     stat = file_path.stat()
-                    age_hours = (stat.st_mtime - stat.st_ctime) / 3600 if stat.st_ctime else 0
+                    age_hours = round((time() - stat.st_mtime) / 3600, 2)
                     files.append({
                         "name": file_path.name,
                         "size_bytes": stat.st_size,
                         "modified_iso": stat.st_mtime,
-                        "age_hours": round(age_hours, 2)
+                        "age_hours": age_hours
                     })
                 except Exception as e:
                     logger.warning(f"Не удалось получить stat для {file_path}: {e}")
@@ -139,15 +141,19 @@ async def force_cleanup(
 
     # 2. Очистка encrypted (зашифрованные файлы)
     try:
-        for file_path in ENCRYPTED_DIR.iterdir():
-            if file_path.is_file():
-                try:
-                    file_path.unlink()
-                    deleted["encrypted"] += 1
-                    logger.info(f"🗑️ Удалён зашифрованный файл: {file_path.name}")
-                except Exception as e:
-                    errors.append(f"encrypted/{file_path.name}: {str(e)}")
-                    logger.error(f"Не удалось удалить {file_path}: {e}")
+        encrypted_path = Path(str(ENCRYPTED_DIR))
+        if not encrypted_path.exists():
+            pass
+        else:
+            for file_path in encrypted_path.iterdir():
+                if file_path.is_file():
+                    try:
+                        file_path.unlink()
+                        deleted["encrypted"] += 1
+                        logger.info(f"🗑️ Удалён зашифрованный файл: {file_path.name}")
+                    except Exception as e:
+                        errors.append(f"encrypted/{file_path.name}: {str(e)}")
+                        logger.error(f"Не удалось удалить {file_path}: {e}")
     except Exception as e:
         errors.append(f"encrypted directory error: {str(e)}")
         logger.error(f"Ошибка очистки encrypted: {e}")

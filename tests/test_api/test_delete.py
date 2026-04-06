@@ -458,7 +458,7 @@ class TestDeleteFilePost:
         try:
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
                 resp = await ac.post(URL, data={"confirm": "false"})
-            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         finally:
             _clear(app)
 
@@ -474,7 +474,7 @@ class TestDeleteFilePost:
         assert resp.status_code in (
             status.HTTP_401_UNAUTHORIZED,
             status.HTTP_403_FORBIDDEN,
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
         )
 
     # ── audit_logger: metadata содержит правильные поля ───────
@@ -524,7 +524,7 @@ class TestDeleteFileGet:
         from app.main import app
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             resp = await ac.get(URL, params={"filename": "file.pdf.age"})
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # ── GET без filename → 422 ────────────────────────────────
 
@@ -533,7 +533,7 @@ class TestDeleteFileGet:
         from app.main import app
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             resp = await ac.get(URL, params={"x-api-key": "somekey"})
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
     # ── GET: вызывает delete_file (файл не найден → 404) ──────
 

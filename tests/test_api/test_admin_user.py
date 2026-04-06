@@ -345,7 +345,7 @@ class TestCreateUser:
         try:
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
                 resp = await ac.post(f"{BASE}/", json=bad_payload)
-            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         finally:
             _clear(app)
 
@@ -719,7 +719,7 @@ class TestResetUserPassword:
         try:
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
                 resp = await ac.post(f"{BASE}/5/reset-password", json={"new_password": "short"})
-            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+            assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         finally:
             _clear(app)
 
@@ -817,7 +817,7 @@ class TestBulkUserActions:
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _scalar_result(None),       # self check
-            _scalars_result([]),        # нет админов среди выбранных
+            _scalar_result(None),       # нет админов среди выбранных
             update_res,
         ])
         _override(app, admin_token, session)
@@ -893,7 +893,7 @@ class TestBulkUserActions:
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _scalar_result(None),
-            _scalars_result([]),
+            _scalar_result(None),  # нет админов среди выбранных
             update_res,
         ])
         _override(app, admin_token, session)
@@ -935,7 +935,7 @@ class TestBulkUserActions:
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _scalar_result(None),
-            _scalars_result([]),
+            _scalar_result(None),  # нет админов среди выбранных
             delete_res,
         ])
         _override(app, admin_token, session)

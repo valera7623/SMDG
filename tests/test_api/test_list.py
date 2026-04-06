@@ -270,22 +270,33 @@ async def test_list_user_no_files(async_client, _override_db, db_session):
 
 
 # ============================================================
-# 5. User не найден в БД — message
+# 5. User не найден в БД — пустой список (реальное поведение)
 # ============================================================
-
 @pytest.mark.asyncio
 async def test_list_user_not_found_in_db(async_client, _override_db, db_session):
+    """
+    Пользователь с ролью 'user' не найден в БД.
+    Реальный код: возвращает FileListResponse(count=0, files=[]) без поля 'message'.
+    Логирует WARNING и не бросает исключение.
+    """
     _set_user("ghost_user_xyz", "user")
     try:
         with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
-            resp = await async_client.get("/api/list")
+            with patch("app.api.list.logger") as mock_logger:
+                resp = await async_client.get("/api/list")
     finally:
         _clear_user()
-
     assert resp.status_code == 200
     data = resp.json()
     assert data["count"] == 0
-    assert "message" in data
+    assert data["files"] == []
+    # Проверяем что предупреждение было залогировано
+    warning_calls = [
+        call for call in mock_logger.warning.call_args_list
+        if "ghost_user_xyz" in str(call)
+    ]
+    assert len(warning_calls) == 1, "Должен быть залогирован warning о ненайденном пользователе"
+# ============================================================
 
 
 # ============================================================
@@ -439,17 +450,20 @@ async def test_list_file_with_exhausted_link(async_client, _override_db, db_sess
 # ============================================================
 # 11. Ошибка при stat файла — пропускается, логируется
 # ============================================================
-
 @pytest.mark.asyncio
 async def test_list_file_stat_error(async_client, _override_db, db_session):
+    """
+    stat() бросает PermissionError.
+    Реальный код:
+      1. Вызывает audit_logger с success=False (list_error)
+      2. Затем вызывает audit_logger с success=True (list_files, финальный)
+    Итого: два вызова.
+    """
     db = db_session
-
     doc = _make_user(db, username="doc_err1", role="doctor")
     await db.flush()
-
     _make_file(db, user_id=doc.id, original_name="broken.pdf")
     await db.flush()
-
     _set_user("doc_err1", "doctor")
     try:
         with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir(stat_error=True)), \
@@ -457,14 +471,20 @@ async def test_list_file_stat_error(async_client, _override_db, db_session):
             resp = await async_client.get("/api/list")
     finally:
         _clear_user()
-
     assert resp.status_code == 200
     assert resp.json()["count"] == 0
-    # Аудит-лог вызван с success=False
-    mock_audit.log_operation.assert_called_once()
-    kwargs = mock_audit.log_operation.call_args.kwargs
-    assert kwargs["success"] is False
-
+   
+    assert mock_audit.log_operation.call_count == 2
+    all_calls = mock_audit.log_operation.call_args_list
+    # Первый вызов — ошибка файла
+    error_call_kwargs = all_calls[0].kwargs
+    assert error_call_kwargs["action"] == "list_error"
+    assert error_call_kwargs["success"] is False
+    assert "no access" in error_call_kwargs["reason"]
+   
+    final_call_kwargs = all_calls[1].kwargs
+    assert final_call_kwargs["action"] == "list_files"
+    assert final_call_kwargs["success"] is True
 
 # ============================================================
 # 12. Несколько файлов — порядок по uploaded_at desc

@@ -146,19 +146,14 @@ async def delete_user_file_by_id(
     db: AsyncSession = Depends(get_db)
 ):
     """Удаление своего файла по ID"""
-    if not confirm:
-        return {
-            "message": "⚠️ Требуется подтверждение удаления",
-            "requires_confirmation": True
-        }
-
+    # 1. Ищем запись в БД
     result = await db.execute(select(File).where(File.id == file_id))
     db_file = result.scalar_one_or_none()
 
     if not db_file:
         raise HTTPException(status_code=404, detail=f"Файл с ID {file_id} не найден")
 
-    # Проверка прав
+    # 2. Проверка прав владельца
     if db_file.user_id:
         result = await db.execute(select(User).where(User.username == current_user.sub))
         user = result.scalar_one_or_none()
@@ -166,10 +161,28 @@ async def delete_user_file_by_id(
             if current_user.role != "admin":
                 raise HTTPException(status_code=403, detail="У вас нет прав на удаление этого файла")
 
+    # 3. Проверяем наличие файла на диске
     file_path = ENCRYPTED_DIR / db_file.encrypted_name
 
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="Файл на диске не найден")
+
+    # 4. Требуется подтверждение
+    if not confirm:
+        try:
+            size = file_path.stat().st_size
+        except Exception:
+            size = 0
+        return {
+            "message": "⚠️ Требуется подтверждение удаления",
+            "file_info": {
+                "id": file_id,
+                "name": db_file.encrypted_name,
+                "size": size,
+                "requires_confirmation": True,
+            },
+            "confirmation_required": True
+        }
 
     try:
         os.remove(file_path)

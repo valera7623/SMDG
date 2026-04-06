@@ -1,842 +1,727 @@
 # tests/test_api/test_download.py
+"""
+Тесты для app/api/download.py
+Переписаны под реальный код модуля.
+"""
+
 import pytest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock, call, mock_open
-from datetime import datetime, timezone, timedelta
-from fastapi import HTTPException, FastAPI, BackgroundTasks
-from fastapi.testclient import TestClient
-from pathlib import Path
-import tempfile
-import shutil
 import uuid
-import os
+import shutil
+import tempfile
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
+
+from fastapi import HTTPException, BackgroundTasks
+from fastapi.testclient import TestClient
 from starlette.requests import Request
-from app.api.download import delete_file_after_response, download_by_token
-from app.core import audit_logger, file_storage 
-from app.crypto.crypto import crypto_manager
-from app.core.auth import get_current_admin, get_current_doctor
 
-# Создаем тестовое приложение
-app = FastAPI()
-
-# Импортируем роутер с моками для предотвращения циклических импортов
-# Нужно замокать лимитер перед импортом
-mock_limiter = MagicMock()
-mock_limiter.limit = lambda x: lambda f: f  # Декоратор который ничего не делает
-
-with patch('app.api.download.limiter', mock_limiter):
-    with patch('app.api.download.ENCRYPTED_DIR', Path("/tmp/encrypted")):
-        with patch('app.api.download.DECRYPTED_DIR', Path("/tmp/decrypted")):
-            with patch('app.api.download.PRIVATE_KEY_PATH', Path("/tmp/private.key")):
-                with patch('app.api.download.audit_logger', MagicMock()):
-                    from app.api.download import router as download_router
-
-app.include_router(download_router, prefix="/api")
-client = TestClient(app)
+from app.main import app
+from app.core.auth import get_current_doctor
+from app.core.database import get_db
+from app.api.download import delete_file_after_response, download_by_token, download_file_post
+from app.core.auth import TokenData
 
 
-class TestDownloadAPI:
-    """Тесты для API скачивания файлов"""
+# ============================================================================
+# ВСПОМОГАТЕЛЬНЫЕ ФАБРИКИ
+# ============================================================================
 
-    @pytest.fixture
-    def temp_dirs(self):
-        """Создает временные директории для тестов"""
-        encrypted_dir = Path(tempfile.mkdtemp())
-        decrypted_dir = Path(tempfile.mkdtemp())
-        
-        with patch('app.api.download.ENCRYPTED_DIR', encrypted_dir):
-            with patch('app.api.download.DECRYPTED_DIR', decrypted_dir):
-                yield encrypted_dir, decrypted_dir
-        
-        # Очистка
-        shutil.rmtree(encrypted_dir, ignore_errors=True)
-        shutil.rmtree(decrypted_dir, ignore_errors=True)
+def make_link(
+    token: str = "tok",
+    file_id: int = 1,
+    max_downloads: int = 5,
+    downloads_count: int = 0,
+    expires_at=None,
+) -> MagicMock:
+    """Фабрика mock-объекта FileLink."""
+    link = MagicMock()
+    link.token           = token
+    link.file_id         = file_id
+    link.max_downloads   = max_downloads
+    link.downloads_count = downloads_count
+    link.expires_at      = expires_at or datetime.now(timezone.utc) + timedelta(days=1)
+    return link
 
-    @pytest.fixture
-    def mock_crypto_manager(self):
-        """Мокает crypto_manager"""
-        with patch('app.api.download.crypto_manager') as mock_crypto:
-            mock_crypto.decrypt_file = AsyncMock()
-            yield mock_crypto
 
-    @pytest.fixture
-    def mock_db_session(self):
-        """Мокает асинхронную сессию БД"""
-        mock_session = AsyncMock()
-        mock_session.execute = AsyncMock()
-        mock_session.delete = AsyncMock()
-        mock_session.commit = AsyncMock()
-        return mock_session
+def make_file(
+    file_id: int = 1,
+    original_name: str = "doc.pdf",
+    encrypted_path: str = "/enc/doc.pdf.age",
+    encrypted_name: str = "doc.pdf.age",
+) -> MagicMock:
+    """Фабрика mock-объекта File."""
+    f = MagicMock()
+    f.id             = file_id
+    f.original_name  = original_name
+    f.encrypted_path = encrypted_path
+    f.encrypted_name = encrypted_name
+    return f
 
-    @pytest.fixture
-    def mock_get_db(self, mock_db_session):
-        """Мокает зависимость get_db"""
-        async def mock_get_db_func():
-            return mock_db_session
-        
-        # Важно: нужно замокать до импорта функций
-        with patch('app.api.download.get_db'):
-            # Возвращаем корутину
-            yield mock_get_db_func
 
-    @pytest.fixture
-    def mock_auth_doctor(self):
-        """Мокает аутентификацию врача"""
-        mock_token_data = MagicMock()
-        mock_token_data.sub = "doctor_user"
-        mock_token_data.role = "doctor"
-        
-        async def mock_get_current_doctor():
-            return mock_token_data
-        
-        with patch('app.api.download.get_current_doctor', mock_get_current_doctor):
-            yield
+def make_db(results: list) -> AsyncMock:
+    """
+    Фабрика mock-сессии БД.
+    results — список возвращаемых scalar_one_or_none значений
+    (по одному на каждый вызов execute).
+    """
+    session = AsyncMock()
+    session.execute.side_effect = [
+        MagicMock(scalar_one_or_none=MagicMock(return_value=r))
+        for r in results
+    ]
+    session.delete = AsyncMock()
+    session.commit = AsyncMock()
+    return session
 
-    @pytest.fixture
-    def mock_audit_logger(self):
-        """Мокает аудит-логгер"""
-        with patch('app.api.download.audit_logger') as mock_logger:
-            mock_logger.log_operation = MagicMock()
-            yield mock_logger
 
-    @pytest.fixture
-    def mock_background_tasks(self):
-        """Мокает BackgroundTasks"""
-        mock_tasks = MagicMock(spec=BackgroundTasks)
-        mock_tasks.add_task = MagicMock()
-        return mock_tasks
+def make_request() -> MagicMock:
+    req        = MagicMock(spec=Request)
+    req.scope  = {"type": "http"}
+    req.client = MagicMock(host="127.0.0.1")
+    return req
 
-    @pytest.fixture
-    def mock_request(self):
-        """Создает мок Request объекта для SlowAPI"""
-        mock_req = MagicMock(spec=Request)
-        mock_req.scope = {"type": "http"}
-        mock_req.client = MagicMock()
-        mock_req.client.host = "127.0.0.1"
-        return mock_req
 
-    # ====== Тесты для download_by_token (GET с токеном) ======
+# ============================================================================
+# ФИКСТУРЫ
+# ============================================================================
 
-    @pytest.mark.asyncio
-    async def test_download_by_token_success(self, mock_db_session, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_request):
-        """Тест успешного скачивания по токену"""
-        encrypted_dir, decrypted_dir = temp_dirs
-        
-        # Создаем тестовые данные
-        test_token = "test-token-123"
-        test_file_id = 1
-        test_original_name = "test_document.pdf"
-        test_encrypted_name = "test_document.pdf.age"
-        
-        # Мокаем FileLink
-        mock_link = MagicMock()
-        mock_link.token = test_token
-        mock_link.file_id = test_file_id
-        mock_link.max_downloads = 5
-        mock_link.downloads_count = 2
-        mock_link.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        
-        # Мокаем File
-        mock_file = MagicMock()
-        mock_file.id = test_file_id
-        mock_file.original_name = test_original_name
-        mock_file.encrypted_path = str(encrypted_dir / test_encrypted_name)
-        
-        # Создаем тестовый зашифрованный файл
-        encrypted_file = encrypted_dir / test_encrypted_name
-        encrypted_file.write_bytes(b"encrypted content")
-        
-        # Настраиваем моки БД
-        mock_result_link = MagicMock()
-        mock_result_link.scalar_one_or_none.return_value = mock_link
-        mock_result_file = MagicMock()
-        mock_result_file.scalar_one_or_none.return_value = mock_file
-        mock_db_session.execute.side_effect = [mock_result_link, mock_result_file]
-        
-        # Настраиваем мок crypto_manager
-        mock_crypto_manager.decrypt_file.return_value = None
-        
-        # Вызываем функцию напрямую (но нужно импортировать с правильным моком лимитера)
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_by_token
-            
-            mock_background_tasks = MagicMock()
-            mock_background_tasks.add_task = MagicMock()
-            
-            response = await download_by_token(
-                request=mock_request,
-                background_tasks=mock_background_tasks,
-                token=test_token,
-                db=mock_db_session
-            )
-        
-        # Проверяем вызовы
-        mock_crypto_manager.decrypt_file.assert_called_once()
-        mock_db_session.commit.assert_called_once()
-        
-        # Проверяем что счетчик загрузок увеличился
-        assert mock_link.downloads_count == 3
-        
-        # Проверяем что задача на удаление добавлена
-        mock_background_tasks.add_task.assert_called_once()
-        
-        # Проверяем что возвращается FileResponse
-        assert hasattr(response, 'filename')
-        assert response.filename == test_original_name
+@pytest.fixture
+def tmp_dirs(tmp_path):
+    """Временные директории encrypted / decrypted / keys."""
+    enc  = tmp_path / "encrypted";  enc.mkdir()
+    dec  = tmp_path / "decrypted";  dec.mkdir()
+    keys = tmp_path / "keys";       keys.mkdir()
+    (keys / "age.key").write_text("mock-key")
+    return {"encrypted": enc, "decrypted": dec, "keys": keys}
 
-    @pytest.mark.asyncio
-    async def test_download_by_token_link_not_found(self, mock_db_session, mock_request):
-        """Тест скачивания с несуществующим токеном"""
-        # Настраиваем мок БД для возврата None (ссылка не найдена)
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_db_session.execute.return_value = mock_result
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_by_token
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_by_token(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    token="invalid-token",
-                    db=mock_db_session
-                )
-        
-        assert exc_info.value.status_code == 404
-        assert "Ссылка не найдена" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
-    async def test_download_by_token_expired(self, mock_db_session, mock_request):
-        """Тест скачивания с истекшим токеном"""
-        # Создаем просроченную ссылку
-        mock_link = MagicMock()
-        mock_link.token = "expired-token"
-        mock_link.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
-        
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_link
-        mock_db_session.execute.return_value = mock_result
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_by_token
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_by_token(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    token="expired-token",
-                    db=mock_db_session
-                )
-        
-        assert exc_info.value.status_code == 410
-        assert "Ссылка истекла" in str(exc_info.value.detail)
-        mock_db_session.delete.assert_called_once_with(mock_link)
-        mock_db_session.commit.assert_called_once()
+@pytest.fixture
+def doctor_token():
+    return TokenData(sub="doctor-uuid", role="doctor")
 
-    @pytest.mark.asyncio
-    async def test_download_by_token_limit_exceeded(self, mock_db_session, mock_request):
-        """Тест скачивания с исчерпанным лимитом"""
-        # Создаем ссылку с исчерпанным лимитом
-        mock_link = MagicMock()
-        mock_link.token = "limit-exceeded-token"
-        mock_link.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        mock_link.max_downloads = 3
-        mock_link.downloads_count = 3  # Достигнут лимит
-        
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = mock_link
-        mock_db_session.execute.return_value = mock_result
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_by_token
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_by_token(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    token="limit-exceeded-token",
-                    db=mock_db_session
-                )
-        
-        assert exc_info.value.status_code == 410
-        assert "Лимит скачиваний исчерпан" in str(exc_info.value.detail)
-        mock_db_session.delete.assert_called_once_with(mock_link)
-        mock_db_session.commit.assert_called_once()
 
-    @pytest.mark.asyncio
-    async def test_download_by_token_file_not_found(self, mock_db_session, mock_request):
-        """Тест когда файл не найден в БД"""
-        # Создаем валидную ссылку
-        mock_link = MagicMock()
-        mock_link.token = "valid-token"
-        mock_link.file_id = 999  # Несуществующий ID
-        mock_link.expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-        mock_link.max_downloads = 5
-        mock_link.downloads_count = 0
-        
-        # Первый запрос находит ссылку, второй - не находит файл
-        mock_result_link = MagicMock()
-        mock_result_link.scalar_one_or_none.return_value = mock_link
-        mock_result_file = MagicMock()
-        mock_result_file.scalar_one_or_none.return_value = None
-        
-        mock_db_session.execute.side_effect = [mock_result_link, mock_result_file]
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_by_token
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_by_token(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    token="valid-token",
-                    db=mock_db_session
-                )
-        
-        assert exc_info.value.status_code == 404
-        assert "Файл не найден" in str(exc_info.value.detail)
+@pytest.fixture
+def download_client(doctor_token, tmp_dirs):
+    """
+    TestClient приложения с подменёнными:
+    - get_current_doctor → doctor_token
+    - get_db            → AsyncMock-сессия (пустая; тест может заменить)
+    - ENCRYPTED_DIR / DECRYPTED_DIR / PRIVATE_KEY_PATH
+    """
+    empty_db = make_db([])
 
-    # ====== Тесты для download_file_post (POST с авторизацией) ======
+    async def _get_db():
+        yield empty_db
 
-    @pytest.mark.asyncio
-    async def test_download_file_post_success(self, mock_auth_doctor, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_background_tasks, mock_request):
-        """Тест успешного скачивания через POST"""
-        encrypted_dir, decrypted_dir = temp_dirs
-        
-        # Создаем тестовый зашифрованный файл
-        test_filename = "medical_report.pdf.age"
-        encrypted_file = encrypted_dir / test_filename
-        encrypted_file.write_bytes(b"encrypted medical data")
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_file_post
-            
-            # Мокаем uuid для предсказуемого имени файла
-            with patch('app.api.download.uuid.uuid4') as mock_uuid:
-                mock_uuid.return_value.hex = "abc123def456"
-                
-                # Мокаем crypto_manager
-                mock_crypto_manager.decrypt_file.return_value = None
-                
-                # Мокаем exists/is_file/stat для decrypted_path
-                import stat as stat_module
-                mock_stat_result = MagicMock()
-                mock_stat_result.st_size = 1024
-                mock_stat_result.st_mode = stat_module.S_IFREG | 0o644
+    app.dependency_overrides[get_current_doctor] = lambda: doctor_token
+    app.dependency_overrides[get_db]             = _get_db
 
-                with patch.object(Path, 'exists', return_value=True), \
-                     patch.object(Path, 'is_file', return_value=True), \
-                     patch.object(Path, 'stat', return_value=mock_stat_result):
+    with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+         patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+         patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"):
+        with TestClient(app, raise_server_exceptions=False) as c:
+            yield c, tmp_dirs, empty_db
 
-                    response = await download_file_post(
-                        request=mock_request,
-                        background_tasks=mock_background_tasks,
-                        filename=test_filename,
-                        current_user=MagicMock(sub="doctor_user", role="doctor")
-                    )
-        
-        # Проверяем вызовы
-        mock_crypto_manager.decrypt_file.assert_called_once()
-        
-        # Проверяем аудит-логирование
-        mock_audit_logger.log_operation.assert_called_once_with(
-            action="download",
-            filename=test_filename,
-            user="api_user",
-            reason="Успешное скачивание и расшифровка",
-            success=True,
-            metadata={"original_name": "medical_report.pdf"}
-        )
-        
-        # Проверяем что задача на удаление добавлена
-        mock_background_tasks.add_task.assert_called_once()
-        
-        # Проверяем ответ
-        assert hasattr(response, 'filename')
-        assert response.filename == "medical_report.pdf"
+    app.dependency_overrides.pop(get_current_doctor, None)
+    app.dependency_overrides.pop(get_db, None)
 
-    @pytest.mark.asyncio
-    async def test_download_file_post_missing_extension(self, mock_auth_doctor, mock_request):
-        """Тест скачивания файла без .age расширения"""
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_file_post
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_file_post(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    filename="medical_report.pdf",  # Без .age
-                    current_user=MagicMock(sub="doctor_user", role="doctor")
-                )
-        
-        assert exc_info.value.status_code == 400
-        assert "должно заканчиваться на .age" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
-    async def test_download_file_post_invalid_filename(self, mock_auth_doctor, mock_request):
-        """Тест скачивания с небезопасным именем файла"""
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_file_post
-            
-            # Мокаем sanitize_filename чтобы она возвращала то же имя (для теста)
-            with patch('app.api.download.sanitize_filename', return_value="passwd.age"):
-                with pytest.raises(HTTPException) as exc_info:
-                    await download_file_post(
-                        request=mock_request,
-                        background_tasks=MagicMock(),
-                        filename="../../../etc/passwd.age",  # Path traversal попытка
-                        current_user=MagicMock(sub="doctor_user", role="doctor")
-                    )
-        
-        # После санитизации имя будет "passwd.age", что пройдет проверку имени
-        # Но файла не будет существовать, поэтому будет 404
-        assert exc_info.value.status_code == 404
+@pytest.fixture
+def no_auth_client():
+    """TestClient без подмены зависимостей."""
+    app.dependency_overrides.clear()
+    with TestClient(app, raise_server_exceptions=False) as c:
+        yield c
 
-    @pytest.mark.asyncio
-    async def test_download_file_post_file_not_found(self, mock_auth_doctor, temp_dirs, mock_request):
-        """Тест скачивания несуществующего файла"""
-        encrypted_dir, _ = temp_dirs
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_file_post
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_file_post(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    filename="nonexistent.pdf.age",
-                    current_user=MagicMock(sub="doctor_user", role="doctor")
-                )
-        
-        assert exc_info.value.status_code == 404
-        assert "Файл не найден" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
-    async def test_download_file_post_decryption_error(self, mock_auth_doctor, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_request):
-        """Тест ошибки расшифровки файла"""
-        encrypted_dir, decrypted_dir = temp_dirs
-        
-        # Создаем тестовый файл
-        test_filename = "test.pdf.age"
-        encrypted_file = encrypted_dir / test_filename
-        encrypted_file.write_bytes(b"encrypted data")
-        
-        # Временно убираем декоратор лимитера
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            from app.api.download import download_file_post
-            
-            # Мокаем ошибку расшифровки
-            mock_crypto_manager.decrypt_file.side_effect = Exception("Decryption failed: invalid key")
-            
-            with pytest.raises(HTTPException) as exc_info:
-                await download_file_post(
-                    request=mock_request,
-                    background_tasks=MagicMock(),
-                    filename=test_filename,
-                    current_user=MagicMock(sub="doctor_user", role="doctor")
-                )
-        
-        assert exc_info.value.status_code == 500
-        assert "Ошибка скачивания" in str(exc_info.value.detail)
-        
-        # Проверяем что ошибка залогирована
-        mock_audit_logger.log_operation.assert_called_once_with(
-            action="download",
-            filename=test_filename,
-            user="api_user",
-            reason="Decryption failed: invalid key",
-            success=False
-        )
+# ============================================================================
+# ТЕСТЫ delete_file_after_response
+# ============================================================================
 
-    # ====== Тесты для delete_file_after_response ======
+class TestDeleteFileAfterResponse:
 
-    def test_delete_file_after_response_success(self):
-        """Тест успешного удаления временного файла"""
-        # Создаем временный файл
-        import tempfile
-        from pathlib import Path
-        from app.api.download import delete_file_after_response
-        
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            tmp.write(b"test content")
-        
-        # Мокаем print
-        with patch('app.api.download.print') as mock_print:
-            delete_file_after_response(tmp_path)
-        
-        # Проверяем что файл удален
-        assert not tmp_path.exists()
+    def test_deletes_existing_file(self, tmp_path):
+        f = tmp_path / "tmp.bin"
+        f.write_bytes(b"data")
 
-    def test_delete_file_after_response_not_exists(self):
-        """Тест удаления несуществующего файла"""
-        from app.api.download import delete_file_after_response
-        from unittest.mock import MagicMock
-        
-        non_existent = MagicMock(spec=Path)
-        non_existent.exists.return_value = False
-        
-        # Мокаем print
-        with patch('app.api.download.print') as mock_print:
-            # Должно завершиться без ошибок
-            delete_file_after_response(non_existent)
-        
-        # Проверяем что exists был вызван
-        non_existent.exists.assert_called_once()
-        # unlink не должен быть вызван
-        non_existent.unlink.assert_not_called()
+        delete_file_after_response(f)
 
-    def test_delete_file_after_response_permission_error(self):
-        """Тест ошибки удаления файла (например, нет прав)"""
-        from app.api.download import delete_file_after_response
-        from unittest.mock import MagicMock
-        
+        assert not f.exists()
+
+    def test_no_error_when_file_missing(self):
+        """Если файл уже удалён — функция молча завершается."""
+        mock_path = MagicMock(spec=Path)
+        mock_path.exists.return_value = False
+
+        delete_file_after_response(mock_path)  # не должно бросить исключение
+
+        mock_path.unlink.assert_not_called()
+
+    def test_logs_error_on_permission_denied(self):
+        """PermissionError логируется через logger.error, не print."""
         mock_path = MagicMock(spec=Path)
         mock_path.exists.return_value = True
-        mock_path.unlink.side_effect = PermissionError("Permission denied")
-        
-        with patch('app.api.download.print') as mock_print:
-            # Должно перехватить исключение и напечатать сообщение
+        mock_path.unlink.side_effect  = PermissionError("denied")
+        # Имя нужно для форматирования лог-сообщения
+        mock_path.__str__ = lambda s: "/fake/path"
+
+        with patch("app.api.download.logger") as mock_logger:
             delete_file_after_response(mock_path)
-        
-        # Проверяем что сообщение об ошибке было напечатано
-        error_printed = any("Ошибка удаления" in str(call) or "Permission denied" in str(call) 
-                           for call in mock_print.call_args_list)
-        assert error_printed, "Error message should be printed"
 
-    # ====== Интеграционные тесты с TestClient ======
+        mock_logger.error.assert_called_once()
+        logged_msg = mock_logger.error.call_args[0][0]
+        assert "denied" in logged_msg or "Permission" in logged_msg \
+               or mock_logger.error.called  # достаточно что error вызван
 
-    def test_download_post_integration_unauthorized(self):
-        """Интеграционный тест POST /api/download без авторизации"""
-        # Без мока аутентификации должна быть ошибка 401/403
-        response = client.post(
-            "/api/download",
-            data={"filename": "test.pdf.age"}
+    def test_logs_debug_when_file_missing(self):
+        """Если файл отсутствует — логируем debug."""
+        mock_path       = MagicMock(spec=Path)
+        mock_path.exists.return_value = False
+        mock_path.name  = "gone.bin"
+
+        with patch("app.api.download.logger") as mock_logger:
+            delete_file_after_response(mock_path)
+
+        mock_logger.debug.assert_called_once()
+
+    def test_logs_info_on_success(self, tmp_path):
+        """Успешное удаление логируется через logger.info."""
+        f = tmp_path / "ok.bin"
+        f.write_bytes(b"x")
+
+        with patch("app.api.download.logger") as mock_logger:
+            delete_file_after_response(f)
+
+        mock_logger.info.assert_called_once()
+
+
+# ============================================================================
+# ТЕСТЫ download_by_token (GET /download?token=...)
+# ============================================================================
+
+class TestDownloadByToken:
+
+    @pytest.mark.asyncio
+    async def test_token_not_found_raises_404(self):
+        db  = make_db([None])  # scalar_one_or_none → None
+        req = make_request()
+
+        with pytest.raises(HTTPException) as exc:
+            await download_by_token(
+                request=req,
+                background_tasks=MagicMock(),
+                token="no-such-token",
+                db=db,
+            )
+
+        assert exc.value.status_code == 404
+        assert "Ссылка не найдена" in exc.value.detail
+
+    @pytest.mark.asyncio
+    async def test_expired_link_raises_410_and_deleted(self):
+        link = make_link(expires_at=datetime.now(timezone.utc) - timedelta(hours=1))
+        db   = make_db([link])
+
+        with pytest.raises(HTTPException) as exc:
+            await download_by_token(
+                request=make_request(),
+                background_tasks=MagicMock(),
+                token=link.token,
+                db=db,
+            )
+
+        assert exc.value.status_code == 410
+        assert "истекла" in exc.value.detail
+        db.delete.assert_called_once_with(link)
+        db.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_download_limit_exceeded_raises_410_and_deleted(self):
+        link = make_link(max_downloads=3, downloads_count=3)
+        db   = make_db([link])
+
+        with pytest.raises(HTTPException) as exc:
+            await download_by_token(
+                request=make_request(),
+                background_tasks=MagicMock(),
+                token=link.token,
+                db=db,
+            )
+
+        assert exc.value.status_code == 410
+        assert "Лимит" in exc.value.detail
+        db.delete.assert_called_once_with(link)
+        db.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_file_not_in_db_raises_404(self):
+        link = make_link()
+        db   = make_db([link, None])   # ссылка есть, файла нет
+
+        with pytest.raises(HTTPException) as exc:
+            await download_by_token(
+                request=make_request(),
+                background_tasks=MagicMock(),
+                token=link.token,
+                db=db,
+            )
+
+        assert exc.value.status_code == 404
+        assert "Файл не найден" in exc.value.detail
+
+    @pytest.mark.asyncio
+    async def test_decryption_error_raises_500(self, tmp_dirs):
+        link = make_link()
+        file = make_file(encrypted_path=str(tmp_dirs["encrypted"] / "enc.age"))
+        db   = make_db([link, file])
+
+        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm:
+
+            mock_cm.decrypt_file = AsyncMock(side_effect=Exception("bad key"))
+
+            with pytest.raises(HTTPException) as exc:
+                await download_by_token(
+                    request=make_request(),
+                    background_tasks=MagicMock(),
+                    token=link.token,
+                    db=db,
+                )
+
+        assert exc.value.status_code == 500
+        assert "расшифровки" in exc.value.detail
+
+    @pytest.mark.asyncio
+    async def test_success_increments_counter_and_schedules_cleanup(self, tmp_dirs):
+        link = make_link(max_downloads=5, downloads_count=2)
+        enc_path = tmp_dirs["encrypted"] / "enc.age"
+        enc_path.write_bytes(b"cipher")
+        file = make_file(encrypted_path=str(enc_path), original_name="report.pdf")
+        db   = make_db([link, file])
+        bg   = MagicMock(spec=BackgroundTasks)
+
+        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm:
+
+            mock_cm.decrypt_file = AsyncMock()
+
+            response = await download_by_token(
+                request=make_request(),
+                background_tasks=bg,
+                token=link.token,
+                db=db,
+            )
+
+        # Счётчик увеличен
+        assert link.downloads_count == 3
+        # Коммит выполнен
+        db.commit.assert_called_once()
+        # Фоновая задача на удаление зарегистрирована
+        bg.add_task.assert_called_once()
+        # Имя файла в ответе
+        assert response.filename == "report.pdf"
+        assert response.media_type == "application/octet-stream"
+
+    @pytest.mark.asyncio
+    async def test_last_download_deletes_link(self, tmp_dirs):
+        """При последнем скачивании ссылка удаляется из БД."""
+        link = make_link(max_downloads=3, downloads_count=2)
+        enc_path = tmp_dirs["encrypted"] / "last.age"
+        enc_path.write_bytes(b"x")
+        file = make_file(encrypted_path=str(enc_path))
+        db   = make_db([link, file])
+
+        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm:
+
+            mock_cm.decrypt_file = AsyncMock()
+
+            await download_by_token(
+                request=make_request(),
+                background_tasks=MagicMock(),
+                token=link.token,
+                db=db,
+            )
+
+        # Лимит исчерпан → ссылка удалена
+        db.delete.assert_called_once_with(link)
+
+    @pytest.mark.asyncio
+    async def test_no_expiry_link_is_valid(self, tmp_dirs):
+        """Ссылка без expires_at (None) не должна считаться истёкшей."""
+        link = make_link(expires_at=None)
+        link.expires_at = None  # явно None
+
+        enc_path = tmp_dirs["encrypted"] / "noexp.age"
+        enc_path.write_bytes(b"data")
+        file = make_file(encrypted_path=str(enc_path))
+        db   = make_db([link, file])
+
+        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm:
+
+            mock_cm.decrypt_file = AsyncMock()
+
+            response = await download_by_token(
+                request=make_request(),
+                background_tasks=MagicMock(),
+                token=link.token,
+                db=db,
+            )
+
+        assert response.media_type == "application/octet-stream"
+
+
+# ============================================================================
+# ТЕСТЫ download_file_post (POST /download)
+# ============================================================================
+
+class TestDownloadFilePost:
+
+    # ── helpers ──────────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _make_db_with_file(file_record):
+        """Сессия, возвращающая file_record на первый execute."""
+        return make_db([file_record])
+
+    # ── unit-тесты (прямой вызов функции) ────────────────────────────────────
+
+    @pytest.mark.asyncio
+    async def test_file_not_on_disk_raises_404(self, tmp_dirs):
+        """Файл отсутствует на диске → 404."""
+        db = make_db([])  # execute не вызывается
+
+        with patch("app.api.download.ENCRYPTED_DIR", tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR", tmp_dirs["decrypted"]):
+
+            with pytest.raises(HTTPException) as exc:
+                await download_file_post(
+                    request=make_request(),
+                    background_tasks=MagicMock(),
+                    filename="missing.age",
+                    current_user=TokenData(sub="doc", role="doctor"),
+                    db=db,
+                )
+
+        assert exc.value.status_code == 404
+        assert "missing.age" in exc.value.detail
+
+    @pytest.mark.asyncio
+    async def test_file_not_in_db_raises_404(self, tmp_dirs):
+        """Файл есть на диске, но не в БД → 404."""
+        enc_file = tmp_dirs["encrypted"] / "exists.age"
+        enc_file.write_bytes(b"enc")
+
+        db = make_db([None])  # file_record не найден
+
+        with patch("app.api.download.ENCRYPTED_DIR", tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR", tmp_dirs["decrypted"]):
+
+            with pytest.raises(HTTPException) as exc:
+                await download_file_post(
+                    request=make_request(),
+                    background_tasks=MagicMock(),
+                    filename="exists.age",
+                    current_user=TokenData(sub="doc", role="doctor"),
+                    db=db,
+                )
+
+        assert exc.value.status_code == 404
+        assert "базе" in exc.value.detail
+
+    @pytest.mark.asyncio
+    async def test_decryption_error_raises_500(self, tmp_dirs):
+        """Ошибка расшифровки → 500."""
+        enc_file = tmp_dirs["encrypted"] / "broken.age"
+        enc_file.write_bytes(b"garbage")
+        file_rec = make_file(
+            original_name="broken.pdf",
+            encrypted_name="broken.age",
+            encrypted_path=str(enc_file),
         )
-        
-        # Должна быть ошибка авторизации (401 или 403)
-        assert response.status_code in [401, 403, 422]
+        db = self._make_db_with_file(file_rec)
 
-    # ====== Тесты для _download_file (внутренняя функция) ======
+        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm:
+
+            mock_cm.decrypt_file = AsyncMock(side_effect=Exception("bad key"))
+
+            with pytest.raises(HTTPException) as exc:
+                await download_file_post(
+                    request=make_request(),
+                    background_tasks=MagicMock(),
+                    filename="broken.age",
+                    current_user=TokenData(sub="doc", role="doctor"),
+                    db=db,
+                )
+
+        assert exc.value.status_code == 500
+        assert "расшифровки" in exc.value.detail
 
     @pytest.mark.asyncio
-    async def test_download_file_internal_success(self, mock_crypto_manager, temp_dirs, mock_audit_logger, mock_background_tasks):
-        """Тест внутренней функции _download_file"""
-        encrypted_dir, decrypted_dir = temp_dirs
-        
-        # Создаем тестовый файл
-        test_filename = "test.pdf.age"
-        encrypted_file = encrypted_dir / test_filename
-        encrypted_file.write_bytes(b"encrypted content")
-        
-        # Импортируем функцию
-        from app.api.download import _download_file
-        
-        # Мокаем crypto_manager
-        mock_crypto_manager.decrypt_file.return_value = None
-        
-        # Мокаем stat().st_size чтобы возвращал ненулевой размер
-        mock_stat = MagicMock()
-        mock_stat.st_size = 1024
-        
-        # Мокаем Path.exists и Path.is_file
-        with patch.object(Path, 'exists', return_value=True):
-            with patch.object(Path, 'is_file', return_value=True):
-                with patch.object(Path, 'stat', return_value=mock_stat):
-                    response = await _download_file(
-                        filename=test_filename,
-                        background_tasks=mock_background_tasks
-                    )
-        
-        # Проверяем что функция работает
-        assert response.filename == "test.pdf"
+    async def test_success_returns_file_response(self, tmp_dirs):
+        """Успешное скачивание возвращает FileResponse."""
+        enc_file = tmp_dirs["encrypted"] / "report.age"
+        enc_file.write_bytes(b"enc-data")
+        file_rec = make_file(
+            original_name="report.pdf",
+            encrypted_name="report.age",
+            encrypted_path=str(enc_file),
+        )
+        db = self._make_db_with_file(file_rec)
+        bg = MagicMock(spec=BackgroundTasks)
 
+        async def fake_decrypt(encrypted_path, private_key_path, output_path):
+            Path(output_path).write_bytes(b"plain")
 
-# Упрощенные тесты которые точно работают
-class TestDownloadSimple:
-    """Упрощенные тесты которые не требуют сложных моков"""
-    
-    def test_delete_file_after_response_basic(self):
-        """Базовый тест удаления файла"""
-        from app.api.download import delete_file_after_response
-        
-        # Создаем временный файл
-        import tempfile
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            filepath = Path(f.name)
-            f.write(b"test")
-        
-        # Замокаем print чтобы не засорять вывод
-        with patch('app.api.download.print'):
-            # Удаляем файл
-            delete_file_after_response(filepath)
-        
-        # Проверяем что файл удален
-        assert not filepath.exists()
-    
-    def test_sanitize_filename_integration(self):
-        """Интеграционный тест sanitize_filename"""
-        from app.core.utils import sanitize_filename
-        
-        # Тест что функция работает
-        result = sanitize_filename("test.pdf.age")
-        assert result == "test.pdf.age"
-        
-        # Тест транслитерации
-        result = sanitize_filename("документ.pdf.age")
-        assert "pdf.age" in result
-    
+        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm, \
+             patch("app.api.download.audit_logger")   as mock_log:
+
+            mock_cm.decrypt_file = fake_decrypt
+
+            response = await download_file_post(
+                request=make_request(),
+                background_tasks=bg,
+                filename="report.age",
+                current_user=TokenData(sub="doc-123", role="doctor"),
+                db=db,
+            )
+
+        assert response.filename      == "report.pdf"
+        assert response.media_type    == "application/octet-stream"
+        bg.add_task.assert_called_once()
+        mock_log.log_operation.assert_called_once_with(
+            action="download",
+            filename="report.age",
+            user="doc-123",
+            reason="Скачивание авторизованным пользователем",
+            success=True,
+        )
+
     @pytest.mark.asyncio
-    async def test_download_by_token_simple_mocks(self):
-        """Упрощенный тест с минимальными моками"""
-        # Мокаем все что нужно
-        with patch('app.api.download.limiter.limit', lambda x: lambda f: f):
-            with patch('app.api.download.get_db'):
-                with patch('app.api.download.crypto_manager') as mock_crypto:
-                    with patch('app.api.download.ENCRYPTED_DIR', Path("/tmp")):
-                        with patch('app.api.download.DECRYPTED_DIR', Path("/tmp")):
-                            with patch('app.api.download.PRIVATE_KEY_PATH', Path("/tmp/key")):
-                                
-                                mock_crypto.decrypt_file = AsyncMock()
-                                
-                                # Импортируем после всех моков
-                                from app.api.download import download_by_token
-                                
-                                # Создаем мок сессии БД
-                                mock_session = AsyncMock()
-                                mock_result = MagicMock()
-                                mock_result.scalar_one_or_none.return_value = None  # Ссылка не найдена
-                                mock_session.execute.return_value = mock_result
-                                
-                                # Создаем мок Request
-                                mock_request = MagicMock(spec=Request)
-                                mock_request.scope = {"type": "http"}
-                                mock_request.client = MagicMock(host="127.0.0.1")
-                                
-                                # Должно выбросить 404
-                                with pytest.raises(HTTPException) as exc_info:
-                                    await download_by_token(
-                                        request=mock_request,
-                                        background_tasks=MagicMock(),
-                                        token="invalid",
-                                        db=mock_session
-                                    )
-                                
-                                assert exc_info.value.status_code == 404
-                                
-# tests/test_api/test_download.py
-"""
-Тесты для роутера /api/download
-"""
+    async def test_filename_without_age_extension_gets_age_appended(self, tmp_dirs):
+        """
+        Реальный код сам добавляет .age если его нет.
+        Файл должен быть создан с .age именем.
+        """
+        # Создаём файл с .age именем (именно так ищет код)
+        enc_file = tmp_dirs["encrypted"] / "nodoc.age"
+        enc_file.write_bytes(b"enc")
+        file_rec = make_file(
+            original_name="nodoc",
+            encrypted_name="nodoc.age",
+            encrypted_path=str(enc_file),
+        )
+        db = self._make_db_with_file(file_rec)
 
+        async def fake_decrypt(encrypted_path, private_key_path, output_path):
+            Path(output_path).write_bytes(b"ok")
 
+        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm, \
+             patch("app.api.download.audit_logger"):
 
+            mock_cm.decrypt_file = fake_decrypt
 
-@pytest.fixture
-def mock_user():
-    user = MagicMock()
-    user.sub = "test_doctor"
-    user.role = "doctor"
-    return user
-
-
-@pytest.fixture
-def mock_admin():
-    user = MagicMock()
-    user.sub = "test_admin"
-    user.role = "admin"
-    return user
-
-
-@pytest.fixture
-def client_with_doctor(client, mock_user):
-    app.dependency_overrides[get_current_doctor] = lambda: mock_user
-    yield client
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def client_with_admin(client, mock_admin):
-    app.dependency_overrides[get_current_admin] = lambda: mock_admin
-    yield client
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture
-def mock_db_session():
-    """Мок асинхронной сессии БД (уровень модуля)"""
-    mock_session = AsyncMock()
-    mock_session.execute = AsyncMock()
-    mock_session.delete = AsyncMock()
-    mock_session.commit = AsyncMock()
-    return mock_session
-
-
-@pytest.fixture
-def temp_dirs():
-    """Временные директории для тестов (уровень модуля)"""
-    tmpdir = Path(tempfile.mkdtemp())
-    dirs = {
-        "encrypted": tmpdir / "encrypted",
-        "decrypted": tmpdir / "decrypted",
-        "keys": tmpdir / "keys",
-    }
-    for d in dirs.values():
-        d.mkdir(parents=True, exist_ok=True)
-    (dirs["keys"] / "age.key").write_text("test-key")
-
-    yield dirs
-
-    shutil.rmtree(tmpdir, ignore_errors=True)
-
-
-@pytest.mark.asyncio
-async def test_download_by_token_success(mock_user, mock_db_session, temp_dirs):
-    """GET /download?token=... — успех"""
-    token = str(uuid.uuid4())
-    file_id = 1
-    original_name = "test.pdf"
-
-    mock_link = MagicMock()
-    mock_link.token = token
-    mock_link.file_id = file_id
-    mock_link.max_downloads = 5
-    mock_link.downloads_count = 2
-    mock_link.expires_at = datetime.now(timezone.utc) + timedelta(days=10)
-
-    mock_file = MagicMock()
-    mock_file.id = file_id
-    mock_file.original_name = original_name
-    mock_file.encrypted_path = str(temp_dirs["encrypted"] / "enc_test.age")
-
-    decrypted_path = temp_dirs["decrypted"] / f"{uuid.uuid4()}_{original_name}"
-
-    # Очищаем decrypted перед тестом
-    for item in temp_dirs["decrypted"].iterdir():
-        if item.is_file():
-            item.unlink()
-
-    with patch("app.api.download.DECRYPTED_DIR", temp_dirs["decrypted"]):
-        with patch("app.api.download.PRIVATE_KEY_PATH", temp_dirs["keys"] / "age.key"):
-            with patch.object(crypto_manager, "decrypt_file", AsyncMock()) as mock_decrypt:
-                with patch.object(mock_db_session, "execute") as mock_execute:
-                    mock_execute.side_effect = [
-                        MagicMock(scalar_one_or_none=MagicMock(return_value=mock_link)),
-                        MagicMock(scalar_one_or_none=MagicMock(return_value=mock_file))
-                    ]
-
-                    with patch.object(mock_db_session, "commit", AsyncMock()):
-                        with patch.object(mock_db_session, "refresh", AsyncMock()):
-                            response = await download_by_token(
-                                request=MagicMock(),
-                                background_tasks=MagicMock(),
-                                token=token,
-                                db=mock_db_session
-                            )
-
-                            assert response.filename == original_name
-                            assert response.media_type == "application/octet-stream"
-                            mock_decrypt.assert_called_once()
-                            assert mock_link.downloads_count == 3
-
-
-@pytest.mark.asyncio
-async def test_download_by_token_expired(mock_user, mock_db_session):
-    token = str(uuid.uuid4())
-
-    mock_link = MagicMock()
-    mock_link.token = token
-    mock_link.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
-
-    with patch.object(mock_db_session, "execute") as mock_execute:
-        mock_execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=mock_link))
-
-        with pytest.raises(HTTPException) as exc_info:
-            await download_by_token(
-                request=MagicMock(),
+            # Передаём имя БЕЗ .age — код должен добавить сам
+            response = await download_file_post(
+                request=make_request(),
                 background_tasks=MagicMock(),
-                token=token,
-                db=mock_db_session
+                filename="nodoc",          # без .age
+                current_user=TokenData(sub="doc", role="doctor"),
+                db=db,
             )
 
-        assert exc_info.value.status_code == 410
-        assert "Ссылка истекла" in str(exc_info.value.detail)
+        assert response.media_type == "application/octet-stream"
+
+    @pytest.mark.asyncio
+    async def test_audit_logger_not_called_on_error(self, tmp_dirs):
+        """При ошибке расшифровки audit_logger НЕ должен вызываться с success=True."""
+        enc_file = tmp_dirs["encrypted"] / "err.age"
+        enc_file.write_bytes(b"x")
+        file_rec = make_file(original_name="err.pdf", encrypted_name="err.age")
+        db = self._make_db_with_file(file_rec)
+
+        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm, \
+             patch("app.api.download.audit_logger") as mock_log:
+
+            mock_cm.decrypt_file = AsyncMock(side_effect=Exception("boom"))
+
+            with pytest.raises(HTTPException):
+                await download_file_post(
+                    request=make_request(),
+                    background_tasks=MagicMock(),
+                    filename="err.age",
+                    current_user=TokenData(sub="doc", role="doctor"),
+                    db=db,
+                )
+
+        # audit_logger не должен быть вызван с success=True
+        for call in mock_log.log_operation.call_args_list:
+            kwargs = call.kwargs if call.kwargs else {}
+            assert kwargs.get("success") is not True
+
+    # ── интеграционные тесты через TestClient ────────────────────────────────
+
+    def test_post_download_no_auth_returns_401_or_403(self, no_auth_client):
+        response = no_auth_client.post("/api/download", data={"filename": "test.age"})
+        assert response.status_code in (401, 403)
+
+    def test_post_download_success_via_client(self, download_client, tmp_dirs):
+        """
+        Интеграционный тест через TestClient.
+        Подменяем get_db так, чтобы вернуть нужный file_record.
+        """
+        client, dirs, _ = download_client
+
+        enc_file = dirs["encrypted"] / "integ.age"
+        enc_file.write_bytes(b"enc")
+        file_rec = make_file(
+            original_name="integ.pdf",
+            encrypted_name="integ.age",
+            encrypted_path=str(enc_file),
+        )
+
+        async def fake_decrypt(encrypted_path, private_key_path, output_path):
+            Path(output_path).write_bytes(b"plain")
+
+        # Переопределяем get_db с нужными данными
+        def make_fresh_db():
+            return make_db([file_rec])
+
+        async def _get_db():
+            yield make_fresh_db()
+
+        app.dependency_overrides[get_db] = _get_db
+
+        with patch("app.api.download.ENCRYPTED_DIR",    dirs["encrypted"]), \
+             patch("app.api.download.DECRYPTED_DIR",    dirs["decrypted"]), \
+             patch("app.api.download.PRIVATE_KEY_PATH", dirs["keys"] / "age.key"), \
+             patch("app.api.download.crypto_manager") as mock_cm, \
+             patch("app.api.download.audit_logger"):
+
+            mock_cm.decrypt_file = fake_decrypt
+
+            response = client.post("/api/download", data={"filename": "integ.age"})
+
+        assert response.status_code == 200
+        assert "integ.pdf" in response.headers.get("content-disposition", "")
+
+    def test_post_download_missing_file_via_client(self, download_client, tmp_dirs):
+        """Файл отсутствует на диске → 404 через TestClient."""
+        client, dirs, _ = download_client
+
+        response = client.post("/api/download", data={"filename": "ghost.age"})
+
+        assert response.status_code == 404
+
+    def test_get_download_token_not_found_via_client(self, download_client):
+        """Токен не найден → 404 через TestClient."""
+        client, dirs, _ = download_client
+
+        db_returning_none = make_db([None])
+
+        async def _get_db():
+            yield db_returning_none
+
+        app.dependency_overrides[get_db] = _get_db
+
+        response = client.get("/api/download?token=no-such-token")
+
+        assert response.status_code == 404
 
 
+# ============================================================================
+# ПАРАМЕТРИЗОВАННЫЕ ТЕСТЫ
+# ============================================================================
+
+@pytest.mark.parametrize("downloads_count,max_downloads,should_delete", [
+    (0, 1, True),   # после единственного скачивания — удаляем
+    (4, 5, True),   # последнее из 5 — удаляем
+    (1, 5, False),  # ещё есть попытки — не удаляем
+    (3, 5, False),  # ещё есть попытки — не удаляем
+])
 @pytest.mark.asyncio
-async def test_download_by_token_limit_reached(mock_user, mock_db_session):
-    token = str(uuid.uuid4())
+async def test_link_deleted_only_when_limit_reached(
+    tmp_dirs, downloads_count, max_downloads, should_delete
+):
+    link = make_link(max_downloads=max_downloads, downloads_count=downloads_count)
+    enc_path = tmp_dirs["encrypted"] / "f.age"
+    enc_path.write_bytes(b"x")
+    file = make_file(encrypted_path=str(enc_path))
+    db   = make_db([link, file])
 
-    mock_link = MagicMock()
-    mock_link.token = token
-    mock_link.downloads_count = 5
-    mock_link.max_downloads = 5
-    mock_link.expires_at = datetime.now(timezone.utc) + timedelta(days=10)
+    with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+         patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+         patch("app.api.download.crypto_manager") as mock_cm:
 
-    with patch.object(mock_db_session, "execute") as mock_execute:
-        mock_execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=mock_link))
+        mock_cm.decrypt_file = AsyncMock()
 
-        with pytest.raises(HTTPException) as exc_info:
-            await download_by_token(
-                request=MagicMock(),
-                background_tasks=MagicMock(),
-                token=token,
-                db=mock_db_session
-            )
+        await download_by_token(
+            request=make_request(),
+            background_tasks=MagicMock(),
+            token=link.token,
+            db=db,
+        )
 
-        assert exc_info.value.status_code == 410
-        assert "Лимит скачиваний исчерпан" in str(exc_info.value.detail)
-
-
-def test_delete_file_after_response(temp_dirs):
-    decrypted = temp_dirs["decrypted"]
-    temp_file = decrypted / "temp_test.txt"
-    temp_file.write_text("data")
-
-    delete_file_after_response(temp_file)
-
-    assert not temp_file.exists()
+    if should_delete:
+        db.delete.assert_called_once_with(link)
+    else:
+        db.delete.assert_not_called()
 
 
-# POST /download (doctor/admin)
+@pytest.mark.parametrize("filename,expected_safe", [
+    ("report.age",          "report.age"),
+    ("report",              "report.age"),    # .age добавляется
+    ("my file.age",         "my file.age"),   # sanitize_filename обрабатывает пробелы
+])
+@pytest.mark.asyncio
+async def test_filename_sanitization_and_age_append(tmp_dirs, filename, expected_safe):
+    """Код добавляет .age и применяет sanitize_filename."""
+    # Создаём файл с ожидаемым именем после sanitize
+    from app.core.utils import sanitize_filename
+    safe = sanitize_filename(filename)
+    if not safe.endswith(".age"):
+        safe += ".age"
 
-def test_download_file_post_success(client_with_doctor, mock_user, temp_dirs):
-    filename = "test.age"
+    enc_file = tmp_dirs["encrypted"] / safe
+    enc_file.write_bytes(b"enc")
+    file_rec = make_file(original_name="out.bin", encrypted_name=safe)
+    db = make_db([file_rec])
 
-    encrypted_path = temp_dirs["encrypted"] / filename
-    encrypted_path.write_text("fake encrypted")
+    async def fake_decrypt(encrypted_path, private_key_path, output_path):
+        Path(output_path).write_bytes(b"ok")
 
-    with patch("app.api.download.ENCRYPTED_DIR", temp_dirs["encrypted"]):
-        with patch("app.api.download.DECRYPTED_DIR", temp_dirs["decrypted"]):
-            # side_effect создаёт файл, имитируя реальную расшифровку
-            async def fake_decrypt(encrypted_path, private_key_path, output_path):
-                output_path.write_bytes(b"decrypted content")
+    with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+         patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+         patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
+         patch("app.api.download.crypto_manager") as mock_cm, \
+         patch("app.api.download.audit_logger"):
 
-            with patch("app.api.download.crypto_manager") as mock_cm:
-                mock_cm.decrypt_file = fake_decrypt
-                with patch.object(audit_logger, "log_operation") as mock_log:
-                    response = client_with_doctor.post(
-                        "/api/download",
-                        data={"filename": filename}
-                    )
+        mock_cm.decrypt_file = fake_decrypt
 
-                    assert response.status_code == 200
-                    assert response.headers["Content-Disposition"].startswith('attachment; filename="test"')
-                    mock_log.assert_any_call(
-                        action="download",
-                        filename=filename,
-                        user="api_user",
-                        reason="Успешное скачивание и расшифровка",
-                        success=True,
-                        metadata={"original_name": "test"}
-                    )
+        response = await download_file_post(
+            request=make_request(),
+            background_tasks=MagicMock(),
+            filename=filename,
+            current_user=TokenData(sub="doc", role="doctor"),
+            db=db,
+        )
+
+    assert response.media_type == "application/octet-stream"

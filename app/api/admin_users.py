@@ -18,7 +18,6 @@ router = APIRouter(prefix="/admin/users", tags=["Admin Users"])
 # ==================== Pydantic схемы (Pydantic V2) ====================
 
 class UserResponse(BaseModel):
-    """Модель пользователя для ответа API"""
     id: int
     username: str
     email: str
@@ -30,7 +29,6 @@ class UserResponse(BaseModel):
 
 
 class UserCreateRequest(BaseModel):
-    """Создание нового пользователя администратором"""
     username: str = Field(..., min_length=3, max_length=50, pattern="^[a-zA-Z0-9_]+$")
     email: str = Field(..., max_length=255)
     password: str = Field(..., min_length=8)
@@ -47,7 +45,6 @@ class UserCreateRequest(BaseModel):
 
 
 class UserUpdateRequest(BaseModel):
-    """Обновление пользователя"""
     email: Optional[str] = Field(None, max_length=255)
     role: Optional[str] = Field(None, pattern="^(user|doctor|admin)$")
     is_active: Optional[bool] = None
@@ -67,19 +64,16 @@ class UserUpdateRequest(BaseModel):
 
 
 class UserPasswordResetRequest(BaseModel):
-    """Сброс пароля администратором"""
     new_password: str = Field(..., min_length=8)
 
 
 class BulkUserActionRequest(BaseModel):
-    """Массовые операции с пользователями"""
     user_ids: List[int]
-    action: str  # 'activate', 'deactivate', 'delete', 'change_role'
+    action: str
     role: Optional[str] = Field(None, pattern="^(user|doctor|admin)$")
 
 
 class UserStatsResponse(BaseModel):
-    """Статистика по пользователям"""
     total_users: int
     active_users: int
     inactive_users: int
@@ -161,15 +155,10 @@ async def create_user(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    print(f"=== СОЗДАНИЕ ПОЛЬЗОВАТЕЛЯ ===")
-    print(f"Получены данные: {user_data.model_dump()}")
-
-    # Проверка уникальности username
     result = await db.execute(select(User).where(User.username == user_data.username))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
 
-    # Проверка уникальности email
     result = await db.execute(select(User).where(User.email == user_data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
@@ -212,7 +201,7 @@ async def update_user(
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
     if user.username == current_admin.sub:
-        raise HTTPException(status_code=400, detail="Нельзя изменять свою учётную запись через этот эндпоинт")
+        raise HTTPException(status_code=400, detail="change-password")
 
     changes = {}
 
@@ -334,7 +323,7 @@ async def bulk_user_actions(
     if not action_data.user_ids:
         raise HTTPException(status_code=400, detail="Не указаны пользователи")
 
-    # Запрещаем массовые операции над самим собой
+    # Проверка на попытку изменить себя
     result = await db.execute(
         select(User).where(User.id.in_(action_data.user_ids), User.username == current_admin.sub)
     )
