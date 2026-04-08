@@ -9,14 +9,6 @@
 
 ## [Unreleased]
 
-### Added
-- Подготовка документации (README.md, ARCHITECTURE.md, API.md, DEPLOYMENT.md, SECURITY.md)
-
-### Changed
-- Улучшена структура проекта и документация
-
----
-
 ## [1.0.0] - 2026-04-05
 
 ### Added

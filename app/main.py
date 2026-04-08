@@ -79,8 +79,11 @@ async def lifespan(app: FastAPI):
 # Создаём приложение с lifespan
 app = FastAPI(
     title="SMDG",
-    version="0.1",
-    lifespan=lifespan  
+    version="1.0",
+    lifespan=lifespan,  
+    docs_url="/docs",        
+    redoc_url="/redoc",      
+    openapi_url="/openapi.json"
 )
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")

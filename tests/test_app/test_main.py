@@ -37,7 +37,7 @@ async def test_lifespan_startup_shutdown(
 # ====================== BASIC ======================
 def test_app_creation():
     assert app.title == "SMDG"
-    assert app.version == "0.1"
+    assert app.version == "1.0"
 
 
 # ====================== ENDPOINTS ======================

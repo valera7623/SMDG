@@ -1,21 +1,21 @@
-# Architecture Document
+# Architecture Document — Secure Medical Data Gateway (SMDG)
 
-**Secure Medical Data Gateway (SMDG)**  
 **Версия:** 1.0  
-**Дата:** 05 апреля 2026
+**Дата:** 06 апреля 2026
 
 ---
 
 ## 1. Обзор архитектуры
 
-SMDG — это **self-hosted** веб-приложение для безопасной передачи медицинских файлов с акцентом на **конфиденциальность, аудит и соответствие требованиям защиты персональных данных** (в т.ч. ФЗ-152).
+SMDG — self-hosted решение для безопасной передачи медицинских данных.  
+Архитектура построена по принципам **Zero Trust**, layered design и полной контейнеризации.
 
-### Основные принципы архитектуры:
-- **Максимальная безопасность** (zero-trust подход)
-- **Разделение ответственности** (Layered Architecture)
-- **Асинхронность** (asyncio + FastAPI)
-- **Полная контейнеризация** (Docker-first)
-- **Готовность к продакшену** (secrets, health checks, monitoring)
+**Ключевые принципы:**
+- Максимальная конфиденциальность и целостность медицинских данных
+- Полный аудит всех операций
+- Соответствие ФЗ-152 и GDPR-подобным стандартам
+- Асинхронность и высокая производительность
+- Готовность к продакшену (secrets, healthchecks, monitoring)
 
 ---
 
@@ -24,157 +24,206 @@ SMDG — это **self-hosted** веб-приложение для безопа�
 ```mermaid
 graph TD
     subgraph Client
-        A[Веб-интерфейс HTML/JS]
+        A[Веб-интерфейс (HTML + Vanilla JS)]
     end
-
-    subgraph "Nginx (Reverse Proxy)"
-        B[HTTPS + HTTP/2]
+    subgraph "Nginx Reverse Proxy"
+        B[HTTPS + TLS 1.3 + HSTS]
     end
-
-    subgraph "SMDG Application"
-        C[FastAPI]
+    subgraph "SMDG Application (FastAPI)"
+        C[API Layer]
         D[Middleware: Audit + Rate Limit + User Context]
         E[Lifespan Events]
     end
-
     subgraph "Core Services"
         F[PostgreSQL]
         G[Redis]
         H[ClamAV]
     end
-
     subgraph "Storage & Crypto"
-        I[Encrypted Files]
+        I[Encrypted Files (/encrypted)]
         J[Age Encryption]
-        K[Temporary Decrypted Files]
+        K[Temporary Decrypted Files (/decrypted)]
     end
 
     A --> B --> C
     C --> D
     C --> E
-    C --> F
-    C --> G
-    C --> H
+    C --> F & G & H
     C --> I
     C <--> J
     C --> K
 
-3. Компоненты и слои
-3.1. Presentation Layer
+## 3. Схема базы данных (ERD)
+erDiagram
+    USER ||--o{ FILE : "owns"
+    USER ||--o{ FILE_LINK : "creates"
+    FILE ||--o{ FILE_LINK : "referenced_by"
 
-app/main.py — входная точка приложения
-app/api/ — все REST эндпоинты
-Фронтенд: static/ (HTML + Vanilla JS + CSS)
+    USER {
+        int id PK
+        string username
+        string email
+        string hashed_password
+        string role
+        boolean is_active
+        string otp_secret
+        timestamp created_at
+        timestamp updated_at
+    }
 
-3.2. Application Layer
+    FILE {
+        int id PK
+        string original_name
+        string encrypted_name
+        bigint size
+        string patient_id
+        jsonb medical_metadata
+        int owner_id FK
+        string uploaded_by
+        timestamp created_at
+    }
 
-Dependency Injection через FastAPI Depends
-Rate Limiting (slowapi + Redis)
-Аудит (AuditMiddleware + audit_logger)
-Авторизация (get_current_user, get_current_admin, get_current_doctor)
+    FILE_LINK {
+        int id PK
+        string token UK
+        int file_id FK
+        int max_downloads
+        int downloads_count
+        timestamp expires_at
+        timestamp created_at
+    }
 
-3.3. Domain / Business Logic Layer
+Индексы:
 
-app/core/ — основная бизнес-логика
-app/crypto/crypto.py — шифрование/расшифровка
-app/core/cleanup.py — политика очистки
-app/core/storage.py — управление временными файлами
+user.username, user.email (unique)
+file.owner_id, file.patient_id
+file_link.token (unique + index)
 
-3.4. Data Access Layer
+## 4. Модели БД
+User (app/models/user.py)
+    id, username, email, hashed_password, role (userdoctoradmin), is_active, otp_secret
+File (app/models/file.py)
+    original_name, encrypted_name, size, patient_id, medical_metadata (JSONB), owner_id
+FileLink (app/models/file_link.py)
+    token (UUID), file_id, max_downloads, downloads_count, expires_at
 
-app/core/database.py — Async SQLAlchemy
-app/models/ — SQLModel модели (User, File, FileLink)
-Alembic миграции (migrations/)
+## 5. Ключевые сценарии (Sequence Diagrams)
+### 5.1. Upload файла
+sequenceDiagram
+    participant Client
+    participant Nginx
+    participant FastAPI
+    participant ClamAV
+    participant Crypto
+    participant DB
+    participant Storage
 
-3.5. Infrastructure Layer
+    Client->>Nginx: POST /api/upload
+    Nginx->>FastAPI: Request + file
+    FastAPI->>FastAPI: Rate Limit + Auth
+    FastAPI->>ClamAV: instream(file)
+    ClamAV-->>FastAPI: CLEAN / FOUND
+    alt Virus detected
+        FastAPI-->>Client: 400 Virus detected
+    else Clean
+        FastAPI->>Crypto: encrypt_file()
+        Crypto->>Storage: save .age
+        FastAPI->>DB: create File + FileLink
+        DB-->>FastAPI: OK
+        FastAPI-->>Client: 200 + download_url
+    end
 
-Docker + docker-compose
-PostgreSQL, Redis, ClamAV
-Volume mounts для encrypted/, keys/, audit_logs/
+### 5.2. Download по токену
 
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant DB
+    participant Storage
+    participant Crypto
 
-4. Ключевые механизмы
-4.1. Шифрование файлов
+    Client->>FastAPI: GET /api/download?token=xxx
+    FastAPI->>DB: find FileLink by token
+    alt Token valid
+        DB-->>FastAPI: File record
+        FastAPI->>Storage: get encrypted file
+        FastAPI->>Crypto: decrypt_file()
+        Crypto-->>FastAPI: decrypted bytes
+        FastAPI-->>Client: FileResponse
+        FastAPI->>DB: increment downloads_count
+    else Invalid/Expired
+        FastAPI-->>Client: 404 / 410
+    end
 
-Используется age (asymmetric)
-Публичный ключ хранится в keys/age.pub
-Приватный ключ (age.key) защищён и монтируется через Docker Secret
-Шифрование происходит до сохранения на диск (upload.py)
-Расшифровка — только по запросу (download.py)
+### 5.3. Login с 2FA
 
-4.2. Временные одноразовые ссылки
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant DB
+    participant OTP
 
-Модель FileLink (токен + max_downloads + expires_at)
-После исчерпания лимита или срока — ссылка автоматически инвалидируется
+    Client->>FastAPI: POST /api/auth/login
+    FastAPI->>DB: find User by username
+    alt 2FA enabled
+        FastAPI->>OTP: TOTP.verify(otp_code)
+        OTP-->>FastAPI: True/False
+    end
+    FastAPI->>FastAPI: create JWT
+    FastAPI-->>Client: 200 + set-cookie access_token
 
-4.3. Автоматическая очистка
+## 6. Lifespan Events (main.py)
+При старте приложения (@asynccontextmanager lifespan) выполняются следующие шаги:
 
-FileCleanupManager + APScheduler
-Запускается каждые 30 минут
-Разные политики удержания по типам файлов
-
-4.4. Ротация ключей
-
-Команда rotate-keys
-Перешифровывает все существующие файлы
-Старый ключ автоматически бэкапится
-
-4.5. Аудит
-
-AuditMiddleware логирует все HTTP-запросы
-audit_logger.log_operation() — централизованный логгер
-Два формата: JSON (по дням) + CSV (для анализа)
-
-
-5. Lifespan Events (main.py)
-При старте приложения выполняются:
-
-init_keys() — инициализация/проверка ключей age
-Проверка подключения к Redis
-Запуск cleanup_manager.start_cleanup_task()
-Создание первого администратора (в dev-режиме)
-
-
-6. Безопасность (Security Architecture)
-
-Хранение паролей: Argon2 (passlib)
-Сессии: JWT в HttpOnly cookie
-2FA: TOTP (pyotp) + обязательная проверка
-Rate Limiting: SlowAPI + Redis
-Middleware: Audit + User Context + Rate Limit
-Docker Secrets: все чувствительные данные
-CORS: настроен с явным whitelist в продакшене
-
-
-7. Deployment Architecture
-Production использует:
-
-docker-compose.prod.yml (ресурсные лимиты, логирование json-file, отключение лишних портов)
-Nginx как reverse proxy + SSL termination
-Docker Secrets для всех ключей и паролей
-Отдельные volumes: smdg_keys, smdg_encrypted, smdg_audit_logs
-
-
-8. Ключевые технические решения
-
-Решение                     Почему выбрано
-age вместо PyCryptodome     Простота, надёжность, современный стандарт
-Asyncio + FastAPI           Высокая производительность
-APScheduler вместо Celery   Простота и отсутствие RabbitMQ
-Docker Secrets              Соответствие лучшим практикам
-Alembic + SQLModel          Удобство миграций и типизация
+Чтение Docker Secrets (JWT, ADMIN_PASSWORD, DATABASE_URL)
+Проверка и создание приватного ключа age.key
+Ожидание готовности PostgreSQL (port 5432)
+Применение Alembic-миграций
+Инициализация FileStorageManager
+Запуск фоновой задачи очистки (cleanup_manager.start_cleanup_task())
+Создание/обновление администратора
+Проверка необходимости ротации ключей
+Генерация self-signed сертификата для localhost (dev-режим)
 
 
+## 7. Технические решения и обоснования
 
-9. Будущие расширения (Roadmap)
+Решение                 Почему выбрано
+age encryption          Простой, надёжный, современный стандарт
+FastAPI + Async         Высокая производительность и удобство
+APScheduler             Простота, не требует RabbitMQ/Celery
+Docker Secrets          Соответствие лучшим практикам безопасности
+SQLModel + Alembic      Типизация + удобные миграции
 
-Поддержка S3/MinIO как backend хранения
-Multi-tenancy (организации/клиники)
+## 8. Мониторинг и Prometheus-метрики
+SMDG экспонирует метрики по адресу GET /metrics через библиотеку prometheus-fastapi-instrumentator.
+
+Основные группы метрик
+
+Метрика                        Тип                     Описание
+http_requests_total            Counter                 "Общее количество HTTP-запросов (по методу, пути, статусу)"
+http_request_duration_seconds  Histogram               "Время обработки запроса (buckets: 0.1, 0.5, 1, 5, 10 сек)"
+http_requests_in_progress      Gauge                   "Количество одновременно обрабатываемых запросов"
+upload_file_size_bytes         Histogram               "Размер загружаемых файлов (используется в /api/upload)"
+upload_success_total           Counter                 "Количество успешно загруженных и зашифрованных файлов"
+upload_virus_detected_total    Counter                 "Количество файлов, отклонённых ClamAV"
+download_success_total         Counter                 "Количество успешных скачиваний по токену"
+file_cleanup_deleted_total     Counter                 "Количество файлов, удалённых CleanupManager"
+age_key_rotation_total         Counter                 "Количество выполненных ротаций ключей шифрования"
+db_query_duration_seconds      Histogram               "Время выполнения SQL-запросов"
+clamav_scan_duration_seconds   Histogram               "Время сканирования файла ClamAV"
+rate_limit_exceeded_total      Counter                 "Количество превышений rate limit"
+
+Метрики доступны в формате Prometheus и могут быть подключены к Grafana / Prometheus / Alertmanager.
+Пример запроса:
+curl -k https://localhost/metrics
+
+## 9. Roadmap (будущие расширения)
+
+Поддержка S3/MinIO
+Multi-tenancy (организации)
 Webhook-уведомления
-DICOM viewer в браузере
+Встроенный DICOM-viewer
 Экспорт аудита в PDF/Excel
-Интеграция с внешними системами (ЕГИСЗ, МИС)
 
-
-Документ актуален на момент анализа кода (05.04.2026).
-Готов обновить или дополнить любую секцию.
+Конец документа.

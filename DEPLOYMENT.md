@@ -67,17 +67,17 @@ Bashcp .env.example .env
 # Отредактируйте .env под себя
 Production (.env.prod)
 Создайте файл .env.prod:
-envDOCKER_USERNAME=valera7623
+DOCKER_USERNAME=<your-docker-username>
 IMAGE_TAG=latest
-DOMAIN=fileguardian.com.ru
-REDIS_PASSWORD=1kaiPbPR2Jrxp4xMrCpy5w
+DOMAIN=<your-domain>
+REDIS_PASSWORD=<your-redis-password>
 
 6. Запуск
 6.1 Development режим
 Bashdocker compose up --build -d
 Приложение будет доступно по http://localhost
 6.2 Production режим (рекомендуется)
-Bash# Первый запуск (сборка образа)
+Первый запуск (сборка образа)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 # Последующие запуски
