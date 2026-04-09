@@ -61,7 +61,7 @@ docker compose up --build
 
 Приложение будет доступно по адресу: https://localhost
 
-2. Production запуск
+### 2. Production запуск
 
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
@@ -104,7 +104,7 @@ app/core/cleanup.py	        Автоматическая очистка
 
 Все файлы шифруются до записи на диск
 Пароли — только Argon2
-2FA желательна
+2FA (TOTP) является обязательной рекомендацией (см. SECURITY.md)
 Rate limiting + полный аудит
 Docker Secrets для ключей и паролей
 
@@ -135,6 +135,7 @@ COMPLIANCE_TEMPLATE.md	                Шаблон соответствия Ф�
 TESTING.md	                            Стратегия тестирования, coverage (93%)
 TROUBLESHOOTING.md	                    Решение типовых проблем
 CHANGELOG.md	                        История версий
+CONTRIBUTING.md                         Сотрудничество
 
 🤝 Внесение изменений
 Проект находится в приватной разработке. Подробности см. в CONTRIBUTING.md.

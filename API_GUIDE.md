@@ -75,6 +75,7 @@ POST /api/auth/login
 Content-Type: application/x-www-form-urlencoded
 username=admin&password=secret
 При успешном входе cookie устанавливается автоматически.
+
 ### 2.2. Альтернативный способ — Bearer Token
 Для внешних интеграций (мобильные приложения, сервисы):
 
@@ -94,18 +95,46 @@ X-User-Id: 42
 
 ### 2.4. Двухфакторная аутентификация (2FA)
 
+Согласно политике безопасности проекта (см. SECURITY.md):
+- 2FA (TOTP) является обязательной рекомендацией для всех пользователей.
+- После первой успешной авторизации пользователю рекомендуется немедленно настроить двухфакторную аутентификацию.
+- Для администраторов (admin) использование 2FA обязательно.
+
 Для пользователей с включённой 2FA:
     При логине обязателен параметр otp_code
     Код генерируется TOTP (30 секунд, 6 цифр)
     Поддерживаются все стандартные аутентификаторы (Google Authenticator, Authy, 1Password)
 
-Поток настройки 2FA:
-    POST /api/auth/setup-2fa → получаете QR-код
-    Пользователь сканирует QR-код в приложении
-    POST /api/auth/verify-2fa-setup с кодом из приложения
-    2FA активирована
+Доступные операции с 2FA:
 
-Важно: При смене пароля 2FA автоматически отключается (требуется повторная настройка).
+Метод       Эндпоинт                           Описание                           Требуется OTP 
+POST        /api/auth/setup-2fa                Генерация QR-кода для настройки    Нет
+POST        /api/auth/verify-2fa-setup         Подтверждение настройки 2FA        Да
+POST        /api/auth/disable-2fa              Отключение 2FA                     Да
+
+Отключение 2FA
+
+POST /api/auth/disable-2fa
+
+Тело запроса (form-data):
+
+otp_code — 6-значный код из приложения-аутентификатора (обязательно)
+
+Пример запроса:
+
+POST /api/auth/disable-2fa
+Content-Type: application/x-www-form-urlencoded
+
+otp_code=123456
+Ответы:
+200 OK — 2FA успешно отключена
+400 Bad Request — неверный или отсутствующий код
+401 Unauthorized — неверный код 2FA
+404 Not Found — пользователь не найден
+
+Важно: 
+При смене пароля 2FA автоматически отключается (требуется повторная настройка) чтобы исключить захват аккаунта через смену пароля без повторной верификации второго фактора.
+Отключение 2FA возможно только с подтверждением текущим кодом из приложения.
 
 ## 3. Форматы данных и ограничения
 
@@ -304,6 +333,10 @@ Audit ID (UUID)
 Через файловую систему (/audit_logs/)
 Для администраторов — через API (будет в версии 1.1)
 
+Важное примечание:
+Скачивание по публичной одноразовой ссылке (GET /api/download?token=...) в текущей версии не логируется в систему аудита.
+Аудит выполняется только при скачивании авторизованным пользователем (POST /api/download).
+
 ## 7. Потоки данных (Sequence Diagrams)
 
 ### 7.1. Загрузка файла с проверкой ClamAV
@@ -323,22 +356,32 @@ ClamAV → API: CLEAN / FOUND
 
 ### 7.2. Скачивание по одноразовой ссылке
 
-Клиент → API: GET /download?token=xxx
-API → DB: SELECT FROM file_links WHERE token = xxx
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant DB
+    participant Storage
+    participant Crypto
 
-Если не найден:
-  API → Клиент: 404 Not Found
-
-Если найден, но expired OR downloads >= max_downloads:
-  API → Клиент: 410 Gone
-
-Если валидный:
-  API → Storage: read encrypted file
-  API → Crypto: decrypt_file()
-  Crypto → API: decrypted bytes
-  API → Клиент: FileResponse (streaming)
-  API → DB: UPDATE downloads_count++
-  API → Audit: log download
+    Client->>FastAPI: GET /api/download?token=xxx
+    FastAPI->>DB: find FileLink by token
+    alt Token valid
+        DB-->>FastAPI: File record
+        FastAPI->>Storage: get encrypted file
+        FastAPI->>Crypto: decrypt_file()
+        Crypto-->>FastAPI: decrypted bytes
+        
+        Note over FastAPI,DB: Критический участок — гарантия "at-least-once"
+        FastAPI->>DB: increment downloads_count<br/>и/или delete link (если лимит исчерпан)
+        FastAPI->>DB: commit
+        
+        FastAPI-->>Client: FileResponse (streaming)
+        FastAPI->>Background: delete temporary file (after response)
+        
+        Note right of FastAPI: Аудит **не логируется** при скачивании по публичному токену<br/>(текущее поведение)
+    else Invalid/Expired
+        FastAPI-->>Client: 404 / 410
+    end
 
 ### 7.3. Логин с 2FA
 

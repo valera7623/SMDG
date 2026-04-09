@@ -44,7 +44,7 @@ sudo apt install docker.io docker-compose-plugin -y
 sudo usermod -aG docker $USER
 newgrp docker
 
-4. Подготовка секретов (обязательно!)
+## 4. Подготовка секретов (обязательно!)
 Создайте папку secrets/ и положите туда файлы:
 Bashmkdir -p secrets
 
@@ -60,7 +60,7 @@ age-keygen -o secrets/age.key
 chmod 600 secrets/age.key
 Важно: Никогда не коммитьте папку secrets/ в Git!
 
-5. Настройка окружения
+## 5. Настройка окружения
 Development (.env)
 Bashcp .env.example .env
 
@@ -72,11 +72,11 @@ IMAGE_TAG=latest
 DOMAIN=<your-domain>
 REDIS_PASSWORD=<your-redis-password>
 
-6. Запуск
-6.1 Development режим
+## 6. Запуск
+### 6.1 Development режим
 Bashdocker compose up --build -d
 Приложение будет доступно по http://localhost
-6.2 Production режим (рекомендуется)
+### 6.2 Production режим (рекомендуется)
 Первый запуск (сборка образа)
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
@@ -84,17 +84,17 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 Приложение будет доступно по HTTPS через Nginx.
 
-7. После первого запуска
+## 7. После первого запуска
 
 Проверьте логи:Bashdocker compose logs -f smdg
-Создайте первого администратора (если не создан автоматически):Bashdocker compose exec smdg python -m app.cli create-admin admin StrongPass123! admin@example.com
+Создайте первого администратора (если не создан автоматически):Bashdocker compose exec smdg python -m app.cli create-admin \<admin-username> <strong-password> <admin@your-domain.com>
 Проверьте работоспособность:
 http://ваш-домен/health
 http://ваш-домен/admin
 
 
 
-8. CI/CD (GitHub Actions)
+## 8. CI/CD (GitHub Actions)
 Проект содержит готовый workflow .github/workflows/ci.yml, который:
 
 Запускает тесты на Python 3.10–3.12
@@ -102,15 +102,15 @@ http://ваш-домен/admin
 Собирает и пушит Docker-образ в Docker Hub при пуше в main
 
 
-9. Обновление приложения
-Bash# 1. Получить новые изменения
+## 9. Обновление приложения
+### 9.1 Получить новые изменения
 git pull
 
-# 2. Пересобрать и перезапустить
+### 9.2 Пересобрать и перезапустить
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 После обновления рекомендуется выполнить миграции БД (делается автоматически в entrypoint.sh).
 
-10. Backup и восстановление
+## 10. Backup и восстановление
 Автоматические бэкапы
 В docker-compose.prod.yml включена служба backups, которая:
 
@@ -121,7 +121,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 Ручной backup
 Bashdocker compose exec db pg_dump -U smdg_user smdg > backup_$(date +%Y%m%d).sql
 
-11. Мониторинг
+## 11. Мониторинг
 В проекте настроены:
 
 Prometheus (/metrics)
@@ -130,7 +130,7 @@ Grafana (порт 3000, закрыт снаружи)
 
 Логи хранятся в audit_logs/ и в json-формате Docker.
 
-12. Troubleshooting
+## 12. Troubleshooting
 Проблема: Не запускается PostgreSQL
 Решение: Проверьте наличие секрета postgres_password
 Проблема: Ошибка "age.key not found"

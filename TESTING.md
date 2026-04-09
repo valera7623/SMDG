@@ -50,7 +50,7 @@ round-trip encrypt_file ↔ decrypt_file
 Ротация ключей (rotate_keys)
 Обработка ошибок (неверный ключ, повреждённый файл)
 
-3.2 Интеграционные тесты ClamAV
+### 3.2 Интеграционные тесты ClamAV
 Файл: tests/test_api/test_upload.py
 Используется мок ClamdNetworkSocket.
 Проверяется:
@@ -59,7 +59,7 @@ round-trip encrypt_file ↔ decrypt_file
 ClamAV недоступен в prod-режиме → 503
 Чистый файл проходит дальше
 
-3.3 Тестирование 2FA
+### 3.3 Тестирование 2FA
 Файл: tests/test_api/test_auth.py
 
 pyotp.TOTP с valid_window=1
@@ -67,7 +67,7 @@ pyotp.TOTP с valid_window=1
 Полный цикл: setup → verify → login → disable
 
 
-4. Реальные E2E сценарии
+## 4. Реальные E2E сценарии
 E2E-тесты проверяют полный пользовательский путь:
 
 Полный цикл загрузки и скачивания
@@ -91,7 +91,7 @@ Bulk-действия (deactivate, delete)
 Запуск E2E:
 poetry run pytest tests/e2e/ -v --tb=short
 
-5.  Анализ покрытия (актуальный от 06.04.2026)
+## 5.  Анализ покрытия (актуальный от 06.04.2026)
 ============================================================== tests coverage ===============================================================
 Name                              Stmts   Miss  Cover   Missing
 ----------------------------------------------------------------
@@ -134,8 +134,17 @@ api/upload.py — 99%
 api/admin_users.py — 100%
 api/download.py — 100%
 
+### Модули ниже порога (требуют внимания)
 
-6. Как запускать тесты
+| Модуль             | Текущий coverage | Целевой | Приоритет |
+|--------------------|------------------|---------|-----------|
+| `app/api/list.py`  | 66%              | 80%+    | Высокий   |
+| `app/core/audit.py`| 71%              | 80%+    | Высокий   |
+| `app/core/auth.py` | 74%              | 80%+    | Средний   |
+
+
+
+## 6. Как запускать тесты
 # Все тесты
 poetry run pytest
 
@@ -155,7 +164,7 @@ poetry run pytest -m e2e
 @pytest.mark.e2e
 
 
-7. CI/CD
+## 7. CI/CD
 Файл: .github/workflows/ci.yml
 Пайплайн запускает:
 

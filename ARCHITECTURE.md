@@ -101,7 +101,7 @@ file_link.token (unique + index)
 
 ## 4. Модели БД
 User (app/models/user.py)
-    id, username, email, hashed_password, role (userdoctoradmin), is_active, otp_secret
+    id, username, email, hashed_password, role (user doctor admin), is_active, otp_secret
 File (app/models/file.py)
     original_name, encrypted_name, size, patient_id, medical_metadata (JSONB), owner_id
 FileLink (app/models/file_link.py)
@@ -149,8 +149,15 @@ sequenceDiagram
         FastAPI->>Storage: get encrypted file
         FastAPI->>Crypto: decrypt_file()
         Crypto-->>FastAPI: decrypted bytes
-        FastAPI-->>Client: FileResponse
-        FastAPI->>DB: increment downloads_count
+        
+        Note over FastAPI,DB: Критический участок — гарантия "at-least-once"
+        FastAPI->>DB: increment downloads_count<br/>и/или delete link (если лимит исчерпан)
+        FastAPI->>DB: commit
+        
+        FastAPI-->>Client: FileResponse (streaming)
+        FastAPI->>Background: delete temporary file (after response)
+        
+        Note right of FastAPI: Даже если клиент оборвёт соединение<br/>после начала скачивания — токен уже считается использованным.
     else Invalid/Expired
         FastAPI-->>Client: 404 / 410
     end
