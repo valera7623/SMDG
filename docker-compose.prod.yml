@@ -77,6 +77,7 @@ services:
     volumes:
       # В prod НЕ монтируем исходники (./app) — образ уже содержит код
       # Если S3_ENABLED=true, volumes для encrypted можно убрать
+      
       - smdg_uploads:/app/uploads
       - smdg_encrypted:/app/encrypted
       - smdg_decrypted:/app/decrypted

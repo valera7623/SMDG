@@ -1,21 +1,105 @@
 # app/core/config.py
 import os
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
+
+
+def read_secret(secret_name: str, env_var: str = None, default: str = None) -> str:
+    """
+    Читает секрет из Docker secret или переменной окружения.
+    Приоритет: Docker secret > переменная окружения > default
+    """
+    # Пути к Docker secrets
+    secret_paths = [
+        Path(f"/run/secrets/{secret_name}"),
+        Path(f"/run/secrets/smdg_{secret_name}"),  # на случай если есть префикс
+    ]
+    
+    for secret_path in secret_paths:
+        if secret_path.exists():
+            with open(secret_path, 'r') as f:
+                return f.read().strip()
+    
+    # Если secret не найден, пробуем переменную окружения
+    if env_var:
+        value = os.getenv(env_var)
+        if value:
+            return value
+    
+    # Возвращаем default если ничего не найдено
+    if default is not None:
+        return default
+    
+    # Если default нет - возвращаем пустую строку
+    return ""
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8" if os.getenv("DEV_MODE", "false").lower() == "true" else None,
+        env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
     )
 
-    # Обязательные поля — без дефолтов!
-    database_url: str
-    redis_url: str
-    jwt_secret_key: str
-    admin_password: str
+    # Приватные поля для хранения значений из secrets
+    _database_url: str = ""
+    _redis_url: str = ""
+    _jwt_secret_key: str = ""
+    _admin_password: str = ""
+    
+    @property
+    def database_url(self) -> str:
+        """Читает DATABASE_URL из secrets или переменной окружения"""
+        if not self._database_url:
+            # Пробуем прочитать из файла secret
+            secret_value = read_secret('database_url', 'DATABASE_URL')
+            if secret_value:
+                self._database_url = secret_value
+            else:
+                # Если нет - собираем из отдельных компонентов
+                postgres_password = read_secret('postgres_password', 'POSTGRES_PASSWORD', 'password')
+                postgres_user = os.getenv('POSTGRES_USER', 'smdg_user')
+                postgres_db = os.getenv('POSTGRES_DB', 'smdg')
+                postgres_host = os.getenv('POSTGRES_HOST', 'db')
+                postgres_port = os.getenv('POSTGRES_PORT', '5432')
+                
+                self._database_url = f"postgresql+asyncpg://{postgres_user}:{postgres_password}@{postgres_host}:{postgres_port}/{postgres_db}"
+        
+        return self._database_url
+    
+    @property
+    def redis_url(self) -> str:
+        """Читает REDIS_URL из secrets или переменной окружения"""
+        if not self._redis_url:
+            self._redis_url = read_secret('redis_url', 'REDIS_URL', 'redis://redis:6379/0')
+        return self._redis_url
+    
+    @property
+    def jwt_secret_key(self) -> str:
+        """Читает JWT_SECRET_KEY из secrets или переменной окружения"""
+        if not self._jwt_secret_key:
+            self._jwt_secret_key = read_secret('jwt_secret_key', 'JWT_SECRET_KEY')
+            if not self._jwt_secret_key:
+                # В dev режиме можно использовать дефолтный ключ
+                if self.dev_mode:
+                    self._jwt_secret_key = "dev-secret-key-change-in-production-min-32-chars"
+                else:
+                    raise ValueError("JWT_SECRET_KEY is required in production mode")
+        return self._jwt_secret_key
+    
+    @property
+    def admin_password(self) -> str:
+        """Читает ADMIN_PASSWORD из secrets или переменной окружения"""
+        if not self._admin_password:
+            self._admin_password = read_secret('admin_password', 'ADMIN_PASSWORD')
+            if not self._admin_password:
+                if self.dev_mode:
+                    self._admin_password = "admin123"
+                else:
+                    raise ValueError("ADMIN_PASSWORD is required in production mode")
+        return self._admin_password
     
     # Опциональные с разумными дефолтами (не секретные)
     jwt_access_expires_minutes: int = 60
@@ -38,16 +122,16 @@ class Settings(BaseSettings):
         "text/plain", "text/csv",
         "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "application/dicom",  # основной для DICOM
-        "application/octet-stream",  # иногда DICOM идёт как octet-stream
+        "application/dicom",
+        "application/octet-stream",
         "application/json", "application/xml"
     ]
 
-    # DICOM-сигнатуры (первые байты файла)
-    DICOM_MAGIC: bytes = b'\x00\x00\x00\x00DICM'  # offset 128, "DICM"
+    # DICOM-сигнатуры
+    DICOM_MAGIC: bytes = b'\x00\x00\x00\x00DICM'
 
-    # S3 / MinIO Configuration (опционально)
-    s3_endpoint_url: str | None = None  # e.g. "http://minio:9000" или AWS S3 URL
+    # S3 / MinIO Configuration
+    s3_endpoint_url: str | None = None
     s3_access_key: str | None = None
     s3_secret_key: str | None = None
     s3_bucket_encrypted: str = "smdg-encrypted"

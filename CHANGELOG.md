@@ -9,6 +9,20 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-04-10
+
+### Added
+- **Webhook-уведомления** о событиях: file.uploaded, file.downloaded, file.deleted
+- **CRUD API** для управления webhook-подписками (`/api/webhooks`)
+- **История доставки** webhook-уведомлений с статусом и количеством попыток
+- **HMAC-SHA256 подпись** payload для безопасности webhook
+- **Retry mechanism** с exponential backoff (до 10 попыток, до 5 минут задержка)
+- **Фоновый retry scheduler** — проверка каждые 30 секунд
+- **Webhook ping endpoint** — тестирование подписки
+- **Модели БД:** WebhookSubscription, WebhookDelivery
+- **Alembic миграция 002** — таблицы webhook_subscriptions и webhook_deliveries
+- **19 тестов** для webhook системы
+
 ## [2.0.0] - 2026-04-10
 
 ### Added

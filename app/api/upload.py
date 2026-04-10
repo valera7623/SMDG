@@ -18,6 +18,7 @@ from app.core import (
     settings,
     encrypted_storage,
 )
+from app.core.webhook import webhook_dispatcher
 from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
 from app.core.utils import calculate_hash_async, sanitize_filename
@@ -315,6 +316,23 @@ async def upload_file(
                 "encrypted_name": final_encrypted_name,
                 "ttl_days": params.ttl_days
             }
+        )
+
+        # Отправляем webhook-уведомление
+        asyncio.create_task(
+            webhook_dispatcher.dispatch(
+                event="file.uploaded",
+                data={
+                    "file_id": new_file.id,
+                    "original_name": original_filename,
+                    "encrypted_name": final_encrypted_name,
+                    "size": len(file_content),
+                    "mime_type": mime_type,
+                    "patient_id": params.patient_id,
+                    "download_url": download_url,
+                    "uploaded_by": current_user.sub,
+                }
+            )
         )
 
         logger.info(f"✅ Файл успешно загружен: {original_filename}")

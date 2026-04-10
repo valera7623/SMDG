@@ -6,9 +6,11 @@ from sqlalchemy import select
 from typing import Annotated
 from pathlib import Path
 import uuid
+import asyncio
 import logging
 
 from app.core import ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH, audit_logger, encrypted_storage
+from app.core.webhook import webhook_dispatcher
 from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename
@@ -110,6 +112,20 @@ async def download_by_token(
         if link.downloads_count >= link.max_downloads:
             await db.delete(link)
         await db.commit()
+
+        # Отправляем webhook-уведомление
+        asyncio.create_task(
+            webhook_dispatcher.dispatch(
+                event="file.downloaded",
+                data={
+                    "file_id": file_record.id,
+                    "original_name": file_record.original_name,
+                    "downloaded_via": "token",
+                    "token": token,
+                    "downloads_remaining": max(0, link.max_downloads - link.downloads_count) if link.max_downloads > link.downloads_count else 0,
+                }
+            )
+        )
 
         # Добавляем удаление файла **после** отправки ответа
         background_tasks.add_task(delete_file_after_response, decrypted_path)

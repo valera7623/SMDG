@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import JSONB
 from datetime import datetime
 from typing import Optional, Dict, Any
-from app.core.database import Base
+from app.models.base import Base
 from sqlalchemy.sql import func
 
 class File(Base):

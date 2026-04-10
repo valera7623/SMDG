@@ -6,28 +6,36 @@ from sqlalchemy import pool
 
 from alembic import context
 
-import os  # Добавляем для getenv
+import os
+import sys
+from pathlib import Path
 
-# this is the Alembic Config object
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 config = context.config
 
-# Interpret config file for Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 logger = logging.getLogger("alembic.env")
 
-# Добавляем модели проекта
-from app.core.database import Base
+# Импорт Base из standalone модуля (НЕ тянет Settings)
+from app.models.base import Base
 from app.models.user import User
 from app.models.file import File
 from app.models.file_link import FileLink
+try:
+    from app.models.webhook import WebhookSubscription, WebhookDelivery
+except ImportError:
+    pass
 
 target_metadata = Base.metadata
 
-# Добавляем: берём DATABASE_URL из environment (как в docker-compose или .env)
-# Если не задан, берём дефолт из alembic.ini или fallback
 if not config.get_main_option("sqlalchemy.url"):
-    database_url = os.getenv("DATABASE_URL", "postgresql://smdg_user:password@localhost:5432/smdg")  # Fallback на локальный для dev
+    database_url = os.getenv("DATABASE_URL", "")
+    if database_url.startswith("postgresql+asyncpg://"):
+        database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+    if not database_url:
+        database_url = "postgresql://smdg_user:password@localhost:5432/smdg"
     config.set_main_option("sqlalchemy.url", database_url)
 
 def run_migrations_online():
@@ -49,5 +57,4 @@ def run_migrations_online():
         with context.begin_transaction():
             context.run_migrations()
 
-# Запускаем только онлайн-режим
 run_migrations_online()

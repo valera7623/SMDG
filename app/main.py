@@ -18,12 +18,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.api import upload, download, list, delete, cleanup, stats
+from app.api import upload, download, list, delete, cleanup, stats, webhooks
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
+from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
-from app.core.database import engine, AsyncSessionLocal
-from app.models.user import User
+from app.core.database import engine, AsyncSessionLocal, Base
+from app.models import User, File, FileLink, WebhookSubscription, WebhookDelivery
 from app.core.security import get_password_hash, verify_password
 
 from app.core.middleware import AuditMiddleware
@@ -36,9 +37,65 @@ import asyncio
 import logging
 import os
 
+from app.models.webhook import DeliveryStatus, WebhookDelivery
+
 
 logger = logging.getLogger(__name__)
 
+
+async def webhook_retry_scheduler():
+    """Фоновая задача для повторной отправки неудачных webhook доставок."""
+    from sqlalchemy import select, exc
+    from datetime import datetime, timezone
+    import time
+
+    # Ждём чтобы миграции успели примениться
+    await asyncio.sleep(5)
+
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                # Находим доставки готовые к retry
+                stmt = (
+                    select(WebhookDelivery)
+                    .where(
+                        WebhookDelivery.status == DeliveryStatus.RETRYING.value,
+                        WebhookDelivery.next_retry_at <= datetime.now(timezone.utc),
+                        WebhookDelivery.attempts < WebhookDelivery.max_attempts,
+                    )
+                    .limit(50)
+                )
+                result = await db.execute(stmt)
+                pending_retries = result.scalars().all()
+
+                for delivery in pending_retries:
+                    # Повторяем отправку через dispatcher
+                    from app.models.webhook import WebhookSubscription
+
+                    sub_stmt = select(WebhookSubscription).where(
+                        WebhookSubscription.id == delivery.subscription_id
+                    )
+                    sub_result = await db.execute(sub_stmt)
+                    subscription = sub_result.scalar_one_or_none()
+
+                    if subscription and subscription.is_active:
+                        await webhook_dispatcher._send_with_retry(
+                            subscription=subscription,
+                            payload_json=delivery.payload,
+                            db=db
+                        )
+
+                await db.commit()
+
+        except (exc.ProgrammingError, exc.OperationalError) as e:
+            # Таблицы ещё не существуют — ждём
+            logger.debug(f"Webhook retry: таблицы ещё не готовы ({e}), повтор через 10с")
+            await asyncio.sleep(10)
+        except Exception as e:
+            logger.error(f"Webhook retry scheduler error: {e}")
+            await asyncio.sleep(10)
+
+        await asyncio.sleep(30)  # Проверка каждые 30 секунд
 
 
 @asynccontextmanager
@@ -58,7 +115,16 @@ async def lifespan(app: FastAPI):
     
     await cleanup_manager.start_cleanup_task()
     print("✅ Авто-очистка старых файлов запущена (APScheduler)")
-    
+
+    # Конфигурируем все SQLAlchemy мапперы
+    Base.registry.configure()
+    print("✅ SQLAlchemy мапперы сконфигурированы")
+
+    # Запуск фоновой задачи retry для webhook доставок (с задержкой чтобы миграции успели примениться)
+    await asyncio.sleep(2)  # Даём миграциям завершиться
+    asyncio.create_task(webhook_retry_scheduler())
+    print("✅ Webhook retry scheduler запущен")
+
     try:
         await RedisClient.set("test_key_startup", "test_value", ex=60)
         value = await RedisClient.get("test_key_startup")
@@ -67,12 +133,13 @@ async def lifespan(app: FastAPI):
         print(f"Ошибка тестовой записи в Redis: {e}")
     
     await create_first_admin()
-    
+
     yield  # Здесь приложение работает
-    
+
     # Shutdown (если нужно)
     print("🛑 Завершение работы SMDG...")
     await cleanup_manager.stop_cleanup_task()
+    await webhook_dispatcher.close()
     await RedisClient.close()
     print("✅ Ресурсы освобождены")
 
@@ -192,6 +259,7 @@ app.include_router(list.router, prefix="/api")
 app.include_router(delete.router, prefix="/api")
 app.include_router(cleanup.router, prefix="/api")
 app.include_router(stats.router, prefix="/api")
+app.include_router(webhooks.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_users_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")

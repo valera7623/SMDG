@@ -21,6 +21,7 @@ SMDG — self-hosted решение для безопасного обмена �
 - Rate limiting и защита от brute-force
 - Полная поддержка Docker + Docker Secrets
 - **Гибридное хранилище:** локальная ФС или **S3/MinIO** (Yandex Object Storage, Selectel, AWS S3)
+- **Webhook-уведомления** о событиях (upload, download, delete) с HMAC подписью и retry
 
 ---
 

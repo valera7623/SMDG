@@ -299,11 +299,42 @@ Client ← FileResponse ← age Decrypt ← StorageBackend.download() ← Storag
 | AWS S3                 | `https://s3.amazonaws.com`                  | Да  | ❌                |
 | DigitalOcean Spaces    | `https://<region>.digitaloceanspaces.com`   | Да  | ❌                |
 
+### 9.8 Webhook-уведомления
+
+SMDG поддерживает отправку webhook-уведомлений при ключевых событиях системы.
+
+#### События
+
+| Событие           | Описание                   |
+|-------------------|----------------------------|
+| `file.uploaded`   | Файл загружен и зашифрован |
+| `file.downloaded` | Файл скачан по ссылке      |
+| `file.deleted`    | Файл удалён                |
+
+#### Безопасность
+
+- **HMAC-SHA256 подпись** — заголовок `X-Webhook-Signature`
+- **Retry с exponential backoff** — до 10 попыток, задержка до 5 минут
+- **Настраиваемый timeout** — 1–60 секунд
+
+#### API Endpoints
+
+| Метод   | Путь                             | Описание            |
+|---------|----------------------------------|---------------------|
+| `POST`  | `/api/webhooks`                  | Создать подписку    |
+| `GET`   | `/api/webhooks`                  | Список подписок     |
+| `PUT`   | `/api/webhooks/{id}`             | Обновить подписку   |
+| `DELETE`| `/api/webhooks/{id}`             | Удалить подписку    |
+| `GET`   | `/api/webhooks/{id}/deliveries`  | История доставки    |
+| `POST`  | `/api/webhooks/{id}/ping`        | Тестировать webhook |
+
+---
+
 ## 10. Roadmap (будущие расширения)
 
 ~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0
+~~Webhook-уведомления~~ ✅ Реализовано в v2.1
 Multi-tenancy (организации)
-Webhook-уведомления
 Встроенный DICOM-viewer
 Экспорт аудита в PDF/Excel
 S3 Lifecycle Policies вместо FileCleanupManager

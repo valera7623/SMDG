@@ -346,6 +346,72 @@ docker compose exec db pg_dump -U smdg_user smdg > backup_$(date +%Y%m%d).sql
 
 ---
 
+## 16. Webhook-уведомления
+
+SMDG может отправлять HTTP-уведомления внешним системам при возникновении ключевых событий.
+
+### 16.1 Создание webhook-подписки
+
+```bash
+curl -X POST https://your-domain/api/webhooks \
+  -H "Authorization: Bearer <your-jwt-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-service.com/webhook",
+    "events": ["file.uploaded", "file.downloaded", "file.deleted"],
+    "secret": "your-webhook-secret-for-hmac-signature",
+    "description": "Уведомления о файлах",
+    "max_retries": 5,
+    "timeout_seconds": 15
+  }'
+```
+
+### 16.2 Проверка webhook (ping)
+
+```bash
+curl -X POST https://your-domain/api/webhooks/{id}/ping \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### 16.3 История доставки
+
+```bash
+curl -X GET "https://your-domain/api/webhooks/{id}/deliveries?status=failed&limit=20" \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### 16.4 Доступные события
+
+```bash
+curl -X GET https://your-domain/api/webhooks/meta/events \
+  -H "Authorization: Bearer <your-jwt-token>"
+```
+
+### 16.5 Обработка webhook на вашей стороне
+
+Ваш endpoint должен:
+
+1. Принимать POST запросы с `Content-Type: application/json`
+2. Проверять HMAC-SHA256 подпись из заголовка `X-Webhook-Signature`
+3. Отвечать HTTP 200 для подтверждения получения
+
+Пример проверки подписи (Python):
+
+```python
+import hmac
+import hashlib
+
+def verify_webhook(payload: str, signature: str, secret: str) -> bool:
+    expected = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(f"sha256={expected}", signature)
+```
+
+---
+
 ## 15. Архитектура хранилища
 
 ### Режимы работы

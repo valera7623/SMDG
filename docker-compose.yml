@@ -60,7 +60,7 @@ services:
       REDIS_URL: "redis://redis:6379/0"
 
       # S3 / MinIO Configuration
-      S3_ENABLED: "${S3_ENABLED:-false}"
+      S3_ENABLED: "${S3_ENABLED:-true}"
       S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-http://minio:9000}"
       S3_ACCESS_KEY: "${S3_ACCESS_KEY:-minioadmin}"
       S3_SECRET_KEY: "${S3_SECRET_KEY:-minioadmin123}"
@@ -71,6 +71,7 @@ services:
       S3_USE_SSL: "${S3_USE_SSL:-false}"
 
     volumes:
+      - ./migrations:/app/migrations
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
       - ./decrypted:/app/decrypted
@@ -157,8 +158,8 @@ services:
       start_period: 10s
     networks:
       - backend
-    profiles:
-      - s3  # Запускается только с: docker compose --profile s3 up
+    #profiles:
+      #- s3  # Запускается только с: docker compose --profile s3 up
 
 
 

@@ -5,10 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core import ENCRYPTED_DIR, audit_logger, encrypted_storage
+from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_admin, TokenData
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from pathlib import Path
+import asyncio
 
 router = APIRouter()
 
@@ -89,6 +91,19 @@ async def _delete_file(
             reason=reason or "Ручное удаление администратором",
             metadata=file_info,
             success=True
+        )
+
+        # Отправляем webhook-уведомление
+        asyncio.create_task(
+            webhook_dispatcher.dispatch(
+                event="file.deleted",
+                data={
+                    "filename": safe_filename,
+                    "size": file_info["size"],
+                    "deleted_by": current_user.sub,
+                    "reason": reason or "Ручное удаление администратором",
+                }
+            )
         )
 
         return {

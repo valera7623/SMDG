@@ -3,7 +3,7 @@ from sqlalchemy import String, Integer, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from typing import Optional
-from app.core.database import Base
+from app.models.base import Base
 import uuid
 
 class FileLink(Base):
