@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
 from app.core.database import get_db
-from app.core import ENCRYPTED_DIR, audit_logger
+from app.core import ENCRYPTED_DIR, audit_logger, encrypted_storage
 from app.core.rate_limiter import limiter
 from app.models.file import File
 from app.models.file_link import FileLink
@@ -80,14 +80,17 @@ async def list_files(
     db_files = result.scalars().all()
 
     for db_file in db_files:
-        file_path = ENCRYPTED_DIR / db_file.encrypted_name
+        storage_key = db_file.encrypted_path
 
-        if not file_path.exists():
-            logger.debug(f"Файл {db_file.encrypted_name} есть в БД, но отсутствует на диске — пропускаем")
+        # Проверяем существование через хранилище
+        if not await encrypted_storage.exists(storage_key):
+            logger.debug(f"Файл {db_file.encrypted_name} есть в БД, но отсутствует в хранилище — пропускаем")
             continue
 
         try:
-            stat = file_path.stat()
+            # Получаем размер из БД или из хранилища
+            metadata = await encrypted_storage.stat(storage_key)
+            file_size = db_file.encrypted_size or (metadata.size if metadata else 0)
 
             # Ищем активную ссылку (самую свежую)
             token_result = await db.execute(
@@ -105,7 +108,7 @@ async def list_files(
             files.append(FileItem(
                 id=db_file.id,
                 name=db_file.encrypted_name,
-                size=db_file.encrypted_size or stat.st_size,
+                size=file_size,
                 modified=db_file.uploaded_at.isoformat(),
                 original_name=db_file.original_name,
                 patient_id=db_file.patient_id,

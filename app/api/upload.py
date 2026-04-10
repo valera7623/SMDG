@@ -15,7 +15,8 @@ from app.core import (
     ENCRYPTED_DIR,
     audit_logger,
     get_public_key,
-    settings
+    settings,
+    encrypted_storage,
 )
 from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
@@ -233,6 +234,8 @@ async def upload_file(
 
         # Шифрование
         final_encrypted_name = f"{uuid.uuid4()}_{safe_filename}.age"
+
+        # Для локального режима используем старый путь, для S3 — ключ объекта
         final_encrypted_path = ENCRYPTED_DIR / final_encrypted_name
 
         await crypto_manager.encrypt_file(
@@ -242,6 +245,16 @@ async def upload_file(
         )
 
         original_hash = await calculate_hash_async(temp_upload_path)
+
+        # Загрузка в хранилище (S3 или локальное)
+        storage_key = final_encrypted_name  # S3 key или относительный путь
+        metadata = await encrypted_storage.upload(
+            key=storage_key,
+            file_path=final_encrypted_path,
+            content_type="application/octet-stream"
+        )
+
+        encrypted_size = metadata.size
 
         user_id = None
         result = await db.execute(select(User).where(User.username == current_user.sub))
@@ -263,9 +276,9 @@ async def upload_file(
             user_id=user_id,
             original_name=original_filename,
             encrypted_name=final_encrypted_name,
-            encrypted_path=str(final_encrypted_path),
+            encrypted_path=storage_key,  # Теперь хранит S3 key или относительный путь
             original_size=len(file_content),
-            encrypted_size=final_encrypted_path.stat().st_size,
+            encrypted_size=encrypted_size,
             original_hash=original_hash,
             mime_type=mime_type,
             patient_id=params.patient_id,

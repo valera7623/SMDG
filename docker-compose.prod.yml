@@ -62,8 +62,21 @@ services:
       DEV_MODE: "false"
       REDIS_URL: "redis://:${REDIS_PASSWORD}@redis:6379/0"
       LOG_LEVEL: "WARNING"
+
+      # S3 / MinIO Configuration (в prod можно использовать внешний S3)
+      S3_ENABLED: "${S3_ENABLED:-false}"
+      S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-}"
+      S3_ACCESS_KEY: "${S3_ACCESS_KEY:-}"
+      S3_SECRET_KEY: "${S3_SECRET_KEY:-}"
+      S3_BUCKET_ENCRYPTED: "${S3_BUCKET_ENCRYPTED:-smdg-encrypted}"
+      S3_BUCKET_UPLOADS: "${S3_BUCKET_UPLOADS:-smdg-uploads}"
+      S3_BUCKET_DECRYPTED: "${S3_BUCKET_DECRYPTED:-smdg-decrypted}"
+      S3_REGION: "${S3_REGION:-us-east-1}"
+      S3_USE_SSL: "${S3_USE_SSL:-true}"
+
     volumes:
       # В prod НЕ монтируем исходники (./app) — образ уже содержит код
+      # Если S3_ENABLED=true, volumes для encrypted можно убрать
       - smdg_uploads:/app/uploads
       - smdg_encrypted:/app/encrypted
       - smdg_decrypted:/app/decrypted

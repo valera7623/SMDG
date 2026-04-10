@@ -2,7 +2,7 @@
 
 **Безопасная передача медицинских файлов с end-to-end шифрованием**
 
-SMDG — self-hosted решение для безопасного обмена медицинскими данными между врачами, клиниками и пациентами.  
+SMDG — self-hosted решение для безопасного обмена медицинскими данными между врачами, клиниками и пациентами.
 Все файлы шифруются на сервере, имеют временные защищённые ссылки и полный аудит действий.
 
 ---
@@ -20,6 +20,7 @@ SMDG — self-hosted решение для безопасного обмена �
 - Удобный веб-интерфейс + админ-панель
 - Rate limiting и защита от brute-force
 - Полная поддержка Docker + Docker Secrets
+- **Гибридное хранилище:** локальная ФС или **S3/MinIO** (Yandex Object Storage, Selectel, AWS S3)
 
 ---
 
@@ -65,7 +66,37 @@ docker compose up --build
 
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-📁 Структура проекта
+### 3. Запуск с MinIO (S3-режим)
+
+Для разработки с S3-совместимым хранилищем:
+
+```bash
+# В .env установите:
+S3_ENABLED=true
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin123
+
+# Запуск с MinIO
+docker compose --profile s3 up -d
+```
+
+MinIO Console будет доступна по адресу: http://localhost:9001
+
+### 4. Миграция данных из ФС в S3
+
+Если вы переходите с локального хранилища на S3:
+
+```bash
+# Проверка (dry-run)
+python scripts/migrate_to_s3.py --dry-run
+
+# Реальная миграция с удалением локальных файлов
+python scripts/migrate_to_s3.py --delete-local
+```
+
+---
+
+## 📁 Структура проекта
 
 smdg/
 ├── app/                          # Основной код приложения
@@ -97,10 +128,50 @@ app/core/config.py	        Все настройки (Pydantic Settings)
 app/core/security.py	    JWT, Argon2, 2FA
 app/crypto/crypto.py	    Шифрование/расшифровка age
 app/core/storage.py	        Управление временными файлами и TTL
+app/core/storage_backend.py	Абстракция хранилища (Local + S3/MinIO)
 app/core/audit.py	        Централизованный аудит
 app/core/cleanup.py	        Автоматическая очистка
+scripts/migrate_to_s3.py	Скрипт миграции ФС → S3
 
-🔐 Безопасность
+---
+
+## 💾 Режимы хранения файлов
+
+SMDG поддерживает два режима хранения зашифрованных файлов:
+
+| Режим                           | Описание                                   |         Когда использовать                      |
+|---------------------------------|--------------------------------------------|-------------------------------------------------|
+| **Локальная ФС** (по умолчанию) | Файлы хранятся в `/app/encrypted` на хосте | Dev, небольшие проекты, isolated серверы        |
+| **S3/MinIO**                    | Файлы хранятся в S3-совместимом хранилище  | Production, масштабирование, внешние облака     |
+
+### Поддерживаемые S3-провайдеры
+
+| Провайдер                  | Endpoint                                  | SSL| Примечание                     |
+|----------------------------|-------------------------------------------|----|--------------------------------|
+| **MinIO** (self-hosted)    | `http://minio:9000`                       | Нет| Dev/test, полный контроль      |
+| **Yandex Object Storage**  | `https://storage.yandexcloud.net`         | Да | Российские дата-центры, ФЗ-152 |
+| **Selectel Cloud Storage** | `https://s3.selcdn.ru`                    | Да | Российский облако              |
+| **AWS S3**                 | `https://s3.amazonaws.com`                | Да | Глобальный, не для ФЗ-152      |
+| **DigitalOcean Spaces**    | `https://<region>.digitaloceanspaces.com` | Да | Простая настройка              |
+
+### Конфигурация S3
+
+```bash
+# В .env или .env.prod:
+S3_ENABLED=true
+S3_ENDPOINT_URL=http://minio:9000          # или внешний S3 endpoint
+S3_ACCESS_KEY=your_access_key
+S3_SECRET_KEY=your_secret_key
+S3_BUCKET_ENCRYPTED=smdg-encrypted         # бакет для зашифрованных файлов
+S3_BUCKET_UPLOADS=smdg-uploads             # временный бакет для загрузок
+S3_BUCKET_DECRYPTED=smdg-decrypted         # временный бакет для расшифровок
+S3_REGION=us-east-1
+S3_USE_SSL=false                           # true для внешних S3 провайдеров
+```
+
+---
+
+## 🔐 Безопасность
 
 Все файлы шифруются до записи на диск
 Пароли — только Argon2

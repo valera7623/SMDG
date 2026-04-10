@@ -50,6 +50,27 @@ fi
 echo "✅ Приватный ключ age найден"
 
 # ────────────────────────────────────────────────────────────────
+# Инициализация S3/MinIO (если включено)
+# ────────────────────────────────────────────────────────────────
+if [ "${S3_ENABLED:-false}" = "true" ]; then
+    echo "🪣 S3 режим включён — инициализация бакетов..."
+    bash /app/scripts/init_s3_buckets.sh
+
+    echo "⏳ Ожидание готовности MinIO/S3..."
+    # Ждём S3 endpoint
+    for i in {1..30}; do
+        if curl -sf "${S3_ENDPOINT_URL:-http://minio:9000}/minio/health/live" >/dev/null 2>&1; then
+            echo "✅ S3 endpoint доступен"
+            break
+        fi
+        echo "S3 ещё не готов... ($i/30)"
+        sleep 2
+    done
+else
+    echo "ℹ️  S3 отключён — используется локальное хранилище"
+fi
+
+# ────────────────────────────────────────────────────────────────
 # Ждём PostgreSQL
 # ────────────────────────────────────────────────────────────────
 echo "⏳ Waiting for PostgreSQL port 5432..."
@@ -89,15 +110,15 @@ CURRENT_TIME=$(date +%s 2>/dev/null || echo "0")
 if [ -f "$LAST_ROTATION_FILE" ]; then
     LAST_ROTATION=$(cat "$LAST_ROTATION_FILE" 2>/dev/null || echo "1970-01-01")
     LAST_TIME=$(date -d "$LAST_ROTATION" +%s 2>/dev/null || echo "0")
-    
+
     DAYS_SINCE=$(( (CURRENT_TIME - LAST_TIME) / 86400 ))
-    
+
     if [ "$DAYS_SINCE" -ge "$ROTATION_INTERVAL_DAYS" ]; then
         echo "Прошло $DAYS_SINCE дней → ротация"
-        
+
         # Создаём директорию бэкапов
         mkdir -p /app/backups/keys
-        
+
         # Запускаем ротацию (без --no-backup)
         python -m app.cli rotate-keys >> /app/audit_logs/key_rotation.log 2>&1 \
             && echo "Ротация OK" && date --iso-8601=seconds > "$LAST_ROTATION_FILE" \
@@ -132,7 +153,18 @@ fi
 echo "✅ Директория бэкапов $BACKUP_DIR готова"
 
 # ────────────────────────────────────────────────────────────────
+# Информация о режиме хранилища
+# ────────────────────────────────────────────────────────────────
+if [ "${S3_ENABLED:-false}" = "true" ]; then
+    echo "🪣 Режим хранилища: S3/MinIO (${S3_ENDPOINT_URL:-unknown})"
+    echo "   Бакет encrypted: ${S3_BUCKET_ENCRYPTED:-smdg-encrypted}"
+else
+    echo "💾 Режим хранилища: Локальная файловая система"
+    echo "   Директория encrypted: /app/encrypted"
+fi
+
+# ────────────────────────────────────────────────────────────────
 # Запуск приложения
 # ────────────────────────────────────────────────────────────────
 echo "🖥️ Starting Uvicorn..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info 
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info

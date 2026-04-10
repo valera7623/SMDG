@@ -46,6 +46,21 @@ class Settings(BaseSettings):
     # DICOM-сигнатуры (первые байты файла)
     DICOM_MAGIC: bytes = b'\x00\x00\x00\x00DICM'  # offset 128, "DICM"
 
+    # S3 / MinIO Configuration (опционально)
+    s3_endpoint_url: str | None = None  # e.g. "http://minio:9000" или AWS S3 URL
+    s3_access_key: str | None = None
+    s3_secret_key: str | None = None
+    s3_bucket_encrypted: str = "smdg-encrypted"
+    s3_bucket_uploads: str = "smdg-uploads"
+    s3_bucket_decrypted: str = "smdg-decrypted"
+    s3_region: str = "us-east-1"
+    s3_use_ssl: bool = False
+    s3_enabled: bool = False
 
-    
+    @property
+    def is_s3_enabled(self) -> bool:
+        """Проверяет, включён ли S3 режим."""
+        return self.s3_enabled and bool(self.s3_endpoint_url) and bool(self.s3_access_key)
+
+
 settings = Settings()

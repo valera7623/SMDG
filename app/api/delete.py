@@ -4,12 +4,11 @@ from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core import ENCRYPTED_DIR, audit_logger
+from app.core import ENCRYPTED_DIR, audit_logger, encrypted_storage
 from app.core.auth import get_current_admin, TokenData
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from pathlib import Path
-import os
 
 router = APIRouter()
 
@@ -35,36 +34,35 @@ async def _delete_file(
     print(f"🗑️ Запрос на удаление: {filename} от {current_user.sub} ({current_user.role})")
 
     safe_filename = sanitize_filename(filename)
-    file_path = ENCRYPTED_DIR / safe_filename
 
-    # Автоматически добавляем .age, если не указано
-    if not file_path.exists() and not safe_filename.endswith('.age'):
-        file_path = ENCRYPTED_DIR / f"{safe_filename}.age"
+    # Проверяем существование через хранилище
+    storage_key = safe_filename
+    if not await encrypted_storage.exists(storage_key) and not safe_filename.endswith('.age'):
+        storage_key = f"{safe_filename}.age"
         safe_filename = f"{safe_filename}.age"
 
-    if not file_path.exists() or not file_path.is_file():
+    if not await encrypted_storage.exists(storage_key):
         raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
 
-    # Информация для аудита — с разбором типов ошибок stat()
+    # Информация для аудита
     file_info = {
         "filename": safe_filename,
-        "path": str(file_path),
+        "path": storage_key,
         "size": 0,
         "hash": "unknown"
     }
 
     try:
-        stat = file_path.stat()
-        file_info["size"] = stat.st_size
-        file_info["hash"] = await calculate_hash_async(file_path)
-    except FileNotFoundError as e:
-        print(f"⚠️ Не удалось получить информацию о файле: {e}")
-    except PermissionError as e:
-        print(f"⚠️ Не удалось получить информацию о файле: {e}")
-        file_info["size"] = "permission_denied"
+        metadata = await encrypted_storage.stat(storage_key)
+        if metadata:
+            file_info["size"] = metadata.size
+            # Для хэша скачиваем и считаем
+            temp_path = ENCRYPTED_DIR / f"temp_hash_{safe_filename}"
+            await encrypted_storage.download(storage_key, temp_path)
+            file_info["hash"] = await calculate_hash_async(temp_path)
+            temp_path.unlink(missing_ok=True)
     except Exception as e:
         print(f"⚠️ Не удалось получить информацию о файле: {e}")
-        file_info["size"] = f"error: {e}"
 
     # Требуется подтверждение
     if not confirm:
@@ -82,7 +80,7 @@ async def _delete_file(
         }
 
     try:
-        os.remove(file_path)
+        await encrypted_storage.delete(storage_key)
 
         audit_logger.log_operation(
             action="delete",
@@ -93,16 +91,13 @@ async def _delete_file(
             success=True
         )
 
-        # timestamp: заполняется если файл всё ещё существует после удаления
-        timestamp = os.path.getmtime(str(file_path)) if os.path.exists(str(file_path)) else None
-
         return {
             "message": "✅ Файл успешно удален",
             "filename": safe_filename,
             "size": file_info["size"],
             "hash": file_info["hash"],
             "audit_logged": True,
-            "timestamp": timestamp,
+            "timestamp": None,
         }
 
     except Exception as e:

@@ -8,7 +8,7 @@ from pathlib import Path
 import uuid
 import logging
 
-from app.core import ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH, audit_logger
+from app.core import ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH, audit_logger, encrypted_storage
 from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename
@@ -77,17 +77,33 @@ async def download_by_token(
         logger.error(f"[DOWNLOAD TOKEN] ❌ Файл с ID {link.file_id} не найден")
         raise HTTPException(status_code=404, detail="Файл не найден")
 
-    encrypted_path = Path(file_record.encrypted_path)
+    # encrypted_path теперь может быть S3 key или локальным путём
+    storage_key = file_record.encrypted_path
     decrypted_path = DECRYPTED_DIR / f"{uuid.uuid4()}_{file_record.original_name}"
 
     logger.info(f"[DOWNLOAD TOKEN] Расшифровываем: {file_record.original_name}")
 
     try:
+        # Скачиваем из хранилища во временную директорию для расшифровки
+        encrypted_local_path = DECRYPTED_DIR / f"enc_{uuid.uuid4()}_{file_record.encrypted_name}"
+
+        await encrypted_storage.download(
+            key=storage_key,
+            destination_path=encrypted_local_path
+        )
+
         await crypto_manager.decrypt_file(
-            encrypted_path=encrypted_path,
+            encrypted_path=encrypted_local_path,
             private_key_path=PRIVATE_KEY_PATH,
             output_path=decrypted_path
         )
+
+        # Удаляем временный зашифрованный файл сразу после расшифровки
+        try:
+            if encrypted_local_path.exists():
+                encrypted_local_path.unlink()
+        except Exception as e:
+            logger.warning(f"Не удалось удалить временный зашифрованный файл: {e}")
 
         # Увеличиваем счётчик
         link.downloads_count += 1
@@ -127,11 +143,6 @@ async def download_file_post(
     if not safe_filename.endswith('.age'):
         safe_filename += '.age'
 
-    file_path = ENCRYPTED_DIR / safe_filename
-
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
-
     result = await db.execute(select(File).where(File.encrypted_name == safe_filename))
     file_record = result.scalar_one_or_none()
 
@@ -141,11 +152,27 @@ async def download_file_post(
     decrypted_path = DECRYPTED_DIR / f"{uuid.uuid4()}_{file_record.original_name}"
 
     try:
+        # Скачиваем из хранилища
+        storage_key = file_record.encrypted_path
+        encrypted_local_path = DECRYPTED_DIR / f"enc_{uuid.uuid4()}_{safe_filename}"
+
+        await encrypted_storage.download(
+            key=storage_key,
+            destination_path=encrypted_local_path
+        )
+
         await crypto_manager.decrypt_file(
-            encrypted_path=file_path,
+            encrypted_path=encrypted_local_path,
             private_key_path=PRIVATE_KEY_PATH,
             output_path=decrypted_path
         )
+
+        # Удаляем временный зашифрованный файл
+        try:
+            if encrypted_local_path.exists():
+                encrypted_local_path.unlink()
+        except Exception as e:
+            logger.warning(f"Не удалось удалить временный зашифрованный файл: {e}")
 
         background_tasks.add_task(delete_file_after_response, decrypted_path)
 

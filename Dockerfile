@@ -22,7 +22,12 @@ RUN pip install --no-cache-dir "setuptools<81"
 
 COPY . .
 
-RUN mkdir -p /app/uploads /app/encrypted /app/decrypted /app/keys /app/certs
+# Создаём директории для данных
+RUN mkdir -p /app/uploads /app/encrypted /app/decrypted /app/keys /app/certs /app/scripts
+
+# Делаем скрипты исполняемыми
+RUN chmod +x /app/entrypoint.sh /app/scripts/*.sh 2>/dev/null || true
+RUN chmod +x /app/scripts/*.py 2>/dev/null || true
 
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh

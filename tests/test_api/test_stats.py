@@ -269,7 +269,7 @@ class TestGetStorageStats:
     """Тесты для _get_storage_stats."""
 
     def test_returns_required_keys(self):
-        from app.api.stats import _get_storage_stats
+        from app.api.stats import _get_storage_stats_sync as _get_storage_stats
 
         result = _get_storage_stats()
 
@@ -279,7 +279,7 @@ class TestGetStorageStats:
         assert "total_size_gb" in result
 
     def test_aggregates_directory_sizes(self, tmp_path):
-        from app.api.stats import _get_storage_stats
+        from app.api.stats import _get_storage_stats_sync as _get_storage_stats
 
         enc_dir  = tmp_path / "enc";  enc_dir.mkdir()
         dec_dir  = tmp_path / "dec";  dec_dir.mkdir()
@@ -303,7 +303,7 @@ class TestGetStorageStats:
         assert result["total_size_mb"] >= 0
 
     def test_nonexistent_dirs_count_as_zero(self, tmp_path):
-        from app.api.stats import _get_storage_stats
+        from app.api.stats import _get_storage_stats_sync as _get_storage_stats
 
         missing = tmp_path / "no_such_dir"
 
@@ -317,7 +317,7 @@ class TestGetStorageStats:
         assert result["total_size_bytes"] == 0
 
     def test_directory_names_present(self):
-        from app.api.stats import _get_storage_stats
+        from app.api.stats import _get_storage_stats_sync as _get_storage_stats
 
         result = _get_storage_stats()
 
@@ -343,7 +343,7 @@ class TestGetFilesStats:
         return f
 
     def test_encrypted_dir_not_exists(self, tmp_path):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         missing = tmp_path / "missing"
 
@@ -356,7 +356,7 @@ class TestGetFilesStats:
         assert result["encrypted"]["total_size_bytes"] == 0
 
     def test_counts_encrypted_files(self, tmp_path):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc_dir = tmp_path / "enc"; enc_dir.mkdir()
         (enc_dir / "a.age").write_bytes(b"A" * 100)
@@ -371,7 +371,7 @@ class TestGetFilesStats:
         assert result["encrypted"]["total_size_bytes"] == 300
 
     def test_skips_non_files(self, tmp_path):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc_dir = tmp_path / "enc"; enc_dir.mkdir()
         subdir = enc_dir / "subdir"; subdir.mkdir()
@@ -387,7 +387,7 @@ class TestGetFilesStats:
 
     def test_files_in_recent_list(self, tmp_path):
         """Последние 10 файлов в списке."""
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc_dir = tmp_path / "enc"; enc_dir.mkdir()
         for i in range(15):
@@ -403,7 +403,7 @@ class TestGetFilesStats:
         assert len(result["encrypted"]["files"]) <= 10
 
     def test_stat_exception_skips_file(self):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         mock_enc_dir = Mock(spec=Path)
         mock_enc_dir.exists.return_value = True
@@ -429,7 +429,7 @@ class TestGetFilesStats:
         assert result["encrypted"]["total_size_bytes"] == 512
 
     def test_temporary_stats_included(self, tmp_path):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc_dir = tmp_path / "enc"; enc_dir.mkdir()
 
@@ -442,7 +442,7 @@ class TestGetFilesStats:
 
     def test_file_storage_no_get_stats(self, tmp_path):
         """Если у file_storage нет get_stats — возвращаем {}."""
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc_dir = tmp_path / "enc"; enc_dir.mkdir()
 
@@ -674,7 +674,7 @@ class TestIntegration:
 
     @pytest.mark.integration
     def test_get_files_stats_with_mixed_extensions(self, tmp_path):
-        from app.api.stats import _get_files_stats
+        from app.api.stats import _get_files_stats_sync as _get_files_stats
 
         enc = tmp_path / "enc"; enc.mkdir()
         files = [

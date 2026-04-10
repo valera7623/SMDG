@@ -2,9 +2,10 @@
 from pathlib import Path
 import asyncio
 from app.core.storage import FileStorageManager
+from app.core.storage_backend import StorageBackend, StorageFactory
 from .cleanup import FileCleanupManager
 from .audit import AuditLogger
-from .config import settings  
+from .config import settings
 from .constants import BASE_DIR, UPLOAD_DIR, ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH
 
 # Инициализация аудит-логгера (первым, чтобы другие компоненты могли его использовать)
@@ -41,9 +42,29 @@ PRIVATE_KEY_PATH = BASE_DIR / "keys" / "age.key"
 # TTL для временных файлов (в секундах, 1 час по умолчанию)
 TEMP_TTL_SECONDS = 3600
 
+# Инициализация хранилища через фабрику
+# encrypted_storage — основной бэкенд для зашифрованных файлов
+encrypted_storage: StorageBackend = StorageFactory.create_backend(
+    s3_enabled=settings.s3_enabled,
+    s3_endpoint_url=settings.s3_endpoint_url,
+    s3_access_key=settings.s3_access_key,
+    s3_secret_key=settings.s3_secret_key,
+    s3_bucket=settings.s3_bucket_encrypted,
+    s3_region=settings.s3_region,
+    s3_use_ssl=settings.s3_use_ssl,
+    local_base_dir=ENCRYPTED_DIR,
+)
+
 # Глобальные менеджеры
 file_storage = FileStorageManager(DECRYPTED_DIR, TEMP_TTL_SECONDS)
-cleanup_manager = FileCleanupManager(ENCRYPTED_DIR)
+cleanup_manager = FileCleanupManager(ENCRYPTED_DIR, storage_backend=encrypted_storage)
+
+
+async def cleanup_storage():
+    """Очистка ресурсов хранилища (для S3 клиента)."""
+    if hasattr(encrypted_storage, 'close'):
+        await encrypted_storage.close()
+
 
 # Приватный и публичный ключ (инициализируются при старте)
 _PUBLIC_KEY = None
@@ -96,7 +117,9 @@ __all__ = [
     'get_public_key',
     'file_storage',
     'cleanup_manager',
+    'encrypted_storage',
+    'cleanup_storage',
     'audit_logger',
     'init_keys',
-    'settings'  
+    'settings'
 ]

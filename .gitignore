@@ -31,3 +31,5 @@ secrets/
 secrets/*
 !secrets/.gitkeep  
 .zip
+.age
+*.age

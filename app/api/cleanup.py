@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from pathlib import Path
 from time import time
 
-from app.core import DECRYPTED_DIR, file_storage, audit_logger, cleanup_manager
+from app.core import DECRYPTED_DIR, file_storage, audit_logger, cleanup_manager, encrypted_storage
 from app.core.auth import get_current_admin, TokenData
 from app.core.constants import ENCRYPTED_DIR
 from app.core.database import get_db
@@ -139,23 +139,18 @@ async def force_cleanup(
         errors.append(f"decrypted: {str(e)}")
         logger.error(f"Ошибка очистки decrypted: {e}")
 
-    # 2. Очистка encrypted (зашифрованные файлы)
+    # 2. Очистка encrypted (зашифрованные файлы через StorageBackend)
     try:
-        encrypted_path = Path(str(ENCRYPTED_DIR))
-        if not encrypted_path.exists():
-            pass
-        else:
-            for file_path in encrypted_path.iterdir():
-                if file_path.is_file():
-                    try:
-                        file_path.unlink()
-                        deleted["encrypted"] += 1
-                        logger.info(f"🗑️ Удалён зашифрованный файл: {file_path.name}")
-                    except Exception as e:
-                        errors.append(f"encrypted/{file_path.name}: {str(e)}")
-                        logger.error(f"Не удалось удалить {file_path}: {e}")
+        objects = await encrypted_storage.list_objects()
+        keys_to_delete = [obj.key for obj in objects]
+
+        if keys_to_delete:
+            result_enc = await encrypted_storage.delete_many(keys_to_delete)
+            deleted["encrypted"] = result_enc.get("deleted_count", 0)
+            if result_enc.get("errors"):
+                errors.extend(result_enc["errors"])
     except Exception as e:
-        errors.append(f"encrypted directory error: {str(e)}")
+        errors.append(f"encrypted: {str(e)}")
         logger.error(f"Ошибка очистки encrypted: {e}")
 
     # Логирование в аудит

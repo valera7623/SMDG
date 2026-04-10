@@ -12,7 +12,8 @@ from app.core.auth import get_current_admin
 from app.core.auth_utils import TokenData
 from app.core import (
     ENCRYPTED_DIR, DECRYPTED_DIR, UPLOAD_DIR,
-    file_storage, cleanup_manager, audit_logger
+    file_storage, cleanup_manager, audit_logger,
+    encrypted_storage
 )
 
 logger = logging.getLogger(__name__)
@@ -87,9 +88,15 @@ def _get_system_stats() -> Dict[str, Any]:
     return stats
 
 
-def _get_storage_stats() -> Dict[str, Any]:
+async def _get_storage_stats() -> Dict[str, Any]:
+    """Получить статистику хранилища (async версия)."""
+    try:
+        storage_backend_stats = await encrypted_storage.get_storage_stats()
+    except Exception as e:
+        logger.warning(f"Ошибка получения статистики хранилища: {e}")
+        storage_backend_stats = {"error": str(e)}
+
     dirs = {
-        "encrypted": ENCRYPTED_DIR,
         "decrypted": DECRYPTED_DIR,
         "uploads": UPLOAD_DIR,
         "keys": Path("keys"),
@@ -97,6 +104,10 @@ def _get_storage_stats() -> Dict[str, Any]:
     }
     storage = {}
     total_size = 0
+
+    storage["encrypted"] = storage_backend_stats
+    if isinstance(storage_backend_stats, dict):
+        total_size += storage_backend_stats.get("total_size_bytes", 0)
 
     for name, path in dirs.items():
         d = _safe_directory_stats(path)
@@ -111,29 +122,52 @@ def _get_storage_stats() -> Dict[str, Any]:
     }
 
 
-def _get_files_stats() -> Dict[str, Any]:
+def _get_storage_stats_sync() -> Dict[str, Any]:
+    """Синхронная обёртка для обратной совместимости (тесты)."""
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return {"directories": {}, "total_size_bytes": 0, "total_size_mb": 0, "total_size_gb": 0}
+        return loop.run_until_complete(_get_storage_stats())
+    except RuntimeError:
+        return asyncio.run(_get_storage_stats())
+
+
+async def _get_files_stats() -> Dict[str, Any]:
+    """Получить статистику файлов (async версия)."""
     encrypted = []
-    if ENCRYPTED_DIR.exists():
-        for f in ENCRYPTED_DIR.iterdir():
-            if f.is_file():
-                try:
-                    stat = f.stat()
-                    encrypted.append({
-                        "name": f.name,
-                        "size": stat.st_size,
-                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
-                    })
-                except Exception:
-                    pass
+    try:
+        objects = await encrypted_storage.list_objects()
+        for obj in objects:
+            encrypted.append({
+                "name": obj.key,
+                "size": obj.size,
+                "modified": datetime.fromtimestamp(obj.last_modified).isoformat() if obj.last_modified else "unknown",
+            })
+    except Exception as e:
+        logger.warning(f"Ошибка получения списка зашифрованных файлов: {e}")
 
     return {
         "encrypted": {
             "count": len(encrypted),
             "total_size_bytes": sum(f["size"] for f in encrypted),
-            "files": sorted(encrypted, key=lambda x: x["modified"], reverse=True)[:10],
+            "files": sorted(encrypted, key=lambda x: x["modified"], reverse=True)[:10] if encrypted else [],
         },
         "temporary": file_storage.get_stats() if hasattr(file_storage, "get_stats") else {},
     }
+
+
+def _get_files_stats_sync() -> Dict[str, Any]:
+    """Синхронная обёртка для обратной совместимости (тесты)."""
+    import asyncio
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            return {"encrypted": {"count": 0, "total_size_bytes": 0, "files": []}, "temporary": {}}
+        return loop.run_until_complete(_get_files_stats())
+    except RuntimeError:
+        return asyncio.run(_get_files_stats())
 
 
 def _get_cleanup_stats() -> Dict[str, Any]:
@@ -158,8 +192,8 @@ async def get_system_stats(current_user: TokenData = Depends(get_current_admin))
         stats = {
             "timestamp": datetime.now().isoformat(),
             "system": _get_system_stats(),
-            "storage": _get_storage_stats(),
-            "files": _get_files_stats(),
+            "storage": await _get_storage_stats(),
+            "files": await _get_files_stats(),
             "cleanup": _get_cleanup_stats(),
         }
 
@@ -169,11 +203,10 @@ async def get_system_stats(current_user: TokenData = Depends(get_current_admin))
             "health": "healthy",
         }
 
-        # ← ИСПРАВЛЕНО: передаём строку current_user.sub
         audit_logger.log_operation(
             action="system_stats_viewed",
             filename="",
-            user=current_user.sub,          # ← важно!
+            user=current_user.sub,
             reason="Просмотр статистики системы",
             success=True
         )

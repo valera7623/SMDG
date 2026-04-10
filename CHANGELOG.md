@@ -2,12 +2,40 @@
 
 Все значимые изменения в проекте **Secure Medical Data Gateway (SMDG)** будут документироваться в этом файле.
 
-Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),  
+Формат основан на [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 версионирование соответствует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
 ## [Unreleased]
+
+## [2.0.0] - 2026-04-10
+
+### Added
+- **Гибридное хранилище:** поддержка S3/MinIO для хранения зашифрованных файлов
+- **StorageBackend абстракция:** `LocalStorageBackend` + `S3StorageBackend` через `StorageFactory`
+- **MinIO сервис** в docker-compose (запускается через `--profile s3`)
+- **Скрипт миграции:** `scripts/migrate_to_s3.py` для переноса данных из ФС в S3
+- **Скрипт инициализации:** `scripts/init_s3_buckets.sh` для создания S3 бакетов
+- **Поддержка S3-провайдеров:** MinIO, Yandex Object Storage, Selectel, AWS S3, DigitalOcean Spaces
+- **S3 настройки в .env:** `S3_ENABLED`, `S3_ENDPOINT_URL`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET_*`
+- **Интеграция API:** upload, download, delete, list, stats, cleanup теперь работают с обоими режимами
+- **FileCleanupManager** обновлён для работы с StorageBackend
+- **entrypoint.sh** автоматически инициализирует S3 бакеты при старте
+- **aiobotocore** зависимость для асинхронной работы с S3
+- **39 новых тестов:** 22 для LocalStorageBackend + 17 для S3StorageBackend
+
+### Changed
+- `encrypted_path` в БД теперь хранит S3 object key вместо локального пути
+- `_get_storage_stats()` и `_get_files_stats()` стали async функциями
+- `FileCleanupManager` принимает опциональный `storage_backend` параметр
+
+### Deprecated
+- Прямое использование `ENCRYPTED_DIR` в API — используйте `encrypted_storage` вместо этого
+
+### Security
+- S3 bucket policy автоматически устанавливается в dev mode
+- Все S3 операции используют HTTPS в production (`S3_USE_SSL=true`)
 
 ## [1.0.0] - 2026-04-05
 

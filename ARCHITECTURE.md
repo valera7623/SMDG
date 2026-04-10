@@ -225,12 +225,87 @@ rate_limit_exceeded_total      Counter                 "Количество п�
 Пример запроса:
 curl -k https://localhost/metrics
 
-## 9. Roadmap (будущие расширения)
+## 9. Архитектура хранилища (Storage Backend)
 
-Поддержка S3/MinIO
+### 9.1 Обзор
+
+SMDG v2.0 поддерживает **гибридное хранилище** — абстракцию `StorageBackend` которая позволяет переключаться между локальной файловой системой и S3-совместимыми хранилищами **без изменения кода приложения**.
+
+### 9.2 Компоненты
+
+```
+StorageBackend (ABC)
+├── upload(key, file_path, content_type) → ObjectMetadata
+├── download(key, destination_path) → Path
+├── download_bytes(key) → bytes
+├── delete(key) → bool
+├── delete_many(keys) → Dict
+├── exists(key) → bool
+├── stat(key) → ObjectMetadata
+├── list_objects(prefix) → List[ObjectMetadata]
+└── get_storage_stats() → Dict
+```
+
+### 9.3 Реализации
+
+| Класс                 | Описание              | Когда использовать                       |
+|-----------------------|-----------------------|------------------------------------------|
+| `LocalStorageBackend` | Обёртка над `pathlib` | Dev, small deployments, isolated servers |
+| `S3StorageBackend`    | aiobotocore клиент    | Production, cloud, scalability           |
+
+### 9.4 StorageFactory
+
+Фабрика автоматически выбирает бэкенд на основе конфигурации:
+
+```python
+encrypted_storage = StorageFactory.create_backend(
+    s3_enabled=settings.s3_enabled,
+    s3_endpoint_url=settings.s3_endpoint_url,
+    s3_access_key=settings.s3_access_key,
+    s3_secret_key=settings.s3_secret_key,
+    s3_bucket=settings.s3_bucket_encrypted,
+    local_base_dir=ENCRYPTED_DIR,
+)
+```
+
+### 9.5 Поток данных (Upload)
+
+```
+Client → Upload API → ClamAV → age Encrypt → StorageBackend.upload() → Storage
+                                                          │
+                                    ┌─────────────────────┴─────────────────────┐
+                                    │                                           │
+                            Local FS                                      S3/MinIO
+                       /app/encrypted/                           smdg-encrypted bucket
+                       encrypted_path = key                      encrypted_path = object_key
+```
+
+### 9.6 Поток данных (Download)
+
+```
+Client ← FileResponse ← age Decrypt ← StorageBackend.download() ← Storage
+                               │
+                    DECRYPTED_DIR (temp)
+                    TTL-based auto-cleanup
+```
+
+### 9.7 Поддерживаемые S3-провайдеры
+
+| Провайдер              | Endpoint                                    | SSL | ФЗ-152            |
+|------------------------|---------------------------------------------|-----|-------------------|
+| MinIO (self-hosted)    | `http://minio:9000`                         | Нет | ✅ (свой сервер)  |
+| Yandex Object Storage  | `https://storage.yandexcloud.net`           | Да  | ✅                |
+| Selectel Cloud Storage | `https://s3.selcdn.ru`                      | Да  | ✅                |
+| AWS S3                 | `https://s3.amazonaws.com`                  | Да  | ❌                |
+| DigitalOcean Spaces    | `https://<region>.digitaloceanspaces.com`   | Да  | ❌                |
+
+## 10. Roadmap (будущие расширения)
+
+~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0
 Multi-tenancy (организации)
 Webhook-уведомления
 Встроенный DICOM-viewer
 Экспорт аудита в PDF/Excel
+S3 Lifecycle Policies вместо FileCleanupManager
 
 Конец документа.

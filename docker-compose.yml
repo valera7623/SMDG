@@ -54,11 +54,22 @@ services:
       - jwt_secret_key          # если хочешь вынести
       - postgres_password       # если smdg тоже должен знать пароль БД
     environment:
-      
+
       DEV_MODE: "${DEV_MODE:-true}"
-      
+
       REDIS_URL: "redis://redis:6379/0"
-      
+
+      # S3 / MinIO Configuration
+      S3_ENABLED: "${S3_ENABLED:-false}"
+      S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-http://minio:9000}"
+      S3_ACCESS_KEY: "${S3_ACCESS_KEY:-minioadmin}"
+      S3_SECRET_KEY: "${S3_SECRET_KEY:-minioadmin123}"
+      S3_BUCKET_ENCRYPTED: "${S3_BUCKET_ENCRYPTED:-smdg-encrypted}"
+      S3_BUCKET_UPLOADS: "${S3_BUCKET_UPLOADS:-smdg-uploads}"
+      S3_BUCKET_DECRYPTED: "${S3_BUCKET_DECRYPTED:-smdg-decrypted}"
+      S3_REGION: "${S3_REGION:-us-east-1}"
+      S3_USE_SSL: "${S3_USE_SSL:-false}"
+
     volumes:
       - ./uploads:/app/uploads
       - ./encrypted:/app/encrypted
@@ -117,9 +128,37 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 180s   
+      start_period: 180s
     networks:
       - backend
+
+  # ---------------------------------------------------------------------------
+  # MinIO — S3-совместимое объектное хранилище (для dev/test)
+  # В prod можно заменить на Yandex Object Storage, Selectel, AWS S3
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    container_name: smdg-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Console UI
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin123}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend
+    profiles:
+      - s3  # Запускается только с: docker compose --profile s3 up
 
 
 
@@ -220,6 +259,7 @@ volumes:
   prometheus_data:
   pgdata:
   clamav_data:
+  minio_data:
   smdg_encrypted:
   smdg_uploads:
   smdg_decrypted:
