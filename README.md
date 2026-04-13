@@ -22,6 +22,8 @@ SMDG — self-hosted решение для безопасного обмена �
 - Полная поддержка Docker + Docker Secrets
 - **Гибридное хранилище:** локальная ФС или **S3/MinIO** (Yandex Object Storage, Selectel, AWS S3)
 - **Webhook-уведомления** о событиях (upload, download, delete) с HMAC подписью и retry
+- **DICOM Viewer** — просмотр медицинских изображений прямо в браузере (pydicom + numpy + PIL)
+- **DICOMweb API** — QIDO-RS + WADO-RS совместимые эндпоинты
 
 ---
 
@@ -202,6 +204,7 @@ Prometheus metrics	         /metrics	                       Метрики дл�
 API.md	                                Концептуальный гайд по API + ссылки на OpenAPI
 ARCHITECTURE.md	                        Архитектура системы, диаграммы, ERD
 DEPLOYMENT.md	                        Развёртывание в production
+DICOM_VIEWER.md                         DICOM-вьюер
 SECURITY.md	                            Политика безопасности, threat model
 COMPLIANCE_TEMPLATE.md	                Шаблон соответствия ФЗ-152/GDPR
 TESTING.md	                            Стратегия тестирования, coverage (93%)

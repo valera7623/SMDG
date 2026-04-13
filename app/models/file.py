@@ -26,6 +26,7 @@ class File(Base):
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     links = relationship('FileLink', back_populates='file', cascade='all, delete-orphan')
+    view_tokens = relationship('DicomViewToken', back_populates='file', cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<File id={self.id} original_name={self.original_name} patient_id={self.patient_id}>'

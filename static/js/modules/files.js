@@ -40,13 +40,18 @@ function _createFileItem(file) {
     const originalName = file.original_name
         ?? encryptedName.replace(/^[a-f0-9]+_/, '').replace(/\.age$/, '');
 
+    // Определяем DICOM-файл
+    const isDicom = file.mime_type === 'application/dicom'
+        || file.original_name?.match(/\.(dcm|dicom)$/i);
+
     const item = document.createElement('div');
     item.className = 'file-item';
 
     const infoDiv = document.createElement('div');
     infoDiv.className = 'file-info';
+    const fileIcon = isDicom ? '🔬' : '📄';
     infoDiv.innerHTML = `
-        <div class="file-name">📄 ${originalName}</div>
+        <div class="file-name">${fileIcon} ${originalName}</div>
         <div class="file-size">📏 ${formatBytes(file.size)}</div>
         ${file.patient_id ? `<div class="patient-id">🆔 Пациент: ${file.patient_id}</div>` : ''}
         <div class="file-id">🔐 <small>${encryptedName}</small></div>
@@ -54,6 +59,15 @@ function _createFileItem(file) {
 
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'file-actions';
+
+    // Кнопка «Просмотр» для DICOM-файлов (если viewer включён)
+    if (isDicom && window.__DICOM_VIEWER_ENABLED__) {
+        const btnView = document.createElement('button');
+        btnView.className = 'btn-info btn-small dicom-view-btn';
+        btnView.textContent = '👁️ Просмотр';
+        btnView.addEventListener('click', () => openDicomViewer(file.id, originalName));
+        actionsDiv.appendChild(btnView);
+    }
 
     if (file.download_url) {
         const link = document.createElement('a');
@@ -296,6 +310,120 @@ export function copyToClipboard(inputEl) {
         inputEl.select();
         document.execCommand('copy');
         showNotification('Ссылка скопирована!', 'success');
+    }
+}
+
+// ── DICOM Viewer ─────────────────────────────────────────────────────────────
+
+/**
+ * Открывает DICOM viewer в модальном окне с iframe.
+ * Запрашивает у бэкенда view-токен и встраивает viewer через iframe.
+ */
+export async function openDicomViewer(fileId, fileName) {
+    try {
+        const response = await fetch(`/api/dicom/view-url?file_id=${fileId}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        _showDicomViewerModal(data.view_url, data.file_name || fileName, data.expires_at);
+    } catch (error) {
+        showNotification(`Ошибка открытия viewer: ${error.message}`, 'error');
+    }
+}
+
+/**
+ * Показывает модальное окно с iframe для DICOM viewer.
+ */
+function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
+    // Проверяем, нет ли уже открытого viewer
+    const existing = document.getElementById('dicomViewerModal');
+    if (existing) existing.remove();
+
+    const expiresLabel = expiresAt
+        ? new Date(expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        : '—';
+
+    const modal = document.createElement('div');
+    modal.id = 'dicomViewerModal';
+    modal.className = 'dicom-modal';
+    modal.innerHTML = `
+        <div class="dicom-modal-header">
+            <div class="dicom-modal-title">
+                <span class="dicom-modal-icon">🔬</span>
+                <span class="dicom-modal-filename">${escapeHtml(fileName)}</span>
+                <span class="dicom-modal-expires" title="Сессия истекает в ${expiresLabel}">⏰ ${expiresLabel}</span>
+            </div>
+            <div class="dicom-modal-actions">
+                <button class="dicom-modal-btn dicom-modal-btn-close" id="dicomModalClose" title="Закрыть">
+                    ✕ Закрыть
+                </button>
+            </div>
+        </div>
+        <div class="dicom-modal-body">
+            <div class="dicom-modal-loading" id="dicomModalLoading">
+                <div class="dicom-modal-spinner"></div>
+                <p>Загрузка DICOM viewer...</p>
+            </div>
+            <iframe
+                id="dicomModalIframe"
+                src="${iframeUrl}"
+                class="dicom-modal-iframe"
+                allow="fullscreen"
+                referrerpolicy="no-referrer"
+                style="opacity: 0;"
+            ></iframe>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    // Закрытие
+    const closeBtn = modal.querySelector('#dicomModalClose');
+    closeBtn.addEventListener('click', () => _closeDicomViewerModal());
+
+    // Закрытие по Escape
+    const onKeydown = (e) => {
+        if (e.key === 'Escape') {
+            _closeDicomViewerModal();
+            document.removeEventListener('keydown', onKeydown);
+        }
+    };
+    document.addEventListener('keydown', onKeydown);
+
+    // Закрытие по клику на overlay
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) _closeDicomViewerModal();
+    });
+
+    // Когда iframe загрузится — убираем loader
+    const iframe = modal.querySelector('#dicomModalIframe');
+    const loading = modal.querySelector('#dicomModalLoading');
+    iframe.addEventListener('load', () => {
+        iframe.style.opacity = '1';
+        loading.style.display = 'none';
+    });
+
+    // Таймаут на случай если iframe не загрузился
+    setTimeout(() => {
+        if (loading.style.display !== 'none') {
+            loading.innerHTML = '<p class="dicom-modal-error">Viewer не загрузился. <a href="#" onclick="location.reload()">Обновить</a></p>';
+        }
+    }, 15000);
+}
+
+function _closeDicomViewerModal() {
+    const modal = document.getElementById('dicomViewerModal');
+    if (modal) {
+        modal.remove();
+        document.body.style.overflow = '';
     }
 }
 

@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.file import File
 from app.models.file_link import FileLink
 from app.models.webhook import WebhookSubscription, WebhookDelivery
+from app.models.dicom_view_token import DicomViewToken
 
 __all__ = [
     'User',
@@ -11,4 +12,5 @@ __all__ = [
     'FileLink',
     'WebhookSubscription',
     'WebhookDelivery',
+    'DicomViewToken',
 ]

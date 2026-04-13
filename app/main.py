@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from app.api import upload, download, list, delete, cleanup, stats, webhooks
+from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_user
@@ -263,6 +263,7 @@ app.include_router(webhooks.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_users_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")
+app.include_router(dicom.router, prefix="/api")
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
@@ -388,7 +389,8 @@ async def health_check():
             "audit_logging": True,
             "api": True,
             "web_interface": True,
-            "static_files": True
+            "static_files": True,
+            "dicom_viewer": settings.dicom_viewer_enabled,
         },
         "directories": {
             "static": os.path.exists("static"),
@@ -397,6 +399,29 @@ async def health_check():
             "audit_logs": os.path.exists("audit_logs")
         }
     }
+
+
+# Страница DICOM Viewer
+@app.get("/dicom-viewer", response_class=HTMLResponse)
+@app.get("/dicom-viewer/", response_class=HTMLResponse)
+async def dicom_viewer_page():
+    """Страница DICOM Viewer (OHIF Viewer обёртка)."""
+    try:
+        from fastapi.responses import HTMLResponse as _HR
+        from datetime import datetime
+        with open("static/html/dicom-viewer.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        response = HTMLResponse(content=content)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    except FileNotFoundError:
+        return HTMLResponse(
+            status_code=500,
+            content="<h1>DICOM Viewer не найден</h1>"
+        )
+
 
 # Страница для просмотра логов (опционально)
 @app.get("/logs")

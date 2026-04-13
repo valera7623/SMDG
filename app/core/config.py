@@ -127,6 +127,11 @@ class Settings(BaseSettings):
         "application/json", "application/xml"
     ]
 
+    # DICOM Viewer
+    dicom_viewer_enabled: bool = True
+    dicom_view_token_ttl_seconds: int = 900          # 15 минут
+    dicom_max_stream_size_mb: int = 500              # Макс. размер для streaming
+
     # DICOM-сигнатуры
     DICOM_MAGIC: bytes = b'\x00\x00\x00\x00DICM'
 

@@ -58,6 +58,8 @@ erDiagram
     USER ||--o{ FILE : "owns"
     USER ||--o{ FILE_LINK : "creates"
     FILE ||--o{ FILE_LINK : "referenced_by"
+    USER ||--o{ DICOM_VIEW_TOKEN : "creates"
+    FILE ||--o{ DICOM_VIEW_TOKEN : "referenced_by"
 
     USER {
         int id PK
@@ -75,12 +77,16 @@ erDiagram
         int id PK
         string original_name
         string encrypted_name
-        bigint size
+        string encrypted_path
+        bigint original_size
+        bigint encrypted_size
+        string original_hash
+        string mime_type
         string patient_id
         jsonb medical_metadata
-        int owner_id FK
-        string uploaded_by
-        timestamp created_at
+        int user_id FK
+        timestamp uploaded_at
+        timestamp expires_at
     }
 
     FILE_LINK {
@@ -93,6 +99,16 @@ erDiagram
         timestamp created_at
     }
 
+    DICOM_VIEW_TOKEN {
+        int id PK
+        string token UK
+        int file_id FK
+        int user_id FK
+        boolean used
+        timestamp expires_at
+        timestamp created_at
+    }
+
 Индексы:
 
 user.username, user.email (unique)
@@ -101,11 +117,18 @@ file_link.token (unique + index)
 
 ## 4. Модели БД
 User (app/models/user.py)
-    id, username, email, hashed_password, role (user doctor admin), is_active, otp_secret
+    id, username, email, hashed_password, role (user/doctor/admin), is_active, otp_secret
+
 File (app/models/file.py)
-    original_name, encrypted_name, size, patient_id, medical_metadata (JSONB), owner_id
+    original_name, encrypted_name, encrypted_path, original_size, encrypted_size,
+    original_hash, mime_type, patient_id, medical_metadata (JSONB), user_id,
+    uploaded_at, expires_at
+
 FileLink (app/models/file_link.py)
     token (UUID), file_id, max_downloads, downloads_count, expires_at
+
+DicomViewToken (app/models/dicom_view_token.py)
+    token (UUID), file_id, user_id, expires_at, created_at
 
 ## 5. Ключевые сценарии (Sequence Diagrams)
 ### 5.1. Upload файла
@@ -330,13 +353,132 @@ SMDG поддерживает отправку webhook-уведомлений п
 
 ---
 
-## 10. Roadmap (будущие расширения)
+## 10. DICOM Viewer
+
+### 10.1 Обзор
+
+Подсистема просмотра медицинских изображений DICOM прямо в браузере.
+Расшифровка и рендеринг происходят **на сервере** — браузер получает готовый PNG.
+
+**Ключевые принципы:**
+- Расшифрованные данные **никогда не записываются на диск** (только в память)
+- View-токен с TTL (по умолчанию 15 минут)
+- Реальные DICOM UIDs из файла (через pydicom)
+- Redis-кэш метаданных (без повторной расшифровки)
+- DICOMweb-совместимые API (QIDO-RS + WADO-RS)
+
+### 10.2 Компоненты
+
+```
+app/api/dicom.py                    # DICOMweb эндпоинты
+app/models/dicom_view_token.py      # Модель view-токенов
+static/html/dicom-viewer.html       # Viewer UI (Vanilla JS)
+static/js/modules/files.js          # Кнопка «Просмотр»
+static/css/style.css                # Стили модалки
+```
+
+### 10.3 API Endpoints
+
+| Метод   | Путь                                    | Auth       | Описание                    |
+|---------|-----------------------------------------|------------|-----------------------------|
+| `POST`  | `/api/dicom/view-url`                   | JWT cookie | Генерация view-токена       |
+| `GET`   | `/api/dicom/render/{file_id}`           | view_token | DICOM → PNG (pydicom)       |
+| `GET`   | `/api/dicom/wado/{file_id}`             | view_token | DICOM streaming             |
+| `GET`   | `/api/dicom/metadata/{file_id}`         | view_token | DICOM-теги → JSON (Redis)   |
+| `GET`   | `/api/dicom/qido/studies`               | view_token | QIDO-RS: список исследований|
+| `GET`   | `/api/dicom/qido/studies/{uid}/series`  | view_token | QIDO-RS: серии              |
+| `GET`   | `/api/dicom/qido/.../instances`         | view_token | QIDO-RS: экземпляры         |
+| `GET`   | `/api/dicom/wado/studies/.../instances` | view_token | WADO-RS: DICOM объект       |
+
+### 10.4 Поток данных (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant FastAPI
+    participant Redis
+    participant DB
+    participant Storage
+    participant Crypto
+    participant Pydicom
+
+    Client->>FastAPI: POST /api/dicom/view-url?file_id=N
+    FastAPI->>DB: verify JWT + find File
+    FastAPI->>DB: create DicomViewToken (UUID, TTL=15min)
+    FastAPI-->>Client: { view_url, token, study_uid, series_uid }
+
+    Note over FastAPI: Аудит: dicom.view_initiated
+
+    Client->>FastAPI: GET /api/dicom/metadata/N?token=T
+    FastAPI->>Redis: cache lookup
+    alt Cache HIT
+        Redis-->>FastAPI: metadata JSON
+    else Cache MISS
+        FastAPI->>Storage: download encrypted .age
+        FastAPI->>Crypto: decrypt to memory
+        FastAPI->>Pydicom: dcmread + extract tags
+        Pydicom-->>FastAPI: 30+ DICOM tags
+        FastAPI->>Redis: cache metadata (TTL=2.25h)
+    end
+    FastAPI-->>Client: JSON with real UIDs + metadata
+
+    Client->>FastAPI: GET /api/dicom/render/N?token=T
+    FastAPI->>Storage: download encrypted .age
+    FastAPI->>Crypto: decrypt to memory
+    FastAPI->>Pydicom: pixel_array (numpy)
+    Pydicom-->>FastAPI: numpy array
+    Note over FastAPI: numpy normalize → PIL → PNG
+    FastAPI-->>Client: PNG image (image/png)
+
+    Note over FastAPI: Аудит: dicom.streamed
+    Note over FastAPI: Временные файлы удалены в finally
+```
+
+### 10.5 Конфигурация
+
+| Переменная                     | По умолч. | Описание                        |
+|--------------------------------|-----------|---------------------------------|
+| `DICOM_VIEWER_ENABLED`         | `false`   | Включить/выключить viewer       |
+| `DICOM_VIEW_TOKEN_TTL_SECONDS` | `900`     | TTL view-токена (сек)           |
+| `DICOM_MAX_STREAM_SIZE_MB`     | `500`     | Макс. размер DICOM (МБ)         |
+
+### 10.6 Безопасность
+
+- **Расшифровка в память** — временные файлы удаляются в `finally` блоке
+- **View-токен** — UUID, TTL 15 мин, привязан к file_id
+- **Feature Flag** — при `DICOM_VIEWER_ENABLED=false` → 501 на всех эндпоинтах
+- **Аудит** — `dicom.view_initiated`, `dicom.metadata_accessed`, `dicom.streamed`, `dicom.stream_failed`
+
+### 10.7 Зависимости
+
+```toml
+pydicom = "^3.0.1"   # Парсинг DICOM
+numpy   = "^2.0"     # Обработка пикселей
+pillow  = "^11.0"    # Конвертация в PNG
+```
+
+### 10.8 Redis-кэш
+
+| Ключ                          | TTL        | Содержимое              |
+|-------------------------------|------------|-------------------------|
+| `smdg:dicom_meta:{file_id}`   | 2.25 часа  | JSON с 30+ DICOM-тегами |
+
+Первый запрос: расшифровка → pydicom → Redis.
+Повторные: мгновенно из Redis (без расшифровки).
+
+---
+
+## 11. Roadmap (будущие расширения)
 
 ~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0
 ~~Webhook-уведомления~~ ✅ Реализовано в v2.1
+~~DICOM Viewer~~ ✅ Реализовано в v3.0
 Multi-tenancy (организации)
-Встроенный DICOM-viewer
 Экспорт аудита в PDF/Excel
 S3 Lifecycle Policies вместо FileCleanupManager
+Multi-frame DICOM (CT/MRI серии)
+Сжатые DICOM (JPEG2000, JPEG-LS) — pydicom[gdcm]
+Windowing presets (Bone, Lung, Soft tissue)
+Measurements (линейка, угол, ROI)
 
 Конец документа.

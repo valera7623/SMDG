@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SMDG — DICOM Viewer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; background: #000; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+        
+        /* Loading screen */
+        #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0d1117; z-index: 9999; }
+        #loading .spinner { width: 48px; height: 48px; border: 4px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading p { color: #8b949e; }
+        
+        /* Error screen */
+        #error { display: none; position: fixed; inset: 0; align-items: center; justify-content: center; background: #0d1117; text-align: center; padding: 20px; z-index: 9999; }
+        #error h2 { color: #f85149; margin-bottom: 12px; }
+        #error p { color: #888; margin-bottom: 8px; }
+        #error a { color: #58a6ff; text-decoration: none; }
+        #error a:hover { text-decoration: underline; }
+        
+        /* Main layout */
+        #viewer-layout { display: none; flex-direction: column; height: 100%; }
+        
+        /* Header */
+        #viewer-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #1a1a2e; border-bottom: 1px solid #333; font-size: 13px; flex-shrink: 0; }
+        #viewer-header .file-name { font-weight: 600; color: #58a6ff; }
+        #viewer-header .meta { color: #888; font-size: 12px; }
+        #viewer-header .header-buttons { display: flex; gap: 8px; }
+        
+        /* Toolbar */
+        #toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 12px; background: #161b22; border-bottom: 1px solid #333; flex-shrink: 0; align-items: center; }
+        .tool-btn { padding: 5px 12px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e0e0e0; font-size: 12px; cursor: pointer; transition: all 0.1s; }
+        .tool-btn:hover { background: #30363d; border-color: #58a6ff; }
+        .tool-btn.active { background: #58a6ff; border-color: #58a6ff; color: #fff; }
+        .tool-btn.danger { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+        .tool-btn.danger:hover { background: #c0392b; }
+        .sep { width: 1px; background: #30363d; margin: 0 6px; height: 24px; }
+        .preset-group { display: inline-flex; gap: 4px; margin-left: 8px; }
+        .preset-btn { padding: 5px 10px; background: #1a1a2e; border: 1px solid #30363d; border-radius: 6px; color: #aaa; font-size: 11px; cursor: pointer; }
+        .preset-btn:hover { background: #2a2a3e; border-color: #58a6ff; color: #fff; }
+        
+        /* Viewport */
+        #viewport-container { flex: 1; position: relative; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 0; }
+        #dicom-img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: crosshair; transition: opacity 0.15s; transform-origin: center center; }
+        #dicom-img.tool-pan { cursor: grab; }
+        #dicom-img.tool-pan:active { cursor: grabbing; }
+        #dicom-img.tool-window { cursor: ew-resize; }
+        #dicom-img.loading { opacity: 0.5; }
+        
+        /* Status bar */
+        #status-bar { display: flex; justify-content: space-between; padding: 5px 16px; background: #161b22; border-top: 1px solid #333; font-size: 11px; color: #888; flex-shrink: 0; }
+        #wl-info { font-family: monospace; color: #58a6ff; }
+        
+        /* Metadata panel */
+        #metadata-panel { position: absolute; top: 0; right: 0; width: 280px; height: 100%; background: rgba(22, 27, 34, 0.98); backdrop-filter: blur(4px); border-left: 1px solid #333; overflow-y: auto; padding: 12px; font-size: 12px; display: none; z-index: 100; transition: display 0.2s; }
+        #metadata-panel.show { display: block; }
+        #metadata-panel h4 { color: #58a6ff; margin: 12px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #30363d; padding-bottom: 3px; }
+        #metadata-panel h4:first-child { margin-top: 0; }
+        #metadata-panel .row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #21262d; gap: 8px; }
+        #metadata-panel .label { color: #888; font-size: 11px; flex-shrink: 0; }
+        #metadata-panel .value { color: #e0e0e0; text-align: right; word-break: break-word; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #metadata-panel .value[title]:hover { overflow: visible; white-space: normal; background: #1a1a2e; position: relative; z-index: 1; }
+        
+        /* Close button */
+        .close-btn { background: #e74c3c; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+        .close-btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Загрузка DICOM...</p>
+    </div>
+    
+    <div id="error">
+        <div>
+            <h2>⚠️ Ошибка</h2>
+            <p id="errorMsg"></p>
+            <p><a href="#" onclick="window.parent.postMessage('dicom-close','*'); return false;">← Закрыть</a></p>
+        </div>
+    </div>
+
+    <div id="viewer-layout">
+        <div id="viewer-header">
+            <span class="file-name" id="fileName">—</span>
+            <span class="meta" id="fileMeta">—</span>
+            <div class="header-buttons">
+                <button class="tool-btn" onclick="toggleMetadata()" title="Метаданные">ℹ️</button>
+                <button class="tool-btn" onclick="downloadDicom()" title="Скачать оригинальный DICOM">💾</button>
+                <button class="tool-btn danger" onclick="window.parent.postMessage('dicom-close','*')" title="Закрыть">✕</button>
+            </div>
+        </div>
+        
+        <div id="toolbar">
+            <button class="tool-btn active" data-tool="window" onclick="setTool('window')">🪟 Окно (WL/WW)</button>
+            <button class="tool-btn" data-tool="zoom" onclick="setTool('zoom')">🔍 Зум</button>
+            <button class="tool-btn" data-tool="pan" onclick="setTool('pan')">✋ Пан</button>
+            <div class="sep"></div>
+            <button class="tool-btn" onclick="resetView()">↺ Сброс</button>
+            <button class="tool-btn" onclick="invertView()">◐ Инверт</button>
+            <div class="sep"></div>
+            <div class="preset-group">
+                <span style="color:#666; font-size:11px; margin-right:4px;">Предустановки:</span>
+                <button class="preset-btn" onclick="setPreset('Bone')">🦴 Кость</button>
+                <button class="preset-btn" onclick="setPreset('Lung')">🫁 Легкие</button>
+                <button class="preset-btn" onclick="setPreset('Brain')">🧠 Мозг</button>
+                <button class="preset-btn" onclick="setPreset('Abdomen')">🫀 Живот</button>
+                <button class="preset-btn" onclick="setPreset('Liver')">🍖 Печень</button>
+            </div>
+        </div>
+        
+        <div id="viewport-container">
+            <img id="dicom-img" src="" alt="DICOM Medical Image" draggable="false">
+            <div id="metadata-panel"></div>
+        </div>
+        
+        <div id="status-bar">
+            <span id="statusText">Готово</span>
+            <span id="zoomInfo"></span>
+            <span id="wl-info"></span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== ПАРАМЕТРЫ ИЗ URL ====================
+        const params = new URLSearchParams(window.location.search);
+        const TOKEN = params.get('token');
+        const FILE_ID = params.get('file_id');
+        
+        if (!TOKEN || !FILE_ID) {
+            showError('Отсутствуют параметры token или file_id');
+        }
+        
+        // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
+        let metadata = {};
+        let tool = 'window';
+        let dragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let transform = { scale: 1, tx: 0, ty: 0, invert: false };
+        
+        // Window/Level состояние
+        let wlState = { wc: 128, ww: 256 };
+        let wlStart = { wc: 128, ww: 256 };
+        let wlTimeout = null;
+        let currentImageUrl = null;
+        
+        // Предустановки Window/Level для разных тканей
+        const wlPresets = {
+            'Bone': { wc: 500, ww: 2000 },
+            'Lung': { wc: -500, ww: 1500 },
+            'Brain': { wc: 40, ww: 80 },
+            'Abdomen': { wc: 50, ww: 350 },
+            'Liver': { wc: 60, ww: 150 }
+        };
+        
+        // DOM элементы
+        const img = document.getElementById('dicom-img');
+        const loadingDiv = document.getElementById('loading');
+        const viewerLayout = document.getElementById('viewer-layout');
+        const fileNameSpan = document.getElementById('fileName');
+        const fileMetaSpan = document.getElementById('fileMeta');
+        const statusTextSpan = document.getElementById('statusText');
+        const zoomInfoSpan = document.getElementById('zoomInfo');
+        const wlInfoSpan = document.getElementById('wl-info');
+        
+        // ==================== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ ====================
+        (async function init() {
+            try {
+                statusTextSpan.textContent = 'Загрузка метаданных...';
+                
+                // 1. Загружаем метаданные
+                const metaResp = await fetch(`/api/dicom/metadata/${FILE_ID}?token=${TOKEN}`);
+                if (metaResp.ok) {
+                    metadata = await metaResp.json();
+                    
+                    // Загружаем WL/WW из метаданных DICOM, если есть
+                    if (metadata.WindowCenter) {
+                        wlState.wc = parseFloat(metadata.WindowCenter);
+                        wlStart.wc = wlState.wc;
+                    }
+                    if (metadata.WindowWidth) {
+                        wlState.ww = parseFloat(metadata.WindowWidth);
+                        wlStart.ww = wlState.ww;
+                    }
+                } else {
+                    console.warn('Metadata fetch failed:', metaResp.status);
+                }
+                
+                // Формируем имя файла для отображения
+                const fileName = metadata.StudyDescription || 
+                                metadata.PatientName || 
+                                metadata.Modality || 
+                                `DICOM #${FILE_ID}`;
+                
+                // 2. Загружаем PNG с бэкенда (с параметрами WL/WW)
+                statusTextSpan.textContent = 'Загрузка изображения...';
+                let pngUrl = `/api/dicom/render/${FILE_ID}?token=${TOKEN}`;
+                pngUrl += `&center=${wlState.wc}&width=${wlState.ww}`;
+                
+                img.onload = function() {
+                    loadingDiv.style.display = 'none';
+                    viewerLayout.style.display = 'flex';
+                    fileNameSpan.textContent = fileName;
+                    fileMetaSpan.textContent = `${img.naturalWidth}×${img.naturalHeight} | ${metadata.Modality || 'DICOM'}`;
+                    updateZoomInfo();
+                    updateWlInfo();
+                    setupMouse();
+                    renderMetadata();
+                    statusTextSpan.textContent = 'Готово';
+                };
+                
+                img.onerror = function() {
+                    showError('Не удалось загрузить изображение DICOM. Проверьте, что файл является DICOM и сервер доступен.');
+                };
+                
+                img.src = pngUrl;
+                currentImageUrl = pngUrl;
+                
+            } catch (e) {
+                console.error('Init error:', e);
+                showError(e.message);
+            }
+        })();
+        
+        // ==================== НАСТРОЙКА ОБРАБОТЧИКОВ МЫШИ ====================
+        function setupMouse() {
+            // Mouse down
+            img.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return; // только левая кнопка
+                dragging = true;
+                dragStart = { x: e.clientX, y: e.clientY };
+                
+                if (tool === 'window') {
+                    wlStart = { wc: wlState.wc, ww: wlState.ww };
+                    img.style.cursor = 'ew-resize';
+                } else if (tool === 'pan') {
+                    img.style.cursor = 'grabbing';
+                } else {
+                    img.style.cursor = 'default';
+                }
+                e.preventDefault();
+            });
+            
+            // Mouse move
+            img.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+                
+                if (tool === 'window') {
+                    // Горизонтальное движение = ширина окна (WW)
+                    // Вертикальное движение = центр окна (WC)
+                    wlState.ww = Math.max(1, wlStart.ww + dx);
+                    wlState.wc = wlStart.wc + dy;
+                    updateWindowLevel();
+                    
+                } else if (tool === 'zoom') {
+                    transform.scale = Math.max(0.1, Math.min(20, transform.scale * (1 + dy / 200)));
+                    applyTransform();
+                    
+                } else if (tool === 'pan') {
+                    transform.tx += dx / transform.scale;
+                    transform.ty += dy / transform.scale;
+                    applyTransform();
+                }
+                
+                dragStart = { x: e.clientX, y: e.clientY };
+            });
+            
+            // Mouse up
+            window.addEventListener('mouseup', () => {
+                dragging = false;
+                if (tool === 'window') {
+                    img.style.cursor = 'ew-resize';
+                } else if (tool === 'pan') {
+                    img.style.cursor = 'grab';
+                } else {
+                    img.style.cursor = 'crosshair';
+                }
+            });
+            
+            // Mouse leave
+            img.addEventListener('mouseleave', () => {
+                dragging = false;
+            });
+            
+            // Wheel (zoom или WL/WW в зависимости от инструмента)
+            img.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                
+                if (tool === 'window') {
+                    // Изменяем WL/WW колёсиком мыши
+                    const delta = e.deltaY > 0 ? -5 : 5;
+                    wlState.ww = Math.max(1, wlState.ww + delta);
+                    updateWindowLevel();
+                } else {
+                    // Zoom для всех остальных инструментов
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    transform.scale = Math.max(0.1, Math.min(20, transform.scale * delta));
+                    applyTransform();
+                }
+            });
+            
+            // Начальный курсор
+            img.style.cursor = tool === 'window' ? 'ew-resize' : (tool === 'pan' ? 'grab' : 'crosshair');
+        }
+        
+        // ==================== ПРИМЕНЕНИЕ ТРАНСФОРМАЦИЙ ====================
+        function applyTransform() {
+            img.style.transform = `scale(${transform.scale}) translate(${transform.tx}px, ${transform.ty}px)`;
+            img.style.transformOrigin = 'center center';
+            updateZoomInfo();
+        }
+        
+        function updateZoomInfo() {
+            zoomInfoSpan.textContent = `Масштаб: ${Math.round(transform.scale * 100)}%`;
+        }
+        
+        function updateWlInfo() {
+            wlInfoSpan.textContent = `WL: ${Math.round(wlState.wc)} / WW: ${Math.round(wlState.ww)}`;
+        }
+        
+        // ==================== WINDOW/LEVEL ОБНОВЛЕНИЕ ====================
+        function updateWindowLevel() {
+            if (wlTimeout) clearTimeout(wlTimeout);
+            
+            // Показываем индикатор загрузки
+            img.classList.add('loading');
+            updateWlInfo();
+            statusTextSpan.textContent = `Применение WL/WW: ${Math.round(wlState.wc)} / ${Math.round(wlState.ww)}`;
+            
+            wlTimeout = setTimeout(() => {
+                const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&center=${wlState.wc}&width=${wlState.ww}`;
+                
+                // Сохраняем текущие трансформации перед загрузкой нового изображения
+                const savedTransform = { ...transform };
+                
+                img.onload = () => {
+                    img.classList.remove('loading');
+                    statusTextSpan.textContent = 'Готово';
+                    // Восстанавливаем трансформации после загрузки
+                    transform = savedTransform;
+                    applyTransform();
+                };
+                
+                img.onerror = () => {
+                    img.classList.remove('loading');
+                    statusTextSpan.textContent = 'Ошибка обновления WL/WW';
+                };
+                
+                img.src = url;
+                currentImageUrl = url;
+            }, 80);
+        }
+        
+        // ==================== ПРЕДУСТАНОВКИ WL/WW ====================
+        function setPreset(presetName) {
+            const preset = wlPresets[presetName];
+            if (preset) {
+                wlState.wc = preset.wc;
+                wlState.ww = preset.ww;
+                updateWindowLevel();
+                statusTextSpan.textContent = `Предустановка: ${presetName}`;
+                setTimeout(() => {
+                    if (statusTextSpan.textContent === `Предустановка: ${presetName}`) {
+                        statusTextSpan.textContent = 'Готово';
+                    }
+                }, 1500);
+            }
+        }
+        
+        // ==================== ИНСТРУМЕНТЫ ====================
+        function setTool(t) {
+            tool = t;
+            // Обновляем активные классы кнопок
+            document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tool === t);
+            });
+            // Обновляем курсор
+            if (t === 'window') {
+                img.classList.remove('tool-pan');
+                img.classList.add('tool-window');
+                img.style.cursor = 'ew-resize';
+            } else if (t === 'pan') {
+                img.classList.remove('tool-window');
+                img.classList.add('tool-pan');
+                img.style.cursor = 'grab';
+            } else {
+                img.classList.remove('tool-window', 'tool-pan');
+                img.style.cursor = 'crosshair';
+            }
+            statusTextSpan.textContent = `Инструмент: ${t === 'window' ? 'Окно (WL/WW)' : (t === 'zoom' ? 'Зум' : 'Пан')}`;
+            setTimeout(() => {
+                if (statusTextSpan.textContent === `Инструмент: ${t === 'window' ? 'Окно (WL/WW)' : (t === 'zoom' ? 'Зум' : 'Пан')}`) {
+                    statusTextSpan.textContent = 'Готово';
+                }
+            }, 1500);
+        }
+        
+        function resetView() {
+            transform = { scale: 1, tx: 0, ty: 0, invert: false };
+            img.style.filter = '';
+            img.classList.remove('loading');
+            applyTransform();
+            statusTextSpan.textContent = 'Вид сброшен';
+            setTimeout(() => {
+                if (statusTextSpan.textContent === 'Вид сброшен') {
+                    statusTextSpan.textContent = 'Готово';
+                }
+            }, 1000);
+        }
+        
+        function invertView() {
+            transform.invert = !transform.invert;
+            img.style.filter = transform.invert ? 'invert(1)' : '';
+            statusTextSpan.textContent = transform.invert ? 'Инвертировано' : 'Нормальное отображение';
+        }
+        
+        // ==================== МЕТАДАННЫЕ ====================
+        function toggleMetadata() {
+            document.getElementById('metadata-panel').classList.toggle('show');
+        }
+        
+        function renderMetadata() {
+            const groups = {
+                'Пациент': ['PatientName', 'PatientID', 'PatientBirthDate', 'PatientSex'],
+                'Исследование': ['StudyDate', 'StudyTime', 'StudyDescription', 'StudyInstanceUID', 'AccessionNumber', 'ReferringPhysicianName'],
+                'Серия': ['Modality', 'SeriesDescription', 'SeriesNumber', 'SeriesInstanceUID', 'SeriesDate'],
+                'Изображение': ['Rows', 'Columns', 'BitsAllocated', 'BitsStored', 'HighBit', 'PixelRepresentation', 'SamplesPerPixel', 'PhotometricInterpretation', 'NumberOfFrames'],
+                'Окно/Уровень': ['WindowCenter', 'WindowWidth', 'RescaleIntercept', 'RescaleSlope'],
+                'Оборудование': ['Manufacturer', 'ManufacturerModelName', 'InstitutionName', 'StationName', 'SoftwareVersions']
+            };
+            
+            let html = '';
+            for (const [groupName, fields] of Object.entries(groups)) {
+                const presentFields = fields.filter(f => metadata[f] !== undefined && metadata[f] !== '');
+                if (presentFields.length === 0) continue;
+                
+                html += `<h4>${groupName}</h4>`;
+                for (const field of presentFields) {
+                    let value = metadata[field];
+                    // Сокращаем длинные UID для отображения
+                    if (field.endsWith('UID') && value && value.length > 40) {
+                        const shortValue = value.substring(0, 35) + '…';
+                        html += `<div class="row">
+                                    <span class="label">${field}</span>
+                                    <span class="value" title="${escapeHtml(String(value))}">${escapeHtml(shortValue)}</span>
+                                </div>`;
+                    } else {
+                        html += `<div class="row">
+                                    <span class="label">${field}</span>
+                                    <span class="value">${escapeHtml(String(value))}</span>
+                                </div>`;
+                    }
+                }
+            }
+            
+            document.getElementById('metadata-panel').innerHTML = html || '<p style="color:#888; text-align:center;">Нет метаданных</p>';
+        }
+        
+        // ==================== СКАЧИВАНИЕ DICOM ====================
+        async function downloadDicom() {
+            try {
+                statusTextSpan.textContent = 'Подготовка к скачиванию...';
+                const response = await fetch(`/api/dicom/wado/${FILE_ID}?token=${TOKEN}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Формируем имя файла
+                let fileName = 'dicom';
+                if (metadata.StudyDescription) {
+                    fileName = metadata.StudyDescription.replace(/[^a-zA-Z0-9а-яА-Я._-]/g, '_');
+                } else if (metadata.PatientName) {
+                    fileName = metadata.PatientName.replace(/[^a-zA-Z0-9а-яА-Я._-]/g, '_');
+                } else {
+                    fileName = `dicom_${FILE_ID}`;
+                }
+                a.download = `${fileName}.dcm`;
+                
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
+                
+                statusTextSpan.textContent = 'Скачивание начато';
+                setTimeout(() => {
+                    if (statusTextSpan.textContent === 'Скачивание начато') {
+                        statusTextSpan.textContent = 'Готово';
+                    }
+                }, 2000);
+                
+            } catch (e) {
+                console.error('Download error:', e);
+                statusTextSpan.textContent = 'Ошибка скачивания';
+                alert('Ошибка при скачивании: ' + e.message);
+            }
+        }
+        
+        // ==================== УТИЛИТЫ ====================
+        function showError(msg) {
+            loadingDiv.style.display = 'none';
+            document.getElementById('error').style.display = 'flex';
+            document.getElementById('errorMsg').textContent = msg;
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        
+        // Обработка сообщений от родительского окна
+        window.addEventListener('message', (e) => {
+            if (e.data === 'close-dicom-viewer') {
+                window.parent.postMessage('dicom-close', '*');
+            }
+        });
+        
+        // Очистка при закрытии
+        window.addEventListener('beforeunload', () => {
+            if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(currentImageUrl);
+            }
+        });
+    </script>
+</body>
+</html>

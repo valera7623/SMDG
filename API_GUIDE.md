@@ -27,6 +27,7 @@
 6. [Бизнес-правила и особенности](#6-бизнес-правила-и-особенности)
 7. [Потоки данных (Sequence Diagrams)](#7-потоки-данных-sequence-diagrams)
 8. [Security Headers](#8-security-headers)
+9. [DICOM API](#9-dicom-api)
 
 ---
 
@@ -410,7 +411,63 @@ X-Frame-Options: DENY
 Content-Security-Policy: default-src 'self'
 Cache-Control: no-store, no-cache, must-revalidate
 
-## 9. Ссылки
+## 9. DICOM API
+
+### 9.1 Обзор
+
+DICOM API — подсистема просмотра медицинских изображений.
+Все эндпоинты (кроме `/dicom/view-url`) авторизуются через **view_token** — временный UUID.
+
+### 9.2 Основные эндпоинты
+
+| Метод   | Путь                                    | Auth       | Описание                    |
+|---------|-----------------------------------------|------------|-----------------------------|
+| `POST`  | `/api/dicom/view-url?file_id=N`         | JWT cookie | Генерация view-токена       |
+| `GET`   | `/api/dicom/render/{file_id}?token=T`   | view_token | DICOM → PNG (pydicom+numpy) |
+| `GET`   | `/api/dicom/metadata/{file_id}?token=T` | view_token | DICOM-теги → JSON (Redis)   |
+| `GET`   | `/api/dicom/wado/{file_id}?token=T`     | view_token | DICOM streaming             |
+
+### 9.3 QIDO-RS (DICOMweb Query)
+
+| Метод   | Путь                                      | Auth       | Описание           |
+|---------|-------------------------------------------|------------|--------------------|
+| `GET`   | `/api/dicom/qido/studies?token=T`         | view_token | Список исследований|
+| `GET`   | `/api/dicom/qido/studies/{uid}/series`    | view_token | Серии              |
+| `GET`   | `/api/dicom/qido/.../instances`           | view_token | Экземпляры         |
+
+**Параметры QIDO-RS:** `fuzzymatching`, `includefield` (по умолчанию `all`), `limit`.
+
+### 9.4 WADO-RS (DICOMweb Retrieve)
+
+| Метод   | Путь                                                    | Auth       | Описание      |
+|---------|---------------------------------------------------------|------------|---------------|
+| `GET`   | `/api/dicom/wado/studies/{s}/series/{se}/instances/{i}?token=T` | view_token | DICOM объект |
+
+### 9.5 Формат QIDO-RS ответов
+
+Стандартный DICOM JSON:
+```json
+{
+  "00080060": { "vr": "CS", "Value": ["CT"] },
+  "0020000D": { "vr": "UI", "Value": ["2.25.607865..."] },
+  "00100010": { "vr": "PN", "Value": [{"Alphabetic": "Иванов^Иван"}] }
+}
+```
+
+### 9.6 Redis-кэш
+
+Метаданные DICOM кэшируются в Redis (`smdg:dicom_meta:{file_id}`, TTL 2.25 часа).
+Первый запрос: расшифровка → pydicom → кэш. Повторные: мгновенно из Redis.
+
+### 9.7 Безопасность
+
+- Расшифрованные данные **никогда не записываются на диск**
+- View-токен: UUID v4, TTL 15 мин (настраивается), привязан к file_id
+- Feature Flag: `DICOM_VIEWER_ENABLED=false` → все DICOM-эндпоинты возвращают 501
+
+---
+
+## 10. Ссылки
 
 Ресурс	                    URL	                            Описание
 Swagger UI	                /docs	                          Интерактивная документация
@@ -420,11 +477,12 @@ Healthcheck	                /health	                        Статус сер�
 Prometheus metrics	        /metrics	                      Метрики для мониторинга
 Grafana (если включена)	    /grafana/	                      Дашборды
 
-## 10. Changelog API
+## 11. Changelog API
 
 Версия	            Дата	            Изменения
 1.0	                2026-04-06	      Стабильный релиз
-1.1	                (планируется)	    Audit API, Webhook-уведомления, S3 storage
+1.1	                2026-04-10	      Audit API, Webhook-уведомления, S3 storage
+3.0	                2026-04-12	      DICOM Viewer, QIDO-RS, WADO-RS, Redis cache
 
 
 

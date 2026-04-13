@@ -456,4 +456,66 @@ S3_ENDPOINT_URL=http://minio:9000
 
 ---
 
+## 10. DICOM Viewer — развёртывание
+
+### 10.1 Зависимости
+
+Для работы DICOM Viewer требуются дополнительные Python-пакеты:
+
+```bash
+# Внутри контейнера
+pip install --break-system-packages pydicom numpy pillow
+
+# Или через poetry (при пересборке образа)
+poetry add pydicom numpy pillow
+```
+
+### 10.2 Конфигурация
+
+```env
+# .env.prod
+DICOM_VIEWER_ENABLED=true
+DICOM_VIEW_TOKEN_TTL_SECONDS=900
+DICOM_MAX_STREAM_SIZE_MB=500
+```
+
+### 10.3 Миграция БД
+
+```bash
+docker exec smdg-smdg-1 alembic upgrade head
+# Создаёт таблицу dicom_view_tokens
+```
+
+### 10.4 Проверка
+
+```bash
+# Health check
+curl http://localhost:8000/health | jq .features.dicom_viewer
+# → true
+
+# Тест рендера
+curl -o test.png "http://localhost:8000/api/dicom/render/1?token=<token>"
+file test.png
+# → PNG image data
+```
+
+### 10.5 Docker Compose
+
+При пересборке образа DICOM Viewer включается автоматически (зависимости уже в `pyproject.toml`):
+
+```bash
+docker compose build smdg
+docker compose up -d smdg
+```
+
+### 10.6 Redis-кэш
+
+Метаданные DICOM кэшируются в Redis для ускорения повторных запросов:
+
+- Ключ: `smdg:dicom_meta:{file_id}`
+- TTL: `DICOM_VIEW_TOKEN_TTL_SECONDS + 3600` (по умолчанию 2.25 часа)
+- Формат: JSON с 30+ DICOM-тегами
+
+---
+
 **Готово к использованию.**

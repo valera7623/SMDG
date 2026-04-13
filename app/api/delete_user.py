@@ -35,22 +35,28 @@ async def _delete_user_file_by_name(
     current_user: TokenData,
     db: AsyncSession
 ):
+    from app.core import encrypted_storage
     print(f"🗑️ Пользователь {current_user.sub} запрашивает удаление файла: {filename}")
 
     safe_filename = sanitize_filename(filename)
-    file_path = ENCRYPTED_DIR / safe_filename
 
     # Автоматически добавляем .age, если не указано
-    if not file_path.exists() and not safe_filename.endswith('.age'):
-        file_path = ENCRYPTED_DIR / f"{safe_filename}.age"
+    if not safe_filename.endswith('.age'):
         safe_filename = f"{safe_filename}.age"
 
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
-
-    # Находим запись в БД
+    # Ищем запись в БД по encrypted_name
     result = await db.execute(select(File).where(File.encrypted_name == safe_filename))
     db_file = result.scalar_one_or_none()
+
+    if not db_file:
+        raise HTTPException(status_code=404, detail=f"Файл не найден в БД: {safe_filename}")
+
+    # Проверяем наличие файла через storage backend (S3 или локальная ФС)
+    storage_key = db_file.encrypted_path
+    file_exists = await encrypted_storage.exists(storage_key)
+
+    if not file_exists:
+        raise HTTPException(status_code=404, detail=f"Файл не найден в хранилище: {safe_filename}")
 
     # Проверка прав владельца
     if db_file and db_file.user_id:
@@ -67,17 +73,10 @@ async def _delete_user_file_by_name(
     # Информация для аудита
     file_info = {
         "filename": safe_filename,
-        "path": str(file_path),
-        "size": 0,
-        "hash": "unknown"
+        "storage_key": storage_key,
+        "size": db_file.encrypted_size or 0,
+        "hash": db_file.original_hash or "unknown"
     }
-
-    try:
-        stat = file_path.stat()
-        file_info["size"] = stat.st_size
-        file_info["hash"] = await calculate_hash_async(file_path)
-    except Exception as e:
-        print(f"⚠️ Ошибка получения информации о файле: {e}")
 
     if not confirm:
         return {
@@ -91,11 +90,12 @@ async def _delete_user_file_by_name(
         }
 
     try:
-        os.remove(file_path)
+        # Удаляем из хранилища (S3 или локальная ФС)
+        await encrypted_storage.delete(storage_key)
 
-        if db_file:
-            await db.delete(db_file)
-            await db.commit()
+        # Удаляем запись из БД
+        await db.delete(db_file)
+        await db.commit()
 
         audit_logger.log_operation(
             action="user_delete_file",

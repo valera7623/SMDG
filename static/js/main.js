@@ -5,7 +5,23 @@ import { initAuth, switchAuthTab, handleSetup2FA, logout } from './modules/auth.
 import { initFiles, loadFileList, downloadFile, copyToClipboard } from './modules/files.js';
 import { showNotification } from './utils/notifications.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+// ── Feature Flags (проверяем при загрузке страницы) ──────────────────────────
+async function checkFeatureFlags() {
+    try {
+        const resp = await fetch('/health');
+        if (resp.ok) {
+            const data = await resp.json();
+            window.__DICOM_VIEWER_ENABLED__ = !!data.features?.dicom_viewer;
+            console.log('[Feature Flags] DICOM Viewer:', window.__DICOM_VIEWER_ENABLED__);
+        }
+    } catch (e) {
+        console.warn('[Feature Flags] Не удалось проверить /health:', e);
+        window.__DICOM_VIEWER_ENABLED__ = false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await checkFeatureFlags();
     initAuth();
     initFiles();
 });

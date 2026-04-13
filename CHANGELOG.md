@@ -9,6 +9,24 @@
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-04-12
+
+### Added
+- **DICOM Viewer** — встроенный просмотр медицинских изображений
+- **pydicom + numpy + PIL** — серверный рендеринг DICOM в PNG
+- **Redis-кэш метаданных** — 30+ DICOM-тегов с TTL 2.25 часа
+- **Реальные DICOM UIDs** — StudyInstanceUID, SeriesInstanceUID, SOPInstanceUID из файла
+- **QIDO-RS эндпоинты** — `/api/dicom/qido/studies`, `/series`, `/instances`
+- **WADO-RS эндпоинт** — `/api/dicom/wado/studies/{s}/series/{se}/instances/{i}`
+- **DICOMweb совместимость** — формат ответов `application/dicom+json`
+- **Модель DicomViewToken** — временные токены для просмотра (TTL 15 мин)
+- **Alembic миграция** — таблица `dicom_view_tokens`
+- **Feature Flag** — `DICOM_VIEWER_ENABLED` в config
+- **Аудит DICOM** — `dicom.view_initiated`, `dicom.streamed`, `dicom.metadata_accessed`
+- **Инструменты viewer** — Zoom, Pan, Window/Level, Invert, Metadata sidebar
+- **Зависимости:** pydicom, numpy, pillow
+- **Nginx CSP** — расширенные заголовки для DICOM Viewer
+
 ## [2.1.0] - 2026-04-10
 
 ### Added
