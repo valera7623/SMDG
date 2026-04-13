@@ -20,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
+from app.core import encrypted_storage
 from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
@@ -102,7 +103,7 @@ async def webhook_retry_scheduler():
 async def lifespan(app: FastAPI):
     """Lifespan context manager для управления жизненным циклом приложения"""
     print("🚀 Запуск SMDG v0.1...")
-    
+
     # Startup
     try:
         await init_keys()
@@ -112,9 +113,50 @@ async def lifespan(app: FastAPI):
 
     await check_redis_connection()
     print("✅ Rate limiter: Redis проверен")
-    
-    await cleanup_manager.start_cleanup_task()
-    print("✅ Авто-очистка старых файлов запущена (APScheduler)")
+
+    # S3 Lifecycle Policies — применяем при использовании S3
+    from app.core.storage_backend import S3StorageBackend
+    if isinstance(encrypted_storage, S3StorageBackend):
+        if settings.s3_lifecycle_enabled:
+            try:
+                from app.core.s3_lifecycle import S3LifecyclePolicyManager
+                import json
+                
+                s3_client = await encrypted_storage._get_client()
+                
+                # Парсим кастомные политики
+                custom_policies = {}
+                if settings.s3_lifecycle_custom_policies:
+                    try:
+                        custom_policies = json.loads(settings.s3_lifecycle_custom_policies)
+                    except json.JSONDecodeError as e:
+                        print(f"⚠️ Ошибка парсинга s3_lifecycle_custom_policies: {e}")
+                
+                lifecycle_mgr = S3LifecyclePolicyManager(
+                    s3_client=s3_client,
+                    bucket=encrypted_storage.bucket,
+                    default_ttl_days=settings.s3_lifecycle_default_ttl_days,
+                    custom_policies=custom_policies if custom_policies else None,
+                )
+                
+                result = await lifecycle_mgr.apply_lifecycle_rules()
+                if result.get("success"):
+                    print(f"✅ S3 Lifecycle Policies применены: {result['rules_count']} правил")
+                else:
+                    print(f"⚠️ S3 Lifecycle не применены: {result.get('error')}")
+                    # Fallback к APScheduler
+                    await cleanup_manager.start_cleanup_task()
+            except Exception as e:
+                print(f"⚠️ Ошибка настройки S3 Lifecycle: {e}")
+                # Fallback к APScheduler
+                await cleanup_manager.start_cleanup_task()
+        else:
+            print("ℹ️ S3 Lifecycle отключены (s3_lifecycle_enabled=false)")
+            await cleanup_manager.start_cleanup_task()
+    else:
+        # Локальное хранилище — используем APScheduler
+        await cleanup_manager.start_cleanup_task()
+        print("✅ Авто-очистка старых файлов запущена (APScheduler, локальное хранилище)")
 
     # Конфигурируем все SQLAlchemy мапперы
     Base.registry.configure()
@@ -131,16 +173,25 @@ async def lifespan(app: FastAPI):
         print(f"Redis тестовая запись прошла: {value}")
     except Exception as e:
         print(f"Ошибка тестовой записи в Redis: {e}")
-    
+
     await create_first_admin()
 
     yield  # Здесь приложение работает
 
     # Shutdown (если нужно)
     print("🛑 Завершение работы SMDG...")
-    await cleanup_manager.stop_cleanup_task()
-    await webhook_dispatcher.close()
-    await RedisClient.close()
+    try:
+        await cleanup_manager.stop_cleanup_task()
+    except Exception as e:
+        print(f"⚠️ Ошибка остановки cleanup: {e}")
+    try:
+        await webhook_dispatcher.close()
+    except Exception as e:
+        print(f"⚠️ Ошибка закрытия webhook dispatcher: {e}")
+    try:
+        await RedisClient.close()
+    except Exception as e:
+        print(f"⚠️ Ошибка закрытия Redis: {e}")
     print("✅ Ресурсы освобождены")
 
 # Создаём приложение с lifespan

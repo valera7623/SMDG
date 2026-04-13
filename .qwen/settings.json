@@ -88,7 +88,9 @@
       "Bash(python3 *)",
       "Bash(python *)",
       "Bash(docker ps *)",
-      "Bash(sleep *)"
+      "Bash(sleep *)",
+      "Bash(docker compose build *)",
+      "Bash(docker compose up *)"
     ]
   },
   "$version": 3

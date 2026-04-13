@@ -612,6 +612,35 @@
         }
         
         // ==================== ФУНКЦИИ ИЗМЕРЕНИЙ ====================
+        
+        // Преобразование canvas координат в координаты изображения (с учётом zoom/pan)
+        function getImageCoordinates(clientX, clientY) {
+            const canvasRect = measureCanvas.getBoundingClientRect();
+            const imgRect = img.getBoundingClientRect();
+
+            // Позиция клика относительно canvas
+            const canvasX = clientX - canvasRect.left;
+            const canvasY = clientY - canvasRect.top;
+
+            // Позиция изображения относительно canvas
+            const imgOffsetX = imgRect.left - canvasRect.left;
+            const imgOffsetY = imgRect.top - canvasRect.top;
+
+            // Координаты относительно изображения
+            const relX = canvasX - imgOffsetX;
+            const relY = canvasY - imgOffsetY;
+
+            // Обратное преобразование масштава и панорамирования
+            const imgX = (relX - transform.tx * transform.scale) / transform.scale;
+            const imgY = (relY - transform.ty * transform.scale) / transform.scale;
+
+            // Нормализуем к натуральному размеру изображения
+            const normX = (imgX / imgRect.width) * img.naturalWidth;
+            const normY = (imgY / imgRect.height) * img.naturalHeight;
+
+            return { x: normX, y: normY };
+        }
+
         function initMeasurementCanvas() {
             measureCanvas = measureCanvasEl;
             measureCtx = measureCanvas.getContext('2d');
@@ -694,16 +723,15 @@
             if (!measurementMode || !measureTool) return;
             if (e.button !== 0) return;
 
-            const rect = measureCanvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            // Используем точные координаты изображения (с учётом zoom/pan)
+            const imgCoords = getImageCoordinates(e.clientX, e.clientY);
 
             if (!measureDrawing) {
                 measureDrawing = true;
-                measurePoints = [{ x, y }];
+                measurePoints = [{ x: e.clientX, y: e.clientY, imgX: imgCoords.x, imgY: imgCoords.y }];
                 statusTextSpan.textContent = measureTool === 'angle' ? `Точка 2 (вершина)...` : `Точка 2...`;
             } else {
-                measurePoints.push({ x, y });
+                measurePoints.push({ x: e.clientX, y: e.clientY, imgX: imgCoords.x, imgY: imgCoords.y });
 
                 // Проверяем, завершено ли измерение
                 if (measureTool === 'ruler' && measurePoints.length === 2) {
@@ -726,11 +754,11 @@
         function handleMeasureMouseMove(e) {
             if (!measureDrawing || measurePoints.length === 0) return;
 
+            // Предварительный просмотр (используем canvas координаты для отрисовки)
             const rect = measureCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Предварительный просмотр
             redrawMeasurements();
             drawPreview(measurePoints[measurePoints.length - 1], { x, y });
 
@@ -745,29 +773,40 @@
                 timestamp: new Date().toISOString()
             };
 
-            // Вычисляем результат
+            // Вычисляем результат используя координаты изображения (imgX/imgY) для точности
             if (type === 'ruler') {
-                const dx = (measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
-                const dy = (measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                const p1 = measurement.points[0];
+                const p2 = measurement.points[1];
+                const dx = (p2.imgX - p1.imgX) * pixelSpacing.x;
+                const dy = (p2.imgY - p1.imgY) * pixelSpacing.y;
                 measurement.distance = Math.sqrt(dx * dx + dy * dy);
                 measurement.unit = 'mm';
             } else if (type === 'angle') {
                 const p1 = measurement.points[0];
                 const p2 = measurement.points[1];
                 const p3 = measurement.points[2];
-                const angle = calculateAngle(p1, p2, p3);
+                // Используем imgX/imgY для точного вычисления угла
+                const angle = calculateAngle(
+                    { x: p1.imgX, y: p1.imgY },
+                    { x: p2.imgX, y: p2.imgY },
+                    { x: p3.imgX, y: p3.imgY }
+                );
                 measurement.angle = angle;
                 measurement.unit = '°';
             } else if (type === 'rect') {
-                const width = Math.abs(measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
-                const height = Math.abs(measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                const p1 = measurement.points[0];
+                const p2 = measurement.points[1];
+                const width = Math.abs(p2.imgX - p1.imgX) * pixelSpacing.x;
+                const height = Math.abs(p2.imgY - p1.imgY) * pixelSpacing.y;
                 measurement.width = width;
                 measurement.height = height;
                 measurement.area = width * height;
                 measurement.unit = 'mm';
             } else if (type === 'ellipse') {
-                const rx = Math.abs(measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
-                const ry = Math.abs(measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                const p1 = measurement.points[0];
+                const p2 = measurement.points[1];
+                const rx = Math.abs(p2.imgX - p1.imgX) * pixelSpacing.x;
+                const ry = Math.abs(p2.imgY - p1.imgY) * pixelSpacing.y;
                 measurement.radiusX = rx;
                 measurement.radiusY = ry;
                 measurement.area = Math.PI * rx * ry;
@@ -1216,8 +1255,9 @@
 
             const tempImg = new Image();
             tempImg.onload = () => {
-                frameCache.set(cacheKey, url);
+                frameCache.set(cacheKey, tempImg.src);  // FIX: используем tempImg.src вместо url
                 frameLoading.delete(cacheKey);
+                console.log(`[DICOM] Preloaded frame ${frameNumber + 1}/${totalFrames} (cache size: ${frameCache.size})`);
 
                 // Ограничиваем размер кэша (максимум 50 фреймов)
                 if (frameCache.size > 50) {
@@ -1227,6 +1267,7 @@
             };
             tempImg.onerror = () => {
                 frameLoading.delete(cacheKey);
+                console.warn(`[DICOM] Failed to preload frame ${frameNumber + 1}`);
             };
             tempImg.src = url;
         }
@@ -1419,7 +1460,85 @@
                 window.parent.postMessage('dicom-close', '*');
             }
         });
-        
+
+        // ==================== ГОРЯЧИЕ КЛАВИШИ ====================
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+            switch(e.key) {
+                case 'w': case 'W':
+                case 'ц': case 'Ц':  // русская раскладка
+                    setTool('window');
+                    break;
+                case 'z': case 'Z':
+                case 'я': case 'Я':
+                    setTool('zoom');
+                    break;
+                case 'p': case 'P':
+                case 'з': case 'З':
+                    setTool('pan');
+                    break;
+                case 'c': case 'C':
+                case 'с': case 'С':  // русская 'с' для Cine
+                    if (isMultiFrame) setTool('cine');
+                    break;
+                case ' ':
+                    e.preventDefault();
+                    if (isMultiFrame) toggleCineLoop();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (isMultiFrame) prevFrame();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (isMultiFrame) nextFrame();
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (isMultiFrame) cineFirst();
+                    break;
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (isMultiFrame) cineLast();
+                    break;
+                case 'r': case 'R':
+                case 'к': case 'К':
+                    resetView();
+                    break;
+                case 'i': case 'I':
+                case 'ш': case 'Ш':
+                    invertView();
+                    break;
+                case 'm': case 'M':
+                case 'ь': case 'Ь':
+                    toggleMeasurementMode();
+                    break;
+                case 's': case 'S':
+                case 'ы': case 'Ы':
+                    takeScreenshot();
+                    break;
+                case 'Escape':
+                    if (measurementMode) toggleMeasurementMode();
+                    break;
+                case '1':
+                    setPreset('Bone');
+                    break;
+                case '2':
+                    setPreset('Lung');
+                    break;
+                case '3':
+                    setPreset('Brain');
+                    break;
+                case '4':
+                    setPreset('Abdomen');
+                    break;
+                case '5':
+                    setPreset('Liver');
+                    break;
+            }
+        });
+
         // Очистка при закрытии
         window.addEventListener('beforeunload', () => {
             // Останавливаем cine loop

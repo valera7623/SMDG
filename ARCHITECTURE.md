@@ -473,12 +473,17 @@ pillow  = "^11.0"    # Конвертация в PNG
 ~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0
 ~~Webhook-уведомления~~ ✅ Реализовано в v2.1
 ~~DICOM Viewer~~ ✅ Реализовано в v3.0
-Multi-tenancy (организации)
-Экспорт аудита в PDF/Excel
-S3 Lifecycle Policies вместо FileCleanupManager
-Multi-frame DICOM (CT/MRI серии)
-Сжатые DICOM (JPEG2000, JPEG-LS) — pydicom[gdcm]
-Windowing presets (Bone, Lung, Soft tissue)
-Measurements (линейка, угол, ROI)
+~~Multi-frame DICOM (CT/MRI серии)~~ ✅ Реализовано — Cine mode, scroll, preload, frame slider
+~~Сжатые DICOM (JPEG2000, JPEG-LS)~~ ✅ Реализовано — pydicom[gdcm], 9 сжатых Transfer Syntax
+~~Windowing presets~~ ✅ Реализовано — Bone, Lung, Brain, Abdomen, Liver
+~~Measurements (линейка, угол, ROI)~~ ✅ Реализовано — Canvas overlay, точность с учётом zoom/pan
+~~Экспорт PNG/Screenshot~~ ✅ Реализовано — с метаданными, измерениями и ориентацией
+~~OHIF Viewer интеграция~~ ✅ Реализовано — DICOMweb endpoints, series panel
+~~S3 Lifecycle Policies~~ ✅ Реализовано — автоматическое удаление, fallback на APScheduler
+
+### Осталось реализовать (2/12)
+
+- **Multi-tenancy (организации)** — изоляция данных между организациями, админы организаций
+- **Экспорт аудита в PDF/Excel** — отчёты по операциям, фильтрация по дате/пользователю
 
 Конец документа.

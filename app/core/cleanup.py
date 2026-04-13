@@ -46,6 +46,15 @@ class FileCleanupManager:
         self._started = True
         self.logger.info("🗓️ APScheduler запущен: очистка каждые 30 минут")
 
+    async def stop_cleanup_task(self):
+        """Остановка периодической очистки"""
+        if self._started and self.scheduler.running:
+            self.scheduler.shutdown(wait=False)
+            self._started = False
+            self.logger.info("🛑 APScheduler очистки остановлен")
+        else:
+            self.logger.debug("APScheduler не запущен — остановка пропущена")
+
     async def _cleanup_old_files(self):
         """Очистка старых файлов с батчингом"""
         self.logger.info("🚮 Запуск периодической очистки старых файлов")

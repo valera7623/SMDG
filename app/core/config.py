@@ -130,6 +130,11 @@ class Settings(BaseSettings):
     # DICOM Viewer
     dicom_viewer_enabled: bool = True
     dicom_view_token_ttl_seconds: int = 900          # 15 минут
+
+    # S3 Lifecycle Policies
+    s3_lifecycle_enabled: bool = True                 # Включить S3 Lifecycle Policies
+    s3_lifecycle_default_ttl_days: int = 30           # TTL по умолчанию (дни)
+    s3_lifecycle_custom_policies: str = ""            # JSON с кастомными политиками: '{"ext":days}'
     dicom_max_stream_size_mb: int = 500              # Макс. размер для streaming
 
     # DICOM-сигнатуры

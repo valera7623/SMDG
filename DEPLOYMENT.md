@@ -308,7 +308,39 @@ docker compose exec db pg_dump -U smdg_user smdg > backup_$(date +%Y%m%d).sql
 
 - Регулярно бэкапить БД (PostgreSQL)
 - Настроить S3 Versioning на бакете
-- Настроить S3 Lifecycle Policies для автоматического удаления старых версий
+- ~~Настроить S3 Lifecycle Policies~~ ✅ **Автоматически применяется при запуске!**
+
+### S3 Lifecycle Policies (автоудаление)
+
+При использовании S3 хранилища приложение автоматически применяет Lifecycle Policies:
+
+```bash
+# При запуске SMDG:
+# ✅ Создаются правила для каждого типа файлов:
+#    - .txt, .age: 30 дней
+#    - .jpg, .png: 180 дней  
+#    - .pdf: 90 дней
+#    - .dcm: 365 дней
+#    - Остальные: 30 дней (default)
+# ✅ S3 автоматически удаляет файлы по истечении TTL
+# ✅ APScheduler НЕ запускается (экономия ресурсов)
+```
+
+**Настройка через переменные окружения:**
+```env
+# .env.prod
+S3_LIFECYCLE_ENABLED=true
+S3_LIFECYCLE_DEFAULT_TTL_DAYS=30
+S3_LIFECYCLE_CUSTOM_POLICIES='{"dcm":365,"pdf":90}'
+```
+
+**Fallback:** Если S3 Lifecycle не применились (ошибка доступа, нет прав) — автоматически запускается APScheduler как fallback.
+
+**Преимущества перед FileCleanupManager:**
+- ✅ Удаление на стороне S3 — не требует running application
+- ✅ Работает даже когда приложение остановлено
+- ✅ Не потребляет ресурсы приложения
+- ✅ Точное соблюдение TTL
 
 ---
 

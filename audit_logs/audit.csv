@@ -31759,3 +31759,783 @@ DETAIL:  Key (id)=(9) is still referenced from table ""dicom_view_tokens"".
 2026-04-13T18:15:15.787631,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
 2026-04-13T18:15:31.823575,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
 2026-04-13T18:15:46.821150,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:16:00.488916,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:16:00.490046,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:16:01.821810,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:16:18.066493,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:16:33.066777,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:16:48.069531,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:17:00.205131,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:17:00.206981,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:17:03.067911,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:17:18.068580,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:17:33.944210,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:17:48.943406,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:17:59.757690,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:17:59.758706,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:18:03.943265,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:18:18.944546,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:18:34.858792,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:18:49.859003,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:18:59.996563,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:18:59.997569,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:19:05.984254,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:19:20.982622,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:19:37.221757,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:19:52.221568,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:20:00.098973,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:20:00.100433,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:20:07.221010,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:20:22.222133,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:20:38.319751,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:20:53.321733,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:21:00.129663,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:21:00.130527,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:21:08.322991,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:21:24.350356,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:21:39.350796,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:21:55.503158,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:22:00.666749,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:22:00.667670,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:22:10.504396,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:22:26.640640,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:22:41.639234,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:22:57.814202,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:23:01.114761,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:23:01.115680,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:23:12.811098,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:23:29.016363,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:23:44.013431,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:23:59.015502,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:23:59.894012,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:23:59.894858,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:24:15.315185,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:24:30.314525,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:24:46.483763,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:25:00.161798,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:25:00.162629,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:25:01.483788,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:25:17.601701,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:25:32.602727,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:25:48.766794,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:26:00.300841,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:26:00.301794,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:26:03.767830,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:26:19.910583,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:26:34.911617,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:26:51.101943,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:27:00.594208,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:27:00.595185,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:27:06.101316,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:27:21.100792,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:27:37.265047,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:27:52.266265,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:27:59.973144,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:27:59.974171,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:28:07.267266,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:28:22.266822,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:28:37.268068,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:28:53.199071,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:29:01.162579,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:29:01.164314,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:29:08.199986,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:29:23.200669,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:29:38.197401,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:29:53.198526,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:30:00.227688,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:30:00.228612,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:30:08.200150,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:30:23.199329,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:30:39.085580,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:30:54.084168,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:31:00.292743,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:31:00.293638,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:31:10.076784,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:31:25.077329,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:31:41.216998,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:31:56.216070,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:32:00.335798,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:32:11.216674,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:32:27.376884,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:32:42.376526,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:32:57.377212,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:33:01.048796,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:33:13.219693,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:33:28.217986,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:33:44.271453,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:33:59.271757,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:34:00.320351,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:34:15.202540,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:34:30.201175,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:34:46.173474,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:35:00.364252,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:35:01.173337,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:35:17.227613,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:35:32.226778,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:35:48.417148,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:36:00.531185,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:36:03.418520,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:36:13.006722,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:13.120590,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:13.131651,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T18:36:18.419760,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:36:26.986382,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-13T18:36:26.987556,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:27.029283,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:36:27.030280,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:34.799652,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:36:43.717944,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:36:43.719074,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:49.080312,upload,ct_labelmap_monochrome_jpeg2000 (1).dcm,1786332,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-04-13T18:36:49.083382,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:49.141768,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:36:49.142905,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:49.800217,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:36:53.055288,dicom.view_initiated,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,admin,127.0.0.1,,Открыт DICOM viewer,True
+2026-04-13T18:36:53.056254,POST /api/dicom/view-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:53.072247,GET /dicom-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:53.148272,dicom.metadata_accessed,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T18:36:53.149440,GET /api/dicom/metadata/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:55.329010,GET /api/dicom/render/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:36:57.449636,GET /api/dicom/render/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.905344,GET /api/dicom/render/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.907105,GET /api/dicom/render/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.917673,dicom.ohif_initiated,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,admin,127.0.0.1,,Открыт OHIF Viewer,True
+2026-04-13T18:37:01.919002,POST /api/dicom/ohif-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.934140,GET /ohif-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.967243,dicom.metadata_accessed,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T18:37:01.968269,GET /api/dicom/metadata/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:01.989207,GET /api/dicom/render/18,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:04.799956,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:37:13.735731,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:37:13.736837,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:20.908687,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:37:35.910532,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:37:44.021961,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:37:44.022988,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:50.419073,user_delete_file,0c271232-ae28-4508-bcf8-111bc35cc669_ct_labelmap_monochrome_jpeg2000_1_.dcm.age,1786964,admin,127.0.0.1,0339917b0b989e1c66bc8ea8b97927877ec0b90883e16f476546cf5f384cb37e,Удаление файла пользователем,True
+2026-04-13T18:37:50.420306,POST /api/delete-user-file,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:50.458633,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:37:50.459739,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:37:52.074164,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:38:07.076100,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:38:08.164968,upload,ct_labelmap_monochrome_native.dcm,33151416,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-04-13T18:38:08.174654,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:08.230057,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:38:08.231094,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:12.984424,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:38:12.985467,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:15.310488,dicom.ohif_initiated,ct_labelmap_monochrome_native.dcm,0,admin,127.0.0.1,,Открыт OHIF Viewer,True
+2026-04-13T18:38:15.311622,POST /api/dicom/ohif-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:15.329161,GET /ohif-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:15.704367,dicom.metadata_accessed,ct_labelmap_monochrome_native.dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T18:38:15.705618,GET /api/dicom/metadata/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:16.084097,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:23.207605,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:38:23.534389,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:23.647174,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:23.720250,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:23.892123,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:24.784514,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:26.191766,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:26.195489,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:26.196146,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:26.196542,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:27.537301,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:27.538963,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:27.539636,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:27.545948,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:28.872216,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:28.874989,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:28.878395,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:28.878823,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:28.879210,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:30.491204,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:30.494939,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:30.496816,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:30.499522,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:30.502437,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:31.020357,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:31.021286,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:31.021734,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:31.024151,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:38.202573,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:38:42.751796,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:43.048342,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:38:43.049391,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:44.363548,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:47.723490,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:52.452348,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:54.340432,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:38:54.502857,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:57.808587,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:57.809142,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:57.814515,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:58.521329,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:58.521851,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:58.523702,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:59.478995,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:59.481177,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:59.917289,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:59.918424,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:38:59.920933,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:00.102395,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.306763,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.307656,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.331808,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.731887,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.733460,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:01.905975,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:09.338025,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:39:12.620386,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.530342,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.536177,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.539101,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.573717,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:39:13.575259,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.841219,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:13.844377,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:15.396707,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:15.424712,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:15.467795,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:15.650629,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:15.680392,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:16.059301,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:16.125185,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:16.236482,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:17.646157,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:17.659284,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:17.745211,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:18.093521,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:18.320004,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:18.424834,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:18.589241,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:21.433575,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:22.922262,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:22.923346,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:22.924276,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:22.926235,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:22.964033,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:23.385324,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:23.386789,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:23.828087,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:23.828963,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:23.830293,GET /api/dicom/render/19,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:25.407192,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:39:40.407394,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:39:44.140699,user_delete_file,0660d0c9-49ba-4da2-950b-31f715b54d3b_ct_labelmap_monochrome_native.dcm.age,33159696,admin,127.0.0.1,78972469f41d73ab8a3e45e1cd939481d6cb4cf402eabee21a51dc835927ad8d,Удаление файла пользователем,True
+2026-04-13T18:39:44.144777,POST /api/delete-user-file,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:44.146235,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T18:39:44.148962,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:44.188426,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:39:44.189371,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:39:56.598036,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:40:11.598958,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:40:13.330474,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:40:13.331389,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:40:26.600872,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:40:42.735783,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:40:43.463067,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:40:43.464083,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:40:57.733850,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:41:13.545093,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:41:13.545955,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:41:13.876597,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:41:28.877058,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:41:43.827273,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:41:43.828173,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:41:44.974117,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:41:59.971972,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:42:13.891966,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:42:13.893056,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:42:16.071913,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:42:31.071090,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:42:43.948777,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:42:43.949854,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:42:47.179778,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:43:02.180498,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:43:12.978699,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:43:12.979761,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:43:18.296412,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:43:33.294064,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:43:42.999153,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:43:43.000158,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:43:49.396769,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:44:04.394278,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:44:13.155160,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:44:13.156811,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:44:19.396158,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:44:35.493429,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:44:43.213799,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:44:43.214852,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:44:50.494536,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:45:06.607952,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:45:13.268465,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:45:13.269399,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:45:21.608156,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:45:37.710978,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:45:43.545617,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:45:43.546499,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:45:52.709705,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:46:08.808884,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:46:13.552198,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:46:13.553003,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:46:23.811541,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:46:39.935002,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:46:43.833208,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:46:43.834262,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:46:54.935026,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:47:11.054237,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:47:14.034813,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:47:14.035880,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:47:26.055417,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:47:42.193748,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:47:44.041995,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:47:44.042897,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:47:57.191128,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:48:12.192430,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:48:13.008241,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:48:13.009386,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:48:28.326896,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:48:43.021822,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:48:43.022886,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:48:43.324109,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:48:59.465604,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:49:13.065167,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:49:13.066126,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:49:14.466016,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:49:30.608623,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:49:43.255608,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:49:43.256601,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:49:45.608152,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:50:01.754703,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:50:13.225460,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:50:13.226466,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:50:16.757998,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:50:32.919304,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:50:43.460558,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:50:43.461613,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:50:47.921620,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:51:04.068724,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:51:13.585839,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:51:13.586764,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:51:19.069810,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:51:34.067533,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:51:43.792358,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:51:43.793195,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:51:50.266576,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:52:05.265413,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:52:14.047101,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:52:14.048033,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:52:21.456530,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:52:36.454314,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:52:44.065740,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:52:44.066790,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:52:52.616543,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:53:07.616420,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:53:12.953203,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:53:12.954148,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:53:23.825238,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:53:38.827122,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:53:42.996592,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:53:42.997528,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:53:55.041375,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:54:10.040522,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:54:13.027168,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:54:13.028612,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:54:26.212252,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:54:41.218659,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:54:43.203068,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:54:43.203908,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:54:57.390966,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:55:12.390124,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:55:13.239709,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:55:13.240765,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:55:27.390877,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:55:43.392154,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:55:43.393151,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:55:43.544513,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:55:58.541822,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:56:13.825494,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:56:13.827348,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:56:14.625606,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:56:29.627985,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:56:43.902737,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:56:43.903533,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:56:45.626536,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:57:00.625281,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:57:12.946081,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:57:12.947137,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:57:15.625397,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:57:32.123381,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:57:43.493337,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:57:43.494416,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:57:47.120142,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:58:03.177162,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T18:58:13.628359,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T18:58:13.629347,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T18:58:18.179076,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:02:26.210222,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:02:41.199491,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:02:57.332791,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:03:12.333649,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:03:43.535552,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:03:59.743127,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:04:14.743044,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:04:30.985055,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:04:45.985915,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:05:02.283062,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:05:17.282010,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:05:33.570960,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:05:48.569900,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:06:04.726849,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:06:19.727820,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:06:34.729212,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:06:50.943000,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:07:05.943279,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:07:22.136607,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:07:37.135327,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:07:53.350896,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:08:08.351140,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:08:24.566038,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:08:39.567388,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:08:55.816872,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:09:10.817232,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:09:27.042822,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:09:28.868031,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:09:28.967802,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:09:29.029840,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:09:29.030906,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:09:42.043048,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:09:48.477334,POST /api/auth/logout,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:09:57.047405,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:09:57.791389,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:12.048872,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:10:17.862718,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:19.195820,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:28.009150,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:10:28.246520,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:31.438525,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:34.385707,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:43.009586,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:10:54.257973,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:10:54.314291,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:10:54.331217,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:57.829184,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:10:57.874363,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:10:57.887042,GET /api/list,,0,api,172.18.0.9,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",False
+2026-04-13T19:10:59.064149,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:11:14.063979,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:11:19.428102,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-13T19:11:19.429147,POST /api/auth/login,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:19.469302,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:11:19.470267,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:27.716189,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:11:27.717024,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:29.547384,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:11:34.257688,upload,ct_labelmap_monochrome_jpeg2000 (1).dcm,1786332,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-04-13T19:11:34.260148,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:34.364420,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:11:34.365324,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:36.901997,dicom.ohif_initiated,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,admin,127.0.0.1,,Открыт OHIF Viewer,True
+2026-04-13T19:11:36.903242,POST /api/dicom/ohif-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:36.921197,GET /ohif-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:37.395493,dicom.metadata_accessed,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T19:11:37.396873,GET /api/dicom/metadata/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:39.694947,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:44.549758,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:11:55.790849,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:56.173042,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:56.261075,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:56.261843,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:11:56.269235,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:12.184216,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:12:14.427781,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:14.589209,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:25.510989,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:25.512997,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:27.785494,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:27.785964,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:36.462387,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:40.856393,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:45.186652,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:12:49.394305,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.429794,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.430455,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.430810,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.431224,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.509959,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:12:49.518272,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.543053,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:12:49.547885,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.568916,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.569677,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.570141,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:49.584762,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:51.847224,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.309840,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.330131,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.330617,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.330985,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.331643,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:12:56.367301,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.369135,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.386294,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.387236,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:56.407153,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:12:58.800726,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:01.109227,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:01.110007,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:01.110579,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:01.111148,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:03.325183,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:03.325826,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.629460,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.642347,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.651814,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.652889,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.717707,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.718327,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:07.719043,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:15.118698,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:15.119427,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:13:25.789033,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:25.799201,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:25.846973,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:25.847434,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.145828,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.146294,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.146628,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.160951,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.174429,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:13:28.176972,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.177610,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.191357,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.196524,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.228198,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.229367,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.229966,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.232031,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.258819,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:13:28.263749,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.264520,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:28.265311,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:30.544962,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:30.545717,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:30.547479,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:30.547898,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:30.548280,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.643011,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.643492,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.670068,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.670515,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.670848,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.671176,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.677025,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.677809,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.678172,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.739596,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.740999,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:13:32.744289,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:13:32.746816,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:32.752973,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.723434,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.724704,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.725274,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.725610,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.728167,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:44.753429,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:13:44.754222,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:13:47.483834,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:13:57.020230,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:13:57.021285,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:14:02.483559,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:14:18.692281,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:14:33.693918,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:14:48.694161,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:15:04.849232,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:15:19.849052,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:15:34.848324,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:15:49.857388,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:16:06.071480,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:16:21.070900,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:16:36.996961,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:16:51.994961,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:17:08.091142,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:17:23.091992,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:17:39.273178,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:17:54.272854,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:18:09.273932,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:18:25.481431,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:18:40.482556,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:18:55.482634,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:19:10.481688,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:19:26.847512,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:19:41.849295,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:19:57.924103,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:20:12.925256,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:20:29.038018,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:20:44.039286,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:21:00.177684,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:21:15.177307,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:21:30.177709,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:21:46.597429,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:22:01.597663,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:22:17.670502,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:22:32.670318,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:22:48.719410,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:23:03.718493,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:23:18.718914,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:23:34.820295,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:23:49.819305,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:24:04.818694,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:24:21.491156,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:24:36.491181,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:24:52.783190,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:25:07.782580,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:25:24.283574,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:25:39.283044,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:25:55.860833,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:26:10.859653,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:26:27.412892,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:26:42.412344,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:26:57.412335,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:27:13.943561,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:27:28.944295,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:27:45.550645,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:28:00.550599,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:28:17.084151,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:28:32.085575,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:28:47.085598,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:29:03.487632,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:29:18.496655,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:29:34.655911,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:29:49.654344,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:30:05.867559,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:30:20.864684,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:30:35.867372,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:30:52.075642,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:31:07.076444,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:31:22.076418,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:31:38.218117,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:31:53.217849,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:32:09.292461,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:32:24.294587,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:32:55.433494,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:33:11.515038,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:33:26.524202,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:33:42.365564,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:33:57.368558,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:34:28.324070,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:34:43.332644,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:34:58.315675,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:35:14.761101,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:35:44.770766,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:35:52.499968,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:52.790902,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:52.865423,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:35:52.866399,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:57.638085,dicom.view_initiated,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,admin,127.0.0.1,,Открыт DICOM viewer,True
+2026-04-13T19:35:57.639048,POST /api/dicom/view-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:57.671305,GET /dicom-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:57.716782,dicom.metadata_accessed,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T19:35:57.718184,GET /api/dicom/metadata/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:57.745344,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:57.985216,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:58.007228,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:35:58.011978,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:01.263439,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:36:11.170174,GET /,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:11.283620,GET /health,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:11.440769,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:36:11.441759,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:16.264714,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:36:18.834743,dicom.ohif_initiated,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,admin,127.0.0.1,,Открыт OHIF Viewer,True
+2026-04-13T19:36:18.835694,POST /api/dicom/ohif-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:18.866636,GET /ohif-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:18.906766,dicom.metadata_accessed,ct_labelmap_monochrome_jpeg2000 (1).dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T19:36:18.907877,GET /api/dicom/metadata/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:18.929458,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:32.274664,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:36:33.273636,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:33.329938,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:33.330429,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:33.344275,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:33.345057,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:41.581473,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:36:41.582464,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:48.109024,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:48.114544,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:36:52.264843,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:54.464433,GET /api/dicom/render/20,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:58.429426,user_delete_file,4006b3a9-aad1-4e00-8cbe-170d92799ee0_ct_labelmap_monochrome_jpeg2000_1_.dcm.age,1786964,admin,127.0.0.1,0339917b0b989e1c66bc8ea8b97927877ec0b90883e16f476546cf5f384cb37e,Удаление файла пользователем,True
+2026-04-13T19:36:58.430557,POST /api/delete-user-file,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:36:58.470497,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:36:58.471349,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:03.241290,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:37:11.644275,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:37:11.645824,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:12.843602,upload,ct_labelmap_monochrome_native.dcm,33151416,admin,127.0.0.1,,Успешная загрузка и шифрование,True
+2026-04-13T19:37:12.853474,POST /api/upload,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:12.910318,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:37:12.911285,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:17.381065,dicom.view_initiated,ct_labelmap_monochrome_native.dcm,0,admin,127.0.0.1,,Открыт DICOM viewer,True
+2026-04-13T19:37:17.382013,POST /api/dicom/view-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:17.396506,GET /dicom-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:17.829371,dicom.metadata_accessed,ct_labelmap_monochrome_native.dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T19:37:17.830807,GET /api/dicom/metadata/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:18.240202,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:18.252509,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:37:19.110127,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:19.110649,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:19.133704,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:20.486457,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:21.485569,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:22.179542,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:22.757724,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:23.512723,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:27.571734,dicom.ohif_initiated,ct_labelmap_monochrome_native.dcm,0,admin,127.0.0.1,,Открыт OHIF Viewer,True
+2026-04-13T19:37:27.572568,POST /api/dicom/ohif-url,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:27.586722,GET /ohif-viewer,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:27.617951,dicom.metadata_accessed,ct_labelmap_monochrome_native.dcm,0,anon,127.0.0.1,,Запрошены DICOM-теги,True
+2026-04-13T19:37:27.619178,GET /api/dicom/metadata/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:27.639244,GET /api/dicom/render/21,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:34.289198,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:37:41.769067,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:37:41.770149,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:37:49.287204,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:38:04.288466,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:38:10.850417,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (1 шт.),True
+2026-04-13T19:38:10.851535,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:38:20.738485,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:38:32.046709,user_delete_file,4e9b16e3-6fef-4ee2-8195-0f3caa1ab07d_ct_labelmap_monochrome_native.dcm.age,33159696,admin,127.0.0.1,78972469f41d73ab8a3e45e1cd939481d6cb4cf402eabee21a51dc835927ad8d,Удаление файла пользователем,True
+2026-04-13T19:38:32.048149,POST /api/delete-user-file,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:38:32.091001,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:38:32.091872,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:38:35.736559,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:38:41.370745,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:38:41.371786,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:38:50.738726,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:39:06.782205,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:39:11.518590,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:39:11.519620,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:39:21.783994,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:39:37.816405,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:39:41.668742,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:39:41.669591,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:39:52.815145,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:40:08.831974,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:40:11.752828,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:40:11.753774,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:40:23.831074,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:40:39.625428,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:40:41.733992,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:40:41.734980,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:40:54.622797,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:41:09.623780,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:41:10.878086,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:41:10.878891,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
+2026-04-13T19:41:25.964428,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:41:40.939187,GET /metrics,,0,api,172.18.0.5,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-13T19:41:41.340978,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-13T19:41:41.341728,GET /api/list,,0,api,172.18.0.9,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Sa",True
