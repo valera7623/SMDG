@@ -236,7 +236,12 @@
         let cineFps = 10;
         let frameCache = new Map(); // Кэш загруженных фреймов
         let frameLoading = new Set(); // Загружающиеся сейчас фреймы
+        let frameLoadingAbort = new Map(); // AbortController для отмены загрузки
         let preloadRadius = 3; // Сколько соседних фреймов предзагружать
+        let currentLoadingPromise = null; // Текущий promise загрузкики для race condition
+        const FRAME_CACHE_MAX_ITEMS = 100; // Максимальное количество фреймов в кэше
+        const FRAME_CACHE_MAX_MEMORY_MB = 200; // Максимальный размер кэша в MB (примерно)
+        let frameCacheEstimatedSizeMB = 0; // Приблизительный размер кэша
 
         // Measurement состояние
         let measurementMode = false;
@@ -246,6 +251,7 @@
         let measurePoints = []; // Текущие точки измерения
         let measureCanvas, measureCtx;
         let pixelSpacing = { x: 1, y: 1 }; // мм на пиксель (из DICOM)
+        let measureMouseSetup = false; // Флаг для предотвращения дублирования listeners
         
         // Предустановки Window/Level для разных тканей
         const wlPresets = {
@@ -311,7 +317,8 @@
                     'Загрузка изображения...';
                 await loadFrame(0);
 
-                img.onload = function() {
+                // Функция-обработчик загрузки изображения (объявлена заранее)
+                function onImgLoad() {
                     loadingDiv.style.display = 'none';
                     viewerLayout.style.display = 'flex';
                     fileNameSpan.textContent = fileName;
@@ -327,7 +334,9 @@
                     if (isMultiFrame) {
                         preloadNeighborFrames();
                     }
-                };
+                }
+
+                img.addEventListener('load', onImgLoad, { once: true });
 
                 img.onerror = function() {
                     showError('Не удалось загрузить изображение DICOM. Проверьте, что файл является DICOM и сервер доступен.');
@@ -446,6 +455,8 @@
             img.style.transform = `scale(${transform.scale}) translate(${transform.tx}px, ${transform.ty}px)`;
             img.style.transformOrigin = 'center center';
             updateZoomInfo();
+            // Перерисовываем измерения при изменении zoom/pan
+            redrawMeasurements();
         }
         
         function updateZoomInfo() {
@@ -467,17 +478,21 @@
             
             wlTimeout = setTimeout(() => {
                 const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&center=${wlState.wc}&width=${wlState.ww}`;
-                
+
                 // Сохраняем текущие трансформации перед загрузкой нового изображения
                 const savedTransform = { ...transform };
-                
-                img.onload = () => {
+
+                // Используем addEventListener вместо перезаписи onload
+                const onWlLoad = () => {
+                    img.removeEventListener('load', onWlLoad);
                     img.classList.remove('loading');
                     statusTextSpan.textContent = 'Готово';
                     // Восстанавливаем трансформации после загрузки
                     transform = savedTransform;
                     applyTransform();
                 };
+
+                img.addEventListener('load', onWlLoad, { once: true });
                 
                 img.onerror = () => {
                     img.classList.remove('loading');
@@ -612,8 +627,28 @@
         }
         
         // ==================== ФУНКЦИИ ИЗМЕРЕНИЙ ====================
-        
-        // Преобразование canvas координат в координаты изображения (с учётом zoom/pan)
+
+        // Преобразование координат изображения (image-space) в canvas-координаты (с учётом zoom/pan)
+        function getImageToCanvasCoordinates(imgX, imgY) {
+            const canvasRect = measureCanvas.getBoundingClientRect();
+            const imgRect = img.getBoundingClientRect();
+
+            // Нормализуем к относительным координатам изображения (0..1)
+            const normX = imgX / img.naturalWidth;
+            const normY = imgY / img.naturalHeight;
+
+            // Преобразуем в пиксели отображаемого изображения
+            const displayedX = normX * imgRect.width;
+            const displayedY = normY * imgRect.height;
+
+            // Добавляем смещение изображения относительно canvas и трансформации
+            const canvasX = (imgRect.left - canvasRect.left) + displayedX + transform.tx * transform.scale;
+            const canvasY = (imgRect.top - canvasRect.top) + displayedY + transform.ty * transform.scale;
+
+            return { x: canvasX, y: canvasY };
+        }
+
+        // Преобразование client координат (клик мыши) в координаты изображения (image-space)
         function getImageCoordinates(clientX, clientY) {
             const canvasRect = measureCanvas.getBoundingClientRect();
             const imgRect = img.getBoundingClientRect();
@@ -687,6 +722,10 @@
                 document.querySelectorAll('.measure-btn[data-measure]').forEach(btn => {
                     btn.classList.remove('active');
                 });
+                // Удаляем listeners при выходе из режима
+                measureCanvas.removeEventListener('mousedown', handleMeasureMouseDown);
+                measureCanvas.removeEventListener('mousemove', handleMeasureMouseMove);
+                measureMouseSetup = false;
                 redrawMeasurements();
                 statusTextSpan.textContent = 'Режим измерений выключен';
             }
@@ -712,6 +751,10 @@
         }
 
         function setupMeasureMouse() {
+            // Предотвращаем дублирование listeners
+            if (measureMouseSetup) return;
+            measureMouseSetup = true;
+
             // measurement mode — используем отдельный overlay для кликов
             measureCanvas.style.pointerEvents = 'auto';
 
@@ -723,15 +766,17 @@
             if (!measurementMode || !measureTool) return;
             if (e.button !== 0) return;
 
-            // Используем точные координаты изображения (с учётом zoom/pan)
+            // Используем image-space координаты для точности
             const imgCoords = getImageCoordinates(e.clientX, e.clientY);
 
             if (!measureDrawing) {
                 measureDrawing = true;
-                measurePoints = [{ x: e.clientX, y: e.clientY, imgX: imgCoords.x, imgY: imgCoords.y }];
+                // Храним ТОЛЬКО image-space координаты
+                measurePoints = [{ imgX: imgCoords.x, imgY: imgCoords.y }];
                 statusTextSpan.textContent = measureTool === 'angle' ? `Точка 2 (вершина)...` : `Точка 2...`;
             } else {
-                measurePoints.push({ x: e.clientX, y: e.clientY, imgX: imgCoords.x, imgY: imgCoords.y });
+                // Добавляем image-space координаты
+                measurePoints.push({ imgX: imgCoords.x, imgY: imgCoords.y });
 
                 // Проверяем, завершено ли измерение
                 if (measureTool === 'ruler' && measurePoints.length === 2) {
@@ -754,13 +799,18 @@
         function handleMeasureMouseMove(e) {
             if (!measureDrawing || measurePoints.length === 0) return;
 
-            // Предварительный просмотр (используем canvas координаты для отрисовки)
-            const rect = measureCanvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            // Получаем client координаты и конвертируем в image-space для preview
+            const imgCoords = getImageCoordinates(e.clientX, e.clientY);
+            
+            // Получаем canvas координаты последнего сохранённого пункта
+            const lastPoint = measurePoints[measurePoints.length - 1];
+            const lastCanvasCoords = getImageToCanvasCoordinates(lastPoint.imgX, lastPoint.imgY);
+            
+            // Получаем canvas координаты текущей позиции
+            const currentCanvasCoords = getImageToCanvasCoordinates(imgCoords.x, imgCoords.y);
 
             redrawMeasurements();
-            drawPreview(measurePoints[measurePoints.length - 1], { x, y });
+            drawPreview(lastCanvasCoords, currentCanvasCoords);
 
             e.preventDefault();
             e.stopPropagation();
@@ -859,14 +909,15 @@
                 if (measurePoints.length === 1) {
                     // Первая линия: точка 1 → текущая
                     measureCtx.beginPath();
-                    measureCtx.moveTo(measurePoints[0].x, measurePoints[0].y);
+                    measureCtx.moveTo(p1.x, p1.y);
                     measureCtx.lineTo(p2.x, p2.y);
                     measureCtx.stroke();
                 } else if (measurePoints.length === 2) {
                     // Две линии: 1→2 и 2→текущая
+                    const p2canvas = getImageToCanvasCoordinates(measurePoints[1].imgX, measurePoints[1].imgY);
                     measureCtx.beginPath();
-                    measureCtx.moveTo(measurePoints[0].x, measurePoints[0].y);
-                    measureCtx.lineTo(measurePoints[1].x, measurePoints[1].y);
+                    measureCtx.moveTo(p1.x, p1.y);
+                    measureCtx.lineTo(p2canvas.x, p2canvas.y);
                     measureCtx.lineTo(p2.x, p2.y);
                     measureCtx.stroke();
                 }
@@ -904,46 +955,49 @@
                 measureCtx.lineWidth = 2;
                 measureCtx.setLineDash([]);
 
+                // Конвертируем все точки из image-space в canvas
+                const canvasPoints = m.points.map(p => getImageToCanvasCoordinates(p.imgX, p.imgY));
+
                 if (m.type === 'ruler') {
                     measureCtx.beginPath();
-                    measureCtx.moveTo(m.points[0].x, m.points[0].y);
-                    measureCtx.lineTo(m.points[1].x, m.points[1].y);
+                    measureCtx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+                    measureCtx.lineTo(canvasPoints[1].x, canvasPoints[1].y);
                     measureCtx.stroke();
 
                     // Точки
-                    m.points.forEach(p => {
+                    canvasPoints.forEach(p => {
                         measureCtx.beginPath();
                         measureCtx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
                         measureCtx.fill();
                     });
 
                     // Текст
-                    const midX = (m.points[0].x + m.points[1].x) / 2;
-                    const midY = (m.points[0].y + m.points[1].y) / 2;
+                    const midX = (canvasPoints[0].x + canvasPoints[1].x) / 2;
+                    const midY = (canvasPoints[0].y + canvasPoints[1].y) / 2;
                     drawText(`${m.distance.toFixed(2)} ${m.unit}`, midX, midY - 10);
 
                 } else if (m.type === 'angle') {
                     measureCtx.beginPath();
-                    measureCtx.moveTo(m.points[0].x, m.points[0].y);
-                    measureCtx.lineTo(m.points[1].x, m.points[1].y);
-                    measureCtx.lineTo(m.points[2].x, m.points[2].y);
+                    measureCtx.moveTo(canvasPoints[0].x, canvasPoints[0].y);
+                    measureCtx.lineTo(canvasPoints[1].x, canvasPoints[1].y);
+                    measureCtx.lineTo(canvasPoints[2].x, canvasPoints[2].y);
                     measureCtx.stroke();
 
                     // Точки
-                    m.points.forEach(p => {
+                    canvasPoints.forEach(p => {
                         measureCtx.beginPath();
                         measureCtx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
                         measureCtx.fill();
                     });
 
                     // Текст
-                    drawText(`${m.angle.toFixed(1)}°`, m.points[1].x + 10, m.points[1].y - 10);
+                    drawText(`${m.angle.toFixed(1)}°`, canvasPoints[1].x + 10, canvasPoints[1].y - 10);
 
                 } else if (m.type === 'rect') {
-                    const x = Math.min(m.points[0].x, m.points[1].x);
-                    const y = Math.min(m.points[0].y, m.points[1].y);
-                    const w = Math.abs(m.points[1].x - m.points[0].x);
-                    const h = Math.abs(m.points[1].y - m.points[0].y);
+                    const x = Math.min(canvasPoints[0].x, canvasPoints[1].x);
+                    const y = Math.min(canvasPoints[0].y, canvasPoints[1].y);
+                    const w = Math.abs(canvasPoints[1].x - canvasPoints[0].x);
+                    const h = Math.abs(canvasPoints[1].y - canvasPoints[0].y);
                     measureCtx.strokeRect(x, y, w, h);
 
                     // Текст
@@ -951,15 +1005,15 @@
                     drawText(`S=${m.area.toFixed(1)} mm²`, x + w / 2, y + h + 15);
 
                 } else if (m.type === 'ellipse') {
-                    const rx = Math.abs(m.points[1].x - m.points[0].x);
-                    const ry = Math.abs(m.points[1].y - m.points[0].y);
+                    const rx = Math.abs(canvasPoints[1].x - canvasPoints[0].x);
+                    const ry = Math.abs(canvasPoints[1].y - canvasPoints[0].y);
                     measureCtx.beginPath();
-                    measureCtx.ellipse(m.points[0].x, m.points[0].y, rx, ry, 0, 0, 2 * Math.PI);
+                    measureCtx.ellipse(canvasPoints[0].x, canvasPoints[0].y, rx, ry, 0, 0, 2 * Math.PI);
                     measureCtx.stroke();
 
                     // Текст
-                    drawText(`Rx=${m.radiusX.toFixed(1)}, Ry=${m.radiusY.toFixed(1)}`, m.points[0].x + rx + 5, m.points[0].y);
-                    drawText(`S=${m.area.toFixed(1)} mm²`, m.points[0].x + rx + 5, m.points[0].y + 15);
+                    drawText(`Rx=${m.radiusX.toFixed(1)}, Ry=${m.radiusY.toFixed(1)}`, canvasPoints[0].x + rx + 5, canvasPoints[0].y);
+                    drawText(`S=${m.area.toFixed(1)} mm²`, canvasPoints[0].x + rx + 5, canvasPoints[0].y + 15);
                 }
             });
         }
@@ -1073,6 +1127,9 @@
                     return;
                 }
 
+                // Создаём уникальный ID для этой загрузки
+                const loadingId = `frame_${frameNumber}_${Date.now()}`;
+
                 // Проверяем кэш
                 const cacheKey = `${frameNumber}:${wlState.wc}:${wlState.ww}`;
                 if (frameCache.has(cacheKey)) {
@@ -1084,29 +1141,31 @@
                     return;
                 }
 
-                // Проверяем, не загружается ли уже
-                if (frameLoading.has(cacheKey)) {
-                    // Ждём завершения загрузки
-                    const checkInterval = setInterval(() => {
-                        if (frameCache.has(cacheKey)) {
-                            clearInterval(checkInterval);
-                            img.src = frameCache.get(cacheKey);
-                            currentFrame = frameNumber;
-                            updateFrameInfo();
-                            resolve();
-                        }
-                    }, 50);
-                    return;
+                // Отменяем предыдущую загрузку этого же фрейма если есть
+                if (frameLoadingAbort.has(cacheKey)) {
+                    frameLoadingAbort.get(cacheKey)();
+                    frameLoadingAbort.delete(cacheKey);
+                    frameLoading.delete(cacheKey);
                 }
 
+                const abortController = { aborted: false };
+                const abort = () => { abortController.aborted = true; };
+                frameLoadingAbort.set(cacheKey, abort);
                 frameLoading.add(cacheKey);
 
                 const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&frame=${frameNumber}&center=${wlState.wc}&width=${wlState.ww}`;
 
                 const tempImg = new Image();
                 tempImg.onload = () => {
+                    // Проверяем, что загрузка не была отменена
+                    if (abortController.aborted) {
+                        reject(new Error('Load aborted'));
+                        return;
+                    }
+
                     frameCache.set(cacheKey, url);
                     frameLoading.delete(cacheKey);
+                    frameLoadingAbort.delete(cacheKey);
 
                     img.src = url;
                     currentImageUrl = url;
@@ -1121,6 +1180,7 @@
 
                 tempImg.onerror = () => {
                     frameLoading.delete(cacheKey);
+                    frameLoadingAbort.delete(cacheKey);
                     reject(new Error(`Failed to load frame ${frameNumber}`));
                 };
 
@@ -1132,17 +1192,33 @@
             const slider = document.getElementById('frame-slider');
             const newFrame = parseInt(slider.value);
             if (newFrame !== currentFrame) {
+                // Отменяем текущую загрузку если есть
+                if (currentLoadingPromise) {
+                    // Новая загрузка отменит предыдущую через frameLoadingAbort
+                }
+
                 statusTextSpan.textContent = `Загрузка кадра ${newFrame + 1}/${totalFrames}...`;
                 img.classList.add('loading');
 
-                loadFrame(newFrame).then(() => {
-                    img.classList.remove('loading');
-                    statusTextSpan.textContent = 'Готово';
-                    preloadNeighborFrames();
+                const loadPromise = loadFrame(newFrame);
+                currentLoadingPromise = loadPromise;
+
+                loadPromise.then(() => {
+                    // Проверяем, что это всё ещё актуальная загрузка
+                    if (currentLoadingPromise === loadPromise) {
+                        img.classList.remove('loading');
+                        statusTextSpan.textContent = 'Готово';
+                        preloadNeighborFrames();
+                        currentLoadingPromise = null;
+                    }
                 }).catch(err => {
+                    if (err.message === 'Load aborted') return; // Игнорируем отменённые
                     console.error('Frame load error:', err);
-                    img.classList.remove('loading');
-                    statusTextSpan.textContent = 'Ошибка загрузки кадра';
+                    if (currentLoadingPromise === loadPromise) {
+                        img.classList.remove('loading');
+                        statusTextSpan.textContent = 'Ошибка загрузки кадра';
+                        currentLoadingPromise = null;
+                    }
                 });
             }
         }
@@ -1259,17 +1335,32 @@
                 frameLoading.delete(cacheKey);
                 console.log(`[DICOM] Preloaded frame ${frameNumber + 1}/${totalFrames} (cache size: ${frameCache.size})`);
 
-                // Ограничиваем размер кэша (максимум 50 фреймов)
-                if (frameCache.size > 50) {
-                    const firstKey = frameCache.keys().next().value;
-                    frameCache.delete(firstKey);
-                }
+                // Ограничиваем размер кэша (LRU)
+                enforceFrameCacheLimit();
             };
             tempImg.onerror = () => {
                 frameLoading.delete(cacheKey);
                 console.warn(`[DICOM] Failed to preload frame ${frameNumber + 1}`);
             };
             tempImg.src = url;
+        }
+
+        // Ограничение кэша по количеству элементов (LRU стратегия)
+        function enforceFrameCacheLimit() {
+            // Удаляем самые старые записи если превышен лимит
+            while (frameCache.size > FRAME_CACHE_MAX_ITEMS) {
+                const firstKey = frameCache.keys().next().value;
+                frameCache.delete(firstKey);
+            }
+        }
+
+        // Полная очистка кэша (при смене WL/WW или закрытии)
+        function clearFrameCache() {
+            frameCache.clear();
+            frameLoadingAbort.forEach(abort => abort());
+            frameLoadingAbort.clear();
+            frameLoading.clear();
+            frameCacheEstimatedSizeMB = 0;
         }
 
         // ==================== СКРИНШОТ ====================
@@ -1496,11 +1587,11 @@
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
-                    if (isMultiFrame) cineFirst();
+                    if (isMultiFrame) firstFrame();
                     break;
                 case 'ArrowDown':
                     e.preventDefault();
-                    if (isMultiFrame) cineLast();
+                    if (isMultiFrame) lastFrame();
                     break;
                 case 'r': case 'R':
                 case 'к': case 'К':
@@ -1546,9 +1637,8 @@
                 clearInterval(cineInterval);
             }
 
-            // Очищаем кэш фреймов
-            frameCache.clear();
-            frameLoading.clear();
+            // Очищаем кэш фреймов и отменяем загрузки
+            clearFrameCache();
 
             if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
                 URL.revokeObjectURL(currentImageUrl);
