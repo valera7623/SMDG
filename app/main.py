@@ -167,6 +167,8 @@ origins = [
     "http://localhost:5173",     # Vite
     "http://localhost:8080",     # другой dev фронт
     "https://fileguardian.com.ru",  # твой домен из .env
+    "https://viewer.ohif.org",   # OHIF Viewer CDN
+    "https://*.ohif.org",        # OHIF subdomains
     "*"                          # временно для теста (удали в прод!)
 ]
 
@@ -420,6 +422,26 @@ async def dicom_viewer_page():
         return HTMLResponse(
             status_code=500,
             content="<h1>DICOM Viewer не найден</h1>"
+        )
+
+
+# Страница OHIF Viewer
+@app.get("/ohif-viewer", response_class=HTMLResponse)
+@app.get("/ohif-viewer/", response_class=HTMLResponse)
+async def ohif_viewer_page():
+    """Страница OHIF-style Viewer."""
+    try:
+        with open("static/html/ohif-viewer.html", "r", encoding="utf-8") as f:
+            content = f.read()
+        response = HTMLResponse(content=content)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    except FileNotFoundError:
+        return HTMLResponse(
+            status_code=500,
+            content="<h1>OHIF Viewer не найден</h1>"
         )
 
 

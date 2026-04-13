@@ -2,7 +2,7 @@
 // Точка входа для пользовательской части (index.html)
 
 import { initAuth, switchAuthTab, handleSetup2FA, logout } from './modules/auth.js';
-import { initFiles, loadFileList, downloadFile, copyToClipboard } from './modules/files.js';
+import { initFiles, loadFileList, downloadFile, copyToClipboard, openOHIFViewer } from './modules/files.js';
 import { showNotification } from './utils/notifications.js';
 
 // ── Feature Flags (проверяем при загрузке страницы) ──────────────────────────

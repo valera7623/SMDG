@@ -48,7 +48,32 @@
         #dicom-img.tool-pan { cursor: grab; }
         #dicom-img.tool-pan:active { cursor: grabbing; }
         #dicom-img.tool-window { cursor: ew-resize; }
+        #dicom-img.tool-measure { cursor: crosshair; }
         #dicom-img.loading { opacity: 0.5; }
+
+        /* Measurement Canvas overlay */
+        #measurement-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+
+        /* Measurement toolbar */
+        #measure-toolbar { display: none; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(8px); border: 1px solid #30363d; border-radius: 8px; padding: 8px 12px; z-index: 100; gap: 6px; align-items: center; }
+        #measure-toolbar.show { display: flex; }
+        .measure-btn { padding: 6px 12px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; color: #e0e0e0; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .measure-btn:hover { background: #30363d; border-color: #58a6ff; }
+        .measure-btn.active { background: #238636; border-color: #238636; color: #fff; }
+        .measure-btn.danger { background: #da3633; border-color: #da3633; color: #fff; }
+        .measure-btn.danger:hover { background: #b62324; }
+
+        /* Measurement results panel */
+        #measure-results { display: none; position: absolute; top: 60px; right: 10px; background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(8px); border: 1px solid #30363d; border-radius: 8px; padding: 12px; z-index: 100; min-width: 220px; max-height: 400px; overflow-y: auto; font-size: 12px; }
+        #measure-results.show { display: block; }
+        #measure-results h4 { color: #58a6ff; margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .measure-item { padding: 6px 0; border-bottom: 1px solid #21262d; }
+        .measure-item:last-child { border-bottom: none; }
+        .measure-label { color: #8b949e; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+        .measure-value { color: #e0e0e0; font-family: 'Courier New', monospace; font-size: 13px; font-weight: 600; }
+        .measure-value.distance { color: #3fb950; }
+        .measure-value.angle { color: #d29922; }
+        .measure-value.roi { color: #f778ba; }
         
         /* Status bar */
         #status-bar { display: flex; justify-content: space-between; padding: 5px 16px; background: #161b22; border-top: 1px solid #333; font-size: 11px; color: #888; flex-shrink: 0; }
@@ -67,6 +92,23 @@
         /* Close button */
         .close-btn { background: #e74c3c; color: #fff; border: none; padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
         .close-btn:hover { background: #c0392b; }
+
+        /* Frame slider */
+        #frame-control { display: none; padding: 6px 12px; background: #161b22; border-top: 1px solid #333; flex-shrink: 0; }
+        #frame-control.show { display: block; }
+        .frame-slider-container { display: flex; align-items: center; gap: 8px; }
+        .frame-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; background: #30363d; border-radius: 2px; outline: none; cursor: pointer; }
+        .frame-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: #58a6ff; border-radius: 50%; cursor: pointer; }
+        .frame-slider::-moz-range-thumb { width: 14px; height: 14px; background: #58a6ff; border-radius: 50%; cursor: pointer; border: none; }
+        .frame-info { color: #58a6ff; font-family: monospace; font-size: 11px; min-width: 80px; text-align: center; }
+        .frame-btn { padding: 4px 10px; background: #21262d; border: 1px solid #30363d; border-radius: 4px; color: #e0e0e0; font-size: 11px; cursor: pointer; }
+        .frame-btn:hover { background: #30363d; border-color: #58a6ff; }
+        .frame-btn.active { background: #58a6ff; border-color: #58a6ff; color: #fff; }
+        .speed-control { display: none; align-items: center; gap: 4px; margin-left: 8px; }
+        .speed-control.show { display: flex; }
+        .speed-label { color: #888; font-size: 10px; }
+        .speed-slider { width: 60px; -webkit-appearance: none; appearance: none; height: 3px; background: #30363d; border-radius: 2px; outline: none; }
+        .speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; background: #8b949e; border-radius: 50%; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -98,6 +140,11 @@
             <button class="tool-btn active" data-tool="window" onclick="setTool('window')">🪟 Окно (WL/WW)</button>
             <button class="tool-btn" data-tool="zoom" onclick="setTool('zoom')">🔍 Зум</button>
             <button class="tool-btn" data-tool="pan" onclick="setTool('pan')">✋ Пан</button>
+            <button class="tool-btn" data-tool="cine" onclick="setTool('cine')" id="cine-btn" style="display:none;">▶️ Cine</button>
+            <div class="sep"></div>
+            <button class="tool-btn" onclick="toggleMeasurementMode()" id="measure-btn" title="Инструменты измерений">📐 Измерения</button>
+            <div class="sep"></div>
+            <button class="tool-btn" onclick="takeScreenshot()" id="screenshot-btn" title="Скриншот (PNG)">📸 Скриншот</button>
             <div class="sep"></div>
             <button class="tool-btn" onclick="resetView()">↺ Сброс</button>
             <button class="tool-btn" onclick="invertView()">◐ Инверт</button>
@@ -114,7 +161,40 @@
         
         <div id="viewport-container">
             <img id="dicom-img" src="" alt="DICOM Medical Image" draggable="false">
+            <canvas id="measurement-canvas"></canvas>
             <div id="metadata-panel"></div>
+
+            <!-- Measurement Toolbar -->
+            <div id="measure-toolbar">
+                <button class="measure-btn" data-measure="ruler" onclick="setMeasureTool('ruler')" title="Линейка">📏 Линейка</button>
+                <button class="measure-btn" data-measure="angle" onclick="setMeasureTool('angle')" title="Угол">📐 Угол</button>
+                <button class="measure-btn" data-measure="rect" onclick="setMeasureTool('rect')" title="ROI Rectangle">⬜ ROI</button>
+                <button class="measure-btn" data-measure="ellipse" onclick="setMeasureTool('ellipse')" title="ROI Ellipse">⭕ ROI</button>
+                <div style="width: 1px; background: #30363d; height: 24px; margin: 0 4px;"></div>
+                <button class="measure-btn" onclick="undoMeasurement()" title="Отменить">↩️</button>
+                <button class="measure-btn danger" onclick="clearMeasurements()" title="Очистить все">🗑️</button>
+                <button class="measure-btn" onclick="toggleMeasurePanel()" title="Закрыть">✕</button>
+            </div>
+
+            <!-- Measurement Results Panel -->
+            <div id="measure-results"></div>
+        </div>
+
+        <div id="frame-control">
+            <div class="frame-slider-container">
+                <button class="frame-btn" onclick="firstFrame()" title="Первый кадр">⏮</button>
+                <button class="frame-btn" onclick="prevFrame()" title="Предыдущий кадр">◀</button>
+                <input type="range" class="frame-slider" id="frame-slider" min="0" max="0" value="0" oninput="onFrameSliderChange()">
+                <button class="frame-btn" onclick="nextFrame()" title="Следующий кадр">▶</button>
+                <button class="frame-btn" onclick="lastFrame()" title="Последний кадр">⏭</button>
+                <span class="frame-info" id="frame-info">1 / 1</span>
+                <button class="frame-btn" onclick="toggleCineLoop()" id="play-btn" title="Автопроигрывание">▶️ Play</button>
+                <div class="speed-control" id="speed-control">
+                    <span class="speed-label">Скорость:</span>
+                    <input type="range" class="speed-slider" id="speed-slider" min="1" max="30" value="10" oninput="onSpeedChange()">
+                    <span class="speed-label" id="fps-label">10 fps</span>
+                </div>
+            </div>
         </div>
         
         <div id="status-bar">
@@ -140,12 +220,32 @@
         let dragging = false;
         let dragStart = { x: 0, y: 0 };
         let transform = { scale: 1, tx: 0, ty: 0, invert: false };
-        
+
         // Window/Level состояние
         let wlState = { wc: 128, ww: 256 };
         let wlStart = { wc: 128, ww: 256 };
         let wlTimeout = null;
         let currentImageUrl = null;
+
+        // Multi-frame состояние
+        let totalFrames = 1;
+        let currentFrame = 0;
+        let isMultiFrame = false;
+        let cinePlaying = false;
+        let cineInterval = null;
+        let cineFps = 10;
+        let frameCache = new Map(); // Кэш загруженных фреймов
+        let frameLoading = new Set(); // Загружающиеся сейчас фреймы
+        let preloadRadius = 3; // Сколько соседних фреймов предзагружать
+
+        // Measurement состояние
+        let measurementMode = false;
+        let measureTool = null; // 'ruler', 'angle', 'rect', 'ellipse'
+        let measurements = []; // Массив всех измерений
+        let measureDrawing = false;
+        let measurePoints = []; // Текущие точки измерения
+        let measureCanvas, measureCtx;
+        let pixelSpacing = { x: 1, y: 1 }; // мм на пиксель (из DICOM)
         
         // Предустановки Window/Level для разных тканей
         const wlPresets = {
@@ -165,17 +265,18 @@
         const statusTextSpan = document.getElementById('statusText');
         const zoomInfoSpan = document.getElementById('zoomInfo');
         const wlInfoSpan = document.getElementById('wl-info');
+        const measureCanvasEl = document.getElementById('measurement-canvas');
         
         // ==================== ОСНОВНАЯ ИНИЦИАЛИЗАЦИЯ ====================
         (async function init() {
             try {
                 statusTextSpan.textContent = 'Загрузка метаданных...';
-                
+
                 // 1. Загружаем метаданные
                 const metaResp = await fetch(`/api/dicom/metadata/${FILE_ID}?token=${TOKEN}`);
                 if (metaResp.ok) {
                     metadata = await metaResp.json();
-                    
+
                     // Загружаем WL/WW из метаданных DICOM, если есть
                     if (metadata.WindowCenter) {
                         wlState.wc = parseFloat(metadata.WindowCenter);
@@ -185,40 +286,53 @@
                         wlState.ww = parseFloat(metadata.WindowWidth);
                         wlStart.ww = wlState.ww;
                     }
+
+                    // Проверяем multi-frame
+                    totalFrames = parseInt(metadata.NumberOfFrames) || 1;
+                    isMultiFrame = totalFrames > 1;
+
+                    if (isMultiFrame) {
+                        console.log(`[DICOM] Multi-frame detected: ${totalFrames} frames`);
+                        setupMultiFrame();
+                    }
                 } else {
                     console.warn('Metadata fetch failed:', metaResp.status);
                 }
-                
+
                 // Формируем имя файла для отображения
-                const fileName = metadata.StudyDescription || 
-                                metadata.PatientName || 
-                                metadata.Modality || 
+                const fileName = metadata.StudyDescription ||
+                                metadata.PatientName ||
+                                metadata.Modality ||
                                 `DICOM #${FILE_ID}`;
-                
+
                 // 2. Загружаем PNG с бэкенда (с параметрами WL/WW)
-                statusTextSpan.textContent = 'Загрузка изображения...';
-                let pngUrl = `/api/dicom/render/${FILE_ID}?token=${TOKEN}`;
-                pngUrl += `&center=${wlState.wc}&width=${wlState.ww}`;
-                
+                statusTextSpan.textContent = isMultiFrame ? 
+                    `Загрузка изображения (1/${totalFrames})...` : 
+                    'Загрузка изображения...';
+                await loadFrame(0);
+
                 img.onload = function() {
                     loadingDiv.style.display = 'none';
                     viewerLayout.style.display = 'flex';
                     fileNameSpan.textContent = fileName;
-                    fileMetaSpan.textContent = `${img.naturalWidth}×${img.naturalHeight} | ${metadata.Modality || 'DICOM'}`;
+                    fileMetaSpan.textContent = `${img.naturalWidth}×${img.naturalHeight} | ${metadata.Modality || 'DICOM'}${isMultiFrame ? ` | ${totalFrames} fr` : ''}`;
                     updateZoomInfo();
                     updateWlInfo();
                     setupMouse();
                     renderMetadata();
+                    initMeasurementCanvas();
                     statusTextSpan.textContent = 'Готово';
+
+                    // Предзагрузка соседних фреймов для multi-frame
+                    if (isMultiFrame) {
+                        preloadNeighborFrames();
+                    }
                 };
-                
+
                 img.onerror = function() {
                     showError('Не удалось загрузить изображение DICOM. Проверьте, что файл является DICOM и сервер доступен.');
                 };
-                
-                img.src = pngUrl;
-                currentImageUrl = pngUrl;
-                
+
             } catch (e) {
                 console.error('Init error:', e);
                 showError(e.message);
@@ -288,10 +402,28 @@
                 dragging = false;
             });
             
-            // Wheel (zoom или WL/WW в зависимости от инструмента)
+            // Wheel (zoom или WL/WW или frame navigation в зависимости от инструмента)
             img.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                
+
+                // Cine mode — scroll переключает фреймы (только для multi-frame)
+                if (tool === 'cine' && isMultiFrame) {
+                    const delta = e.deltaY > 0 ? 1 : -1;
+                    const newFrame = Math.max(0, Math.min(totalFrames - 1, currentFrame + delta));
+                    if (newFrame !== currentFrame) {
+                        document.getElementById('frame-slider').value = newFrame;
+                        statusTextSpan.textContent = `Загрузка кадра ${newFrame + 1}/${totalFrames}...`;
+                        img.classList.add('loading');
+
+                        loadFrame(newFrame).then(() => {
+                            img.classList.remove('loading');
+                            statusTextSpan.textContent = 'Готово';
+                            preloadNeighborFrames();
+                        });
+                    }
+                    return;
+                }
+
                 if (tool === 'window') {
                     // Изменяем WL/WW колёсиком мыши
                     const delta = e.deltaY > 0 ? -5 : 5;
@@ -389,13 +521,20 @@
                 img.classList.remove('tool-window');
                 img.classList.add('tool-pan');
                 img.style.cursor = 'grab';
+            } else if (t === 'cine') {
+                img.classList.remove('tool-window', 'tool-pan');
+                img.style.cursor = 'default';
+                statusTextSpan.textContent = 'Cine mode: используйте scroll для навигации по кадрам';
             } else {
                 img.classList.remove('tool-window', 'tool-pan');
                 img.style.cursor = 'crosshair';
             }
-            statusTextSpan.textContent = `Инструмент: ${t === 'window' ? 'Окно (WL/WW)' : (t === 'zoom' ? 'Зум' : 'Пан')}`;
+            if (t !== 'cine') {
+                statusTextSpan.textContent = `Инструмент: ${t === 'window' ? 'Окно (WL/WW)' : (t === 'zoom' ? 'Зум' : 'Пан')}`;
+            }
             setTimeout(() => {
-                if (statusTextSpan.textContent === `Инструмент: ${t === 'window' ? 'Окно (WL/WW)' : (t === 'zoom' ? 'Зум' : 'Пан')}`) {
+                const currentText = statusTextSpan.textContent;
+                if (currentText.startsWith('Инструмент:') || currentText === 'Cine mode: используйте scroll для навигации по кадрам') {
                     statusTextSpan.textContent = 'Готово';
                 }
             }, 1500);
@@ -406,6 +545,15 @@
             img.style.filter = '';
             img.classList.remove('loading');
             applyTransform();
+
+            // Останавливаем cine если играет
+            if (cinePlaying) {
+                toggleCineLoop();
+            }
+
+            // Очищаем измерения
+            clearMeasurements();
+
             statusTextSpan.textContent = 'Вид сброшен';
             setTimeout(() => {
                 if (statusTextSpan.textContent === 'Вид сброшен') {
@@ -430,7 +578,8 @@
                 'Пациент': ['PatientName', 'PatientID', 'PatientBirthDate', 'PatientSex'],
                 'Исследование': ['StudyDate', 'StudyTime', 'StudyDescription', 'StudyInstanceUID', 'AccessionNumber', 'ReferringPhysicianName'],
                 'Серия': ['Modality', 'SeriesDescription', 'SeriesNumber', 'SeriesInstanceUID', 'SeriesDate'],
-                'Изображение': ['Rows', 'Columns', 'BitsAllocated', 'BitsStored', 'HighBit', 'PixelRepresentation', 'SamplesPerPixel', 'PhotometricInterpretation', 'NumberOfFrames'],
+                'Изображение': ['Rows', 'Columns', 'BitsAllocated', 'BitsStored', 'HighBit', 'PixelRepresentation', 'SamplesPerPixel', 'PhotometricInterpretation', 'NumberOfFrames', 'PixelSpacing', 'SliceThickness'],
+                'Сжатие': ['TransferSyntaxName', 'TransferSyntaxUID'],
                 'Окно/Уровень': ['WindowCenter', 'WindowWidth', 'RescaleIntercept', 'RescaleSlope'],
                 'Оборудование': ['Manufacturer', 'ManufacturerModelName', 'InstitutionName', 'StationName', 'SoftwareVersions']
             };
@@ -462,6 +611,744 @@
             document.getElementById('metadata-panel').innerHTML = html || '<p style="color:#888; text-align:center;">Нет метаданных</p>';
         }
         
+        // ==================== ФУНКЦИИ ИЗМЕРЕНИЙ ====================
+        function initMeasurementCanvas() {
+            measureCanvas = measureCanvasEl;
+            measureCtx = measureCanvas.getContext('2d');
+
+            // Инициализация Pixel Spacing из DICOM
+            if (metadata.PixelSpacing) {
+                const spacing = metadata.PixelSpacing.split('\\').map(parseFloat);
+                if (spacing.length === 2 && spacing[0] > 0 && spacing[1] > 0) {
+                    pixelSpacing = { x: spacing[0], y: spacing[1] };
+                }
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function resizeCanvas() {
+            const container = document.getElementById('viewport-container');
+            measureCanvas.width = container.offsetWidth;
+            measureCanvas.height = container.offsetHeight;
+            redrawMeasurements();
+        }
+
+        function toggleMeasurementMode() {
+            measurementMode = !measurementMode;
+            const measureBtn = document.getElementById('measure-btn');
+            const measureToolbar = document.getElementById('measure-toolbar');
+
+            if (measurementMode) {
+                measureBtn.classList.add('active');
+                measureToolbar.classList.add('show');
+                img.classList.add('tool-measure');
+                measureCanvas.style.pointerEvents = 'auto';
+                setupMeasureMouse();
+                statusTextSpan.textContent = 'Режим измерений: выберите инструмент';
+            } else {
+                measureBtn.classList.remove('active');
+                measureToolbar.classList.remove('show');
+                img.classList.remove('tool-measure');
+                measureCanvas.style.pointerEvents = 'none';
+                measureTool = null;
+                measureDrawing = false;
+                measurePoints = [];
+                document.querySelectorAll('.measure-btn[data-measure]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                redrawMeasurements();
+                statusTextSpan.textContent = 'Режим измерений выключен';
+            }
+        }
+
+        function setMeasureTool(tool) {
+            measureTool = tool;
+            measureDrawing = false;
+            measurePoints = [];
+
+            // Обновляем активные классы
+            document.querySelectorAll('.measure-btn[data-measure]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.measure === tool);
+            });
+
+            const toolNames = {
+                'ruler': 'Линейка: кликните 2 точки',
+                'angle': 'Угол: кликните 3 точки',
+                'rect': 'ROI Rectangle: кликните 2 угла',
+                'ellipse': 'ROI Ellipse: кликните центр, затем край'
+            };
+            statusTextSpan.textContent = toolNames[tool] || 'Выберите инструмент';
+        }
+
+        function setupMeasureMouse() {
+            // measurement mode — используем отдельный overlay для кликов
+            measureCanvas.style.pointerEvents = 'auto';
+
+            measureCanvas.addEventListener('mousedown', handleMeasureMouseDown);
+            measureCanvas.addEventListener('mousemove', handleMeasureMouseMove);
+        }
+
+        function handleMeasureMouseDown(e) {
+            if (!measurementMode || !measureTool) return;
+            if (e.button !== 0) return;
+
+            const rect = measureCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (!measureDrawing) {
+                measureDrawing = true;
+                measurePoints = [{ x, y }];
+                statusTextSpan.textContent = measureTool === 'angle' ? `Точка 2 (вершина)...` : `Точка 2...`;
+            } else {
+                measurePoints.push({ x, y });
+
+                // Проверяем, завершено ли измерение
+                if (measureTool === 'ruler' && measurePoints.length === 2) {
+                    finishMeasurement('ruler');
+                } else if (measureTool === 'angle' && measurePoints.length === 3) {
+                    finishMeasurement('angle');
+                } else if ((measureTool === 'rect' || measureTool === 'ellipse') && measurePoints.length === 2) {
+                    finishMeasurement(measureTool);
+                } else if (measureTool === 'angle' && measurePoints.length === 2) {
+                    statusTextSpan.textContent = `Точка 3...`;
+                } else {
+                    statusTextSpan.textContent = `Точка ${measurePoints.length + 1}...`;
+                }
+            }
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleMeasureMouseMove(e) {
+            if (!measureDrawing || measurePoints.length === 0) return;
+
+            const rect = measureCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Предварительный просмотр
+            redrawMeasurements();
+            drawPreview(measurePoints[measurePoints.length - 1], { x, y });
+
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function finishMeasurement(type) {
+            const measurement = {
+                type,
+                points: [...measurePoints],
+                timestamp: new Date().toISOString()
+            };
+
+            // Вычисляем результат
+            if (type === 'ruler') {
+                const dx = (measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
+                const dy = (measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                measurement.distance = Math.sqrt(dx * dx + dy * dy);
+                measurement.unit = 'mm';
+            } else if (type === 'angle') {
+                const p1 = measurement.points[0];
+                const p2 = measurement.points[1];
+                const p3 = measurement.points[2];
+                const angle = calculateAngle(p1, p2, p3);
+                measurement.angle = angle;
+                measurement.unit = '°';
+            } else if (type === 'rect') {
+                const width = Math.abs(measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
+                const height = Math.abs(measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                measurement.width = width;
+                measurement.height = height;
+                measurement.area = width * height;
+                measurement.unit = 'mm';
+            } else if (type === 'ellipse') {
+                const rx = Math.abs(measurement.points[1].x - measurement.points[0].x) * pixelSpacing.x;
+                const ry = Math.abs(measurement.points[1].y - measurement.points[0].y) * pixelSpacing.y;
+                measurement.radiusX = rx;
+                measurement.radiusY = ry;
+                measurement.area = Math.PI * rx * ry;
+                measurement.unit = 'mm';
+            }
+
+            measurements.push(measurement);
+            measureDrawing = false;
+            measurePoints = [];
+
+            redrawMeasurements();
+            updateMeasureResults();
+            statusTextSpan.textContent = 'Измерение добавлено';
+            setTimeout(() => {
+                if (statusTextSpan.textContent === 'Измерение добавлено') {
+                    statusTextSpan.textContent = 'Готово';
+                }
+            }, 1500);
+        }
+
+        function calculateAngle(p1, p2, p3) {
+            // p2 - вершина угла
+            const v1 = { x: p1.x - p2.x, y: p1.y - p2.y };
+            const v2 = { x: p3.x - p2.x, y: p3.y - p2.y };
+
+            const dot = v1.x * v2.x + v1.y * v2.y;
+            const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
+            const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
+
+            if (mag1 < 0.001 || mag2 < 0.001) {
+                return 0; // Точки слишком близки
+            }
+
+            const cos = dot / (mag1 * mag2);
+            const angle = Math.acos(Math.max(-1, Math.min(1, cos)));
+            return angle * (180 / Math.PI); // в градусы
+        }
+
+        function drawPreview(p1, p2) {
+            measureCtx.strokeStyle = '#58a6ff';
+            measureCtx.lineWidth = 2;
+            measureCtx.setLineDash([5, 5]);
+
+            if (measureTool === 'ruler') {
+                measureCtx.beginPath();
+                measureCtx.moveTo(p1.x, p1.y);
+                measureCtx.lineTo(p2.x, p2.y);
+                measureCtx.stroke();
+            } else if (measureTool === 'angle') {
+                if (measurePoints.length === 1) {
+                    // Первая линия: точка 1 → текущая
+                    measureCtx.beginPath();
+                    measureCtx.moveTo(measurePoints[0].x, measurePoints[0].y);
+                    measureCtx.lineTo(p2.x, p2.y);
+                    measureCtx.stroke();
+                } else if (measurePoints.length === 2) {
+                    // Две линии: 1→2 и 2→текущая
+                    measureCtx.beginPath();
+                    measureCtx.moveTo(measurePoints[0].x, measurePoints[0].y);
+                    measureCtx.lineTo(measurePoints[1].x, measurePoints[1].y);
+                    measureCtx.lineTo(p2.x, p2.y);
+                    measureCtx.stroke();
+                }
+            } else if (measureTool === 'rect') {
+                const x = Math.min(p1.x, p2.x);
+                const y = Math.min(p1.y, p2.y);
+                const w = Math.abs(p2.x - p1.x);
+                const h = Math.abs(p2.y - p1.y);
+                measureCtx.strokeRect(x, y, w, h);
+            } else if (measureTool === 'ellipse') {
+                const rx = Math.abs(p2.x - p1.x);
+                const ry = Math.abs(p2.y - p1.y);
+                measureCtx.beginPath();
+                measureCtx.ellipse(p1.x, p1.y, rx, ry, 0, 0, 2 * Math.PI);
+                measureCtx.stroke();
+            }
+
+            measureCtx.setLineDash([]);
+        }
+
+        function redrawMeasurements() {
+            if (!measureCtx) return;
+
+            measureCtx.clearRect(0, 0, measureCanvas.width, measureCanvas.height);
+
+            measurements.forEach((m, idx) => {
+                const colors = {
+                    'ruler': '#3fb950',
+                    'angle': '#d29922',
+                    'rect': '#f778ba',
+                    'ellipse': '#f778ba'
+                };
+                measureCtx.strokeStyle = colors[m.type] || '#58a6ff';
+                measureCtx.fillStyle = colors[m.type] || '#58a6ff';
+                measureCtx.lineWidth = 2;
+                measureCtx.setLineDash([]);
+
+                if (m.type === 'ruler') {
+                    measureCtx.beginPath();
+                    measureCtx.moveTo(m.points[0].x, m.points[0].y);
+                    measureCtx.lineTo(m.points[1].x, m.points[1].y);
+                    measureCtx.stroke();
+
+                    // Точки
+                    m.points.forEach(p => {
+                        measureCtx.beginPath();
+                        measureCtx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+                        measureCtx.fill();
+                    });
+
+                    // Текст
+                    const midX = (m.points[0].x + m.points[1].x) / 2;
+                    const midY = (m.points[0].y + m.points[1].y) / 2;
+                    drawText(`${m.distance.toFixed(2)} ${m.unit}`, midX, midY - 10);
+
+                } else if (m.type === 'angle') {
+                    measureCtx.beginPath();
+                    measureCtx.moveTo(m.points[0].x, m.points[0].y);
+                    measureCtx.lineTo(m.points[1].x, m.points[1].y);
+                    measureCtx.lineTo(m.points[2].x, m.points[2].y);
+                    measureCtx.stroke();
+
+                    // Точки
+                    m.points.forEach(p => {
+                        measureCtx.beginPath();
+                        measureCtx.arc(p.x, p.y, 4, 0, 2 * Math.PI);
+                        measureCtx.fill();
+                    });
+
+                    // Текст
+                    drawText(`${m.angle.toFixed(1)}°`, m.points[1].x + 10, m.points[1].y - 10);
+
+                } else if (m.type === 'rect') {
+                    const x = Math.min(m.points[0].x, m.points[1].x);
+                    const y = Math.min(m.points[0].y, m.points[1].y);
+                    const w = Math.abs(m.points[1].x - m.points[0].x);
+                    const h = Math.abs(m.points[1].y - m.points[0].y);
+                    measureCtx.strokeRect(x, y, w, h);
+
+                    // Текст
+                    drawText(`${m.width.toFixed(1)}×${m.height.toFixed(1)} mm`, x + w / 2, y - 5);
+                    drawText(`S=${m.area.toFixed(1)} mm²`, x + w / 2, y + h + 15);
+
+                } else if (m.type === 'ellipse') {
+                    const rx = Math.abs(m.points[1].x - m.points[0].x);
+                    const ry = Math.abs(m.points[1].y - m.points[0].y);
+                    measureCtx.beginPath();
+                    measureCtx.ellipse(m.points[0].x, m.points[0].y, rx, ry, 0, 0, 2 * Math.PI);
+                    measureCtx.stroke();
+
+                    // Текст
+                    drawText(`Rx=${m.radiusX.toFixed(1)}, Ry=${m.radiusY.toFixed(1)}`, m.points[0].x + rx + 5, m.points[0].y);
+                    drawText(`S=${m.area.toFixed(1)} mm²`, m.points[0].x + rx + 5, m.points[0].y + 15);
+                }
+            });
+        }
+
+        function drawText(text, x, y) {
+            measureCtx.font = 'bold 12px monospace';
+            measureCtx.fillStyle = '#ffffff';
+            measureCtx.strokeStyle = '#000000';
+            measureCtx.lineWidth = 3;
+
+            const metrics = measureCtx.measureText(text);
+            const padding = 4;
+            const bgX = x - padding;
+            const bgY = y - 12 - padding;
+            const bgW = metrics.width + padding * 2;
+            const bgH = 24 + padding * 2;
+
+            measureCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            measureCtx.fillRect(bgX, bgY, bgW, bgH);
+
+            measureCtx.fillStyle = '#ffffff';
+            measureCtx.fillText(text, x, y);
+        }
+
+        function updateMeasureResults() {
+            const panel = document.getElementById('measure-results');
+            if (measurements.length === 0) {
+                panel.innerHTML = '<h4>📐 Измерения</h4><p style="color:#888;">Нет измерений</p>';
+                return;
+            }
+
+            let html = '<h4>📐 Измерения</h4>';
+            measurements.forEach((m, idx) => {
+                html += `<div class="measure-item">`;
+                html += `<div class="measure-label">${idx + 1}. ${getMeasureTypeName(m.type)}</div>`;
+
+                if (m.type === 'ruler') {
+                    html += `<div class="measure-value distance">Расстояние: ${m.distance.toFixed(2)} ${m.unit}</div>`;
+                } else if (m.type === 'angle') {
+                    html += `<div class="measure-value angle">Угол: ${m.angle.toFixed(1)}${m.unit}</div>`;
+                } else if (m.type === 'rect') {
+                    html += `<div class="measure-value roi">Ширина: ${m.width.toFixed(2)} ${m.unit}</div>`;
+                    html += `<div class="measure-value roi">Высота: ${m.height.toFixed(2)} ${m.unit}</div>`;
+                    html += `<div class="measure-value roi">Площадь: ${m.area.toFixed(2)} ${m.unit}²</div>`;
+                } else if (m.type === 'ellipse') {
+                    html += `<div class="measure-value roi">Rx: ${m.radiusX.toFixed(2)} ${m.unit}</div>`;
+                    html += `<div class="measure-value roi">Ry: ${m.radiusY.toFixed(2)} ${m.unit}</div>`;
+                    html += `<div class="measure-value roi">Площадь: ${m.area.toFixed(2)} ${m.unit}²</div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            panel.innerHTML = html;
+        }
+
+        function getMeasureTypeName(type) {
+            const names = {
+                'ruler': 'Линейка',
+                'angle': 'Угол',
+                'rect': 'ROI Rectangle',
+                'ellipse': 'ROI Ellipse'
+            };
+            return names[type] || type;
+        }
+
+        function undoMeasurement() {
+            if (measurements.length > 0) {
+                measurements.pop();
+                redrawMeasurements();
+                updateMeasureResults();
+                statusTextSpan.textContent = 'Измерение отменено';
+            }
+        }
+
+        function clearMeasurements() {
+            measurements = [];
+            measurePoints = [];
+            measureDrawing = false;
+            redrawMeasurements();
+            updateMeasureResults();
+            statusTextSpan.textContent = 'Все измерения очищены';
+        }
+
+        function toggleMeasurePanel() {
+            document.getElementById('measure-toolbar').classList.toggle('show');
+        }
+        
+        // ==================== MULTI-FRAME ФУНКЦИИ ====================
+        function setupMultiFrame() {
+            // Показываем Cine кнопку
+            document.getElementById('cine-btn').style.display = 'inline-block';
+
+            // Показываем frame control
+            const frameControl = document.getElementById('frame-control');
+            frameControl.classList.add('show');
+
+            // Настраиваем слайдер
+            const slider = document.getElementById('frame-slider');
+            slider.min = 0;
+            slider.max = totalFrames - 1;
+            slider.value = 0;
+
+            updateFrameInfo();
+        }
+
+        function loadFrame(frameNumber) {
+            return new Promise((resolve, reject) => {
+                if (frameNumber < 0 || frameNumber >= totalFrames) {
+                    reject(new Error(`Frame ${frameNumber} out of range`));
+                    return;
+                }
+
+                // Проверяем кэш
+                const cacheKey = `${frameNumber}:${wlState.wc}:${wlState.ww}`;
+                if (frameCache.has(cacheKey)) {
+                    const cachedUrl = frameCache.get(cacheKey);
+                    img.src = cachedUrl;
+                    currentFrame = frameNumber;
+                    updateFrameInfo();
+                    resolve();
+                    return;
+                }
+
+                // Проверяем, не загружается ли уже
+                if (frameLoading.has(cacheKey)) {
+                    // Ждём завершения загрузки
+                    const checkInterval = setInterval(() => {
+                        if (frameCache.has(cacheKey)) {
+                            clearInterval(checkInterval);
+                            img.src = frameCache.get(cacheKey);
+                            currentFrame = frameNumber;
+                            updateFrameInfo();
+                            resolve();
+                        }
+                    }, 50);
+                    return;
+                }
+
+                frameLoading.add(cacheKey);
+
+                const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&frame=${frameNumber}&center=${wlState.wc}&width=${wlState.ww}`;
+
+                const tempImg = new Image();
+                tempImg.onload = () => {
+                    frameCache.set(cacheKey, url);
+                    frameLoading.delete(cacheKey);
+
+                    img.src = url;
+                    currentImageUrl = url;
+                    currentFrame = frameNumber;
+                    updateFrameInfo();
+
+                    // Обновляем слайдер
+                    document.getElementById('frame-slider').value = frameNumber;
+
+                    resolve();
+                };
+
+                tempImg.onerror = () => {
+                    frameLoading.delete(cacheKey);
+                    reject(new Error(`Failed to load frame ${frameNumber}`));
+                };
+
+                tempImg.src = url;
+            });
+        }
+
+        function onFrameSliderChange() {
+            const slider = document.getElementById('frame-slider');
+            const newFrame = parseInt(slider.value);
+            if (newFrame !== currentFrame) {
+                statusTextSpan.textContent = `Загрузка кадра ${newFrame + 1}/${totalFrames}...`;
+                img.classList.add('loading');
+
+                loadFrame(newFrame).then(() => {
+                    img.classList.remove('loading');
+                    statusTextSpan.textContent = 'Готово';
+                    preloadNeighborFrames();
+                }).catch(err => {
+                    console.error('Frame load error:', err);
+                    img.classList.remove('loading');
+                    statusTextSpan.textContent = 'Ошибка загрузки кадра';
+                });
+            }
+        }
+
+        function firstFrame() {
+            document.getElementById('frame-slider').value = 0;
+            onFrameSliderChange();
+        }
+
+        function prevFrame() {
+            const slider = document.getElementById('frame-slider');
+            slider.value = Math.max(0, parseInt(slider.value) - 1);
+            onFrameSliderChange();
+        }
+
+        function nextFrame() {
+            const slider = document.getElementById('frame-slider');
+            slider.value = Math.min(totalFrames - 1, parseInt(slider.value) + 1);
+            onFrameSliderChange();
+        }
+
+        function lastFrame() {
+            const slider = document.getElementById('frame-slider');
+            slider.value = totalFrames - 1;
+            onFrameSliderChange();
+        }
+
+        function updateFrameInfo() {
+            const frameInfo = document.getElementById('frame-info');
+            frameInfo.textContent = `${currentFrame + 1} / ${totalFrames}`;
+        }
+
+        function toggleCineLoop() {
+            const playBtn = document.getElementById('play-btn');
+            const speedControl = document.getElementById('speed-control');
+
+            if (cinePlaying) {
+                // Останавливаем
+                cinePlaying = false;
+                clearInterval(cineInterval);
+                playBtn.textContent = '▶️ Play';
+                playBtn.classList.remove('active');
+                speedControl.classList.remove('show');
+                statusTextSpan.textContent = 'Cine остановлен';
+            } else {
+                // Запускаем
+                cinePlaying = true;
+                playBtn.textContent = '⏸ Pause';
+                playBtn.classList.add('active');
+                speedControl.classList.add('show');
+                statusTextSpan.textContent = `Cine playing @ ${cineFps} fps`;
+
+                cineInterval = setInterval(() => {
+                    const next = (currentFrame + 1) % totalFrames;
+                    document.getElementById('frame-slider').value = next;
+
+                    img.classList.add('loading');
+                    loadFrame(next).then(() => {
+                        img.classList.remove('loading');
+                    });
+                }, 1000 / cineFps);
+            }
+        }
+
+        function onSpeedChange() {
+            const slider = document.getElementById('speed-slider');
+            cineFps = parseInt(slider.value);
+            document.getElementById('fps-label').textContent = `${cineFps} fps`;
+
+            // Перезапускаем с новой скоростью
+            if (cinePlaying) {
+                clearInterval(cineInterval);
+                cineInterval = setInterval(() => {
+                    const next = (currentFrame + 1) % totalFrames;
+                    document.getElementById('frame-slider').value = next;
+
+                    img.classList.add('loading');
+                    loadFrame(next).then(() => {
+                        img.classList.remove('loading');
+                    });
+                }, 1000 / cineFps);
+
+                statusTextSpan.textContent = `Cine playing @ ${cineFps} fps`;
+            }
+        }
+
+        function preloadNeighborFrames() {
+            if (!isMultiFrame) return;
+
+            // Предзагружаем фреймы в радиусе preloadRadius
+            const start = Math.max(0, currentFrame - preloadRadius);
+            const end = Math.min(totalFrames - 1, currentFrame + preloadRadius);
+
+            for (let i = start; i <= end; i++) {
+                if (i === currentFrame) continue;
+
+                const cacheKey = `${i}:${wlState.wc}:${wlState.ww}`;
+                if (!frameCache.has(cacheKey) && !frameLoading.has(cacheKey)) {
+                    // Тихая предзагрузка без блокировки
+                    preloadFrame(i);
+                }
+            }
+        }
+
+        function preloadFrame(frameNumber) {
+            const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&frame=${frameNumber}&center=${wlState.wc}&width=${wlState.ww}`;
+            const cacheKey = `${frameNumber}:${wlState.wc}:${wlState.ww}`;
+
+            frameLoading.add(cacheKey);
+
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                frameCache.set(cacheKey, url);
+                frameLoading.delete(cacheKey);
+
+                // Ограничиваем размер кэша (максимум 50 фреймов)
+                if (frameCache.size > 50) {
+                    const firstKey = frameCache.keys().next().value;
+                    frameCache.delete(firstKey);
+                }
+            };
+            tempImg.onerror = () => {
+                frameLoading.delete(cacheKey);
+            };
+            tempImg.src = url;
+        }
+
+        // ==================== СКРИНШОТ ====================
+        async function takeScreenshot() {
+            try {
+                statusTextSpan.textContent = 'Подготовка скриншота...';
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Размер = размер viewport
+                const viewport = document.getElementById('viewport-container');
+                canvas.width = viewport.offsetWidth;
+                canvas.height = viewport.offsetHeight;
+
+                // Фон — чёрный
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Рисуем изображение с учётом трансформаций
+                const imgRect = img.getBoundingClientRect();
+                const viewportRect = viewport.getBoundingClientRect();
+
+                const x = imgRect.left - viewportRect.left;
+                const y = imgRect.top - viewportRect.top;
+                const w = imgRect.width;
+                const h = imgRect.height;
+
+                // Применяем трансформации
+                ctx.save();
+                if (transform.invert) {
+                    ctx.filter = 'invert(1)';
+                }
+                ctx.translate(x + w / 2, y + h / 2);
+                ctx.scale(transform.scale, transform.scale);
+                ctx.translate(transform.tx, transform.ty);
+                ctx.drawImage(img, -w / 2, -h / 2, w, h);
+                ctx.restore();
+
+                // Рисуем измерения с canvas overlay
+                if (measureCtx && measurements.length > 0) {
+                    ctx.save();
+                    ctx.drawImage(measureCanvas, 0, 0);
+                    ctx.restore();
+                }
+
+                // Оверлей с метаданными (bottom-left)
+                const overlayY = canvas.height - 60;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, overlayY, 350, 50);
+
+                ctx.font = '11px monospace';
+                ctx.fillStyle = '#0f0';
+
+                const patientName = metadata.PatientName || 'Unknown';
+                const studyDate = metadata.StudyDate || '';
+                const modality = metadata.Modality || 'DICOM';
+                const wl = Math.round(wlState.wc);
+                const ww = Math.round(wlState.ww);
+                const frameText = isMultiFrame ? ` | Frame ${currentFrame + 1}/${totalFrames}` : '';
+
+                ctx.fillText(`${patientName} | ${studyDate} | ${modality}`, 20, overlayY + 18);
+                ctx.fillText(`WL: ${wl} / WW: ${ww}${frameText} | ${img.naturalWidth}×${img.naturalHeight}`, 20, overlayY + 38);
+
+                // Ориентация (top-right)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(canvas.width - 100, 10, 90, 60);
+
+                ctx.fillStyle = '#0f0';
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('A', canvas.width - 55, 25);
+                ctx.fillText('P', canvas.width - 55, canvas.height > 300 ? canvas.height - 30 : 65);
+                ctx.textAlign = 'left';
+                ctx.fillText('R', canvas.width - 30, 40);
+                ctx.fillText('L', canvas.width - 85, 40);
+
+                // Скачиваем
+                const fileName = generateScreenshotFileName();
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        statusTextSpan.textContent = 'Ошибка создания скриншота';
+                        return;
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+
+                    statusTextSpan.textContent = `Скриншот сохранён: ${fileName}`;
+                    setTimeout(() => {
+                        if (statusTextSpan.textContent.startsWith('Скриншот')) {
+                            statusTextSpan.textContent = 'Готово';
+                        }
+                    }, 3000);
+                }, 'image/png');
+
+            } catch (e) {
+                console.error('Screenshot error:', e);
+                statusTextSpan.textContent = 'Ошибка: ' + e.message;
+            }
+        }
+
+        function generateScreenshotFileName() {
+            const patient = (metadata.PatientName || 'Unknown').replace(/[^a-zA-Z0-9а-яА-Я_-]/g, '_').substring(0, 30);
+            const date = metadata.StudyDate ? metadata.StudyDate.substring(0, 8) : 'nodate';
+            const modality = metadata.Modality || 'DICOM';
+            const frame = isMultiFrame ? `_fr${currentFrame + 1}` : '';
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+
+            return `${modality}_${patient}_${date}${frame}_${timestamp}.png`;
+        }
+
         // ==================== СКАЧИВАНИЕ DICOM ====================
         async function downloadDicom() {
             try {
@@ -535,6 +1422,15 @@
         
         // Очистка при закрытии
         window.addEventListener('beforeunload', () => {
+            // Останавливаем cine loop
+            if (cineInterval) {
+                clearInterval(cineInterval);
+            }
+
+            // Очищаем кэш фреймов
+            frameCache.clear();
+            frameLoading.clear();
+
             if (currentImageUrl && currentImageUrl.startsWith('blob:')) {
                 URL.revokeObjectURL(currentImageUrl);
             }

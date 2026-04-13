@@ -36,7 +36,7 @@ python-magic = "0.4.27"
 clamd = "1.0.2"
 age = "0.5.1"
 aiobotocore = "^2.15.0"
-pydicom = "^3.0.1"
+pydicom = {version = "^3.0.1", extras = ["gdcm"]}
 numpy = "^2.0"
 pillow = ">=10.4.0,<12.0"
 

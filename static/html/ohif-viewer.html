@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMDG — OHIF Viewer</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; background: #000; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+
+        /* Loading */
+        #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0d1117; z-index: 9999; }
+        #loading .spinner { width: 48px; height: 48px; border: 4px solid #30363d; border-top-color: #00d4aa; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading p { color: #8b949e; }
+
+        /* Error */
+        #error { display: none; position: fixed; inset: 0; align-items: center; justify-content: center; background: #0d1117; text-align: center; padding: 20px; z-index: 9999; }
+        #error h2 { color: #f85149; margin-bottom: 12px; }
+        #error p { color: #888; margin-bottom: 8px; }
+
+        /* OHIF-style Layout */
+        #ohif-layout { display: none; flex-direction: column; height: 100%; }
+
+        /* Header - OHIF style */
+        #ohif-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: #000000; border-bottom: 2px solid #00d4aa; flex-shrink: 0; }
+        #ohif-header .logo { color: #00d4aa; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        #ohif-header .logo svg { width: 24px; height: 24px; }
+        #ohif-header .study-info { color: #8b949e; font-size: 12px; }
+        #ohif-header .buttons { display: flex; gap: 8px; }
+
+        /* Main content - OHIF viewport layout */
+        #ohif-content { flex: 1; display: flex; overflow: hidden; }
+
+        /* Left panel - Series */
+        #series-panel { width: 200px; background: #0a0a0a; border-right: 1px solid #333; overflow-y: auto; flex-shrink: 0; }
+        #series-panel h3 { padding: 12px; color: #00d4aa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; }
+        .series-item { padding: 10px 12px; border-bottom: 1px solid #222; cursor: pointer; transition: background 0.15s; }
+        .series-item:hover { background: #1a1a1a; }
+        .series-item.active { background: #1a3a3a; border-left: 3px solid #00d4aa; }
+        .series-thumb { width: 100%; height: 100px; background: #111; border-radius: 4px; margin-bottom: 6px; overflow: hidden; }
+        .series-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .series-desc { font-size: 11px; color: #aaa; }
+        .series-meta { font-size: 10px; color: #666; margin-top: 3px; }
+
+        /* Viewport - OHIF style */
+        #viewport-area { flex: 1; background: #000; display: flex; align-items: center; justify-content: center; position: relative; }
+        #viewport-grid { width: 100%; height: 100%; display: grid; gap: 2px; padding: 2px; }
+        .viewport-cell { background: #111; border: 1px solid #333; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .viewport-cell img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .viewport-cell .overlay { position: absolute; top: 8px; left: 8px; font-size: 10px; color: #0f0; font-family: monospace; pointer-events: none; text-shadow: 1px 1px 2px #000; }
+
+        /* Right panel - Metadata */
+        #metadata-panel-ohif { width: 250px; background: #0a0a0a; border-left: 1px solid #333; overflow-y: auto; flex-shrink: 0; }
+        #metadata-panel-ohif h3 { padding: 12px; color: #00d4aa; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #333; }
+        .meta-section { padding: 10px 12px; border-bottom: 1px solid #222; }
+        .meta-section h4 { color: #8b949e; font-size: 10px; text-transform: uppercase; margin-bottom: 6px; }
+        .meta-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+        .meta-label { color: #666; }
+        .meta-value { color: #e0e0e0; font-family: monospace; }
+
+        /* Bottom toolbar - OHIF tools */
+        #toolbar-ohif { display: flex; gap: 4px; padding: 6px 12px; background: #111; border-top: 1px solid #333; flex-shrink: 0; align-items: center; }
+        .ohif-tool { padding: 6px 12px; background: #222; border: 1px solid #444; border-radius: 4px; color: #e0e0e0; font-size: 12px; cursor: pointer; }
+        .ohif-tool:hover { background: #333; border-color: #00d4aa; }
+        .ohif-tool.active { background: #00d4aa; border-color: #00d4aa; color: #000; font-weight: 600; }
+        .tool-sep { width: 1px; background: #444; margin: 0 8px; height: 24px; }
+
+        /* Status bar */
+        #status-bar-ohif { display: flex; justify-content: space-between; padding: 4px 16px; background: #0a0a0a; border-top: 1px solid #333; font-size: 10px; color: #666; flex-shrink: 0; }
+
+        /* Close button */
+        .close-btn { background: #e74c3c; color: #fff; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .close-btn:hover { background: #c0392b; }
+
+        /* Cine controls for OHIF */
+        #cine-controls { display: none; padding: 6px 12px; background: #111; border-top: 1px solid #333; flex-shrink: 0; }
+        #cine-controls.show { display: flex; align-items: center; gap: 8px; }
+        .cine-btn { padding: 4px 10px; background: #222; border: 1px solid #444; border-radius: 4px; color: #e0e0e0; font-size: 11px; cursor: pointer; }
+        .cine-btn:hover { background: #333; border-color: #00d4aa; }
+        .cine-slider { flex: 1; -webkit-appearance: none; height: 4px; background: #333; border-radius: 2px; outline: none; }
+        .cine-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: #00d4aa; border-radius: 50%; cursor: pointer; }
+        .cine-info { color: #00d4aa; font-family: monospace; font-size: 11px; min-width: 70px; text-align: center; }
+    </style>
+</head>
+<body>
+    <!-- Loading -->
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Loading OHIF Viewer...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error">
+        <div>
+            <h2>⚠️ Error</h2>
+            <p id="errorMsg"></p>
+            <p><a href="#" onclick="window.parent.postMessage('ohif-close','*'); return false;" style="color:#00d4aa;">← Close</a></p>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="ohif-layout">
+        <!-- Header -->
+        <div id="ohif-header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                OHIF Viewer
+            </div>
+            <span class="study-info" id="studyInfo">—</span>
+            <div class="buttons">
+                <button class="ohif-tool" onclick="toggleMetadataOHIF()" title="Metadata">ℹ️</button>
+                <button class="ohif-tool" onclick="takeScreenshotOHIF()" title="Screenshot">📸 Screenshot</button>
+                <button class="close-btn" onclick="window.parent.postMessage('ohif-close','*')" title="Close">✕</button>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div id="ohif-content">
+            <!-- Left Panel - Series -->
+            <div id="series-panel">
+                <h3>📁 Series</h3>
+                <div id="series-list"></div>
+            </div>
+
+            <!-- Viewport -->
+            <div id="viewport-area">
+                <div id="viewport-grid" class="viewport-cell">
+                    <img id="ohif-img" src="" alt="DICOM" draggable="false">
+                    <div class="overlay" id="img-overlay"></div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Metadata -->
+            <div id="metadata-panel-ohif" style="display:none;">
+                <h3>📋 Metadata</h3>
+                <div id="metadata-content"></div>
+            </div>
+        </div>
+
+        <!-- Cine Controls (for multi-frame) -->
+        <div id="cine-controls">
+            <button class="cine-btn" onclick="cineFirst()">⏮</button>
+            <button class="cine-btn" onclick="cinePrev()">◀</button>
+            <input type="range" class="cine-slider" id="cine-slider" min="0" max="0" value="0" oninput="onCineSlider()">
+            <button class="cine-btn" onclick="cineNext()">▶</button>
+            <button class="cine-btn" onclick="cineLast()">⏭</button>
+            <span class="cine-info" id="cine-info">1 / 1</span>
+            <button class="cine-btn" onclick="toggleCinePlay()" id="play-btn">▶️ Play</button>
+        </div>
+
+        <!-- Toolbar -->
+        <div id="toolbar-ohif">
+            <button class="ohif-tool active" data-tool="window" onclick="setOHIFTool('window')">🪟 Window</button>
+            <button class="ohif-tool" data-tool="zoom" onclick="setOHIFTool('zoom')">🔍 Zoom</button>
+            <button class="ohif-tool" data-tool="pan" onclick="setOHIFTool('pan')">✋ Pan</button>
+            <div class="tool-sep"></div>
+            <button class="ohif-tool" onclick="resetOHIFView()">↺ Reset</button>
+            <button class="ohif-tool" onclick="invertOHIF()">◐ Invert</button>
+            <div class="tool-sep"></div>
+            <button class="ohif-tool" onclick="setPresetOHIF('Bone')">🦴 Bone</button>
+            <button class="ohif-tool" onclick="setPresetOHIF('Lung')">🫁 Lung</button>
+            <button class="ohif-tool" onclick="setPresetOHIF('Brain')">🧠 Brain</button>
+            <button class="ohif-tool" onclick="setPresetOHIF('Abdomen')">🫀 Abdomen</button>
+            <button class="ohif-tool" onclick="setPresetOHIF('Liver')">🍖 Liver</button>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="status-bar-ohif">
+            <span id="ohif-status">Ready</span>
+            <span id="ohif-zoom">Zoom: 100%</span>
+            <span id="ohif-wl">WL: 128 / WW: 256</span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== URL Params ====================
+        const params = new URLSearchParams(window.location.search);
+        const TOKEN = params.get('token');
+        const FILE_ID = params.get('file_id');
+
+        if (!TOKEN || !FILE_ID) {
+            showError('Missing token or file_id parameter');
+        }
+
+        // ==================== Globals ====================
+        let metadata = {};
+        let tool = 'window';
+        let dragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let transform = { scale: 1, tx: 0, ty: 0, invert: false };
+        let wlState = { wc: 128, ww: 256 };
+        let wlStart = { wc: 128, ww: 256 };
+        let wlTimeout = null;
+        let currentImageUrl = null;
+        let totalFrames = 1;
+        let currentFrame = 0;
+        let isMultiFrame = false;
+        let cinePlaying = false;
+        let cineInterval = null;
+        let cineFps = 10;
+
+        const img = document.getElementById('ohif-img');
+        const loadingDiv = document.getElementById('loading');
+        const ohifLayout = document.getElementById('ohif-layout');
+        const studyInfoSpan = document.getElementById('studyInfo');
+        const statusSpan = document.getElementById('ohif-status');
+        const zoomSpan = document.getElementById('ohif-zoom');
+        const wlSpan = document.getElementById('ohif-wl');
+        const overlayDiv = document.getElementById('img-overlay');
+
+        // ==================== Init ====================
+        (async function init() {
+            try {
+                statusSpan.textContent = 'Loading metadata...';
+
+                const metaResp = await fetch(`/api/dicom/metadata/${FILE_ID}?token=${TOKEN}`);
+                if (metaResp.ok) {
+                    metadata = await metaResp.json();
+
+                    if (metadata.WindowCenter) wlState.wc = parseFloat(metadata.WindowCenter);
+                    if (metadata.WindowWidth) wlState.ww = parseFloat(metadata.WindowWidth);
+
+                    totalFrames = parseInt(metadata.NumberOfFrames) || 1;
+                    isMultiFrame = totalFrames > 1;
+                }
+
+                const fileName = metadata.StudyDescription || metadata.PatientName || metadata.Modality || `DICOM #${FILE_ID}`;
+                studyInfoSpan.textContent = `${metadata.Modality || 'DICOM'} | ${fileName}`;
+
+                statusSpan.textContent = isMultiFrame ? `Loading image (1/${totalFrames})...` : 'Loading image...';
+                await loadFrameOHIF(0);
+
+                img.onload = () => {
+                    loadingDiv.style.display = 'none';
+                    ohifLayout.style.display = 'flex';
+                    overlayDiv.textContent = `${metadata.Modality || ''} | ${img.naturalWidth}×${img.naturalHeight}`;
+                    setupOHIFMouse();
+                    updateOHIFStatus();
+
+                    if (isMultiFrame) {
+                        document.getElementById('cine-controls').classList.add('show');
+                        document.getElementById('cine-slider').max = totalFrames - 1;
+                        updateCineInfo();
+                    }
+                };
+
+                img.onerror = () => showError('Failed to load DICOM image');
+
+            } catch (e) {
+                console.error('Init error:', e);
+                showError(e.message);
+            }
+        })();
+
+        // ==================== Frame Loading ====================
+        async function loadFrameOHIF(frameNumber) {
+            const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&frame=${frameNumber}&center=${wlState.wc}&width=${wlState.ww}`;
+            img.src = url;
+            currentImageUrl = url;
+            currentFrame = frameNumber;
+            updateCineInfo();
+        }
+
+        // ==================== Mouse Setup ====================
+        function setupOHIFMouse() {
+            img.addEventListener('mousedown', (e) => {
+                if (e.button !== 0) return;
+                dragging = true;
+                dragStart = { x: e.clientX, y: e.clientY };
+
+                if (tool === 'window') {
+                    wlStart = { wc: wlState.wc, ww: wlState.ww };
+                    img.style.cursor = 'ew-resize';
+                } else if (tool === 'pan') {
+                    img.style.cursor = 'grabbing';
+                }
+                e.preventDefault();
+            });
+
+            img.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+
+                if (tool === 'window') {
+                    wlState.ww = Math.max(1, wlStart.ww + dx);
+                    wlState.wc = wlStart.wc + dy;
+                    updateOHIFWindow();
+                } else if (tool === 'zoom') {
+                    transform.scale = Math.max(0.1, Math.min(20, transform.scale * (1 + dy / 200)));
+                    applyOHIFTransform();
+                } else if (tool === 'pan') {
+                    transform.tx += dx / transform.scale;
+                    transform.ty += dy / transform.scale;
+                    applyOHIFTransform();
+                }
+
+                dragStart = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => {
+                dragging = false;
+                if (tool === 'window') img.style.cursor = 'ew-resize';
+                else if (tool === 'pan') img.style.cursor = 'grab';
+            });
+
+            img.addEventListener('wheel', (e) => {
+                e.preventDefault();
+
+                if (isMultiFrame && (tool === 'window' || tool === 'zoom')) {
+                    const delta = e.deltaY > 0 ? 1 : -1;
+                    const newFrame = Math.max(0, Math.min(totalFrames - 1, currentFrame + delta));
+                    if (newFrame !== currentFrame) {
+                        document.getElementById('cine-slider').value = newFrame;
+                        loadFrameOHIF(newFrame);
+                    }
+                    return;
+                }
+
+                if (tool === 'window') {
+                    const delta = e.deltaY > 0 ? -5 : 5;
+                    wlState.ww = Math.max(1, wlState.ww + delta);
+                    updateOHIFWindow();
+                } else {
+                    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                    transform.scale = Math.max(0.1, Math.min(20, transform.scale * delta));
+                    applyOHIFTransform();
+                }
+            });
+        }
+
+        // ==================== Transform ====================
+        function applyOHIFTransform() {
+            img.style.transform = `scale(${transform.scale}) translate(${transform.tx}px, ${transform.ty}px)`;
+            img.style.transformOrigin = 'center center';
+            zoomSpan.textContent = `Zoom: ${Math.round(transform.scale * 100)}%`;
+        }
+
+        function updateOHIFWindow() {
+            if (wlTimeout) clearTimeout(wlTimeout);
+            wlSpan.textContent = `WL: ${Math.round(wlState.wc)} / WW: ${Math.round(wlState.ww)}`;
+
+            wlTimeout = setTimeout(() => {
+                const url = `/api/dicom/render/${FILE_ID}?token=${TOKEN}&center=${wlState.wc}&width=${wlState.ww}&frame=${currentFrame}`;
+                img.src = url;
+                currentImageUrl = url;
+            }, 80);
+        }
+
+        function updateOHIFStatus() {
+            wlSpan.textContent = `WL: ${Math.round(wlState.wc)} / WW: ${Math.round(wlState.ww)}`;
+        }
+
+        function updateCineInfo() {
+            document.getElementById('cine-info').textContent = `${currentFrame + 1} / ${totalFrames}`;
+        }
+
+        // ==================== Tools ====================
+        function setOHIFTool(t) {
+            tool = t;
+            document.querySelectorAll('.ohif-tool[data-tool]').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tool === t);
+            });
+
+            if (t === 'window') img.style.cursor = 'ew-resize';
+            else if (t === 'pan') img.style.cursor = 'grab';
+            else img.style.cursor = 'crosshair';
+
+            statusSpan.textContent = `Tool: ${t === 'window' ? 'Window' : (t === 'zoom' ? 'Zoom' : 'Pan')}`;
+        }
+
+        function resetOHIFView() {
+            transform = { scale: 1, tx: 0, ty: 0, invert: false };
+            img.style.filter = '';
+            applyOHIFTransform();
+            if (cinePlaying) toggleCinePlay();
+            statusSpan.textContent = 'View reset';
+        }
+
+        function invertOHIF() {
+            transform.invert = !transform.invert;
+            img.style.filter = transform.invert ? 'invert(1)' : '';
+            statusSpan.textContent = transform.invert ? 'Inverted' : 'Normal';
+        }
+
+        function setPresetOHIF(name) {
+            const presets = {
+                'Bone': { wc: 500, ww: 2000 },
+                'Lung': { wc: -500, ww: 1500 },
+                'Brain': { wc: 40, ww: 80 },
+                'Abdomen': { wc: 50, ww: 350 },
+                'Liver': { wc: 60, ww: 150 }
+            };
+            const preset = presets[name];
+            if (preset) {
+                wlState.wc = preset.wc;
+                wlState.ww = preset.ww;
+                updateOHIFWindow();
+                statusSpan.textContent = `Preset: ${name}`;
+            }
+        }
+
+        // ==================== Cine ====================
+        function cineFirst() { document.getElementById('cine-slider').value = 0; onCineSlider(); }
+        function cinePrev() {
+            const s = document.getElementById('cine-slider');
+            s.value = Math.max(0, parseInt(s.value) - 1);
+            onCineSlider();
+        }
+        function cineNext() {
+            const s = document.getElementById('cine-slider');
+            s.value = Math.min(totalFrames - 1, parseInt(s.value) + 1);
+            onCineSlider();
+        }
+        function cineLast() {
+            const s = document.getElementById('cine-slider');
+            s.value = totalFrames - 1;
+            onCineSlider();
+        }
+
+        function onCineSlider() {
+            const frame = parseInt(document.getElementById('cine-slider').value);
+            loadFrameOHIF(frame);
+        }
+
+        function toggleCinePlay() {
+            const btn = document.getElementById('play-btn');
+            if (cinePlaying) {
+                cinePlaying = false;
+                clearInterval(cineInterval);
+                btn.textContent = '▶️ Play';
+                statusSpan.textContent = 'Cine stopped';
+            } else {
+                cinePlaying = true;
+                btn.textContent = '⏸ Pause';
+                statusSpan.textContent = `Cine @ ${cineFps} fps`;
+                cineInterval = setInterval(() => {
+                    const next = (currentFrame + 1) % totalFrames;
+                    document.getElementById('cine-slider').value = next;
+                    loadFrameOHIF(next);
+                }, 1000 / cineFps);
+            }
+        }
+
+        // ==================== Metadata ====================
+        function toggleMetadataOHIF() {
+            const panel = document.getElementById('metadata-panel-ohif');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                renderMetadataOHIF();
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function renderMetadataOHIF() {
+            const content = document.getElementById('metadata-content');
+            const groups = {
+                'Patient': ['PatientName', 'PatientID', 'PatientSex', 'PatientAge'],
+                'Study': ['StudyDate', 'StudyDescription', 'Modality'],
+                'Series': ['SeriesDescription', 'SeriesNumber'],
+                'Image': ['Rows', 'Columns', 'BitsAllocated', 'NumberOfFrames', 'PixelSpacing'],
+                'Window': ['WindowCenter', 'WindowWidth'],
+                'Equipment': ['Manufacturer', 'SoftwareVersions']
+            };
+
+            let html = '';
+            for (const [group, fields] of Object.entries(groups)) {
+                const present = fields.filter(f => metadata[f]);
+                if (present.length === 0) continue;
+
+                html += `<div class="meta-section"><h4>${group}</h4>`;
+                for (const f of present) {
+                    html += `<div class="meta-row"><span class="meta-label">${f}</span><span class="meta-value">${metadata[f]}</span></div>`;
+                }
+                html += `</div>`;
+            }
+
+            content.innerHTML = html || '<p style="color:#666; padding:12px;">No metadata</p>';
+        }
+
+        // ==================== Screenshot ====================
+        function takeScreenshotOHIF() {
+            try {
+                statusSpan.textContent = 'Taking screenshot...';
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const viewport = document.getElementById('viewport-area');
+                canvas.width = viewport.offsetWidth;
+                canvas.height = viewport.offsetHeight;
+
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                const imgRect = img.getBoundingClientRect();
+                const viewportRect = viewport.getBoundingClientRect();
+
+                const x = imgRect.left - viewportRect.left;
+                const y = imgRect.top - viewportRect.top;
+                const w = imgRect.width;
+                const h = imgRect.height;
+
+                ctx.save();
+                if (transform.invert) ctx.filter = 'invert(1)';
+                ctx.translate(x + w / 2, y + h / 2);
+                ctx.scale(transform.scale, transform.scale);
+                ctx.translate(transform.tx, transform.ty);
+                ctx.drawImage(img, -w / 2, -h / 2, w, h);
+                ctx.restore();
+
+                // Metadata overlay
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, canvas.height - 50, 320, 40);
+
+                ctx.font = '10px monospace';
+                ctx.fillStyle = '#0f0';
+
+                const patient = metadata.PatientName || 'Unknown';
+                const date = metadata.StudyDate || '';
+                const mod = metadata.Modality || 'DICOM';
+                const wl = Math.round(wlState.wc);
+                const ww = Math.round(wlState.ww);
+                const frameText = isMultiFrame ? ` | Frame ${currentFrame + 1}/${totalFrames}` : '';
+
+                ctx.fillText(`${patient} | ${date} | ${mod}`, 20, canvas.height - 30);
+                ctx.fillText(`WL: ${wl} / WW: ${ww}${frameText}`, 20, canvas.height - 15);
+
+                // Orientation
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(canvas.width - 80, 10, 70, 50);
+                ctx.fillStyle = '#0f0';
+                ctx.font = 'bold 11px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('A', canvas.width - 45, 25);
+                ctx.fillText('P', canvas.width - 45, 55);
+                ctx.fillText('R', canvas.width - 20, 40);
+                ctx.fillText('L', canvas.width - 70, 40);
+                ctx.textAlign = 'left';
+
+                const sPatient = (metadata.PatientName || 'Unknown').replace(/[^a-zA-Z0-9а-яА-Я_-]/g, '_').substring(0, 30);
+                const sDate = metadata.StudyDate ? metadata.StudyDate.substring(0, 8) : 'nodate';
+                const sMod = metadata.Modality || 'DICOM';
+                const sFrame = isMultiFrame ? `_fr${currentFrame + 1}` : '';
+                const ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                const fileName = `${sMod}_${sPatient}_${sDate}${sFrame}_${ts}.png`;
+
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        statusSpan.textContent = 'Screenshot failed';
+                        return;
+                    }
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+                    statusSpan.textContent = `Saved: ${fileName}`;
+                    setTimeout(() => { statusSpan.textContent = 'Ready'; }, 3000);
+                }, 'image/png');
+
+            } catch (e) {
+                console.error('Screenshot error:', e);
+                statusSpan.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        // ==================== Utils ====================
+        function showError(msg) {
+            loadingDiv.style.display = 'none';
+            document.getElementById('error').style.display = 'flex';
+            document.getElementById('errorMsg').textContent = msg;
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data === 'close-ohif-viewer') window.parent.postMessage('ohif-close', '*');
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (cineInterval) clearInterval(cineInterval);
+            if (currentImageUrl && currentImageUrl.startsWith('blob:')) URL.revokeObjectURL(currentImageUrl);
+        });
+    </script>
+</body>
+</html>

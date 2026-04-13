@@ -65,8 +65,16 @@ function _createFileItem(file) {
         const btnView = document.createElement('button');
         btnView.className = 'btn-info btn-small dicom-view-btn';
         btnView.textContent = '👁️ Просмотр';
+        btnView.title = 'Открыть встроенный DICOM Viewer';
         btnView.addEventListener('click', () => openDicomViewer(file.id, originalName));
         actionsDiv.appendChild(btnView);
+
+        const btnOHIF = document.createElement('button');
+        btnOHIF.className = 'btn-info btn-small dicom-view-btn';
+        btnOHIF.textContent = '🏥 OHIF';
+        btnOHIF.title = 'Открыть OHIF Viewer (DICOMweb)';
+        btnOHIF.addEventListener('click', () => openOHIFViewer(file.id, originalName));
+        actionsDiv.appendChild(btnOHIF);
     }
 
     if (file.download_url) {
@@ -339,6 +347,29 @@ export async function openDicomViewer(fileId, fileName) {
 }
 
 /**
+ * Открывает OHIF Viewer в модальном окне.
+ * Запрашивает у бэкенда URL с DICOMweb endpoints.
+ */
+export async function openOHIFViewer(fileId, fileName) {
+    try {
+        const response = await fetch(`/api/dicom/ohif-url?file_id=${fileId}`, {
+            method: 'POST',
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        _showOHIFViewerModal(data.ohif_url, data.file_name || fileName, data.expires_at);
+    } catch (error) {
+        showNotification(`Ошибка открытия OHIF Viewer: ${error.message}`, 'error');
+    }
+}
+
+/**
  * Показывает модальное окно с iframe для DICOM viewer.
  */
 function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
@@ -425,6 +456,76 @@ function _closeDicomViewerModal() {
         modal.remove();
         document.body.style.overflow = '';
     }
+}
+
+/**
+ * Показывает модальное окно с OHIF Viewer.
+ */
+function _showOHIFViewerModal(iframeUrl, fileName, expiresAt) {
+    const existing = document.getElementById('ohifViewerModal');
+    if (existing) existing.remove();
+
+    const expiresLabel = expiresAt
+        ? new Date(expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        : '—';
+
+    const modal = document.createElement('div');
+    modal.id = 'ohifViewerModal';
+    modal.className = 'dicom-modal';
+    modal.innerHTML = `
+        <div class="dicom-modal-header">
+            <div class="dicom-modal-title">
+                <span class="dicom-modal-icon">🏥</span>
+                <span class="dicom-modal-filename">${escapeHtml(fileName)}</span>
+                <span class="dicom-modal-expires" title="Сессия истекает в ${expiresLabel}">⏰ ${expiresLabel}</span>
+            </div>
+            <div class="dicom-modal-actions">
+                <button class="dicom-modal-btn dicom-modal-btn-close" id="ohifModalClose" title="Закрыть">
+                    ✕ Закрыть
+                </button>
+            </div>
+        </div>
+        <div class="dicom-modal-body">
+            <div class="dicom-modal-loading" id="ohifModalLoading">
+                <div class="dicom-modal-spinner"></div>
+                <p>Загрузка OHIF Viewer...</p>
+            </div>
+            <iframe
+                id="ohifModalIframe"
+                src="${iframeUrl}"
+                class="dicom-modal-iframe"
+                allow="fullscreen"
+                referrerpolicy="no-referrer"
+                style="opacity: 0;"
+            ></iframe>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    const closeBtn = modal.querySelector('#ohifModalClose');
+    closeBtn.addEventListener('click', () => {
+        const m = document.getElementById('ohifViewerModal');
+        if (m) {
+            m.remove();
+            document.body.style.overflow = '';
+        }
+    });
+
+    const iframe = modal.querySelector('#ohifModalIframe');
+    iframe.onload = () => {
+        iframe.style.opacity = '1';
+        const loading = document.getElementById('ohifModalLoading');
+        if (loading) loading.style.display = 'none';
+    };
+
+    setTimeout(() => {
+        const loading = document.getElementById('ohifModalLoading');
+        if (loading && loading.style.display !== 'none') {
+            loading.innerHTML = '<p class="dicom-modal-error">Viewer не загрузился. <a href="#" onclick="location.reload()">Обновить</a></p>';
+        }
+    }, 15000);
 }
 
 // ── Инициализация ─────────────────────────────────────────────────────────────

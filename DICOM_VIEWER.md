@@ -129,6 +129,7 @@ curl http://localhost:8000/health | jq .features.dicom_viewer
 | `token`   | string  | Да       | View-токен         |
 | `center`  | float   | Нет      | Window Center (WL) |
 | `width`   | float   | Нет      | Window Width (WW)  |
+| `frame`   | int     | Нет      | Номер кадра (0-indexed, по умолчанию 0) |
 
 **Ответ 200:** PNG изображение (`image/png`)
 
@@ -149,22 +150,31 @@ curl http://localhost:8000/health | jq .features.dicom_viewer
 1. Проверка Redis-кэша PNG (HIT → мгновенный ответ)
 2. Расшифровка `.age` файла в память
 3. `pydicom.dcmread()` → `ds.pixel_array` (numpy)
-4. Multi-frame → берётся первый кадр
+4. Multi-frame → выбор кадра по параметру `frame` (по умолчанию 0)
 5. Windowing: заданный WL/WW или автоматический min-max
 6. `PIL.Image.fromarray()` → PNG в память
-7. Сохранение PNG в Redis (TTL 1 час)
+7. Сохранение PNG в Redis (TTL 1 час, ключ включает frame number)
 8. StreamingResponse (без записи на диск)
+
+**Multi-frame обработка:**
+- Если `pixel_array.ndim == 3`, извлекается кадр `pixel_array[frame]`
+- Валидация: `frame` должен быть в диапазоне `0..total_frames-1`
+- Ошибка 400 при выходе за пределы диапазона
+- Redis ключ: `smdg:dicom_png:{file_id}:frame{frame}:{wc}:{ww}`
 
 **Аудит:** `dicom.streamed` / `dicom.stream_failed`
 
 **Примеры запросов:**
 
 ```bash
-# Автоматическая нормализация (min-max)
+# Автоматическая нормализация (min-max), frame 0
 curl -o auto.png "http://localhost:8000/api/dicom/render/7?token=TOKEN"
 
-# Bone preset (WL=500, WW=2000)
-curl -o bone.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&center=500&width=2000"
+# Конкретный кадр multi-frame (frame 5)
+curl -o frame5.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&frame=5"
+
+# Bone preset (WL=500, WW=2000), frame 10
+curl -o bone.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&frame=10&center=500&width=2000"
 
 # Lung preset (WL=-500, WW=1500)
 curl -o lung.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&center=-500&width=1500"
@@ -294,11 +304,11 @@ curl -o brain.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&center=4
 
 ### 3.2. DICOM Viewer UI
 
-`static/html/dicom-viewer.html` — автономная страница без внешних зависимостей (~540 строк).
+`static/html/dicom-viewer.html` — автономная страница без внешних зависимостей (~850 строк).
 
 **Загрузка:**
-1. `GET /api/dicom/metadata/{id}?token=...` → метаданные для sidebar (с автозагрузкой WL/WW)
-2. `GET /api/dicom/render/{id}?token=...&center=...&width=...` → PNG с WL/WW параметрами
+1. `GET /api/dicom/metadata/{id}?token=...` → метаданные для sidebar (с автозагрузкой WL/WW, определение multi-frame)
+2. `GET /api/dicom/render/{id}?token=...&center=...&width=...&frame=N` → PNG с WL/WW параметрами и выбором кадра
 
 **Инструменты:**
 
@@ -307,12 +317,54 @@ curl -o brain.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&center=4
 | 🪟 Окно (WL/WW)    | Drag мышью: горизонталь = WW, вертикаль = WC. Курсор: `ew-resize` |
 | 🔍 Зум           | Drag вверх/вниз или колёсико мыши. Курсор: `crosshair`             |
 | ✋ Пан            | Drag для перемещения. Курсор: `grab` → `grabbing`                 |
-| ↺ Сброс          | Сброс масштаба, позиции и инверсии                                 |
+| ▶️ Cine           | Multi-frame навигация: scroll переключает кадры (появляется только для CT/MRI) |
+| 📐 Измерения      | Инструменты измерений: линейка, угол, ROI (открывает measurement toolbar) |
+| ↺ Сброс          | Сброс масштаба, позиции, инверсии, остановка Cine, очистка измерений|
 | ◐ Инверт         | Инверсия цветов (CSS `filter: invert(1)`)                          |
 | 💾 Скачать       | Скачать оригинальный DICOM-файл (осмысленное имя файла)            |
-| ℹ️               | Панель метаданных (6 групп, сокращённые UID)                       |
-| ✕                | Закрыть viewer                                                     |                          
+| ℹ️               | Панель метаданных (7 групп, сокращённые UID)                       |
+| ✕                | Закрыть viewer                                                     |
 
+**Инструменты измерений (Measurement Tools):**
+
+При нажатии **📐 Измерения** появляется toolbar с инструментами:
+
+| Инструмент | Клики | Результат |
+|------------|-------|-----------|
+| 📏 **Линейка** | 2 точки | Расстояние (мм) |
+| 📐 **Угол** | 3 точки (вершина посередине) | Угол (градусы) |
+| ⬜ **ROI Rectangle** | 2 угла (диагональ) | Ширина, высота, площадь (мм²) |
+| ⭕ **ROI Ellipse** | Центр + край | Rx, Ry, площадь (мм²) |
+
+**Управление измерениями:**
+- **↩️ Отменить** — удалить последнее измерение
+- **🗑️ Очистить** — удалить все измерения
+- **✕ Закрыть** — скрыть measurement toolbar
+
+**Pixel Spacing:**
+- Автоматически извлекается из DICOM тега `PixelSpacing` (0028,0030)
+- Если тег отсутствует — используется 1 мм/пиксель
+- Все измерения в миллиметрах (мм) и квадратных миллиметрах (мм²)
+
+**Multi-frame (CT/MRI серии):**
+
+При загрузке multi-frame DICOM (`NumberOfFrames > 1`) автоматически:
+- Появляется кнопка **▶️ Cine** в toolbar
+- Появляется **Frame Slider** внизу экрана
+- Отображается индикатор `1 / 126` (текущий кадр / всего кадров)
+
+**Навигация по кадрам:**
+- **Frame Slider**: перетаскивание для выбора любого кадра
+- **Кнопки**: ⏮ Первый | ◀ Предыдущий | ▶ Следующий | ⏭ Последний
+- **Scroll мыши**: в режиме Cine переключает кадры (вперёд/назад)
+- **Cine Loop**: кнопка ▶️ Play/⏸ Pause для автопроигрывания
+- **Скорость**: слайдер 1-30 fps (по умолчанию 10 fps)
+
+**Оптимизации Multi-frame:**
+- **Клиентский кэш**: загруженные фреймы кэшируются в браузере (макс 50 кадров)
+- **Предзагрузка**: автоматически предзагружаются ±3 соседних кадра
+- **Deduplication**: одновременные запросы одного кадра объединяются
+- **Redis кэш сервера**: каждый фрейм кэшируется отдельно (`smdg:dicom_png:{id}:frame{N}:{wc}:{ww}`)
 **Пресеты Window/Level (для разных тканей):**
 
 | Пресет     | WL    | WW    | Описание               |
@@ -336,9 +388,11 @@ curl -o brain.png "http://localhost:8000/api/dicom/render/7?token=TOKEN&center=4
 1. **Пациент** — PatientName, PatientID, PatientBirthDate, PatientSex
 2. **Исследование** — StudyDate, StudyTime, StudyDescription, StudyInstanceUID, AccessionNumber, ReferringPhysicianName
 3. **Серия** — Modality, SeriesDescription, SeriesNumber, SeriesInstanceUID, SeriesDate
-4. **Изображение** — Rows, Columns, BitsAllocated, BitsStored, HighBit, PixelRepresentation, SamplesPerPixel, PhotometricInterpretation, NumberOfFrames
-5. **Окно/Уровень** — WindowCenter, WindowWidth, RescaleIntercept, RescaleSlope
-6. **Оборудование** — Manufacturer, ManufacturerModelName, InstitutionName, StationName, SoftwareVersions
+4. **Изображение** — Rows, Columns, BitsAllocated, BitsStored, HighBit, PixelRepresentation, SamplesPerPixel, PhotometricInterpretation, NumberOfFrames, PixelSpacing, SliceThickness
+5. **Сжатие** — TransferSyntaxName, TransferSyntaxUID
+6. **Окно/Уровень** — WindowCenter, WindowWidth, RescaleIntercept, RescaleSlope
+7. **Оборудование** — Manufacturer, ManufacturerModelName, InstitutionName, StationName, SoftwareVersions
+8. **Анатомия** — AnatomicalOrientation, PatientPosition
 
 Длинные UID автоматически сокращаются (35 символов + `…`) с показом полного значения при наведении.
 
@@ -482,22 +536,46 @@ curl -X POST "http://localhost:8000/api/delete-user-file" \
 | DICOM Viewer отключён        | 501  | Кнопка скрыта                           |
 | Файл слишком большой         | 413  | «Файл слишком большой для просмотра»    |
 | Ошибка pydicom               | 500  | «Ошибка рендера: ...»                   |
-| Сжатый DICOM (JPEG2000, RLE) | 500  | pydicom может не распаковать без codecs |
+| Сжатый DICOM (JPEG2000, RLE) | 500  | «Не удалось распаковать сжатый DICOM...»|
 | Зависимости не установлены   | 500  | «Зависимость не установлена: numpy»     |
 
-### Сжатые DICOM
+### Поддерживаемые Transfer Syntax
 
-Форматы JPEG2000, JPEG-LS, RLE требуют дополнительных кодеков:
-
-```bash
-# Для pydicom с поддержкой сжатия
-pip install pydicom[gdcm]
-```
-
-Без кодеков pydicom может извлечь pixel_array только для:
+**Uncompressed (всегда работают):**
 - Implicit VR Little Endian (`1.2.840.10008.1.2`)
 - Explicit VR Little Endian (`1.2.840.10008.1.2.1`)
 - Explicit VR Big Endian (`1.2.840.10008.1.2.2`)
+
+**Compressed (требуют pydicom[gdcm]):**
+- JPEG Baseline (`1.2.840.10008.1.2.4.50`)
+- JPEG Extended (`1.2.840.10008.1.2.4.51`)
+- JPEG Lossless (`1.2.840.10008.1.2.4.57`)
+- JPEG Lossless SV1 (`1.2.840.10008.1.2.4.70`)
+- JPEG-LS Lossy (`1.2.840.10008.1.2.4.80`)
+- JPEG-LS Lossless (`1.2.840.10008.1.2.4.81`)
+- **JPEG 2000 Lossless** (`1.2.840.10008.1.2.4.90`)
+- **JPEG 2000 Lossy** (`1.2.840.10008.1.2.4.91`)
+- **RLE Lossless** (`1.2.840.10008.1.2.5`)
+
+### Установка GDCM
+
+```bash
+# В Docker-контейнере (pyproject.toml уже обновлён)
+docker exec smdg-smdg-1 pip install --break-system-packages "pydicom[gdcm]"
+docker restart smdg-smdg-1
+
+# Или пересобрать образ
+docker compose build smdg
+docker compose up -d smdg
+```
+
+**Проверка установки:**
+```python
+import pydicom
+from pydicom import data_manager
+print(data_manager.get_charset())
+# Если GDCM установлен — распаковка JPEG2000 работает автоматически
+```
 
 ---
 
@@ -507,7 +585,8 @@ pip install pydicom[gdcm]
 |---------------------------|-----------|--------------------------------------------------|
 | Первый запрос metadata    | 1-5 сек   | Расшифровка + pydicom парсинг                    |
 | Повторный запрос metadata | <10 мс    | Redis-кэш (`smdg:dicom_meta:{file_id}`)          |
-| Render PNG (первый)       | 0.5-3 сек | Расшифровка + pydicom + numpy + PIL              |
+| Render PNG (первый, uncompressed) | 0.5-3 сек | Расшифровка + pydicom + numpy + PIL      |
+| Render PNG (первый, JPEG2000)     | 1-8 сек   + GDCM распаковка                          |
 | Render PNG (кэш HIT)      | <5 мс     | Redis-кэш (`smdg:dicom_png:{file_id}:{wc}:{ww}`) |
 | QIDO-RS (из кэша)         | <10 мс    | Redis-кэш метаданных                             |
 | WADO-RS streaming         | 0.5-3 сек | Расшифровка + streaming                          |
@@ -534,6 +613,10 @@ pip install pydicom[gdcm]
 - **Сохранение трансформаций** (zoom/pan) при перезагрузке PNG — UX не страдает
 - **`X-Cache: HIT/MISS`** заголовок — отладка кэширования
 - **`optimize=True`** в PIL — уменьшает размер PNG на 30-50%
+- **Multi-frame клиентский кэш** — до 50 фреймов в браузере, мгновенное переключение
+- **Предзагрузка соседних фреймов** (±3) — плавная навигация в Cine mode
+- **Deduplication запросов** — одновременные запросы одного фрейма объединяются
+- **Redis кэш на сервере** — каждый фрейм кэшируется отдельно с уникальным ключом
 
 ---
 
@@ -610,20 +693,186 @@ docker exec smdg-smdg-1 alembic upgrade head
 
 ## 11. Roadmap
 
-| Функция                    | Статус | Описание                                |
-|----------------------------|--------|-----------------------------------------|
-| Single-frame DICOM         | ✅     | PNG рендер через pydicom                |
-| Redis-кэш метаданных       | ✅     | 30+ тегов, TTL 2.25ч                    |
-| Redis-кэш PNG              | ✅     | `smdg:dicom_png:{id}:{wc}:{ww}`, TTL 1ч |
-| QIDO-RS + WADO-RS          | ✅     | DICOMweb стандарт                       |
-| WL/WW drag мышью           | ✅     | Горизонталь=WW, вертикаль=WC            |
-| 5 пресетов тканей          | ✅     | Bone, Lung, Brain, Abdomen, Liver       |
-| Авто-WL/WW из DICOM        | ✅     | Из WindowCenter/WindowWidth тегов       |
-| 6 групп метаданных         | ✅     | С сокращением UID                       |
-| Удаление файлов S3         | ✅     | encrypted_storage API, cascade delete   |
-| Multi-frame (CT/MRI серии) | 🔜     | Загрузка всех кадров, scroll между ними |
-| Сжатые DICOM (JPEG2000)    | 🔜     | pydicom[gdcm]                           |
-| Measurements               | 🔜     | Линейка, угол, ROI через Canvas         |
-| OHIF Viewer интеграция     | 🔜     | Полноценный PACS viewer в iframe        |
-| Экспорт PNG/Screenshot     | 🔜     | Сохранение текущего вида                |
-| Cine playback              | 🔜      | Анимация multi-frame (cine loop)       |
+| Функция                    | Статус | Описание                                                            |
+|----------------------------|--------|---------------------------------------------------------------------|
+| Single-frame DICOM         | ✅     | PNG рендер через pydicom                                            |
+| Redis-кэш метаданных       | ✅     | 30+ тегов, TTL 2.25ч                                                |
+| Redis-кэш PNG              | ✅     | `smdg:dicom_png:{id}:{wc}:{ww}`, TTL 1ч                             
+| QIDO-RS + WADO-RS          | ✅     | DICOMweb стандарт                                                   |
+| WL/WW drag мышью           | ✅     | Горизонталь=WW, вертикаль=WC                                        |
+| 5 пресетов тканей          | ✅     | Bone, Lung, Brain, Abdomen, Liver                                   |
+| Авто-WL/WW из DICOM        | ✅     | Из WindowCenter/WindowWidth тегов                                   |
+| 6 групп метаданных         | ✅     | С сокращением UID                                                   |
+| Удаление файлов S3         | ✅     | encrypted_storage API, cascade delete                               |
+| Multi-frame (CT/MRI серии) | ✅     | Загрузка всех кадров, scroll, cine loop, предзагрузка               |
+| Сжатые DICOM (JPEG2000)    | ✅     | pydicom[gdcm] — JPEG2000, JPEG-LS, RLE, JPEG                        |
+| Measurements               | ✅     | Линейка, угол, ROI (Rectangle/Ellipse), Pixel Spacing               |
+| OHIF Viewer интеграция     | ✅     | DICOMweb viewer через `/api/dicom/ohif-url`, series panel, metadata |
+| Экспорт PNG/Screenshot     | ✅     | Скриншот с измерениями, метаданными и ориентацией                   |
+
+---
+
+## 12. OHIF Viewer Integration
+
+### Обзор
+
+OHIF Viewer — отдельный viewer в стиле OHIF (Open Health Imaging Foundation) с DICOMweb endpoints.
+Использует те же QIDO-RS/WADO-RS endpoints что и встроенный DICOM Viewer.
+
+### Архитектура
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  OHIF Viewer (standalone page)                               │
+│                                                              │
+│  /ohif-viewer?token=...&file_id=...                          │
+│    ├── GET /api/dicom/metadata/{id}?token=... → JSON         │
+│    ├── GET /api/dicom/render/{id}?token=...&frame=N → PNG    │
+│    └── Series Panel, Viewport, Metadata                      │
+├─────────────────────────────────────────────────────────────┤
+│  Backend:                                                    │
+│  POST /api/dicom/ohif-url → { ohif_url, token, config }      │
+│  (те же QIDO-RS/WADO-RS endpoints)                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### API Endpoint
+
+#### POST /api/dicom/ohif-url
+
+Генерирует URL для OHIF Viewer с DICOMweb configuration.
+
+**Auth:** JWT cookie
+
+**Response 200:**
+```json
+{
+  "ohif_url": "/ohif-viewer?v=...&token=...&file_id=...",
+  "token": "uuid",
+  "expires_at": "2026-04-12T02:15:00+00:00",
+  "file_name": "chest_ct.dcm",
+  "viewer_config": {
+    "qido_url_root": "/api/dicom/qido?token=...",
+    "wado_url_root": "/api/dicom/wado?token=...",
+    "study_uid": "2.25.607865..."
+  }
+}
+```
+
+### OHIF Viewer Features
+
+| Feature | Описание |
+|---------|----------|
+| **Series Panel** | Левая панель с series |
+| **Viewport** | Центральный viewport с изображением |
+| **Metadata Panel** | Правая панель с DICOM тегами |
+| **Window/Level** | Drag мышью, 5 presets |
+| **Zoom/Pan** | Mouse drag + wheel |
+| **Multi-frame** | Cine controls (slider, play/pause) |
+| **Invert** | Инверсия цветов |
+| **Reset View** | Сброс трансформаций |
+
+### Frontend Integration
+
+```javascript
+// Открыть OHIF Viewer
+openOHIFViewer(fileId, fileName);
+```
+
+В UI две кнопки для DICOM файлов:
+- **👁️ Просмотр** — встроенный DICOM Viewer
+- **🏥 OHIF** — OHIF-style Viewer
+
+### Audit
+
+| Событие | Когда логируется |
+|---------|------------------|
+| `dicom.ohif_initiated` | Генерация OHIF Viewer URL |
+
+---
+
+## 13. Экспорт PNG / Screenshot
+
+### Обзор
+
+Оба viewer (встроенный и OHIF) поддерживают экспорт текущего вида в PNG файл.
+Скриншот включает изображение, измерения, метаданные и ориентацию.
+
+### Что включено в скриншот
+
+| Элемент | Описание |
+|---------|----------|
+| **Изображение** | DICOM с применёнными WL/WW, zoom, pan, invert |
+| **Измерения** | Линейки, углы, ROI (если есть) — рисуются поверх |
+| **Метаданные** | PatientName, StudyDate, Modality, WL/WW, Frame (для multi-frame) |
+| **Ориентация** | A (anterior), P (posterior), R (right), L (left) |
+
+### Формат имени файла
+
+```
+{Modality}_{PatientName}_{StudyDate}_fr{Frame}_{Timestamp}.png
+```
+
+**Примеры:**
+```
+CT_Иванов^Иван_20260412_fr5_2026-04-13T14-30-22.png
+MRI_Unknown_nodate_2026-04-13T14-30-22.png
+```
+
+### Как использовать
+
+1. **Настроить вид**: WL/WW, zoom, pan, измерения
+2. **Нажать 📸 Скриншот** в toolbar
+3. **Файл автоматически скачивается** с осмысленным именем
+
+### Архитектура
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Screenshot Canvas                                           │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │                                                      │   │
+│  │  [DICOM Image]  ← с применёнными transform           │   │
+│  │  + Measurements  ← canvas overlay                    │   │
+│  │                                                      │   │
+│  │  A                    ← Orientation markers          │   │
+│  │ R   L                                                │   │
+│  │  P                                                   │   │
+│  │                                                      │   │
+│  │  Patient | Date | Modality  ← Metadata overlay       │   │
+│  │  WL: 500 / WW: 2000 | Frame 5/126                   │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│  → canvas.toBlob() → download → CT_..._fr5_....png          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Реализация
+
+**Встроенный DICOM Viewer:**
+```javascript
+takeScreenshot() {
+    // 1. Создаём canvas размером с viewport
+    // 2. Рисуем изображение с transform (scale, translate, invert)
+    // 3. Рисуем measurement canvas поверх
+    // 4. Добавляем metadata overlay (patient, date, WL/WW, frame)
+    // 5. Добавляем orientation markers (A/P/R/L)
+    // 6. Экспорт в PNG с осмысленным именем файла
+}
+```
+
+**OHIF Viewer:**
+```javascript
+takeScreenshotOHIF() {
+    // Аналогичная логика для OHIF-style viewer
+}
+```
+
+### Особенности
+
+- **Все трансформации** (zoom, pan, invert) сохраняются в скриншоте
+- **Multi-frame** — экспортируется только текущий кадр
+- **Измерения** — все активные измерения рисуются поверх
+- **Без потерь** — PNG без сжатия, оригинальное качество
+- **Ориентация** — стандарт DICOM (A/P/R/L) для медицинских изображений

@@ -96,6 +96,25 @@ async def _parse_and_cache_dicom(file_id: int, encrypted_path: str) -> dict:
     sop_uid = safe(0x00080018)
     transfer_syntax = safe(0x00020010)
 
+    # Human-readable название Transfer Syntax
+    transfer_syntax_name = ""
+    if transfer_syntax:
+        ts_names = {
+            '1.2.840.10008.1.2': 'Implicit VR Little Endian',
+            '1.2.840.10008.1.2.1': 'Explicit VR Little Endian',
+            '1.2.840.10008.1.2.2': 'Explicit VR Big Endian',
+            '1.2.840.10008.1.2.4.50': 'JPEG Baseline',
+            '1.2.840.10008.1.2.4.51': 'JPEG Extended',
+            '1.2.840.10008.1.2.4.57': 'JPEG Lossless',
+            '1.2.840.10008.1.2.4.70': 'JPEG Lossless SV1',
+            '1.2.840.10008.1.2.4.80': 'JPEG-LS Lossy',
+            '1.2.840.10008.1.2.4.81': 'JPEG-LS Lossless',
+            '1.2.840.10008.1.2.4.90': 'JPEG 2000 Lossless',
+            '1.2.840.10008.1.2.4.91': 'JPEG 2000 Lossy',
+            '1.2.840.10008.1.2.5': 'RLE Lossless',
+        }
+        transfer_syntax_name = ts_names.get(transfer_syntax, transfer_syntax)
+
     # Если UIDs отсутствуют — генерируем синтетические
     if not study_uid:
         study_uid = _make_study_uid(file_id)
@@ -110,6 +129,7 @@ async def _parse_and_cache_dicom(file_id: int, encrypted_path: str) -> dict:
         "SeriesInstanceUID": series_uid,
         "SOPInstanceUID": sop_uid,
         "TransferSyntaxUID": transfer_syntax,
+        "TransferSyntaxName": transfer_syntax_name,
 
         # Пациент
         "PatientName": safe(0x00100010),
@@ -330,6 +350,102 @@ async def generate_view_url(
         "file_id": file_id,
         "study_uid": study_uid,
         "series_uid": series_uid,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────
+# POST /api/dicom/ohif-url — генерация URL для OHIF Viewer
+# ─────────────────────────────────────────────────────────────────────
+
+@router.post("/ohif-url")
+async def generate_ohif_url(
+    file_id: int = Query(..., description="ID DICOM-файла"),
+    current_user: TokenData = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Генерирует URL для OHIF Viewer с DICOMweb endpoints.
+
+    Требует: JWT аутентификация.
+    Возвращает: { ohif_url, token, expires_at, viewer_config }
+    """
+    _require_dicom_viewer_enabled()
+
+    result = await db.execute(select(File).where(File.id == file_id))
+    file_record = result.scalar_one_or_none()
+
+    if not file_record:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+
+    if file_record.mime_type != "application/dicom":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Файл не является DICOM (MIME: {file_record.mime_type})"
+        )
+
+    view_token = str(uuid.uuid4())
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        seconds=settings.dicom_view_token_ttl_seconds
+    )
+
+    dicom_token = DicomViewToken(
+        token=view_token,
+        file_id=file_record.id,
+        expires_at=expires_at,
+    )
+    db.add(dicom_token)
+    await db.commit()
+    await db.refresh(dicom_token)
+
+    # Генерируем DICOM UIDs
+    study_uid = _make_study_uid(file_id)
+    series_uid = _make_series_uid(file_id)
+
+    # URL для OHIF Viewer (self-hosted или iframe)
+    # OHIF Viewer поддерживает viewer route через URL params
+    import time
+    cache_buster = int(time.time() // 60)
+    ohif_url = (
+        f"/ohif-viewer?v={cache_buster}&"
+        f"token={view_token}&"
+        f"file_id={file_id}&"
+        f"StudyInstanceUID={study_uid}&"
+        f"SeriesInstanceUID={series_uid}"
+    )
+
+    # АУДИТ
+    audit_logger.log_operation(
+        action="dicom.ohif_initiated",
+        filename=file_record.original_name,
+        user=current_user.sub,
+        reason="Открыт OHIF Viewer",
+        success=True,
+        metadata={
+            "file_id": file_id,
+            "token_id": dicom_token.id,
+            "expires_at": expires_at.isoformat(),
+            "study_uid": study_uid,
+        }
+    )
+
+    logger.info(
+        f"[OHIF VIEW] Пользователь открыл OHIF Viewer для "
+        f"файла {file_record.original_name} (ID={file_id})"
+    )
+
+    return {
+        "ohif_url": ohif_url,
+        "token": view_token,
+        "expires_at": expires_at.isoformat(),
+        "file_name": file_record.original_name,
+        "file_id": file_id,
+        "study_uid": study_uid,
+        "series_uid": series_uid,
+        "viewer_config": {
+            "qido_url_root": f"/api/dicom/qido?token={view_token}",
+            "wado_url_root": f"/api/dicom/wado?token={view_token}",
+            "study_uid": study_uid,
+        }
     }
 
 
@@ -674,11 +790,13 @@ async def render_dicom_png(
     token: str = Query(..., description="View-токен"),
     center: float = Query(None, description="Window Center (WL)"),
     width: float = Query(None, description="Window Width (WW)"),
+    frame: int = Query(0, description="Номер кадра для multi-frame DICOM (0-indexed)"),
 ):
     """Рендерит DICOM в PNG через pydicom+numpy+PIL.
-    
+
     Параметры center/width задают Window Center/Width для визуализации.
     Если не указаны — используется полная динамическая нормализация (min-max).
+    Параметр frame выбирает конкретный кадр из multi-frame DICOM (CT/MRI серии).
     Результат кэшируется в Redis.
     """
     _require_dicom_viewer_enabled()
@@ -706,7 +824,7 @@ async def render_dicom_png(
         }
 
     # Проверяем кэш PNG
-    wl_key = f"smdg:dicom_png:{file_id}:{int(center) if center else 'auto'}:{int(width) if width else 'auto'}"
+    wl_key = f"smdg:dicom_png:{file_id}:frame{frame}:{int(center) if center else 'auto'}:{int(width) if width else 'auto'}"
     try:
         from redis.asyncio import Redis
         r = Redis.from_url(settings.redis_url, decode_responses=False)
@@ -738,11 +856,43 @@ async def render_dicom_png(
         from io import BytesIO
 
         ds = pydicom.dcmread(BytesIO(decrypted_bytes), force=True)
-        pixel_array = ds.pixel_array  # numpy array
 
-        # Multi-frame → берём первый кадр
+        # Проверяем Transfer Syntax UID для определения сжатия
+        transfer_syntax = getattr(ds, 'file_meta', {}).get('TransferSyntaxUID', None)
+        if transfer_syntax:
+            ts_uid = str(transfer_syntax)
+            # Определяем сжатые форматы
+            compressed_formats = {
+                '1.2.840.10008.1.2.4.50': 'JPEG Baseline',
+                '1.2.840.10008.1.2.4.51': 'JPEG Extended',
+                '1.2.840.10008.1.2.4.57': 'JPEG Lossless',
+                '1.2.840.10008.1.2.4.70': 'JPEG Lossless SV1',
+                '1.2.840.10008.1.2.4.80': 'JPEG-LS Lossy',
+                '1.2.840.10008.1.2.4.81': 'JPEG-LS Lossless',
+                '1.2.840.10008.1.2.4.90': 'JPEG 2000 Lossless',
+                '1.2.840.10008.1.2.4.91': 'JPEG 2000 Lossy',
+                '1.2.840.10008.1.2.5': 'RLE Lossless',
+            }
+            if ts_uid in compressed_formats:
+                logger.info(f"[DICOM RENDER] Compressed DICOM detected: {compressed_formats[ts_uid]} ({ts_uid})")
+
+        pixel_array = ds.pixel_array  # numpy array (pydicom + GDCM распакует автоматически)
+
+        # Multi-frame обработка
+        total_frames = 1
         if pixel_array.ndim == 3:
-            pixel_array = pixel_array[0]
+            total_frames = pixel_array.shape[0]
+            if frame < 0 or frame >= total_frames:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Frame {frame} out of range (0-{total_frames-1})"
+                )
+            pixel_array = pixel_array[frame]
+        elif frame > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Single-frame DICOM, frame parameter must be 0"
+            )
 
         # Windowing
         if center is not None and width is not None and width > 0:
@@ -778,11 +928,22 @@ async def render_dicom_png(
 
         logger.info(
             f"[DICOM RENDER] {data['original_name']} → {img.width}x{img.height} PNG, "
+            f"frame={frame}/{total_frames-1}, "
             f"WL={int(center) if center else 'auto'}/WW={int(width) if width else 'auto'}"
         )
 
     except ImportError as e:
         raise HTTPException(status_code=500, detail=f"Зависимость не установлена: {e}")
+    except RuntimeError as e:
+        # GDCM ошибки распаковки
+        error_msg = str(e).lower()
+        if 'gdcm' in error_msg or 'jpeg' in error_msg or 'codec' in error_msg:
+            logger.error(f"[DICOM RENDER] GDCM decompression error: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Не удалось распаковать сжатый DICOM (JPEG2000/JPEG-LS/RLE). Установите pydicom[gdcm]. Ошибка: {e}"
+            )
+        raise HTTPException(status_code=500, detail=f"Ошибка рендера: {e}")
     except Exception as e:
         logger.error(f"[DICOM RENDER] Ошибка: {e}")
         raise HTTPException(status_code=500, detail=f"Ошибка рендера: {e}")

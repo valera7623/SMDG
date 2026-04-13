@@ -85,7 +85,10 @@
       "Bash(docker exec *)",
       "Bash(docker restart *)",
       "Bash(docker logs *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(python *)",
+      "Bash(docker ps *)",
+      "Bash(sleep *)"
     ]
   },
   "$version": 3
