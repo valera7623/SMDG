@@ -105,8 +105,13 @@ class Settings(BaseSettings):
     jwt_access_expires_minutes: int = 60
     jwt_algorithm: str = "HS256"
     debug: bool = False
-    dev_mode: bool = False 
-    
+    dev_mode: bool = False
+
+    # Multi-tenant: поддомен резервного tenant при Host без поддомена (см. resolve_tenant_by_host)
+    tenant_default_subdomain: str = "default"
+    # Если true — для Host localhost / 127.0.0.1 / ::1 без поддомена подставляется tenant_default_subdomain (удобно для https://localhost)
+    tenant_resolve_localhost_as_default: bool = True
+
     # ClamAV
     CLAMAV_HOST: str = "clamav"  
     CLAMAV_PORT: int = 3310

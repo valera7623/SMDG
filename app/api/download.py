@@ -19,6 +19,7 @@ from app.core.database import get_db
 from app.models.file import File
 from app.models.file_link import FileLink
 from datetime import datetime, timezone
+from app.core.tenant import require_tenant
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -48,7 +49,13 @@ async def download_by_token(
     logger.info(f"[DOWNLOAD TOKEN] Запрос с токеном: '{token}'")
 
     # Поиск токена
-    result = await db.execute(select(FileLink).where(FileLink.token == token))
+    tenant = require_tenant(request)
+    result = await db.execute(
+        select(FileLink).join(File, File.id == FileLink.file_id).where(
+            FileLink.token == token,
+            File.tenant_id == tenant.id,
+        )
+    )
     link = result.scalar_one_or_none()
 
     if not link:
@@ -72,7 +79,7 @@ async def download_by_token(
         raise HTTPException(status_code=410, detail="Лимит скачиваний исчерпан")
 
     # Поиск файла
-    result = await db.execute(select(File).where(File.id == link.file_id))
+    result = await db.execute(select(File).where(File.id == link.file_id, File.tenant_id == tenant.id))
     file_record = result.scalar_one_or_none()
 
     if not file_record:
@@ -159,7 +166,10 @@ async def download_file_post(
     if not safe_filename.endswith('.age'):
         safe_filename += '.age'
 
-    result = await db.execute(select(File).where(File.encrypted_name == safe_filename))
+    tenant = require_tenant(request)
+    result = await db.execute(
+        select(File).where(File.encrypted_name == safe_filename, File.tenant_id == tenant.id)
+    )
     file_record = result.scalar_one_or_none()
 
     if not file_record:

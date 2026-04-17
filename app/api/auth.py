@@ -11,9 +11,11 @@ from app.core.auth import get_current_user, get_current_admin
 from app.core.auth_utils import create_access_token, TokenData
 from app.core.database import get_db
 from app.models.user import User
+from app.models.tenant import Tenant
 from app.core.security import verify_password, get_password_hash
 from app.core import audit_logger
 from app.core.rate_limiter import limiter, get_remote_address
+from app.core.tenant import require_tenant, assert_tenant_access
 from datetime import timedelta
 import pyotp
 
@@ -89,7 +91,11 @@ async def change_password(
     current_user: Annotated[TokenData, Depends(get_current_user)] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == current_user.sub))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -142,10 +148,11 @@ async def login(
     otp_code: Optional[str] = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
+    tenant = require_tenant(request)
     print(f"[LOGIN] Попытка входа: username={username}, otp_provided={bool(otp_code)}")
 
     # Поиск пользователя
-    result = await db.execute(select(User).where(User.username == username))
+    result = await db.execute(select(User).where(User.username == username, User.tenant_id == tenant.id))
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
@@ -174,7 +181,7 @@ async def login(
         print("[LOGIN] 2FA отключена — вход без кода")
 
     # Создание токена
-    access_token = create_access_token(subject=user.username, role=user.role)
+    access_token = create_access_token(subject=user.username, role=user.role, tenant_id=user.tenant_id)
 
     # Установка cookie
     response.set_cookie(
@@ -218,7 +225,11 @@ async def setup_2fa(
     current_user: Annotated[TokenData, Depends(get_current_user)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == current_user.sub))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -253,7 +264,11 @@ async def verify_2fa_setup(
     req: Verify2FARequest = Body(...),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == current_user.sub))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -277,7 +292,11 @@ async def disable_2fa(
     otp_code: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == current_user.sub))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -303,11 +322,16 @@ async def register(
     user_data: RegisterRequest = Body(...),
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == user_data.username))
+    tenant = require_tenant(request)
+    result = await db.execute(
+        select(User).where(User.username == user_data.username, User.tenant_id == tenant.id)
+    )
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
 
-    result = await db.execute(select(User).where(User.email == user_data.email))
+    result = await db.execute(
+        select(User).where(User.email == user_data.email, User.tenant_id == tenant.id)
+    )
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
 
@@ -316,7 +340,8 @@ async def register(
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         role="user",
-        is_active=True
+        is_active=True,
+        tenant_id=tenant.id,
     )
 
     db.add(new_user)

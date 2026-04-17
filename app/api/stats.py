@@ -1,5 +1,5 @@
 # app/api/stats.py
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import Dict, Any
 import logging
 from datetime import datetime
@@ -10,6 +10,7 @@ from pathlib import Path
 
 from app.core.auth import get_current_admin
 from app.core.auth_utils import TokenData
+from app.core.tenant import require_tenant, assert_tenant_access
 from app.core import (
     ENCRYPTED_DIR, DECRYPTED_DIR, UPLOAD_DIR,
     file_storage, cleanup_manager, audit_logger,
@@ -184,9 +185,14 @@ def _get_cleanup_stats() -> Dict[str, Any]:
 # ==================== Основной эндпоинт ====================
 
 @router.get("/stats")
-async def get_system_stats(current_user: TokenData = Depends(get_current_admin)):
+async def get_system_stats(
+    request: Request,
+    current_user: TokenData = Depends(get_current_admin),
+):
     """Полная статистика системы"""
     logger.info(f"📊 Запрос статистики от {current_user.sub} (роль: {current_user.role})")
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
 
     try:
         stats = {
@@ -226,10 +232,13 @@ async def get_system_stats(current_user: TokenData = Depends(get_current_admin))
 
 
 @router.get("/stats/summary")
-async def get_stats_summary(current_user: TokenData = Depends(get_current_admin)):
+async def get_stats_summary(
+    request: Request,
+    current_user: TokenData = Depends(get_current_admin),
+):
     """Краткая сводка"""
     try:
-        full = await get_system_stats(current_user)
+        full = await get_system_stats(request=request, current_user=current_user)
         return {
             "timestamp": full["timestamp"],
             "total_files": full["summary"]["total_files"],

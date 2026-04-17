@@ -15,6 +15,7 @@ from app.core.rate_limiter import limiter
 from app.models.file import File
 from app.models.file_link import FileLink
 from app.models.user import User
+from app.core.tenant import require_tenant, assert_tenant_access
 from pathlib import Path
 
 router = APIRouter()
@@ -57,15 +58,17 @@ async def list_files(
     logger.info(f"📋 Запрос списка файлов от {current_user.sub} (роль: {current_user.role})")
 
     files: List[FileItem] = []
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
 
     # Базовый запрос
-    stmt = select(File).order_by(File.uploaded_at.desc())
+    stmt = select(File).where(File.tenant_id == tenant.id).order_by(File.uploaded_at.desc())
 
     # Ограничение по правам
     if current_user.role not in {"doctor", "admin"}:
         # Обычный пользователь видит только свои файлы
         user_result = await db.execute(
-            select(User.id).where(User.username == current_user.sub)
+            select(User.id).where(User.username == current_user.sub, User.tenant_id == tenant.id)
         )
         user_id = user_result.scalar()
 

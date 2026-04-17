@@ -25,8 +25,9 @@ from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
 from app.core.database import engine, AsyncSessionLocal, Base
-from app.models import User, File, FileLink, WebhookSubscription, WebhookDelivery
+from app.models import User, File, FileLink, WebhookSubscription, WebhookDelivery, Tenant
 from app.core.security import get_password_hash, verify_password
+from app.core.tenant import resolve_tenant_by_host
 
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
@@ -243,7 +244,11 @@ app.add_middleware(
 @app.middleware("http")
 async def set_user_context(request: Request, call_next):
     user = None
+    tenant = None
     try:
+        async with AsyncSessionLocal() as db:
+            tenant = await resolve_tenant_by_host(db, request.headers.get("host", ""))
+
         token = request.cookies.get("access_token")
         if token:
             from jwt import decode
@@ -255,12 +260,17 @@ async def set_user_context(request: Request, call_next):
             )
             sub = payload.get("sub")
             role = payload.get("role", "user")
+            tenant_id = payload.get("tenant_id")
             if sub:
-                user = TokenData(sub=sub, role=role)
+                user = TokenData(sub=sub, role=role, tenant_id=tenant_id)
     except Exception as e:
         logger.debug(f"Middleware: токен невалидный → user=None ({e})")
 
     request.scope["user"] = user
+    request.scope["tenant"] = tenant
+    request.scope["tenant_id"] = tenant.id if tenant else None
+    request.state.tenant = tenant
+    request.state.tenant_id = tenant.id if tenant else None
     response = await call_next(request)
     return response
 
@@ -356,6 +366,14 @@ async def create_first_admin():
         return
 
     async with AsyncSessionLocal() as db:
+        tenant_result = await db.execute(select(Tenant).where(Tenant.subdomain == "default"))
+        default_tenant = tenant_result.scalar_one_or_none()
+        if not default_tenant:
+            default_tenant = Tenant(name="Default Tenant", subdomain="default", settings={})
+            db.add(default_tenant)
+            await db.commit()
+            await db.refresh(default_tenant)
+
         async with db.begin():
             result = await db.execute(
                 select(User).where(User.username == "admin")
@@ -367,8 +385,10 @@ async def create_first_admin():
                 # Проверим, есть ли email
                 if not existing_admin.email:
                     existing_admin.email = "admin@example.com"
+                if not existing_admin.tenant_id:
+                    existing_admin.tenant_id = default_tenant.id
                     await db.commit()
-                    print("✅ Email добавлен существующему admin")
+                    print("✅ Tenant/email добавлены существующему admin")
                 return
 
             # Создаём первого админа с email
@@ -377,7 +397,8 @@ async def create_first_admin():
                 email="admin@example.com",  # ← ОБЯЗАТЕЛЬНО
                 hashed_password=get_password_hash("admin123"),
                 role="admin",
-                is_active=True
+                is_active=True,
+                tenant_id=default_tenant.id,
             )
             
             db.add(admin)

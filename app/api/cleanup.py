@@ -1,5 +1,5 @@
 # app/api/cleanup.py
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,7 @@ from app.core import DECRYPTED_DIR, file_storage, audit_logger, cleanup_manager,
 from app.core.auth import get_current_admin, TokenData
 from app.core.constants import ENCRYPTED_DIR
 from app.core.database import get_db
+from app.core.tenant import require_tenant, assert_tenant_access
 import logging
 
 router = APIRouter(prefix="/cleanup", tags=["Cleanup"])
@@ -30,10 +31,13 @@ class ForceCleanupResponse(BaseModel):
 
 @router.get("/stats")
 async def get_cleanup_stats(
+    request: Request,
     current_user: TokenData = Depends(get_current_admin)
 ):
     """Получить статистику по временным файлам"""
     try:
+        tenant = require_tenant(request)
+        assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
         stats = file_storage.get_stats()
 
         audit_logger.log_operation(
@@ -60,6 +64,7 @@ async def get_cleanup_stats(
 
 @router.get("/files")
 async def list_temp_files(
+    request: Request,
     current_user: TokenData = Depends(get_current_admin),
     limit: int = Query(100, ge=1, le=1000, description="Максимальное количество файлов в ответе")
 ):
@@ -74,6 +79,8 @@ async def list_temp_files(
         }
 
     try:
+        tenant = require_tenant(request)
+        assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
         for file_path in DECRYPTED_DIR.iterdir():
             if len(files) >= limit:
                 break
@@ -121,6 +128,7 @@ async def list_temp_files(
 
 @router.post("/force")
 async def force_cleanup(
+    request: Request,
     current_user: TokenData = Depends(get_current_admin)
 ):
     """Принудительная полная очистка всех временных и зашифрованных файлов"""
@@ -128,6 +136,8 @@ async def force_cleanup(
     errors = []
 
     logger.info(f"[FORCE CLEANUP] Запущена принудительная очистка пользователем {current_user.sub}")
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
 
     # 1. Очистка decrypted (временные файлы)
     try:

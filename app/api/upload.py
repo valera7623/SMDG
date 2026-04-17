@@ -27,6 +27,7 @@ from app.core.database import get_db
 from app.models.file import File
 from app.models.file_link import FileLink
 from app.models.user import User
+from app.core.tenant import require_tenant, assert_tenant_access
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
@@ -147,6 +148,8 @@ async def upload_file(
 ):
     temp_upload_path: Optional[Path] = None
     original_filename = file.filename or "unnamed_file"
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
 
     try:
         params = UploadParams(
@@ -258,7 +261,9 @@ async def upload_file(
         encrypted_size = metadata.size
 
         user_id = None
-        result = await db.execute(select(User).where(User.username == current_user.sub))
+        result = await db.execute(
+            select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+        )
         db_user = result.scalar_one_or_none()
         if db_user:
             user_id = db_user.id
@@ -275,6 +280,7 @@ async def upload_file(
 
         new_file = File(
             user_id=user_id,
+            tenant_id=tenant.id,
             original_name=original_filename,
             encrypted_name=final_encrypted_name,
             encrypted_path=storage_key,  # Теперь хранит S3 key или относительный путь

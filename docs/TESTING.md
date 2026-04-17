@@ -66,6 +66,15 @@ pyotp.TOTP с valid_window=1
 Мокирование TOTP.verify
 Полный цикл: setup → verify → login → disable
 
+### 3.4 Multi-tenancy
+
+- Юнит-тесты: `tests/test_core/test_tenant.py` (`extract_subdomain`, `assert_tenant_access`, обход для `super_admin`).
+- Фикстура БД в `tests/conftest.py` создаёт tenant `default` (`id=1`), чтобы резолвинг поддомена и FK были согласованы с кодом приложения.
+
+Для интеграционных проверок с **несколькими** tenants передавайте заголовок **`Host`** с нужным поддоменом (и заведите соответствующие строки в таблице `tenants`). Убедитесь, что JWT для запросов выдан после логина с тем же виртуальным хостом.
+
+Подробнее: [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md).
+
 
 ## 4. Реальные E2E сценарии
 E2E-тесты проверяют полный пользовательский путь:

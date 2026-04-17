@@ -50,6 +50,7 @@ class UserFactory(AsyncSQLAlchemyModelFactory):
     role = "user"
     is_active = True
     otp_secret = None
+    tenant_id = 1
     
     class Params:
         doctor = factory.Trait(role="doctor")
@@ -79,6 +80,7 @@ class FileFactory(AsyncSQLAlchemyModelFactory):
     
     # id - автоинкремент
     user_id = None  # может быть None
+    tenant_id = 1
     original_name = Faker("file_name", extension="pdf")
     encrypted_name = LazyAttribute(lambda obj: f"{uuid.uuid4().hex}.enc")
     encrypted_path = LazyAttribute(lambda obj: f"/tmp/uploads/{obj.encrypted_name}")

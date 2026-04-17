@@ -31,7 +31,7 @@ graph TD
     end
     subgraph "SMDG Application (FastAPI)"
         C[API Layer]
-        D[Middleware: Audit + Rate Limit + User Context]
+        D[Middleware: User + Tenant + Rate limit + Audit]
         E[Lifespan Events]
     end
     subgraph "Core Services"
@@ -52,17 +52,59 @@ graph TD
     C --> I
     C <--> J
     C --> K
+```
+
+### 2.1. Multi-tenancy (общая БД, изоляция по `tenant_id`)
+
+Используется **shared database**: одна PostgreSQL, строки пользователей и файлов помечены `tenant_id`. Текущий арендатор определяется по **поддомену в заголовке `Host`** (см. `app/core/tenant.py`). JWT содержит `tenant_id`; при доступе к данным выполняется проверка совпадения токена и запроса. Роль **`super_admin`** может обходить проверку перекрёстного доступа между арендаторами.
+
+```mermaid
+flowchart LR
+    subgraph Request
+        H["Host: clinic.example.com"]
+    end
+    subgraph Resolution
+        S["extract_subdomain → clinic"]
+        L[("tenants.subdomain")]
+        R["request.state.tenant"]
+    end
+    subgraph Auth
+        J["JWT: tenant_id"]
+        C{"tenant_id == tenant.id ?"}
+    end
+    H --> S --> L --> R
+    R --> C
+    J --> C
+    C -->|yes / super_admin| API["Обработчик + SQL с File.tenant_id / User.tenant_id"]
+    C -->|no| E403["403 Cross-tenant access"]
+```
+
+Файловое хранилище (локальная ФС или S3) **общее для инстанса**: изоляция обеспечивается логикой приложения и полями в БД, а не отдельными бакетами на арендатора.
+
+---
 
 ## 3. Схема базы данных (ERD)
+
+```mermaid
 erDiagram
+    TENANT ||--o{ USER : "has"
+    TENANT ||--o{ FILE : "scopes"
     USER ||--o{ FILE : "owns"
     USER ||--o{ FILE_LINK : "creates"
     FILE ||--o{ FILE_LINK : "referenced_by"
     USER ||--o{ DICOM_VIEW_TOKEN : "creates"
     FILE ||--o{ DICOM_VIEW_TOKEN : "referenced_by"
 
+    TENANT {
+        int id PK
+        string name
+        string subdomain UK
+        jsonb settings
+    }
+
     USER {
         int id PK
+        int tenant_id FK
         string username
         string email
         string hashed_password
@@ -75,6 +117,7 @@ erDiagram
 
     FILE {
         int id PK
+        int tenant_id FK
         string original_name
         string encrypted_name
         string encrypted_path
@@ -108,19 +151,24 @@ erDiagram
         timestamp expires_at
         timestamp created_at
     }
+```
 
 Индексы:
 
-user.username, user.email (unique)
-file.owner_id, file.patient_id
+tenants.subdomain (unique)
+users.tenant_id, users.username, users.email (unique в разрезе логики приложения / пара username+tenant)
+files.tenant_id, files.user_id, files.patient_id
 file_link.token (unique + index)
 
 ## 4. Модели БД
+Tenant (app/models/tenant.py)
+    id, name, subdomain (уникальный), settings (JSONB)
+
 User (app/models/user.py)
-    id, username, email, hashed_password, role (user/doctor/admin), is_active, otp_secret
+    tenant_id (FK → tenants), username, email, hashed_password, role (user/doctor/admin/super_admin), is_active, otp_secret
 
 File (app/models/file.py)
-    original_name, encrypted_name, encrypted_path, original_size, encrypted_size,
+    tenant_id (FK → tenants), original_name, encrypted_name, encrypted_path, original_size, encrypted_size,
     original_hash, mime_type, patient_id, medical_metadata (JSONB), user_id,
     uploaded_at, expires_at
 
@@ -211,9 +259,11 @@ sequenceDiagram
 Применение Alembic-миграций
 Инициализация FileStorageManager
 Запуск фоновой задачи очистки (cleanup_manager.start_cleanup_task())
-Создание/обновление администратора
+Создание/обновление администратора (привязка к tenant `default`, см. multi-tenant миграцию)
 Проверка необходимости ротации ключей
 Генерация self-signed сертификата для localhost (dev-режим)
+
+**HTTP middleware** (порядок важен): контекст пользователя и арендатора (`set_user_context` в `app/main.py`) разрешает tenant по `Host` и кладёт объект `Tenant` в `request.state` / `request.scope`; затем SlowAPI и аудит.
 
 
 ## 7. Технические решения и обоснования
@@ -480,10 +530,12 @@ pillow  = "^11.0"    # Конвертация в PNG
 ~~Экспорт PNG/Screenshot~~ ✅ Реализовано — с метаданными, измерениями и ориентацией
 ~~OHIF Viewer интеграция~~ ✅ Реализовано — DICOMweb endpoints, series panel
 ~~S3 Lifecycle Policies~~ ✅ Реализовано — автоматическое удаление, fallback на APScheduler
+~~Multi-tenancy (shared DB + subdomain)~~ ✅ Реализовано — см. [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md)
 
-### Осталось реализовать (2/12)
+### Осталось реализовать (1/12)
 
-- **Multi-tenancy (организации)** — изоляция данных между организациями, админы организаций
 - **Экспорт аудита в PDF/Excel** — отчёты по операциям, фильтрация по дате/пользователю
+
+Подробнее по multi-tenancy: [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md).
 
 Конец документа.

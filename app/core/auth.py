@@ -27,12 +27,13 @@ async def get_current_user(
         payload = jwt_decode(access_token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
         username: str = payload.get("sub")
         role: str = payload.get("role", "user")
+        tenant_id: int | None = payload.get("tenant_id")
         if username is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Некорректный токен: отсутствует subject"
             )
-        return TokenData(sub=username, role=role)
+        return TokenData(sub=username, role=role, tenant_id=tenant_id)
 
     except JWTError as e:
         raise HTTPException(
@@ -55,7 +56,7 @@ async def get_current_doctor(
 async def get_current_admin(
     current_user: Annotated[TokenData, Depends(get_current_user)]
 ) -> TokenData:
-    if current_user.role != "admin":
+    if current_user.role not in {"admin", "super_admin"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ разрешён только администраторам"

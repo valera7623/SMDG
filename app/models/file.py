@@ -12,6 +12,7 @@ class File(Base):
     __table_args__ = {'extend_existing': True}
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[int] = mapped_column(Integer, ForeignKey('tenants.id'), nullable=False, index=True, default=1)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
     original_name: Mapped[str] = mapped_column(String(255), nullable=False)
     encrypted_name: Mapped[str] = mapped_column(String(255), nullable=False)

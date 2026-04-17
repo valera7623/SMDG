@@ -20,7 +20,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,6 +29,7 @@ from app.core.config import settings
 from app.core import encrypted_storage, PRIVATE_KEY_PATH, audit_logger
 from app.core.database import AsyncSessionLocal, get_db
 from app.core.auth import get_current_user, TokenData
+from app.core.tenant import require_tenant, assert_tenant_access
 from app.models.file import File
 from app.models.dicom_view_token import DicomViewToken
 from app.crypto.crypto import crypto_manager
@@ -267,6 +268,7 @@ def _make_instance_uid(file_id: int) -> str:
 
 @router.post("/view-url")
 async def generate_view_url(
+    request: Request,
     file_id: int = Query(..., description="ID DICOM-файла"),
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -279,7 +281,9 @@ async def generate_view_url(
     """
     _require_dicom_viewer_enabled()
 
-    result = await db.execute(select(File).where(File.id == file_id))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(select(File).where(File.id == file_id, File.tenant_id == tenant.id))
     file_record = result.scalar_one_or_none()
 
     if not file_record:
@@ -359,6 +363,7 @@ async def generate_view_url(
 
 @router.post("/ohif-url")
 async def generate_ohif_url(
+    request: Request,
     file_id: int = Query(..., description="ID DICOM-файла"),
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -371,7 +376,9 @@ async def generate_ohif_url(
     """
     _require_dicom_viewer_enabled()
 
-    result = await db.execute(select(File).where(File.id == file_id))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    result = await db.execute(select(File).where(File.id == file_id, File.tenant_id == tenant.id))
     file_record = result.scalar_one_or_none()
 
     if not file_record:

@@ -1,5 +1,5 @@
 # app/api/delete_user.py
-from fastapi import APIRouter, HTTPException, Form, Depends, status, Path, Query
+from fastapi import APIRouter, HTTPException, Form, Depends, status, Path, Query, Request
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Annotated, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +12,7 @@ from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from app.models.file import File
 from app.models.user import User
+from app.core.tenant import require_tenant, assert_tenant_access
 from pathlib import Path as PathlibPath   # ← алиас для работы с файловой системой
 import os
 
@@ -45,7 +46,9 @@ async def _delete_user_file_by_name(
         safe_filename = f"{safe_filename}.age"
 
     # Ищем запись в БД по encrypted_name
-    result = await db.execute(select(File).where(File.encrypted_name == safe_filename))
+    result = await db.execute(
+        select(File).where(File.encrypted_name == safe_filename, File.tenant_id == current_user.tenant_id)
+    )
     db_file = result.scalar_one_or_none()
 
     if not db_file:
@@ -128,6 +131,7 @@ async def _delete_user_file_by_name(
 
 @router.post("/delete-user-file")
 async def delete_user_file(
+    request: Request,
     filename: str = Form(...),
     confirm: str = Form("false"),
     current_user: TokenData = Depends(get_current_user),
@@ -135,19 +139,24 @@ async def delete_user_file(
 ):
     """Удаление своего файла по имени"""
     confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     return await _delete_user_file_by_name(filename, confirm_bool, current_user, db)
 
 
 @router.delete("/delete-user-file/{file_id}")
 async def delete_user_file_by_id(
+    request: Request,
     file_id: Annotated[int, Path(..., description="ID файла")],
     confirm: bool = Query(False),
     current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Удаление своего файла по ID"""
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     # 1. Ищем запись в БД
-    result = await db.execute(select(File).where(File.id == file_id))
+    result = await db.execute(select(File).where(File.id == file_id, File.tenant_id == tenant.id))
     db_file = result.scalar_one_or_none()
 
     if not db_file:
@@ -155,7 +164,9 @@ async def delete_user_file_by_id(
 
     # 2. Проверка прав владельца
     if db_file.user_id:
-        result = await db.execute(select(User).where(User.username == current_user.sub))
+        result = await db.execute(
+            select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+        )
         user = result.scalar_one_or_none()
         if not user or user.id != db_file.user_id:
             if current_user.role != "admin":

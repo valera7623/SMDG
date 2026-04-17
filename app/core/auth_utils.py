@@ -12,14 +12,16 @@ from app.core.config import settings
 class TokenData(BaseModel):
     sub: str
     role: str = "user"
+    tenant_id: int | None = None
 
 
 def create_access_token(
     subject: str,
     role: str = "user",
+    tenant_id: int | None = None,
     expires_delta: Optional[timedelta] = None
 ) -> str:
-    to_encode = {"sub": subject, "role": role}
+    to_encode = {"sub": subject, "role": role, "tenant_id": tenant_id}
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.jwt_access_expires_minutes))
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)

@@ -78,6 +78,18 @@ cp .env.example .env
 # Отредактируйте .env под себя
 ```
 
+**Multi-tenant (опционально, есть значения по умолчанию):**
+
+```bash
+# Поддомен резервного tenant, если в Host нет первого лейбла (localhost / 127.0.0.1 и т.д.)
+TENANT_DEFAULT_SUBDOMAIN=default
+
+# Подставлять TENANT_DEFAULT_SUBDOMAIN для локальных хостов без поддомена (удобно для https://localhost)
+TENANT_RESOLVE_LOCALHOST_AS_DEFAULT=true
+```
+
+Список организаций задаётся в таблице PostgreSQL `tenants`, не через `.env`. Подробнее: [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md).
+
 ### Production (`.env.prod`)
 
 Создайте файл `.env.prod`:
@@ -283,6 +295,14 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 После обновления рекомендуется выполнить миграции БД (делается автоматически в `entrypoint.sh`).
+
+### 11.3 Миграции БД и multi-tenant
+
+Ревизия **`b7c8d9e0f1a2`** (`add multi tenant core`) создаёт таблицу `tenants`, добавляет обязательный `tenant_id` к `users` и `files`, заполняет существующие строки ссылкой на tenant `default`.
+
+- Новый деплой: миграции поднимут схему автоматически при старте контейнера.
+- Обновление с версии без multi-tenancy: перед выкладкой сделайте **резервную копию БД**; после `upgrade` все пользователи и файлы будут привязаны к tenant `default`. Дополнительные организации добавляются INSERT в `tenants` и созданием пользователей для нужного поддомена (см. [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md)).
+- **Downgrade** этой ревизии удаляет `tenant_id` и таблицу `tenants` — допустимо только в осознанном сценарии отката.
 
 ---
 

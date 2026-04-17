@@ -9,6 +9,8 @@ from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_admin, TokenData
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
+from app.core.tenant import require_tenant, assert_tenant_access
+from app.models.file import File
 from pathlib import Path
 import asyncio
 
@@ -31,20 +33,25 @@ async def _delete_file(
     filename: str,
     confirm: bool,
     reason: str,
-    current_user: TokenData
+    current_user: TokenData,
+    tenant_id: int,
+    db: AsyncSession,
 ):
     print(f"🗑️ Запрос на удаление: {filename} от {current_user.sub} ({current_user.role})")
 
     safe_filename = sanitize_filename(filename)
 
-    # Проверяем существование через хранилище
-    storage_key = safe_filename
-    if not await encrypted_storage.exists(storage_key) and not safe_filename.endswith('.age'):
-        storage_key = f"{safe_filename}.age"
-        safe_filename = f"{safe_filename}.age"
-
-    if not await encrypted_storage.exists(storage_key):
+    stmt = select(File).where(File.tenant_id == tenant_id, File.encrypted_name == safe_filename)
+    if not safe_filename.endswith(".age"):
+        stmt = select(File).where(
+            File.tenant_id == tenant_id,
+            File.encrypted_name.in_([safe_filename, f"{safe_filename}.age"]),
+        )
+    file_row = (await db.execute(stmt)).scalars().first()
+    if not file_row:
         raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
+    storage_key = file_row.encrypted_path
+    safe_filename = file_row.encrypted_name
 
     # Информация для аудита
     file_info = {
@@ -83,6 +90,8 @@ async def _delete_file(
 
     try:
         await encrypted_storage.delete(storage_key)
+        await db.delete(file_row)
+        await db.commit()
 
         audit_logger.log_operation(
             action="delete",
@@ -131,14 +140,18 @@ async def _delete_file(
 
 @router.post("/delete")
 async def delete_file(
+    request: Request,
     filename: str = Form(...),
     confirm: str = Form("false"),
     reason: str = Form(""),
-    current_user: TokenData = Depends(get_current_admin)
+    current_user: TokenData = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_db),
 ):
     """Удаление файла администратором (POST)"""
     confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
-    return await _delete_file(filename, confirm_bool, reason, current_user)
+    tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    return await _delete_file(filename, confirm_bool, reason, current_user, tenant.id, db)
 
 
 @router.get("/delete")

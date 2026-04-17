@@ -201,8 +201,9 @@ Prometheus metrics	         /metrics	                       Метрики дл�
 
 📄 Документация
 Документ	                            Описание
-API.md	                                Концептуальный гайд по API + ссылки на OpenAPI
+API_GUIDE.md	                        Концептуальный гайд по API + ссылки на OpenAPI
 ARCHITECTURE.md	                        Архитектура системы, диаграммы, ERD
+docs/MULTI_TENANCY.md	                Multi-tenancy: Host, JWT tenant_id, миграции, ограничения
 DEPLOYMENT.md	                        Развёртывание в production
 DICOM_VIEWER.md                         DICOM-вьюер
 SECURITY.md	                            Политика безопасности, threat model

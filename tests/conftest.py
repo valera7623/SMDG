@@ -36,6 +36,7 @@ from app.main import app
 from app.core.database import Base, get_db
 from app.core.auth import get_current_user
 from app.core.config import settings
+from app.models.tenant import Tenant
 
 # ========== ИМПОРТ ФАБРИК ==========
 from tests.factories import UserFactory, FileFactory, FileLinkFactory
@@ -70,6 +71,9 @@ async def setup_test_db():
         # Удаляем и создаём таблицы заново
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+    async with TestingSessionLocal() as session:
+        session.add(Tenant(id=1, name="Default Tenant", subdomain="default", settings={}))
+        await session.commit()
         print("✅ Таблицы созданы")
     yield
     # Очищаем после тестов

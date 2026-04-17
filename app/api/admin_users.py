@@ -1,5 +1,5 @@
 # app/api/admin_users.py
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete
 from pydantic import BaseModel, Field, field_validator, ConfigDict
@@ -11,6 +11,7 @@ from app.core.auth import get_current_admin, TokenData
 from app.core.security import get_password_hash, verify_password
 from app.models.user import User
 from app.core import audit_logger
+from app.core.tenant import require_tenant, assert_tenant_access
 
 router = APIRouter(prefix="/admin/users", tags=["Admin Users"])
 
@@ -87,6 +88,7 @@ class UserStatsResponse(BaseModel):
 
 @router.get("/", response_model=List[UserResponse])
 async def get_all_users(
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db),
     skip: int = Query(0, ge=0),
@@ -95,7 +97,11 @@ async def get_all_users(
     role: Optional[str] = Query(None, pattern="^(user|doctor|admin)$"),
     active_only: bool = Query(False)
 ):
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
     query = select(User)
+    if current_admin.role != "super_admin":
+        query = query.where(User.tenant_id == tenant.id)
 
     if search:
         query = query.where(
@@ -129,10 +135,16 @@ async def get_all_users(
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: int,
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.id == user_id))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
+    stmt = select(User).where(User.id == user_id)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
     if not user:
@@ -151,15 +163,22 @@ async def get_user(
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def create_user(
+    request: Request,
     user_data: UserCreateRequest,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.username == user_data.username))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
+    result = await db.execute(
+        select(User).where(User.username == user_data.username, User.tenant_id == tenant.id)
+    )
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким логином уже существует")
 
-    result = await db.execute(select(User).where(User.email == user_data.email))
+    result = await db.execute(
+        select(User).where(User.email == user_data.email, User.tenant_id == tenant.id)
+    )
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
 
@@ -168,7 +187,8 @@ async def create_user(
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
         role=user_data.role,
-        is_active=user_data.is_active
+        is_active=user_data.is_active,
+        tenant_id=tenant.id,
     )
 
     db.add(new_user)
@@ -191,10 +211,16 @@ async def create_user(
 async def update_user(
     user_id: int,
     update_data: UserUpdateRequest,
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.id == user_id))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
+    stmt = select(User).where(User.id == user_id)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
     if not user:
@@ -206,7 +232,13 @@ async def update_user(
     changes = {}
 
     if update_data.email and update_data.email != user.email:
-        result = await db.execute(select(User).where(User.email == update_data.email, User.id != user_id))
+        result = await db.execute(
+            select(User).where(
+                User.email == update_data.email,
+                User.id != user_id,
+                User.tenant_id == tenant.id,
+            )
+        )
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Пользователь с таким email уже существует")
         user.email = update_data.email
@@ -247,14 +279,20 @@ async def update_user(
 @router.delete("/{user_id}")
 async def delete_user(
     user_id: int,
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db),
     confirm: bool = Query(False)
 ):
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
     if not confirm:
         raise HTTPException(status_code=400, detail="Требуется подтверждение удаления (confirm=true)")
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    stmt = select(User).where(User.id == user_id)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
     if not user:
@@ -264,7 +302,7 @@ async def delete_user(
         raise HTTPException(status_code=400, detail="Нельзя удалить свою учётную запись")
 
     if user.role == "admin":
-        result = await db.execute(select(User).where(User.role == "admin"))
+        result = await db.execute(select(User).where(User.role == "admin", User.tenant_id == tenant.id))
         admins = result.scalars().all()
         if len(admins) <= 1:
             raise HTTPException(status_code=400, detail="Нельзя удалить последнего администратора")
@@ -288,10 +326,16 @@ async def delete_user(
 async def reset_user_password(
     user_id: int,
     reset_data: UserPasswordResetRequest,
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User).where(User.id == user_id))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
+    stmt = select(User).where(User.id == user_id)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    result = await db.execute(stmt)
     user = result.scalar_one_or_none()
 
     if not user:
@@ -317,15 +361,22 @@ async def reset_user_password(
 @router.post("/bulk")
 async def bulk_user_actions(
     action_data: BulkUserActionRequest,
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
     if not action_data.user_ids:
         raise HTTPException(status_code=400, detail="Не указаны пользователи")
 
     # Проверка на попытку изменить себя
     result = await db.execute(
-        select(User).where(User.id.in_(action_data.user_ids), User.username == current_admin.sub)
+        select(User).where(
+            User.id.in_(action_data.user_ids),
+            User.username == current_admin.sub,
+            User.tenant_id == tenant.id,
+        )
     )
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Нельзя применять массовые операции к своей учётной записи")
@@ -333,30 +384,42 @@ async def bulk_user_actions(
     affected_count = 0
 
     if action_data.action == "activate":
-        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(is_active=True))
+        result = await db.execute(
+            update(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id).values(is_active=True)
+        )
         affected_count = result.rowcount
 
     elif action_data.action == "deactivate":
-        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        result = await db.execute(
+            select(User).where(User.id.in_(action_data.user_ids), User.role == "admin", User.tenant_id == tenant.id)
+        )
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Нельзя деактивировать администраторов")
-        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(is_active=False))
+        result = await db.execute(
+            update(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id).values(is_active=False)
+        )
         affected_count = result.rowcount
 
     elif action_data.action == "change_role":
         if not action_data.role:
             raise HTTPException(status_code=400, detail="Не указана новая роль")
-        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        result = await db.execute(
+            select(User).where(User.id.in_(action_data.user_ids), User.role == "admin", User.tenant_id == tenant.id)
+        )
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Нельзя изменить роль администраторов")
-        result = await db.execute(update(User).where(User.id.in_(action_data.user_ids)).values(role=action_data.role))
+        result = await db.execute(
+            update(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id).values(role=action_data.role)
+        )
         affected_count = result.rowcount
 
     elif action_data.action == "delete":
-        result = await db.execute(select(User).where(User.id.in_(action_data.user_ids), User.role == "admin"))
+        result = await db.execute(
+            select(User).where(User.id.in_(action_data.user_ids), User.role == "admin", User.tenant_id == tenant.id)
+        )
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Нельзя удалять администраторов")
-        result = await db.execute(delete(User).where(User.id.in_(action_data.user_ids)))
+        result = await db.execute(delete(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id))
         affected_count = result.rowcount
 
     else:
@@ -381,10 +444,16 @@ async def bulk_user_actions(
 
 @router.get("/stats/overview", response_model=UserStatsResponse)
 async def get_user_stats(
+    request: Request,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(User))
+    tenant = require_tenant(request)
+    assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
+    stmt = select(User)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    result = await db.execute(stmt)
     all_users = result.scalars().all()
 
     total = len(all_users)
