@@ -32,4 +32,6 @@ secrets/*
 !secrets/.gitkeep  
 .zip
 .age
-*.age
+*.age.coverage
+.cursor/
+poetry.toml
