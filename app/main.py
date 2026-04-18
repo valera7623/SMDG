@@ -27,11 +27,12 @@ from app.core.auth_utils import TokenData
 from app.core.database import engine, AsyncSessionLocal, Base
 from app.models import User, File, FileLink, WebhookSubscription, WebhookDelivery, Tenant
 from app.core.security import get_password_hash, verify_password
-from app.core.tenant import resolve_tenant_by_host
+from app.core.tenant import resolve_tenant_from_request
 
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
 from app.api.admin_users import router as admin_users_router
+from app.api.admin_audit_export import router as admin_audit_export_router
 from app.api.delete_user import router as delete_user_router
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core import cleanup_manager
@@ -229,7 +230,13 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,          # если используешь куки/auth headers
     allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
-    allow_headers=["Authorization", "Content-Type", "X-Requested-With"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Requested-With",
+        "X-Tenant-ID",
+        "X-Tenant-Subdomain",
+    ],
     expose_headers=["X-Total-Count"],  # если возвращаешь пагинацию/кастом headers
     max_age=86400,                   # кэш preflight на сутки
 )
@@ -245,26 +252,45 @@ app.add_middleware(
 async def set_user_context(request: Request, call_next):
     user = None
     tenant = None
-    try:
-        async with AsyncSessionLocal() as db:
-            tenant = await resolve_tenant_by_host(db, request.headers.get("host", ""))
 
-        token = request.cookies.get("access_token")
-        if token:
+    token = request.cookies.get("access_token")
+    if not token:
+        auth_hdr = request.headers.get("authorization") or ""
+        if auth_hdr.lower().startswith("bearer "):
+            token = auth_hdr[7:].strip()
+
+    jwt_tenant_id = None
+    jwt_role = None
+    if token:
+        try:
             from jwt import decode
+
             payload = decode(
                 token,
                 settings.jwt_secret_key,
                 algorithms=[settings.jwt_algorithm],
-                options={"verify_exp": False}
+                options={"verify_exp": False},
             )
+            jwt_tenant_id = payload.get("tenant_id")
+            jwt_role = payload.get("role", "user")
             sub = payload.get("sub")
-            role = payload.get("role", "user")
-            tenant_id = payload.get("tenant_id")
             if sub:
-                user = TokenData(sub=sub, role=role, tenant_id=tenant_id)
+                user = TokenData(sub=sub, role=jwt_role, tenant_id=jwt_tenant_id)
+        except Exception as e:
+            logger.debug(f"Middleware: JWT decode → user=None ({e})")
+
+    try:
+        async with AsyncSessionLocal() as db:
+            tenant = await resolve_tenant_from_request(
+                db,
+                request,
+                jwt_tenant_id=jwt_tenant_id,
+                jwt_role=jwt_role,
+            )
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.debug(f"Middleware: токен невалидный → user=None ({e})")
+        logger.debug(f"Middleware: tenant resolution → tenant=None ({e})")
 
     request.scope["user"] = user
     request.scope["tenant"] = tenant
@@ -325,6 +351,7 @@ app.include_router(stats.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_users_router, prefix="/api")
+app.include_router(admin_audit_export_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")
 app.include_router(dicom.router, prefix="/api")
 

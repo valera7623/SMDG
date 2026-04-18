@@ -2,8 +2,8 @@
 
 **Secure Medical Data Gateway (SMDG)** — Руководство по развертыванию
 
-**Версия:** 2.0
-**Дата:** 10 апреля 2026
+**Версия:** 3.1  
+**Дата:** 18 апреля 2026
 
 ---
 
@@ -567,6 +567,40 @@ docker compose up -d smdg
 - Ключ: `smdg:dicom_meta:{file_id}`
 - TTL: `DICOM_VIEW_TOKEN_TTL_SECONDS + 3600` (по умолчанию 2.25 часа)
 - Формат: JSON с 30+ DICOM-тегами
+
+---
+
+## 17. Audit Export — зависимости и конфигурация
+
+Отчёты аудита (**Excel**, **PDF**, **CSV**) формируются эндпоинтом `GET /api/admin/audit/export` (только **admin**). Зависимости должны быть установлены в образе приложения.
+
+### 17.1 Установка зависимостей (Poetry)
+
+Из корня репозитория:
+
+```bash
+poetry add openpyxl reportlab aiofiles
+```
+
+Примечание: **`aiofiles`** уже указан в `pyproject.toml`; повторное добавление не навредит (Poetry сообщит об актуальной версии).
+
+### 17.2 Переменные окружения
+
+| Переменная | Описание |
+|------------|----------|
+| `AUDIT_LOGS_DIR` | Каталог JSON-файлов `audit_YYYY-MM-DD.log` (по умолчанию `audit_logs`) |
+| `AUDIT_EXPORT_PDF_FONT_PATH` | Абсолютный путь к **`DejaVuSans.ttf`** в slim-образах без пакета `fonts-dejavu` |
+| `AUDIT_EXPORT_DOWNLOAD_PREFIX` | Префикс имени скачиваемого файла (по умолчанию `smdg_audit`) |
+
+В Docker без системных шрифтов скопируйте TTF в образ (например `/app/fonts/DejaVuSans.ttf`) и задайте `AUDIT_EXPORT_PDF_FONT_PATH`.
+
+### 17.3 Проверка после деплоя
+
+```bash
+docker compose exec smdg poetry show openpyxl reportlab aiofiles
+```
+
+Подробнее по API: [API_GUIDE.md](API_GUIDE.md#11-audit-export-api).
 
 ---
 

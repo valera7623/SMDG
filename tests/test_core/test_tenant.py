@@ -14,6 +14,12 @@ def test_extract_subdomain_none_for_root_domain():
     assert extract_subdomain("localhost:8000") is None
 
 
+def test_extract_subdomain_localhost_dev():
+    """Два сегмента alpha.localhost — поддомен alpha (curl / dev)."""
+    assert extract_subdomain("alpha.localhost") == "alpha"
+    assert extract_subdomain("alpha.localhost:8000") == "alpha"
+
+
 def test_assert_tenant_access_forbidden():
     with pytest.raises(HTTPException) as exc:
         assert_tenant_access(current_user_tenant_id=1, request_tenant_id=2, role="admin")

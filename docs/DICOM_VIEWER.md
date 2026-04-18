@@ -710,6 +710,8 @@ docker exec smdg-smdg-1 alembic upgrade head
 | OHIF Viewer интеграция     | ✅     | DICOMweb viewer через `/api/dicom/ohif-url`, series panel, metadata |
 | Экспорт PNG/Screenshot     | ✅     | Скриншот с измерениями, метаданными и ориентацией                   |
 
+**Связанные возможности платформы (не DICOM):** экспорт журнала аудита **Excel/PDF/CSV** для администратора — см. [CHANGELOG.md](CHANGELOG.md) и [API_GUIDE.md](API_GUIDE.md#11-audit-export-api) (версия **3.1.0**).
+
 ---
 
 ## 12. OHIF Viewer Integration

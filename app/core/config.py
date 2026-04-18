@@ -1,6 +1,7 @@
 # app/core/config.py
 import os
 from pathlib import Path
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
@@ -160,6 +161,21 @@ class Settings(BaseSettings):
     def is_s3_enabled(self) -> bool:
         """Проверяет, включён ли S3 режим."""
         return self.s3_enabled and bool(self.s3_endpoint_url) and bool(self.s3_access_key)
+
+    # Журналы аудита (JSON по дням: audit_YYYY-MM-DD.log)
+    audit_logs_dir: Path = Field(default=Path("audit_logs"))
+
+    # Экспорт аудита (PDF): абсолютный путь к DejaVuSans.ttf (обязательно в slim-контейнере без fonts-dejavu)
+    audit_export_pdf_font_path: Optional[str] = Field(
+        default=None,
+        description=(
+            "Путь к файлу шрифта DejaVuSans.ttf для отчётов PDF. Если не задан, ищется в стандартных "
+            "каталогах Linux (например /usr/share/fonts/truetype/dejavu/). В Docker без пакета шрифтов "
+            "скопируйте TTF в образ и укажите этот путь через переменную AUDIT_EXPORT_PDF_FONT_PATH."
+        ),
+    )
+    # Префикс имени скачиваемого файла (без расширения)
+    audit_export_download_prefix: str = "smdg_audit"
 
 
 settings = Settings()

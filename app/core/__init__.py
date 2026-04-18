@@ -9,7 +9,7 @@ from .config import settings
 from .constants import BASE_DIR, UPLOAD_DIR, ENCRYPTED_DIR, DECRYPTED_DIR, PRIVATE_KEY_PATH
 
 # Инициализация аудит-логгера (первым, чтобы другие компоненты могли его использовать)
-audit_logger = AuditLogger()
+audit_logger = AuditLogger(log_dir=settings.audit_logs_dir)
 
 # Корневая директория проекта
 BASE_DIR = Path.cwd()

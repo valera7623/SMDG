@@ -1,8 +1,17 @@
 from fastapi import HTTPException, Request, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.tenant import Tenant
+
+
+def _get_optional_header(request: Request, canonical: str) -> str | None:
+    """Читает заголовок (имена в HTTP регистронезависимы — см. Starlette Headers)."""
+    raw = request.headers.get(canonical)
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    return s if s else None
 
 
 def _plain_hostname(host: str) -> str:
@@ -10,13 +19,108 @@ def _plain_hostname(host: str) -> str:
 
 
 def extract_subdomain(host: str) -> str | None:
+    """Извлекает поддомен из Host.
+
+    - ``clinic.example.com`` → ``clinic`` (≥3 меток).
+    - ``alpha.localhost`` → ``alpha`` (dev: две метки, второй уровень ``localhost``).
+    Одиночный ``localhost`` / ``127.0.0.1`` не даёт поддомена (обрабатывается в resolve)."""
     if not host:
         return None
     hostname = host.split(":")[0].strip().lower()
     parts = hostname.split(".")
-    if len(parts) < 3:
+    if len(parts) >= 3:
+        return parts[0]
+    # Два сегмента: например alpha.localhost (curl / dev без DNS)
+    if len(parts) == 2 and parts[1] == "localhost":
+        return parts[0]
+    return None
+
+
+async def _resolve_tenant_from_headers_and_host(
+    db: AsyncSession, request: Request
+) -> Tenant | None:
+    """Только заголовки и Host (без JWT)."""
+    raw_id = _get_optional_header(request, "X-Tenant-ID")
+    if raw_id is not None:
+        try:
+            tid = int(raw_id)
+            result = await db.execute(select(Tenant).where(Tenant.id == tid))
+            tenant = result.scalar_one_or_none()
+            if tenant is not None:
+                return tenant
+        except (ValueError, TypeError):
+            pass
+
+    raw_sub = _get_optional_header(request, "X-Tenant-Subdomain")
+    if raw_sub is not None:
+        sub_norm = raw_sub.lower()
+        result = await db.execute(
+            select(Tenant).where(func.lower(Tenant.subdomain) == sub_norm)
+        )
+        tenant = result.scalar_one_or_none()
+        if tenant is not None:
+            return tenant
+
+    return await resolve_tenant_by_host(db, request.headers.get("host", ""))
+
+
+async def resolve_tenant_from_request(
+    db: AsyncSession,
+    request: Request,
+    jwt_tenant_id: int | None = None,
+    jwt_role: str | None = None,
+) -> Tenant | None:
+    """Определяет tenant для запроса.
+
+    **Подсказки запроса** (порядок): ``X-Tenant-ID`` → ``X-Tenant-Subdomain`` → ``Host``.
+
+    **JWT** (если переданы ``jwt_tenant_id`` / ``jwt_role`` из распакованного токена):
+
+    - Обычные роли: при наличии ``tenant_id`` в токене загружается tenant из БД и **используется
+      как основной контекст** — заголовки ``X-Tenant-*`` не обязательны после логина.
+      Если подсказки запроса указывают другой tenant — **403** (несогласованность с сессией).
+    - ``super_admin``: при явной подсказке (Host / заголовки) используется она; иначе — tenant из JWT.
+
+    Без JWT / без ``tenant_id`` в токене поведение как раньше — только подсказки запроса.
+    """
+    tenant_hints = await _resolve_tenant_from_headers_and_host(db, request)
+
+    tid: int | None = None
+    if jwt_tenant_id is not None:
+        try:
+            tid = int(jwt_tenant_id)
+        except (TypeError, ValueError):
+            tid = None
+
+    role = (jwt_role or "").strip() or "user"
+
+    if role == "super_admin":
+        if tenant_hints is not None:
+            return tenant_hints
+        if tid is not None:
+            result = await db.execute(select(Tenant).where(Tenant.id == tid))
+            return result.scalar_one_or_none()
         return None
-    return parts[0]
+
+    if tid is not None:
+        result = await db.execute(select(Tenant).where(Tenant.id == tid))
+        tenant_jwt = result.scalar_one_or_none()
+        if tenant_jwt is None:
+            if tenant_hints is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Сессия содержит недействительный tenant; выполните вход повторно",
+                )
+            return None
+
+        if tenant_hints is not None and tenant_hints.id != tenant_jwt.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant сессии не совпадает с Host или заголовками X-Tenant-*",
+            )
+        return tenant_jwt
+
+    return tenant_hints
 
 
 async def resolve_tenant_by_host(db: AsyncSession, host: str) -> Tenant | None:
@@ -37,7 +141,9 @@ async def resolve_tenant_by_host(db: AsyncSession, host: str) -> Tenant | None:
             subdomain = settings.tenant_default_subdomain
     if not subdomain:
         return None
-    result = await db.execute(select(Tenant).where(Tenant.subdomain == subdomain))
+    result = await db.execute(
+        select(Tenant).where(func.lower(Tenant.subdomain) == subdomain.lower())
+    )
     return result.scalar_one_or_none()
 
 

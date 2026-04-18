@@ -1,7 +1,7 @@
 # API Guide — Secure Medical Data Gateway (SMDG)
 
-**Версия:** 1.0  
-**Дата:** 06 апреля 2026  
+**Версия:** 1.1  
+**Дата:** 18 апреля 2026  
 
 > **📘 Интерактивная документация**
 >
@@ -29,8 +29,9 @@
 8. [Потоки данных](#8-потоки-данных-sequence-diagrams)
 9. [Security Headers](#9-security-headers)
 10. [DICOM API](#10-dicom-api)
-11. [Ссылки](#11-ссылки)
-12. [Changelog API](#12-changelog-api)
+11. [Audit Export API](#11-audit-export-api)
+12. [Ссылки](#12-ссылки)
+13. [Changelog API](#13-changelog-api)
 
 ---
 
@@ -360,8 +361,8 @@ Timestamp (UTC)
 Audit ID (UUID)
 
 Доступ к логам:
-Через файловую систему (/audit_logs/)
-Для администраторов — через API (будет в версии 1.1)
+Через файловую систему (`audit_logs/` или каталог из `AUDIT_LOGS_DIR`)
+Для администраторов — экспорт отчётов через **Audit Export API** (`GET /api/admin/audit/export`).
 
 Важное примечание:
 Скачивание по публичной одноразовой ссылке (GET /api/download?token=...) в текущей версии не логируется в систему аудита.
@@ -496,7 +497,80 @@ DICOM API — подсистема просмотра медицинских и�
 
 ---
 
-## 11. Ссылки
+## 11. Audit Export API
+
+Экспорт записей журнала аудита из JSON-файлов `audit_YYYY-MM-DD.log` за выбранный период. Ответ — поток файла (**StreamingResponse**).
+
+### 11.1 Эндпоинт
+
+| Метод | Путь | Авторизация |
+|-------|------|-------------|
+| `GET` | `/api/admin/audit/export` | JWT (`access_token`), роль **`admin`** или **`super_admin`** |
+
+Используется зависимость `get_current_admin` — пользователи с ролями `doctor` / `user` получают **403 Forbidden**.
+
+### 11.2 Параметры запроса (query)
+
+| Параметр | Обязательный | Описание |
+|----------|----------------|----------|
+| `format` | Да | Формат отчёта: **`excel`** \| **`pdf`** \| **`csv`** |
+| `start_date` | Да | Начало периода (включительно), дата **`YYYY-MM-DD`** |
+| `end_date` | Да | Конец периода (включительно), **`YYYY-MM-DD`** |
+| `user_id` | Нет | Фильтр по строковому полю **`user`** в JSON-записи журнала (полное совпадение). Это имя пользователя из аудита, не числовой id в БД. |
+| `event_type` | Нет | Фильтр по полю **`action`** — полное совпадение строки (например `GET /health`). |
+
+**Валидация:** если `start_date > end_date` → **400 Bad Request**.
+
+**Отсутствие данных:** после фильтрации нет строк → **404 Not Found** (`detail`: записей не найдено).
+
+**Ошибки генерации или чтения логов:** **500 Internal Server Error** (с записью в серверный лог).
+
+### 11.3 Форматы ответа
+
+| `format` | Content-Type | Имя файла (пример) |
+|----------|----------------|---------------------|
+| `excel` | `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` | `smdg_audit_2026-04-01_2026-04-18.xlsx` |
+| `pdf` | `application/pdf` | `smdg_audit_2026-04-01_2026-04-18.pdf` |
+| `csv` | `text/csv; charset=utf-8` | `smdg_audit_2026-04-01_2026-04-18.csv` |
+
+Заголовок: `Content-Disposition: attachment; filename="..."`.
+
+**Excel:** два листа — «Сводка» (статистика и параметры фильтра), «Детали» (все события; автофильтр, закрепление первой строки).
+
+**CSV:** разделитель **`;`**, первая порция в кодировке **UTF-8 с BOM** (`utf-8-sig`) для корректного импорта в Excel.
+
+**PDF:** заголовок «Аудит SMDG», таблица событий с чередованием фона строк, итоговая статистика. Для кириллицы используется шрифт **DejaVuSans** (системный путь или переменная **`AUDIT_EXPORT_PDF_FONT_PATH`** к файлу `DejaVuSans.ttf` в образах без пакета шрифтов).
+
+### 11.4 Примеры
+
+```bash
+# Excel за период (cookie после POST /api/auth/login)
+curl -v -b 'access_token=<JWT>' \
+  "https://your-host/api/admin/audit/export?format=excel&start_date=2026-04-01&end_date=2026-04-18" \
+  -o audit_export.xlsx
+
+# PDF с фильтром по пользователю и действию
+curl -v -b 'access_token=<JWT>' \
+  "https://your-host/api/admin/audit/export?format=pdf&start_date=2026-04-01&end_date=2026-04-18&user_id=api&event_type=GET%20%2Fhealth" \
+  -o audit_export.pdf
+
+# CSV (UTF-8 BOM + «;»)
+curl -v -b 'access_token=<JWT>' \
+  "https://your-host/api/admin/audit/export?format=csv&start_date=2026-04-01&end_date=2026-04-18" \
+  -o audit_export.csv
+```
+
+Пример ошибки при пустой выборке:
+
+```json
+{
+  "detail": "За указанный период и фильтры записей аудита не найдено"
+}
+```
+
+---
+
+## 12. Ссылки
 
 Ресурс	                    URL	                            Описание
 Swagger UI	                /docs	                          Интерактивная документация
@@ -506,13 +580,15 @@ Healthcheck	                /health	                        Статус сер�
 Prometheus metrics	        /metrics	                      Метрики для мониторинга
 Grafana (если включена)	    /grafana/	                      Дашборды
 
-## 12. Changelog API
+## 13. Changelog API
 
-Версия	            Дата	            Изменения
-1.0	                2026-04-06	      Стабильный релиз
-1.1	                2026-04-10	      Audit API, Webhook-уведомления, S3 storage
-3.0	                2026-04-12	      DICOM Viewer, QIDO-RS, WADO-RS, Redis cache
-—	                2026-04-18	      Документация multi-tenancy (Host + JWT tenant_id); см. `docs/MULTI_TENANCY.md`
+| Версия | Дата       | Изменения |
+|--------|------------|-----------|
+| 1.0    | 2026-04-06 | Стабильный релиз |
+| 1.1    | 2026-04-10 | Webhook-уведомления, S3 storage |
+| 3.0    | 2026-04-12 | DICOM Viewer, QIDO-RS, WADO-RS, Redis cache |
+| 3.1    | 2026-04-18 | **Audit Export API** (`GET /api/admin/audit/export`), форматы excel/pdf/csv |
+| —      | 2026-04-18 | Документация multi-tenancy: [docs/MULTI_TENANCY.md](MULTI_TENANCY.md) |
 
 
 

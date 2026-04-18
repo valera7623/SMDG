@@ -3,6 +3,7 @@ import asyncio
 import typer
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
+from app.models.tenant import Tenant  # нужно будет создать
 from app.core.security import get_password_hash
 from sqlalchemy import select
 
@@ -41,6 +42,193 @@ async def _create_admin_async(username: str, password: str, email: str) -> str:
             return f"Админ {username} создан с email {email}."
 
 
+async def _create_tenant_async(
+    name: str,
+    subdomain: str,
+    admin_email: str,
+    admin_password: str,
+) -> str:
+    """Асинхронная логика создания tenant и его администратора"""
+    async with AsyncSessionLocal() as session:
+        # Проверка существующего tenant
+        result = await session.execute(
+            select(Tenant).where(Tenant.subdomain == subdomain)
+        )
+        existing_tenant = result.scalar_one_or_none()
+        
+        if existing_tenant:
+            return f"❌ Tenant с subdomain '{subdomain}' уже существует (id={existing_tenant.id})"
+        
+        # Проверка существующего пользователя с таким email
+        result = await session.execute(
+            select(User).where(User.email == admin_email)
+        )
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            return f"❌ Пользователь с email '{admin_email}' уже существует"
+        
+        # Создаём tenant
+        tenant = Tenant(
+            name=name,
+            subdomain=subdomain,
+            settings={
+                "ttl_days": 30,
+                "max_downloads": 5,
+                "require_2fa": False,
+            }
+        )
+        session.add(tenant)
+        await session.flush()  # получаем tenant.id
+        
+        # Создаём администратора tenant
+        admin = User(
+            username=f"admin_{subdomain}",
+            email=admin_email,
+            hashed_password=get_password_hash(admin_password),
+            role="admin",
+            is_active=True,
+            tenant_id=tenant.id,
+        )
+        session.add(admin)
+        await session.commit()
+        
+        return f"""✅ Tenant '{name}' создан:
+   - ID: {tenant.id}
+   - Subdomain: {subdomain}
+   - Администратор: {admin_email}
+   - Логин: admin_{subdomain}"""
+
+
+async def _create_user_async(
+    username: str,
+    password: str,
+    email: str,
+    role: str = "user",
+    tenant_id: int = None,
+) -> str:
+    """Асинхронная логика создания обычного пользователя"""
+    async with AsyncSessionLocal() as session:
+        # Проверка существующего пользователя
+        result = await session.execute(
+            select(User).where(User.username == username)
+        )
+        existing = result.scalar_one_or_none()
+        
+        if existing:
+            return f"❌ Пользователь с именем '{username}' уже существует"
+        
+        # Проверка email
+        result = await session.execute(
+            select(User).where(User.email == email)
+        )
+        existing_email = result.scalar_one_or_none()
+        
+        if existing_email:
+            return f"❌ Пользователь с email '{email}' уже существует"
+        
+        # Если указан tenant_id — проверить, что tenant существует
+        if tenant_id:
+            result = await session.execute(
+                select(Tenant).where(Tenant.id == tenant_id)
+            )
+            tenant = result.scalar_one_or_none()
+            if not tenant:
+                return f"❌ Tenant с id={tenant_id} не существует"
+        
+        # Создаём пользователя
+        user = User(
+            username=username,
+            email=email,
+            hashed_password=get_password_hash(password),
+            role=role,
+            is_active=True,
+            tenant_id=tenant_id,
+        )
+        session.add(user)
+        await session.commit()
+        
+        tenant_info = f", tenant_id={tenant_id}" if tenant_id else ""
+        return f"✅ Пользователь '{username}' создан (role={role}, email={email}{tenant_info})"
+
+
+async def _list_users_async(tenant_id: int = None) -> str:
+    """Асинхронная логика списка пользователей"""
+    async with AsyncSessionLocal() as session:
+        query = select(User)
+        if tenant_id:
+            query = query.where(User.tenant_id == tenant_id)
+        
+        result = await session.execute(query)
+        users = result.scalars().all()
+        
+        if not users:
+            return "Нет зарегистрированных пользователей"
+        
+        lines = ["\n📋 Список пользователей:"]
+        lines.append("-" * 80)
+        for u in users:
+            tenant_info = f" (tenant={u.tenant_id})" if u.tenant_id else ""
+            lines.append(f"  ID: {u.id} | {u.username} | {u.email} | role: {u.role} | active: {u.is_active}{tenant_info}")
+        return "\n".join(lines)
+
+
+# ========== СИНХРОННЫЕ КОМАНДЫ (добавить) ==========
+
+@cli.command(name="create-user")
+def create_user(
+    username: str = typer.Option(..., help="Имя пользователя"),
+    password: str = typer.Option(..., help="Пароль пользователя"),
+    email: str = typer.Option(..., help="Email пользователя"),
+    role: str = typer.Option("user", help="Роль: admin, doctor, user"),
+    tenant_id: int = typer.Option(None, help="ID tenant (организации)"),
+):
+    """
+    Создаёт нового пользователя.
+    
+    Пример:
+    python -m app.cli create-user \\
+      --username doctor_ivanov \\
+      --password Doctor123! \\
+      --email ivanov@clinic.ru \\
+      --role doctor
+    """
+    try:
+        output = asyncio.run(_create_user_async(
+            username=username,
+            password=password,
+            email=email,
+            role=role,
+            tenant_id=tenant_id,
+        ))
+        print(output)
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise typer.Exit(code=1)
+
+
+@cli.command(name="list-users")
+def list_users(
+    tenant_id: int = typer.Option(None, help="Фильтр по tenant ID"),
+):
+    """
+    Показывает список всех пользователей.
+    
+    Пример:
+    python -m app.cli list-users
+    python -m app.cli list-users --tenant-id 1
+    """
+    try:
+        output = asyncio.run(_list_users_async(tenant_id=tenant_id))
+        print(output)
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise typer.Exit(code=1)
+
+
+
+
+
 async def _rotate_keys_async(backup_dir: str) -> str:
     """Асинхронная логика ротации ключей"""
     from app.crypto.crypto import crypto_manager
@@ -51,9 +239,24 @@ async def _rotate_keys_async(backup_dir: str) -> str:
     return f"Ротация завершена. Новый публичный ключ: {new_pub}"
 
 
+async def _list_tenants_async() -> str:
+    """Асинхронная логика списка tenants"""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Tenant))
+        tenants = result.scalars().all()
+        
+        if not tenants:
+            return "Нет зарегистрированных организаций (tenants)"
+        
+        lines = ["\n📋 Список организаций (tenants):"]
+        lines.append("-" * 60)
+        for t in tenants:
+            lines.append(f"  ID: {t.id} | {t.name} | subdomain: {t.subdomain}")
+        return "\n".join(lines)
+
+
 # ========== СИНХРОННЫЕ КОМАНДЫ (ОБЁРТКИ) ==========
 
-# app/cli.py - временно добавьте print для отладки
 @cli.command(name="create-admin")
 def create_admin(
     username: str = typer.Argument("admin", help="Имя пользователя"),
@@ -62,12 +265,51 @@ def create_admin(
 ):
     """Создаёт или обновляет администратора"""
     try:
-        # Временная отладка
-        print(f"DEBUG: calling _create_admin_async with username={username}, password={password}, email={email}")
-        
+        print(f"DEBUG: creating admin with username={username}, email={email}")
         output = asyncio.run(_create_admin_async(username, password, email))
         print(output)
         print("Готово. Теперь можно логиниться.")
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise typer.Exit(code=1)
+
+
+@cli.command(name="create-tenant")
+def create_tenant(
+    name: str = typer.Option(..., help="Название организации"),
+    subdomain: str = typer.Option(..., help="Уникальный subdomain (например, 'alpha')"),
+    admin_email: str = typer.Option(..., help="Email администратора tenant"),
+    admin_password: str = typer.Option(..., help="Пароль администратора"),
+):
+    """
+    Создаёт нового tenant (организацию) и его администратора.
+    
+    Пример:
+    python -m app.cli create-tenant \
+      --name "Клиника Альфа" \
+      --subdomain alpha \
+      --admin-email admin@alpha.com \
+      --admin-password Admin123!
+    """
+    try:
+        output = asyncio.run(_create_tenant_async(
+            name=name,
+            subdomain=subdomain,
+            admin_email=admin_email,
+            admin_password=admin_password,
+        ))
+        print(output)
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise typer.Exit(code=1)
+
+
+@cli.command(name="list-tenants")
+def list_tenants():
+    """Показывает список всех tenants (организаций)"""
+    try:
+        output = asyncio.run(_list_tenants_async())
+        print(output)
     except Exception as e:
         print(f"❌ Ошибка: {e}")
         raise typer.Exit(code=1)

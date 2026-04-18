@@ -1,6 +1,6 @@
 # Multi-tenancy в SMDG
 
-**Версия:** 1.0  
+**Версия:** 1.1  
 **Дата:** 18 апреля 2026
 
 Руководство описывает, как в проекте устроена **изоляция арендаторов (tenants)**: определение контекста, изоляция данных, настройка, тестирование и известные ограничения.
@@ -11,15 +11,29 @@
 1. **Добавить tenant в БД:**
    ```sql
    INSERT INTO tenants (subdomain, name) VALUES ('clinic1', 'Первая клиника');
+   ```
 
-   Настроить DNS (или /etc/hosts для локальной разработки):
+2. **DNS или `/etc/hosts`** (локально):
+   ```text
    127.0.0.1 clinic1.localhost
-    
-   Зарегистрировать пользователя:
-   curl -H "Host: clinic1.localhost" -X POST https://127.0.0.1/api/auth/register \
+   ```
+
+3. **Регистрация / логин** с контекстом tenant — любой из вариантов:
+   ```bash
+   curl -H "Host: clinic1.localhost" -X POST "https://127.0.0.1/api/auth/register" \
      -H "Content-Type: application/json" \
      -d '{"username": "doctor", "password": "securepass"}'
+   ```
+   ```bash
+   # То же без записи в hosts — явный subdomain
+   curl -H "X-Tenant-Subdomain: clinic1" -X POST "http://127.0.0.1:8000/api/auth/register" \
+     -H "Content-Type: application/json" \
+     -d '{"username": "doctor", "password": "securepass"}'
+   ```
 
+Подробности — в §2 и §9.
+
+---
 
 ## 1. Стратегия
 
@@ -43,10 +57,12 @@ graph TB
         T --> F
     end
     subgraph App["FastAPI"]
+        XT["X-Tenant-ID / X-Tenant-Subdomain"]
         Host["Host → subdomain"]
         JWT["JWT tenant_id"]
         SQL["WHERE ... tenant_id = :tid"]
     end
+    XT --> SQL
     Host --> SQL
     JWT --> SQL
 ```
@@ -61,18 +77,58 @@ admin.example.com → может требовать super_admin (если нас
 
 ## 2. Как определяется текущий tenant
 
-1. **Заголовок HTTP `Host`** передаётся в `resolve_tenant_by_host()` (`app/core/tenant.py`).
-2. Из хоста извлекается **первый лейбл поддомена** (`extract_subdomain`): для `clinic.example.com` это `clinic`. Требуется минимум три сегмента имени (`часть1.часть2.часть3`).
-3. По значению поддомена выполняется выборка `Tenant.subdomain == subdomain`.
-4. **Особые случаи:**
-   - `localhost`, `127.0.0.1`, `::1`, `0.0.0.0` без поддомена: если `tenant_resolve_localhost_as_default=true`, подставляется поддомен из настройки `tenant_default_subdomain` (по умолчанию `default`).
-   - В режиме разработки (`dev_mode`) пустой host может быть отнесён к тому же резервному поддомену.
+В middleware **`set_user_context`** (`app/main.py`) вызывается **`resolve_tenant_from_request(db, request)`** (`app/core/tenant.py`). Порядок такой:
 
-Результат кладётся в `request.state.tenant` и `request.scope["tenant"]` в middleware **`set_user_context`** в `app/main.py` (до rate limit и audit).
+| Шаг | Источник | Поведение |
+|-----|----------|-----------|
+| 1 | Заголовок **`X-Tenant-ID`** | Если указан непустой целочисленный id, выполняется `SELECT` по `tenants.id`. При совпадении tenant найден. |
+| 2 | Заголовок **`X-Tenant-Subdomain`** | Непустая строка сравнивается с `tenants.subdomain` (без учёта регистра). |
+| 3 | Заголовок **`Host`** | Логика **`resolve_tenant_by_host`**: поддомен из имени хоста → поиск по `Tenant.subdomain`. |
+
+Если ни один шаг не дал запись в `tenants`, в `request.state.tenant` остаётся **`None`**; последующий **`require_tenant(request)`** вернёт **400** с текстом `Tenant could not be resolved from subdomain`.
+
+### 2.1. Извлечение поддомена из `Host` (`extract_subdomain`)
+
+- Три и более метки: **`clinic.example.com`** → поддомен **`clinic`** (как раньше).
+- Две метки для локальной разработки: **`alpha.localhost`** или **`alpha.localhost:8000`** → поддомен **`alpha`**. Это нужно для **curl** и браузера без полноценного DNS из трёх частей.
+- Один сегмент **`localhost`** / **`127.0.0.1`** и т.п. без явного поддомена: поддомен из имени **не** извлекается; дальше срабатывает логика **`resolve_tenant_by_host`** (см. ниже).
+
+### 2.2. Особые случаи только для шага 3 (`Host`)
+
+- **`localhost`**, **`127.0.0.1`**, **`::1`**, **`0.0.0.0`** без поддомена в имени: при **`tenant_resolve_localhost_as_default=true`** подставляется поддомен из **`tenant_default_subdomain`** (по умолчанию **`default`**).
+- В режиме разработки (**`dev_mode`**) пустой host может быть отнесён к тому же резервному поддомену.
+
+Результат кладётся в **`request.state.tenant`** и **`request.scope["tenant"]`** в middleware **`set_user_context`** (до rate limit и audit).
 
 **JWT** после логина содержит поле **`tenant_id`**. Для защищённых операций вызывается **`assert_tenant_access`**: `tenant_id` из токена должен совпадать с id tenant, разрешённого по `Host`, **если только** роль не `super_admin` (тогда перекрёстная проверка пропускается).
 
-Итоговое правило: клиент должен обращаться к **тому же виртуальному хосту (поддомену)**, под который выдан сеанс, иначе получит **403 Cross-tenant access** (или **400**, если tenant по Host не найден).
+Итоговое правило: клиент должен обращаться к **тому же виртуальному хосту (поддомену)** или передавать **те же заголовки `X-Tenant-*`**, что согласованы с JWT, иначе получит **403 Cross-tenant access** (или **400**, если tenant не найден).
+
+### 2.3. Заголовки `X-Tenant-ID` и `X-Tenant-Subdomain` (curl, Postman, мобильные клиенты)
+
+Браузерный фронтенд обычно открывается по URL вида **`https://clinic.example.com`**, и достаточно заголовка **`Host`**. Инструменты вроде **`curl`** часто бьют в **`http://localhost:8000`** без поддомена: тогда без дополнительных заголовков получается tenant **`default`**, а пользователь другого tenant в запросе логина **не находится** → **401** «Неверное имя пользователя или пароль».
+
+**Решение без смены DNS:**
+
+```bash
+# По числовому id строки tenants (например 2)
+curl -s -X POST "http://127.0.0.1:8000/api/auth/login" \
+  -H "X-Tenant-ID: 2" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin_alpha&password=***"
+
+# По subdomain в БД (например alpha)
+curl -s -X POST "http://127.0.0.1:8000/api/auth/login" \
+  -H "X-Tenant-Subdomain: alpha" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin_alpha&password=***"
+```
+
+**Решение с Host `alpha.localhost`:** добавьте в **`/etc/hosts`** строку `127.0.0.1 alpha.localhost` и вызывайте API с **`Host: alpha.localhost`** (после поддержки двухсегментного `*.localhost` в коде).
+
+Заголовки **`X-Tenant-ID`** / **`X-Tenant-Subdomain`** перечислены в **CORS** `allow_headers` в `app/main.py`, чтобы preflight из браузера не отсекался.
+
+**Безопасность:** заголовки дают явный выбор tenant до проверки пароля; в публичном продакшене их можно **удалять на reverse-proxy** для внешних клиентов, если tenant должен определяться **только** по **`Host`**. Подбор пароля по-прежнему необходим для входа.
 
 ---
 
@@ -96,8 +152,9 @@ admin.example.com → может требовать super_admin (если нас
 
 | Компонент              | Файл                     | Назначение                                                                                        |
 |------------------------|--------------------------|---------------------------------------------------------------------------------------------------|
-| `set_user_context`     | `app/main.py`            | Разрешает tenant по `Host`, парсит JWT из cookie `access_token`, заполняет `request.state` и `request.scope` |
-| `require_tenant`       | `app/core/tenant.py`     | Возвращает `Tenant` или 400, если поддомен не сопоставлен записи                                  |
+| `set_user_context`     | `app/main.py`            | Вызывает `resolve_tenant_from_request` (`X-Tenant-ID` / `X-Tenant-Subdomain` / `Host`), парсит JWT из cookie `access_token`, заполняет `request.state` и `request.scope` |
+| `resolve_tenant_from_request` | `app/core/tenant.py` | Оркестратор: заголовки `X-Tenant-*`, затем `resolve_tenant_by_host` |
+| `require_tenant`       | `app/core/tenant.py`     | Возвращает `Tenant` или 400, если tenant не удалось разрешить                                  |
 | `assert_tenant_access` | `app/core/tenant.py`     | Сверяет `tenant_id` пользователя с tenant запроса; исключение для `super_admin`                   |
 | `AuditMiddleware`      | `app/core/middleware.py` | Аудит (не привязан к tenant в явном виде)                                                         |
 
@@ -124,7 +181,7 @@ admin.example.com → может требовать super_admin (если нас
 1. **DNS и reverse proxy:** настройте поддомен вида `{subdomain}.ваш-домен`, указывающий на тот же инстанс SMDG (как и для существующих клиентов).
 2. **Запись в БД:** вставьте строку в `tenants` (уникальный `subdomain`, human-readable `name`, при необходимости `settings` в JSON).
 3. **Пользователи:** создавайте учётные записи **уже в контексте этого tenant** (через API регистрации/админки с заголовком `Host`, соответствующим новому поддомену), либо проставьте `tenant_id` при ручном заведении в БД согласованно с политикой безопасности.
-4. **Логин:** пользователь должен открывать приложение по **правильному хосту**, чтобы `resolve_tenant_by_host` нашёл нужный `Tenant` и выдал JWT с корректным `tenant_id`.
+4. **Логин:** пользователь должен открывать приложение по **правильному хосту** или передавать **`X-Tenant-ID` / `X-Tenant-Subdomain`**, чтобы был найден нужный `Tenant` и выдан JWT с корректным `tenant_id`.
 
 Пример SQL (идентификатор `id` подставьте по соглашению с вашей последовательностью):
 
@@ -141,11 +198,12 @@ VALUES ('Клиника А', 'clinic-a', '{}'::jsonb);
 
 **Ручные / интеграционные запросы:**
 
-- Укажите заголовок **`Host`** в клиенте (например `curl -H "Host: clinic-a.example.com" https://127.0.0.1/api/...` при локальной отладке с `-k`).
-- Либо используйте реальные записи в `/etc/hosts` или отдельные поддомены в DNS.
-- После логина пройдите сценарий под тем же хостом, что и при выдаче cookie/JWT.
+- Укажите заголовок **`Host`** (например `curl -H "Host: clinic-a.example.com" https://127.0.0.1/api/...` при локальной отладке с `-k`).
+- Или **`Host: alpha.localhost`** при записи в **`/etc/hosts`**: `127.0.0.1 alpha.localhost`.
+- Или без смены имени хоста: **`X-Tenant-ID`** / **`X-Tenant-Subdomain`** (см. §2.3).
+- После логина используйте **тот же способ привязки к tenant**, что и при выдаче cookie/JWT (**тот же `Host` или те же `X-Tenant-*`**).
 
-**Важно:** просто менять JWT между запросами без согласованного `Host` приведёт к отказу в доступе для ролей, отличных от `super_admin`.
+**Важно:** менять только JWT между запросами без согласованного контекста tenant (**`Host` или `X-Tenant-*`**) приведёт к отказу в доступе для ролей, отличных от `super_admin`.
 
 ---
 
@@ -168,16 +226,26 @@ VALUES ('Клиника А', 'clinic-a', '{}'::jsonb);
 
 ## 9. Примеры (curl)
 
-**Имитация tenant `clinic` на локальном сервере (нужна запись в `tenants`):**
+**Имитация tenant по поддомену `clinic` на локальном сервере** (в БД есть `tenants.subdomain = 'clinic'`):
 
 ```bash
+# Два сегмента: clinic.localhost → поддомен clinic
 curl -k -H "Host: clinic.localhost" \
   -X POST "https://127.0.0.1/api/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=demo&password=******"
 ```
 
-Дальнейшие запросы с той же cookie/JWT должны использовать **тот же `Host`**, что согласован с поддоменом `clinic`.
+**Тот же логин без поддомена в Host** (удобно для скриптов):
+
+```bash
+curl -s -X POST "http://127.0.0.1:8000/api/auth/login" \
+  -H "X-Tenant-Subdomain: clinic" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=demo&password=******"
+```
+
+Дальнейшие запросы с той же cookie/JWT должны использовать **тот же контекст tenant** (**тот же `Host` или те же заголовки `X-Tenant-*`**).
 
 **Доступ к default-tenant с машины без поддомена в имени:**
 
@@ -194,7 +262,7 @@ curl -k "https://localhost/api/health"
 1. **Глобальная уникальность логина:** в модели `User` поля `username` и `email` помечены как `unique=True` на таблице — то есть **два разных tenant не могут иметь одинаковый username/email** без смены схемы БД. Это ограничение продуктовое/модельное, не только runtime.
 2. **Хранилище файлов:** нет физического разделения путей/бакетов по tenant; полагайтесь на корректность `tenant_id` и настроек доступа.
 3. **Агрегированная статистика** (`/api/stats`): доступ проверяется по tenant, но часть метрик (хост, диск, список объектов в storage) отражает **инстанс целиком**, а не одного арендатора.
-4. **Продакшен без поддомена:** если запрос приходит на «плоский» хост без трёх сегментов DNS и это не localhost, tenant может **не определиться** (`400 Tenant could not be resolved from subdomain`). Нужна схема DNS с поддоменами или выделенные хостнеймы по политике продукта.
+4. **Продакшен без поддомена в `Host`:** если запрос приходит на «плоский» хост (например `app.example.com` без префикса tenant) и не переданы **`X-Tenant-ID` / `X-Tenant-Subdomain`**, tenant может **не определиться** (`400 Tenant could not be resolved from subdomain`). Нужна схема DNS с поддоменами, отдельные хостнеймы или явные заголовки для доверенных API-клиентов.
 5. **`super_admin`:** обход проверки cross-tenant снимает часть гарантий изоляции — ограничивайте эту роль.
 
 ---
@@ -203,7 +271,7 @@ curl -k "https://localhost/api/health"
 
 | Файл                                       | Роль                                                                                    |
 |--------------------------------------------|-----------------------------------------------------------------------------------------|
-| `app/core/tenant.py`                       | Резолвинг tenant, `require_tenant`, `assert_tenant_access`                              |
+| `app/core/tenant.py`                       | `extract_subdomain`, `resolve_tenant_by_host`, **`resolve_tenant_from_request`**, `require_tenant`, `assert_tenant_access` |
 | `app/main.py`                              | Middleware контекста, первичное создание default tenant при инициализации admin         |
 | `app/core/auth_utils.py`                   | JWT с `tenant_id`                                                                       |
 | `app/models/tenant.py`                     | Модель `Tenant`                                                                         |
@@ -211,24 +279,21 @@ curl -k "https://localhost/api/health"
 
 Подробности по архитектуре: [../ARCHITECTURE.md](../ARCHITECTURE.md).
 
-12. Частые проблемы и решения (Troubleshooting)
+## 12. Частые проблемы и решения (Troubleshooting)
 
-|Проблема	                                   |Вероятная причина	                            Решение
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|403 Cross-tenant access	                   | Host не совпадает с tenant_id в JWT	     |   Проверьте Host заголовок при логине и запросах. Убедитесь,чтоиспользуете тот же поддомен
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|400 Tenant could not be resolved	           | Поддомен не найден в таблице tenants	     |   Проверьте DNS и записи в БД tenants. Убедитесь, что поддомен имеет минимум 3 сегмента
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|Данные видны не из своего tenant	           | Баг в запросе к БД	                         |   Убедитесь, что везде добавлен .filter_by(tenant_id=tenant.id) или аналогичный фильтр
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|Не работает на localhost	                   | TENANT_RESOLVE_LOCALHOST_AS_DEFAULT=false	 |   Установите в true в .env или явно указывайте Host: -H "Host: clinic.localhost"
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|JWT есть, но tenant не определяется	       | Middleware не выполнился	                 |   Проверьте порядок middleware в app/main.py. set_user_context должен быть рано
-|----------------------------------------------|---------------------------------------------|--------------------------------------------------------------------
-|После миграции старые данные стали недоступны | У старых записей нет tenant_id	             |   Убедитесь, что миграция проставила default tenant для       существующих записей
-|_________________________________________________________________________________________________________________________________________________________________
+| Проблема | Вероятная причина | Решение |
+|----------|-------------------|---------|
+| 403 Cross-tenant access | `Host` или `X-Tenant-*` не совпадают с `tenant_id` в JWT | При логине и последующих запросах используйте один и тот же способ привязки к tenant (см. §2.3). |
+| 400 Tenant could not be resolved | Нет строки в `tenants` или не передан контекст | Проверьте БД и DNS; для `curl` на `localhost` используйте **`X-Tenant-ID`** / **`X-Tenant-Subdomain`** или **`Host: {subdomain}.localhost`**. |
+| 401 при логине tenant-пользователя с `localhost` | Запрос попал в tenant **`default`**, пользователь в другом `tenant_id` | Передайте **`X-Tenant-Subdomain`** / **`X-Tenant-ID`** или хост с поддоменом (§2.3). |
+| Данные «чужого» tenant в ответе | Нет фильтра `tenant_id` в SQL | Везде фильтровать по `tenant.id` из `require_tenant`. |
+| На `localhost` не подставляется default | `TENANT_RESOLVE_LOCALHOST_AS_DEFAULT=false` | Включите в `.env` или задайте **`Host: clinic.localhost`** / заголовки **`X-Tenant-*`**. |
+| JWT есть, tenant не определяется | Ошибка middleware или нет контекста | Проверьте порядок middleware в `app/main.py`; контекст задаёт **`set_user_context`**. |
+| После миграции записи недоступны | У строк нет `tenant_id` | Убедитесь, что миграция проставила default tenant для существующих строк. |
 
-13. Мониторинг и отладка
+---
+
+## 13. Мониторинг и отладка
 
 Полезные SQL запросы:
 
@@ -267,7 +332,7 @@ smdg_cross_tenant_denied_total
 # Распределение запросов по tenant'ам
 smdg_requests_by_tenant{tenant="clinic1"}
 
-14. Чеклист для разработчика при добавлении нового эндпоинта
+## 14. Чеклист для разработчика при добавлении нового эндпоинта
 
 Эндпоинт использует require_tenant(request) или получает tenant из request.state.tenant?
 
@@ -302,7 +367,8 @@ async def get_users(db: Session = Depends(get_db)):
     users = db.query(User).all()  # ОПАСНО! Вернёт пользователей всех tenant'ов
     return users
 
-15. План миграции для существующего проекта
+## 15. План миграции для существующего проекта
+
 Если вы внедряете multi-tenancy в уже работающий проект:
 
 Подготовка:

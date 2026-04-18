@@ -1,7 +1,7 @@
 # Architecture Document — Secure Medical Data Gateway (SMDG)
 
-**Версия:** 1.0  
-**Дата:** 06 апреля 2026
+**Версия:** 1.1  
+**Дата:** 18 апреля 2026
 
 ---
 
@@ -518,24 +518,84 @@ pillow  = "^11.0"    # Конвертация в PNG
 
 ---
 
-## 11. Roadmap (будущие расширения)
+## 11. Audit Export Service
 
-~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0
-~~Webhook-уведомления~~ ✅ Реализовано в v2.1
-~~DICOM Viewer~~ ✅ Реализовано в v3.0
-~~Multi-frame DICOM (CT/MRI серии)~~ ✅ Реализовано — Cine mode, scroll, preload, frame slider
-~~Сжатые DICOM (JPEG2000, JPEG-LS)~~ ✅ Реализовано — pydicom[gdcm], 9 сжатых Transfer Syntax
-~~Windowing presets~~ ✅ Реализовано — Bone, Lung, Brain, Abdomen, Liver
-~~Measurements (линейка, угол, ROI)~~ ✅ Реализовано — Canvas overlay, точность с учётом zoom/pan
-~~Экспорт PNG/Screenshot~~ ✅ Реализовано — с метаданными, измерениями и ориентацией
-~~OHIF Viewer интеграция~~ ✅ Реализовано — DICOMweb endpoints, series panel
-~~S3 Lifecycle Policies~~ ✅ Реализовано — автоматическое удаление, fallback на APScheduler
-~~Multi-tenancy (shared DB + subdomain)~~ ✅ Реализовано — см. [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md)
+Экспорт журналов аудита из файлов **`audit_YYYY-MM-DD.log`** (JSON построчно) в отчёты **Excel**, **PDF** или **CSV**. Доступ только для роли **admin** / **super_admin**.
 
-### Осталось реализовать (1/12)
+### 11.1 Логические компоненты
 
-- **Экспорт аудита в PDF/Excel** — отчёты по операциям, фильтрация по дате/пользователю
+| Компонент | Реализация в коде | Назначение |
+|-----------|-------------------|------------|
+| **AdminAuditAPI** | `app/api/admin_audit_export.py`, маршрут `GET /api/admin/audit/export` | Авторизация через `get_current_admin`, параметры запроса, выбор формата, `StreamingResponse` |
+| **AuditExporter** | `app/core/audit_export.py`: `iter_audit_log_entries`, `load_filtered_audit_entries` | Асинхронное построчное чтение логов (**aiofiles**), фильтрация по датам, `user`, `action`, сбор статистики |
+| **ExcelGenerator** | `build_excel_bytes()` | Листы «Сводка» и «Детали» (**openpyxl**), автофильтр, закрепление строки заголовка |
+| **PDFGenerator** | `build_pdf_bytes()` | Заголовок, таблица событий, итоги (**reportlab**), шрифт **DejaVuSans** для кириллицы |
+| **CSV stream** | `iter_csv_chunks()` | Разделитель `;`, BOM UTF-8 в первой порции |
 
-Подробнее по multi-tenancy: [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md).
+Каталог журналов задаётся **`AUDIT_LOGS_DIR`** → `settings.audit_logs_dir` (совпадает с каталогом записи `AuditLogger`).
+
+### 11.2 Последовательность экспорта
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin (browser/curl)
+    participant API as AdminAuditAPI
+    participant Auth as get_current_admin
+    participant Exp as AuditExporter
+    participant FS as audit_logs/*.log
+    participant Gen as Excel/PDF/CSV
+
+    Admin->>API: GET /api/admin/audit/export?format=...
+    API->>Auth: JWT cookie / роль admin
+    alt Не администратор
+        Auth-->>Admin: 403 Forbidden
+    else OK
+        Auth-->>API: TokenData
+        API->>Exp: load_filtered_audit_entries(dates, filters)
+        loop По дням периода
+            Exp->>FS: aiofiles readline JSON
+            FS-->>Exp: строки записей
+        end
+        Exp-->>API: rows + stats
+        alt Нет записей
+            API-->>Admin: 404 Not Found
+        else Есть данные
+            API->>Gen: build_* / iter_csv_chunks
+            Gen-->>Admin: StreamingResponse (файл)
+        end
+    end
+```
+
+### 11.3 Конфигурация (фрагмент)
+
+| Переменная | Описание |
+|------------|----------|
+| `AUDIT_LOGS_DIR` | Каталог JSON/CSV журналов аудита |
+| `AUDIT_EXPORT_PDF_FONT_PATH` | Путь к `DejaVuSans.ttf` в контейнере без системных шрифтов |
+| `AUDIT_EXPORT_DOWNLOAD_PREFIX` | Префикс имени скачиваемого файла |
+
+---
+
+## 12. Roadmap (будущие расширения)
+
+~~Поддержка S3/MinIO~~ ✅ Реализовано в v2.0  
+~~Webhook-уведомления~~ ✅ Реализовано в v2.1  
+~~DICOM Viewer~~ ✅ Реализовано в v3.0  
+~~Экспорт аудита в PDF/Excel/CSV~~ ✅ Реализовано в **v3.1.0** — см. раздел [11. Audit Export Service](#11-audit-export-service)  
+~~Multi-frame DICOM (CT/MRI серии)~~ ✅ Реализовано — Cine mode, scroll, preload, frame slider  
+~~Сжатые DICOM (JPEG2000, JPEG-LS)~~ ✅ Реализовано — pydicom[gdcm], 9 сжатых Transfer Syntax  
+~~Windowing presets~~ ✅ Реализовано — Bone, Lung, Brain, Abdomen, Liver  
+~~Measurements (линейка, угол, ROI)~~ ✅ Реализовано — Canvas overlay, точность с учётом zoom/pan  
+~~Экспорт PNG/Screenshot~~ ✅ Реализовано — с метаданными, измерениями и ориентацией  
+~~OHIF Viewer интеграция~~ ✅ Реализовано — DICOMweb endpoints, series panel  
+~~S3 Lifecycle Policies~~ ✅ Реализовано — автоматическое удаление, fallback на APScheduler  
+~~Multi-tenancy (shared DB + subdomain)~~ ✅ Реализовано — см. [MULTI_TENANCY.md](MULTI_TENANCY.md)
+
+### Идеи на будущее
+
+- Расширенные фильтры экспорта аудита (нечёткий поиск по `action`, экспорт только метаданных без обогащения)
+- Плановые отчёты по расписанию (cron / фоновые задачи)
+
+Подробнее по multi-tenancy: [MULTI_TENANCY.md](MULTI_TENANCY.md).
 
 Конец документа.

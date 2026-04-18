@@ -9,6 +9,20 @@
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-04-18
+
+### Added
+- **Экспорт журнала аудита для администратора** — `GET /api/admin/audit/export`
+- Форматы отчёта: **Excel** (`.xlsx`, листы «Сводка» и «Детали»), **PDF** (DejaVuSans, кириллица), **CSV** (`;`, UTF-8 BOM для Excel)
+- Параметры: `format`, `start_date`, `end_date`, опционально `user_id` (поле `user` в JSON), `event_type` (поле `action`)
+- Асинхронное построчное чтение логов через **aiofiles** из каталога **`AUDIT_LOGS_DIR`** (`audit_logs_dir` в настройках)
+- Настройки: `AUDIT_EXPORT_PDF_FONT_PATH`, `AUDIT_EXPORT_DOWNLOAD_PREFIX`
+- Зависимости: **openpyxl**, **reportlab** ( **aiofiles** уже используется в проекте)
+- Модули: `app/core/audit_export.py`, `app/api/admin_audit_export.py`; запись аудита перенаправлена на `settings.audit_logs_dir` для согласованности с экспортом
+
+### Security
+- Экспорт аудита доступен только ролям **admin** / **super_admin** (`get_current_admin`)
+
 ## [3.0.0] - 2026-04-12
 
 ### Added

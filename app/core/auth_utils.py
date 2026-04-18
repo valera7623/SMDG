@@ -21,6 +21,8 @@ def create_access_token(
     tenant_id: int | None = None,
     expires_delta: Optional[timedelta] = None
 ) -> str:
+    """Формирует JWT. Для multi-tenant всегда передавайте ``tenant_id`` пользователя —
+    после логина клиент может не слать ``X-Tenant-*``: tenant восстанавливается из cookie."""
     to_encode = {"sub": subject, "role": role, "tenant_id": tenant_id}
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=settings.jwt_access_expires_minutes))
     to_encode.update({"exp": expire})
