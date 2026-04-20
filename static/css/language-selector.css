@@ -1,0 +1,114 @@
+/* Language selector styles for the SMDG UI.
+   Loaded in addition to style.css so the dropdown can be reused in
+   every template without touching the main stylesheet. */
+
+.language-selector {
+    position: relative;
+    display: inline-block;
+    margin-left: 16px;
+    font-family: inherit;
+}
+
+.language-selector.floating {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    z-index: 1100;
+    margin-left: 0;
+}
+
+.language-selector .lang-btn {
+    background: transparent;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.language-selector .lang-btn:hover,
+.language-selector .lang-btn:focus-visible {
+    background: #30363d;
+    outline: none;
+    border-color: #58a6ff;
+}
+
+.language-selector .lang-btn[aria-expanded="true"] {
+    background: #30363d;
+    border-color: #58a6ff;
+}
+
+.language-selector .lang-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    min-width: 140px;
+    z-index: 1000;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.language-selector .lang-dropdown.show {
+    display: block;
+}
+
+.language-selector .lang-option {
+    display: block;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.4;
+    transition: background-color 100ms ease;
+}
+
+.language-selector .lang-option:hover,
+.language-selector .lang-option:focus-visible {
+    background: #30363d;
+    outline: none;
+}
+
+.language-selector .lang-option.active {
+    color: #58a6ff;
+    font-weight: 600;
+    background: rgba(88, 166, 255, 0.08);
+}
+
+/* Light theme fallback when the host page uses a light palette. */
+@media (prefers-color-scheme: light) {
+    .language-selector .lang-btn {
+        color: #1f2328;
+        border-color: #d0d7de;
+    }
+    .language-selector .lang-btn:hover,
+    .language-selector .lang-btn:focus-visible,
+    .language-selector .lang-btn[aria-expanded="true"] {
+        background: #f6f8fa;
+        border-color: #0969da;
+    }
+    .language-selector .lang-dropdown {
+        background: #ffffff;
+        border-color: #d0d7de;
+        box-shadow: 0 8px 20px rgba(31, 35, 40, 0.12);
+    }
+    .language-selector .lang-option {
+        color: #1f2328;
+    }
+    .language-selector .lang-option:hover {
+        background: #f6f8fa;
+    }
+    .language-selector .lang-option.active {
+        color: #0969da;
+        background: rgba(9, 105, 218, 0.08);
+    }
+}

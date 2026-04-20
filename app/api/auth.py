@@ -82,6 +82,24 @@ def verify_otp_code(secret: str, code: str) -> bool:
     return totp.verify(code, valid_window=1)
 
 
+async def _load_current_db_user(
+    db: AsyncSession,
+    current_user: TokenData,
+    tenant,
+) -> User:
+    """Загрузить запись пользователя из БД по данным токена и текущего тенанта.
+
+    Бросает HTTPException(404), если пользователь не найден.
+    """
+    result = await db.execute(
+        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
+
+
 # ==================== Эндпоинты ====================
 
 @router.post("/change-password")
@@ -94,13 +112,7 @@ async def change_password(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
-    )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_current_db_user(db, current_user, tenant)
 
     if not verify_password(request_body.old_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Неверный текущий пароль")
@@ -244,13 +256,7 @@ async def setup_2fa(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
-    )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_current_db_user(db, current_user, tenant)
 
     new_secret = generate_otp_secret()
 
@@ -283,13 +289,7 @@ async def verify_2fa_setup(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
-    )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_current_db_user(db, current_user, tenant)
 
     if not user.otp_secret:
         raise HTTPException(status_code=400, detail="2FA ещё не настроена")
@@ -311,13 +311,7 @@ async def disable_2fa(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    result = await db.execute(
-        select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
-    )
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_current_db_user(db, current_user, tenant)
 
     if not user.otp_secret:
         raise HTTPException(status_code=400, detail="2FA не включена")

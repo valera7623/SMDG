@@ -45,5 +45,17 @@ RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
+# HEALTHCHECK: Docker сам снимает unhealthy контейнеры.
+#   --start-period=40s  — даём 40 секунд на startup (init_keys, миграции, etc.)
+#   --interval=30s      — проверка каждые 30 секунд
+#   --timeout=10s       — один запрос не должен висеть дольше 10 секунд
+#   --retries=3         — три подряд неудачных → контейнер unhealthy
+# Используем /health/live (а не /health/ready), чтобы контейнер не помечался
+# unhealthy при временной недоступности БД/Redis — за это отвечает readiness
+# probe в оркестраторе (k8s), а Docker HEALTHCHECK должен только детектить
+# зависший процесс.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -fsS http://localhost:8000/health/live || exit 1
+
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD []   
+CMD []

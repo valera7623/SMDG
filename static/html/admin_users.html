@@ -1,13 +1,15 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMDG - Управление пользователями</title>
+    <title data-i18n="admin_users.title">SMDG — User management</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/admin-users.css">
+    <link rel="stylesheet" href="/static/css/language-selector.css">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <script src="/static/js/i18n.js" defer></script>
     <script type="module" src="/static/js/admin-users.js"></script>
 </head>
 
@@ -15,103 +17,106 @@
     <div class="container">
         <header>
             <div class="header-content">
-                <h1>👥 Управление пользователями SMDG</h1>
-                <p><a href="/admin" class="back-link">← Назад к панели администратора</a></p>
+                <h1>👥 <span data-i18n="admin_users.title">User management</span></h1>
+                <p><a href="/admin" class="back-link">← <span data-i18n="admin.back_admin">Back to admin panel</span></a></p>
             </div>
             <div class="user-info" id="userInfo">
                 <span id="currentAdminUsername"></span>
-                <button onclick="logout()" class="btn-danger btn-small">🚪 Выйти</button>
+                <button onclick="logout()" class="btn-danger btn-small">🚪 <span data-i18n="auth.logout">Log out</span></button>
+                <!-- language selector is auto-injected here by i18n.js -->
             </div>
         </header>
 
-        <!-- Статистика -->
+        <!-- Statistics -->
         <section class="section stats-section">
-            <h2>📊 Статистика пользователей</h2>
+            <h2>📊 <span data-i18n="admin_users.stats_title">User statistics</span></h2>
             <div class="stats-grid" id="userStats">
                 <div class="stat-card">
-                    <div class="stat-label">Всего</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_total">Total</div>
                     <div class="stat-number" id="totalUsers">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Активные</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_active">Active</div>
                     <div class="stat-number" id="activeUsers">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Администраторы</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_admins">Administrators</div>
                     <div class="stat-number" id="adminCount">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Врачи</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_doctors">Doctors</div>
                     <div class="stat-number" id="doctorCount">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Пользователи</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_users">Users</div>
                     <div class="stat-number" id="userCount">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">2FA включена</div>
+                    <div class="stat-label" data-i18n="admin_users.stat_2fa">2FA enabled</div>
                     <div class="stat-number" id="twofaCount">0</div>
                 </div>
             </div>
         </section>
 
-        <!-- Фильтры -->
+        <!-- Filters -->
         <section class="section filters-section">
             <div class="filters">
                 <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="🔍 Поиск по логину или email..."
+                    <input type="text" id="searchInput"
+                        data-i18n-placeholder="admin_users.search_placeholder"
+                        placeholder="🔍 Search by username or email…"
                         oninput="debounceSearch()">
                 </div>
                 <div class="filter-controls">
                     <select id="roleFilter" onchange="applyFilters()">
-                        <option value="">Все роли</option>
-                        <option value="admin">Администраторы</option>
-                        <option value="doctor">Врачи</option>
-                        <option value="user">Пользователи</option>
+                        <option value="" data-i18n="admin_users.filter_all_roles">All roles</option>
+                        <option value="admin" data-i18n="admin_users.stat_admins">Administrators</option>
+                        <option value="doctor" data-i18n="admin_users.stat_doctors">Doctors</option>
+                        <option value="user" data-i18n="admin_users.stat_users">Users</option>
                     </select>
                     <select id="statusFilter" onchange="applyFilters()">
-                        <option value="">Все статусы</option>
-                        <option value="active">Активные</option>
-                        <option value="inactive">Неактивные</option>
+                        <option value="" data-i18n="admin_users.filter_all_statuses">All statuses</option>
+                        <option value="active" data-i18n="admin_users.stat_active">Active</option>
+                        <option value="inactive" data-i18n="admin_users.filter_inactive">Inactive</option>
                     </select>
-                    <button onclick="applyFilters()" class="btn-primary">Применить</button>
-                    <button onclick="clearFilters()" class="btn-secondary">Сбросить</button>
+                    <button onclick="applyFilters()" class="btn-primary" data-i18n="admin_users.apply">Apply</button>
+                    <button onclick="clearFilters()" class="btn-secondary" data-i18n="admin_users.clear_filters">Reset</button>
                 </div>
             </div>
         </section>
 
-        <!-- Массовые операции -->
+        <!-- Bulk actions -->
         <section class="section bulk-actions">
             <div class="bulk-controls">
-                <span id="selectedCount">Выбрано: 0</span>
-                <button onclick="selectAll()" class="btn-secondary btn-small">Выбрать всех</button>
-                <button onclick="clearSelection()" class="btn-secondary btn-small">Сбросить выбор</button>
+                <span id="selectedCount">Selected: 0</span>
+                <button onclick="selectAll()" class="btn-secondary btn-small" data-i18n="admin_users.select_all">Select all</button>
+                <button onclick="clearSelection()" class="btn-secondary btn-small" data-i18n="admin_users.clear_selection">Clear selection</button>
                 <select id="bulkActionSelect">
-                    <option value="">Массовые действия</option>
-                    <option value="activate">Активировать</option>
-                    <option value="deactivate">Деактивировать</option>
-                    <option value="change_role">Изменить роль</option>
-                    <option value="delete">Удалить</option>
+                    <option value="" data-i18n="admin_users.bulk_actions">Bulk actions</option>
+                    <option value="activate" data-i18n="admin_users.bulk_activate">Activate</option>
+                    <option value="deactivate" data-i18n="admin_users.bulk_deactivate">Deactivate</option>
+                    <option value="change_role" data-i18n="admin_users.bulk_change_role">Change role</option>
+                    <option value="delete" data-i18n="admin_users.bulk_delete">Delete</option>
                 </select>
                 <select id="bulkRoleSelect" style="display:none;">
-                    <option value="user">Пользователь</option>
-                    <option value="doctor">Врач</option>
-                    <option value="admin">Администратор</option>
+                    <option value="user" data-i18n="admin.role_user">User</option>
+                    <option value="doctor" data-i18n="admin.role_doctor">Doctor</option>
+                    <option value="admin" data-i18n="admin.role_admin">Administrator</option>
                 </select>
-                <button onclick="executeBulkAction()" class="btn-warning">Выполнить</button>
+                <button onclick="executeBulkAction()" class="btn-warning" data-i18n="admin_users.execute">Execute</button>
             </div>
         </section>
 
-        <!-- Создание -->
+        <!-- Create -->
         <section class="section create-user">
             <button onclick="showCreateUserModal()" class="btn-success">
-                ➕ Создать нового пользователя
+                ➕ <span data-i18n="admin_users.create_new">Create new user</span>
             </button>
         </section>
 
-        <!-- Таблица -->
+        <!-- Table -->
         <section class="section users-table-section">
-            <h2>📋 Список пользователей</h2>
+            <h2>📋 <span data-i18n="admin_users.list_title">User list</span></h2>
             <div class="table-container">
                 <table class="users-table" id="usersTable">
                     <thead>
@@ -119,18 +124,18 @@
                             <th>
                                 <input type="checkbox" id="selectAllCheckbox" onchange="toggleAllCheckboxes()">
                             </th>
-                            <th>ID</th>
-                            <th>Логин</th>
-                            <th>Email</th>
-                            <th>Роль</th>
-                            <th>Статус</th>
-                            <th>2FA</th>
-                            <th>Действия</th>
+                            <th data-i18n="admin_users.col_id">ID</th>
+                            <th data-i18n="admin_users.col_username">Username</th>
+                            <th data-i18n="admin_users.col_email">Email</th>
+                            <th data-i18n="admin_users.col_role">Role</th>
+                            <th data-i18n="admin_users.col_status">Status</th>
+                            <th data-i18n="admin_users.col_2fa">2FA</th>
+                            <th data-i18n="admin_users.col_actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="8" class="loading">⏳ Загрузка пользователей...</td>
+                            <td colspan="8" class="loading" data-i18n="admin_users.loading_users">⏳ Loading users…</td>
                         </tr>
                     </tbody>
                 </table>
@@ -139,72 +144,72 @@
         </section>
     </div>
 
-    <!-- Модальное окно создания/редактирования -->
+    <!-- Create / edit modal -->
     <div id="userModal" class="modal" style="display:none;">
         <div class="modal-content">
             <span class="close" onclick="closeUserModal()">&times;</span>
-            <h2 id="modalTitle">➕ Создание пользователя</h2>
+            <h2 id="modalTitle" data-i18n="admin_users.modal_create">➕ Create user</h2>
 
             <form id="userForm">
                 <input type="hidden" id="userId">
 
                 <div class="form-group">
-                    <label for="modalUsername">Логин</label>
+                    <label for="modalUsername" data-i18n="admin_users.col_username">Username</label>
                     <input type="text" id="modalUsername" required minlength="3" maxlength="50"
                         pattern="^[a-zA-Z0-9_]+$">
-                    <small class="field-hint">От 3 до 50 символов, только буквы, цифры и _</small>
+                    <small class="field-hint" data-i18n="admin_users.username_hint">3 to 50 characters, letters, digits and _ only</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="modalEmail">Email</label>
+                    <label for="modalEmail" data-i18n="admin_users.col_email">Email</label>
                     <input type="email" id="modalEmail" required>
                 </div>
 
                 <div class="form-group" id="passwordGroup">
-                    <label for="modalPassword">Пароль</label>
+                    <label for="modalPassword" data-i18n="auth.password">Password</label>
                     <input type="password" id="modalPassword" minlength="8">
-                    <small class="field-hint">Минимум 8 символов (оставьте пустым, чтобы не менять)</small>
+                    <small class="field-hint" data-i18n="admin_users.password_hint">At least 8 characters (leave empty to keep the current one)</small>
                 </div>
 
                 <div class="form-group">
-                    <label for="modalRole">Роль</label>
+                    <label for="modalRole" data-i18n="admin_users.col_role">Role</label>
                     <select id="modalRole">
-                        <option value="user">Пользователь</option>
-                        <option value="doctor">Врач</option>
-                        <option value="admin">Администратор</option>
+                        <option value="user" data-i18n="admin.role_user">User</option>
+                        <option value="doctor" data-i18n="admin.role_doctor">Doctor</option>
+                        <option value="admin" data-i18n="admin.role_admin">Administrator</option>
                     </select>
                 </div>
 
                 <div class="form-group checkbox-group">
                     <label>
                         <input type="checkbox" id="modalIsActive" checked>
-                        Активен
+                        <span data-i18n="admin_users.field_active">Active</span>
                     </label>
                 </div>
 
                 <div class="form-group checkbox-group" id="reset2faGroup" style="display:none;">
                     <label>
                         <input type="checkbox" id="modalReset2fa">
-                        Сбросить двухфакторную аутентификацию
+                        <span data-i18n="admin_users.reset_2fa">Reset two-factor authentication</span>
                     </label>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-success" id="modalSubmitBtn">Создать</button>
-                    <button type="button" onclick="closeUserModal()" class="btn-secondary">Отмена</button>
+                    <button type="submit" class="btn-success" id="modalSubmitBtn" data-i18n="admin_users.btn_create">Create</button>
+                    <button type="button" onclick="closeUserModal()" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Модальное окно подтверждения -->
+    <!-- Confirmation modal -->
     <div id="confirmModal" class="modal" style="display:none;">
         <div class="modal-content confirm-modal">
-            <h3 id="confirmTitle">Подтверждение</h3>
+            <h3 id="confirmTitle" data-i18n="admin_users.confirm_title">Confirmation</h3>
             <p id="confirmMessage"></p>
             <div class="form-actions">
-                <button onclick="confirmAction()" class="btn-danger">Подтвердить</button>
-                <button onclick="closeConfirmModal()" class="btn-secondary">Отмена</button>
+                <button onclick="confirmAction()" class="btn-danger" data-i18n="admin_users.btn_confirm">Confirm</button>
+                <button onclick="closeConfirmModal()" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
             </div>
         </div>
     </div>

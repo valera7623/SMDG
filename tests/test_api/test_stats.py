@@ -461,35 +461,39 @@ class TestGetCleanupStats:
     """Тесты для _get_cleanup_stats."""
 
     def test_returns_dict(self):
+        import asyncio
         from app.api.stats import _get_cleanup_stats
 
-        result = _get_cleanup_stats()
+        result = asyncio.run(_get_cleanup_stats())
 
         assert isinstance(result, dict)
 
     def test_includes_cleanup_manager_stats(self):
+        import asyncio
         from app.api.stats import _get_cleanup_stats
 
         with patch("app.api.stats.cleanup_manager") as mock_cm:
             mock_cm.get_cleanup_stats.return_value = {"cleaned": 5}
             with patch("app.api.stats.file_storage") as mock_fs:
                 mock_fs.get_stats.return_value = {}
-                result = _get_cleanup_stats()
+                result = asyncio.run(_get_cleanup_stats())
 
         assert result["cleanup_manager"] == {"cleaned": 5}
 
     def test_includes_temporary_files_stats(self):
+        import asyncio
         from app.api.stats import _get_cleanup_stats
 
         with patch("app.api.stats.cleanup_manager") as mock_cm:
             mock_cm.get_cleanup_stats.return_value = {}
             with patch("app.api.stats.file_storage") as mock_fs:
                 mock_fs.get_stats.return_value = {"total": 3}
-                result = _get_cleanup_stats()
+                result = asyncio.run(_get_cleanup_stats())
 
         assert result["temporary_files"] == {"total": 3}
 
     def test_cleanup_manager_no_method_returns_empty(self):
+        import asyncio
         from app.api.stats import _get_cleanup_stats
 
         # Объект без get_cleanup_stats
@@ -498,17 +502,18 @@ class TestGetCleanupStats:
 
         with patch("app.api.stats.cleanup_manager", cm_mock), \
              patch("app.api.stats.file_storage",    fs_mock):
-            result = _get_cleanup_stats()
+            result = asyncio.run(_get_cleanup_stats())
 
         assert result["cleanup_manager"] == {}
         assert result["temporary_files"] == {}
 
     def test_exception_returns_error_dict(self):
+        import asyncio
         from app.api.stats import _get_cleanup_stats
 
         with patch("app.api.stats.cleanup_manager") as mock_cm:
             mock_cm.get_cleanup_stats.side_effect = RuntimeError("boom")
-            result = _get_cleanup_stats()
+            result = asyncio.run(_get_cleanup_stats())
 
         assert "error" in result
         assert "boom" in result["error"]
@@ -740,11 +745,12 @@ def test_endpoints_require_authentication(endpoint, stats_client_no_auth):
 @pytest.mark.parametrize("error_class", [Exception, RuntimeError, ValueError, OSError])
 def test_get_cleanup_stats_handles_various_exceptions(error_class):
     """_get_cleanup_stats перехватывает любые исключения."""
+    import asyncio
     from app.api.stats import _get_cleanup_stats
 
     with patch("app.api.stats.cleanup_manager") as mock_cm:
         mock_cm.get_cleanup_stats.side_effect = error_class("test error")
-        result = _get_cleanup_stats()
+        result = asyncio.run(_get_cleanup_stats())
 
     assert "error" in result
     assert isinstance(result["error"], str)

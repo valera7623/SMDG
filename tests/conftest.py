@@ -231,31 +231,38 @@ def mock_redis_global():
         yield mock_instance
         
 
+# ========== Фабрики типовых моков (устраняют дублирование фикстур) ==========
+
+def _build_cleanup_manager_mock() -> MagicMock:
+    """Типовой мок FileCleanupManager, используемый тестами."""
+    m = MagicMock()
+    m.start_cleanup_task = AsyncMock()
+    m.stop_cleanup_task = AsyncMock()
+    m.get_cleanup_stats = MagicMock(return_value={"cleaned": 0, "errors": 0})
+    return m
+
+
+def _build_crypto_manager_mock() -> MagicMock:
+    """Типовой мок CryptoManager — чтобы тесты не зависели от наличия age."""
+    m = MagicMock()
+    m.check_age_installed = MagicMock(return_value=True)
+    m.generate_keypair = AsyncMock(return_value=("age1mockpublickey1234567890", "/tmp/mock_age.key"))
+    m.generate_new_keypair = AsyncMock(return_value=(Path("/tmp/mock.key"), "age1mockpublickey1234567890"))
+    m.encrypt = AsyncMock(return_value="fake_encrypt_hash_123")
+    m.decrypt = AsyncMock(return_value="fake_decrypt_hash_456")
+    m.encrypt_file = AsyncMock(return_value="fake_encrypt_hash_123")
+    m.decrypt_file = AsyncMock()
+    m.reencrypt_file = AsyncMock()
+    m.rotate_keys = AsyncMock(return_value="age1mockrotatedpubkey123")
+    return m
+
+
 @pytest.fixture(autouse=True)
 def mock_cleanup_manager():
-    mock_instance = MagicMock()
-    mock_instance.start_cleanup_task = AsyncMock()
-    mock_instance.stop_cleanup_task = AsyncMock()        # ← обязательно AsyncMock
-    mock_instance.get_cleanup_stats = MagicMock(return_value={"cleaned": 0, "errors": 0})
-    
+    """Глобальный мок cleanup_manager (патчится в app.main)."""
+    mock_instance = _build_cleanup_manager_mock()
     with patch("app.main.cleanup_manager", mock_instance):
         yield mock_instance
-
-# Глобальный мок cleanup_manager
-@pytest.fixture(autouse=True)
-def mock_cleanup_manager():
-    """Глобальный мок cleanup_manager"""
-    # Создаём мок инстанса FileCleanupManager
-    mock_instance = MagicMock()
-    mock_instance.start_cleanup_task = AsyncMock()
-    mock_instance.stop_cleanup_task = AsyncMock()
-    mock_instance.get_cleanup_stats = MagicMock(return_value={"cleaned": 0, "errors": 0})
-    
-    # Патчим импорт cleanup_manager в main.py
-    with patch("app.main.cleanup_manager", mock_instance):
-        yield mock_instance
-        
-
 
 
 # Глобальный мок для init_keys и других функций
@@ -266,51 +273,19 @@ def mock_core_functions():
          patch("app.main.check_redis_connection", new_callable=AsyncMock) as mock_check_redis, \
          patch("app.main.create_first_admin", new_callable=AsyncMock) as mock_create_admin, \
          patch("app.main.ensure_admin_exists", new_callable=AsyncMock) as mock_ensure_admin:
-        
+
         yield {
             "init_keys": mock_init,
             "check_redis": mock_check_redis,
             "create_admin": mock_create_admin,
             "ensure_admin": mock_ensure_admin
         }
-        
-        
+
+
 @pytest.fixture(autouse=True)
 def mock_crypto_manager():
-    """Глобальный мок crypto_manager"""
-    mock_cm = MagicMock()
-    mock_cm.encrypt = AsyncMock(return_value="fake_encrypt_hash")
-    mock_cm.decrypt = AsyncMock(return_value="fake_decrypt_hash")
-    mock_cm.encrypt_file = AsyncMock(return_value="fake_encrypt_hash")
-    mock_cm.decrypt_file = AsyncMock(return_value=None)
-    mock_cm.check_age_installed = MagicMock(return_value=True)
-    mock_cm.generate_keypair = AsyncMock(return_value=("age1mockpubkey123", "/tmp/mock.key"))
-    mock_cm.generate_new_keypair = AsyncMock(return_value=(Path("/tmp/mock.key"), "age1mockpubkey123"))
-    mock_cm.reencrypt_file = AsyncMock(return_value=None)
-    mock_cm.rotate_keys = AsyncMock(return_value="age1mockpubkey123")
-
-    with patch("app.crypto.crypto.crypto_manager", mock_cm), \
-         patch("app.crypto.crypto.CryptoManager", return_value=mock_cm):
-        yield mock_cm
-
-# ========== ГЛОБАЛЬНЫЙ МОК ДЛЯ CRYPTO (чтобы тесты не падали) ==========
-@pytest.fixture(autouse=True)
-def mock_crypto_manager_globally():
     """Полный мок CryptoManager, чтобы тесты crypto не падали из-за отсутствия age в venv"""
-    from unittest.mock import MagicMock, AsyncMock, patch
-    from pathlib import Path
-
-    mock_instance = MagicMock()
-    mock_instance.check_age_installed = MagicMock(return_value=True)
-    mock_instance.generate_keypair = AsyncMock(return_value=("age1mockpublickey1234567890", "/tmp/mock_age.key"))
-    mock_instance.generate_new_keypair = AsyncMock(return_value=(Path("/tmp/mock.key"), "age1mockpublickey1234567890"))
-    mock_instance.encrypt = AsyncMock(return_value="fake_encrypt_hash_123")
-    mock_instance.decrypt = AsyncMock(return_value="fake_decrypt_hash_456")
-    mock_instance.encrypt_file = AsyncMock(return_value="fake_encrypt_hash_123")
-    mock_instance.decrypt_file = AsyncMock()
-    mock_instance.reencrypt_file = AsyncMock()
-    mock_instance.rotate_keys = AsyncMock(return_value="age1mockrotatedpubkey123")
-
+    mock_instance = _build_crypto_manager_mock()
     with patch("app.crypto.crypto.crypto_manager", mock_instance), \
          patch("app.crypto.crypto.CryptoManager", return_value=mock_instance):
         yield mock_instance

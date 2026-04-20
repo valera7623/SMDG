@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SMDG — DICOM Viewer</title>
+    <title data-i18n="viewer.ohif_title">SMDG — DICOM Viewer</title>
+    <link rel="stylesheet" href="/static/css/language-selector.css">
+    <script src="/static/js/i18n.js" defer></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100%; overflow: hidden; background: #000; color: #e0e0e0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
@@ -114,14 +116,14 @@
 <body>
     <div id="loading">
         <div class="spinner"></div>
-        <p>Загрузка DICOM...</p>
+        <p data-i18n="viewer.loading">Loading DICOM…</p>
     </div>
-    
+
     <div id="error">
         <div>
-            <h2>⚠️ Ошибка</h2>
+            <h2>⚠️ <span data-i18n="viewer.error">Error</span></h2>
             <p id="errorMsg"></p>
-            <p><a href="#" onclick="window.parent.postMessage('dicom-close','*'); return false;">← Закрыть</a></p>
+            <p><a href="#" onclick="window.parent.postMessage('dicom-close','*'); return false;">← <span data-i18n="viewer.close">Close</span></a></p>
         </div>
     </div>
 
@@ -130,32 +132,32 @@
             <span class="file-name" id="fileName">—</span>
             <span class="meta" id="fileMeta">—</span>
             <div class="header-buttons">
-                <button class="tool-btn" onclick="toggleMetadata()" title="Метаданные">ℹ️</button>
-                <button class="tool-btn" onclick="downloadDicom()" title="Скачать оригинальный DICOM">💾</button>
-                <button class="tool-btn danger" onclick="window.parent.postMessage('dicom-close','*')" title="Закрыть">✕</button>
+                <button class="tool-btn" onclick="toggleMetadata()" data-i18n-title="viewer.metadata" title="Metadata">ℹ️</button>
+                <button class="tool-btn" onclick="downloadDicom()" data-i18n-title="viewer.download_dicom" title="Download original DICOM">💾</button>
+                <button class="tool-btn danger" onclick="window.parent.postMessage('dicom-close','*')" data-i18n-title="viewer.close" title="Close">✕</button>
             </div>
         </div>
-        
+
         <div id="toolbar">
-            <button class="tool-btn active" data-tool="window" onclick="setTool('window')">🪟 Окно (WL/WW)</button>
-            <button class="tool-btn" data-tool="zoom" onclick="setTool('zoom')">🔍 Зум</button>
-            <button class="tool-btn" data-tool="pan" onclick="setTool('pan')">✋ Пан</button>
-            <button class="tool-btn" data-tool="cine" onclick="setTool('cine')" id="cine-btn" style="display:none;">▶️ Cine</button>
+            <button class="tool-btn active" data-tool="window" onclick="setTool('window')">🪟 <span data-i18n="viewer.tool_window">Window (WL/WW)</span></button>
+            <button class="tool-btn" data-tool="zoom" onclick="setTool('zoom')">🔍 <span data-i18n="viewer.tool_zoom">Zoom</span></button>
+            <button class="tool-btn" data-tool="pan" onclick="setTool('pan')">✋ <span data-i18n="viewer.tool_pan">Pan</span></button>
+            <button class="tool-btn" data-tool="cine" onclick="setTool('cine')" id="cine-btn" style="display:none;">▶️ <span data-i18n="viewer.tool_cine">Cine</span></button>
             <div class="sep"></div>
-            <button class="tool-btn" onclick="toggleMeasurementMode()" id="measure-btn" title="Инструменты измерений">📐 Измерения</button>
+            <button class="tool-btn" onclick="toggleMeasurementMode()" id="measure-btn" data-i18n-title="viewer.tool_measure_tools" title="Measurement tools">📐 <span data-i18n="dicom.measure">Measurements</span></button>
             <div class="sep"></div>
-            <button class="tool-btn" onclick="takeScreenshot()" id="screenshot-btn" title="Скриншот (PNG)">📸 Скриншот</button>
+            <button class="tool-btn" onclick="takeScreenshot()" id="screenshot-btn" data-i18n-title="viewer.screenshot_hint" title="Screenshot (PNG)">📸 <span data-i18n="dicom.screenshot">Screenshot</span></button>
             <div class="sep"></div>
-            <button class="tool-btn" onclick="resetView()">↺ Сброс</button>
-            <button class="tool-btn" onclick="invertView()">◐ Инверт</button>
+            <button class="tool-btn" onclick="resetView()">↺ <span data-i18n="viewer.tool_reset">Reset</span></button>
+            <button class="tool-btn" onclick="invertView()">◐ <span data-i18n="viewer.tool_invert">Invert</span></button>
             <div class="sep"></div>
             <div class="preset-group">
-                <span style="color:#666; font-size:11px; margin-right:4px;">Предустановки:</span>
-                <button class="preset-btn" onclick="setPreset('Bone')">🦴 Кость</button>
-                <button class="preset-btn" onclick="setPreset('Lung')">🫁 Легкие</button>
-                <button class="preset-btn" onclick="setPreset('Brain')">🧠 Мозг</button>
-                <button class="preset-btn" onclick="setPreset('Abdomen')">🫀 Живот</button>
-                <button class="preset-btn" onclick="setPreset('Liver')">🍖 Печень</button>
+                <span style="color:#666; font-size:11px; margin-right:4px;" data-i18n="viewer.presets_label">Presets:</span>
+                <button class="preset-btn" onclick="setPreset('Bone')">🦴 <span data-i18n="dicom.bone">Bone</span></button>
+                <button class="preset-btn" onclick="setPreset('Lung')">🫁 <span data-i18n="dicom.lung">Lung</span></button>
+                <button class="preset-btn" onclick="setPreset('Brain')">🧠 <span data-i18n="dicom.brain">Brain</span></button>
+                <button class="preset-btn" onclick="setPreset('Abdomen')">🫀 <span data-i18n="dicom.abdomen">Abdomen</span></button>
+                <button class="preset-btn" onclick="setPreset('Liver')">🍖 <span data-i18n="dicom.liver">Liver</span></button>
             </div>
         </div>
         
@@ -166,14 +168,14 @@
 
             <!-- Measurement Toolbar -->
             <div id="measure-toolbar">
-                <button class="measure-btn" data-measure="ruler" onclick="setMeasureTool('ruler')" title="Линейка">📏 Линейка</button>
-                <button class="measure-btn" data-measure="angle" onclick="setMeasureTool('angle')" title="Угол">📐 Угол</button>
-                <button class="measure-btn" data-measure="rect" onclick="setMeasureTool('rect')" title="ROI Rectangle">⬜ ROI</button>
-                <button class="measure-btn" data-measure="ellipse" onclick="setMeasureTool('ellipse')" title="ROI Ellipse">⭕ ROI</button>
+                <button class="measure-btn" data-measure="ruler" onclick="setMeasureTool('ruler')" data-i18n-title="viewer.measure_ruler" title="Ruler">📏 <span data-i18n="viewer.measure_ruler">Ruler</span></button>
+                <button class="measure-btn" data-measure="angle" onclick="setMeasureTool('angle')" data-i18n-title="viewer.measure_angle" title="Angle">📐 <span data-i18n="viewer.measure_angle">Angle</span></button>
+                <button class="measure-btn" data-measure="rect" onclick="setMeasureTool('rect')" data-i18n-title="viewer.measure_roi_rect" title="ROI Rectangle">⬜ ROI</button>
+                <button class="measure-btn" data-measure="ellipse" onclick="setMeasureTool('ellipse')" data-i18n-title="viewer.measure_roi_ellipse" title="ROI Ellipse">⭕ ROI</button>
                 <div style="width: 1px; background: #30363d; height: 24px; margin: 0 4px;"></div>
-                <button class="measure-btn" onclick="undoMeasurement()" title="Отменить">↩️</button>
-                <button class="measure-btn danger" onclick="clearMeasurements()" title="Очистить все">🗑️</button>
-                <button class="measure-btn" onclick="toggleMeasurePanel()" title="Закрыть">✕</button>
+                <button class="measure-btn" onclick="undoMeasurement()" data-i18n-title="viewer.measure_undo" title="Undo">↩️</button>
+                <button class="measure-btn danger" onclick="clearMeasurements()" data-i18n-title="viewer.measure_clear_all" title="Clear all">🗑️</button>
+                <button class="measure-btn" onclick="toggleMeasurePanel()" data-i18n-title="viewer.close" title="Close">✕</button>
             </div>
 
             <!-- Measurement Results Panel -->
@@ -182,23 +184,23 @@
 
         <div id="frame-control">
             <div class="frame-slider-container">
-                <button class="frame-btn" onclick="firstFrame()" title="Первый кадр">⏮</button>
-                <button class="frame-btn" onclick="prevFrame()" title="Предыдущий кадр">◀</button>
+                <button class="frame-btn" onclick="firstFrame()" data-i18n-title="viewer.first_frame" title="First frame">⏮</button>
+                <button class="frame-btn" onclick="prevFrame()" data-i18n-title="viewer.prev_frame" title="Previous frame">◀</button>
                 <input type="range" class="frame-slider" id="frame-slider" min="0" max="0" value="0" oninput="onFrameSliderChange()">
-                <button class="frame-btn" onclick="nextFrame()" title="Следующий кадр">▶</button>
-                <button class="frame-btn" onclick="lastFrame()" title="Последний кадр">⏭</button>
+                <button class="frame-btn" onclick="nextFrame()" data-i18n-title="viewer.next_frame" title="Next frame">▶</button>
+                <button class="frame-btn" onclick="lastFrame()" data-i18n-title="viewer.last_frame" title="Last frame">⏭</button>
                 <span class="frame-info" id="frame-info">1 / 1</span>
-                <button class="frame-btn" onclick="toggleCineLoop()" id="play-btn" title="Автопроигрывание">▶️ Play</button>
+                <button class="frame-btn" onclick="toggleCineLoop()" id="play-btn" data-i18n-title="viewer.autoplay" title="Autoplay">▶️ <span data-i18n="viewer.play">Play</span></button>
                 <div class="speed-control" id="speed-control">
-                    <span class="speed-label">Скорость:</span>
+                    <span class="speed-label" data-i18n="viewer.speed">Speed:</span>
                     <input type="range" class="speed-slider" id="speed-slider" min="1" max="30" value="10" oninput="onSpeedChange()">
                     <span class="speed-label" id="fps-label">10 fps</span>
                 </div>
             </div>
         </div>
-        
+
         <div id="status-bar">
-            <span id="statusText">Готово</span>
+            <span id="statusText" data-i18n="viewer.ready">Ready</span>
             <span id="zoomInfo"></span>
             <span id="wl-info"></span>
         </div>

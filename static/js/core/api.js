@@ -94,94 +94,46 @@ export const auth = {
 
 // ── Files (пользовательские) ──────────────────────────────────────────────────
 
-
-
 export const files = {
     async list() {
-        const response = await fetch(`${API_BASE}/list`, {
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            const error = new Error(`HTTP ${response.status}`);
-            error.status = response.status;
-            throw error;
-        }
-        
-        return response.json();
+        return requestJSON('/list');
     },
-    
+
     async upload(file) {
         const formData = new FormData();
         formData.append('file', file);
-        
-        const response = await fetch(`${API_BASE}/upload`, {
+
+        const data = await requestJSON('/upload', {
             method: 'POST',
             body: formData,
-            credentials: 'include'
         });
-        
-        if (!response.ok) {
-            let errorMessage;
-            try {
-                const err = await response.json();
-                errorMessage = err.detail || err.message;
-            } catch {
-                errorMessage = `HTTP ${response.status}`;
-            }
-            const error = new Error(errorMessage);
-            error.status = response.status;
-            throw error;
-        }
-        
-        const data = await response.json();
-        
-        // Добавляем отладочный вывод
+
         console.log('API upload response:', data);
-        
         return data;
     },
-    
+
     async download(filename) {
-        const response = await fetch(
-            `${API_BASE}/download?filename=${encodeURIComponent(filename)}`,
-            { credentials: 'include' }
+        const response = await request(
+            `/download?filename=${encodeURIComponent(filename)}`,
         );
-        
+
         if (!response.ok) {
             const error = new Error(`HTTP ${response.status}`);
             error.status = response.status;
             throw error;
         }
-        
+
         return response;
     },
-    
+
     async deleteUserFile(filename) {
-        const formData = new URLSearchParams();
-        formData.append('filename', filename);
-        formData.append('confirm', 'true');
-        
-        const response = await fetch(`${API_BASE}/delete-user-file`, {
+        const body = new URLSearchParams({ filename, confirm: 'true' });
+        return requestJSON('/delete-user-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData,
-            credentials: 'include'
+            body,
         });
-        
-        if (!response.ok) {
-            let errorMessage;
-            try {
-                const err = await response.json();
-                errorMessage = err.detail || err.message;
-            } catch {
-                errorMessage = `HTTP ${response.status}`;
-            }
-            throw new Error(errorMessage);
-        }
-        
-        return response.json();
-    }
+    },
 };
 
 // ── Admin — файлы ─────────────────────────────────────────────────────────────

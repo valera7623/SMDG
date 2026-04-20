@@ -4,7 +4,8 @@ import { adminUsers as adminUsersAPI } from '../core/api.js';
 import { showNotification }   from '../utils/notifications.js';
 import { showConfirm }        from '../utils/modals.js';
 import { createElement }      from '../utils/dom.js';
-import { ROLE_NAMES }         from '../core/config.js';
+import { roleName }           from '../core/config.js';
+import { t }                  from '../utils/i18n.js';
 import {
     currentUser,
     selectedUsers, clearSelectedUsers,
@@ -15,7 +16,28 @@ import {
 
 const REDIRECT_HOME = () => { window.location.href = '/'; };
 
-// ── Статистика ────────────────────────────────────────────────────────────────
+/**
+ * Единая обработка ошибок API:
+ * - при 401/403 → редирект на главную и возврат true (вызывающий должен выйти);
+ * - иначе — показать toast и вернуть false.
+ *
+ * @param {Error & { status?: number }} error
+ * @param {string} [fallbackKey='admin_users.generic_error']
+ * @returns {boolean} true, если сработал редирект (вызывающий должен завершить обработчик).
+ */
+function handleApiError(error, fallbackKey = 'admin_users.generic_error') {
+    if (error?.status === 401 || error?.status === 403) {
+        REDIRECT_HOME();
+        return true;
+    }
+    showNotification(
+        t(fallbackKey, 'Error: {{message}}', { message: error?.message ?? '' }),
+        'error',
+    );
+    return false;
+}
+
+// ── Statistics ───────────────────────────────────────────────────────────────
 
 export async function loadUserStats() {
     try {
@@ -27,8 +49,8 @@ export async function loadUserStats() {
         _setText('userCount',   s.regular_users);
         _setText('twofaCount',  s.users_with_2fa);
     } catch (error) {
-        if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-        showNotification('Ошибка загрузки статистики', 'error');
+        if (error?.status === 401 || error?.status === 403) { REDIRECT_HOME(); return; }
+        showNotification(t('admin_users.stats_error', 'Failed to load statistics'), 'error');
     }
 }
 
@@ -37,7 +59,7 @@ function _setText(id, val) {
     if (el) el.textContent = val ?? 0;
 }
 
-// ── Список пользователей ──────────────────────────────────────────────────────
+// ── User list ────────────────────────────────────────────────────────────────
 
 export async function loadUsers(resetPage = false) {
     if (resetPage) setCurrentPage(0);
@@ -56,11 +78,12 @@ export async function loadUsers(resetPage = false) {
         renderPagination();
 
     } catch (error) {
-        if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
+        if (error?.status === 401 || error?.status === 403) { REDIRECT_HOME(); return; }
         const tbody = document.getElementById('usersTableBody');
         if (tbody) {
             tbody.innerHTML = '';
-            const td = _errorCell(`❌ Ошибка: ${error.message}`, 8);
+            const label = `❌ ${t('admin_users.error_prefix', 'Error: {{message}}', { message: error.message })}`;
+            const td = _errorCell(label, 8);
             const tr = document.createElement('tr');
             tr.appendChild(td);
             tbody.appendChild(tr);
@@ -68,7 +91,7 @@ export async function loadUsers(resetPage = false) {
     }
 }
 
-// ── Рендер таблицы ────────────────────────────────────────────────────────────
+// ── Table rendering ──────────────────────────────────────────────────────────
 
 export function renderUsersTable(users) {
     const tbody = document.getElementById('usersTableBody');
@@ -77,7 +100,7 @@ export function renderUsersTable(users) {
 
     if (!users?.length) {
         const tr = document.createElement('tr');
-        tr.appendChild(_errorCell('📭 Нет пользователей', 8));
+        tr.appendChild(_errorCell(`📭 ${t('admin_users.empty_users', 'No users')}`, 8));
         tbody.appendChild(tr);
         return;
     }
@@ -93,7 +116,6 @@ export function renderUsersTable(users) {
 function _createUserRow(user, isMe) {
     const tr = document.createElement('tr');
 
-    // Чекбокс
     const cb = document.createElement('input');
     cb.type      = 'checkbox';
     cb.className = 'user-checkbox';
@@ -104,44 +126,46 @@ function _createUserRow(user, isMe) {
     tdCb.appendChild(cb);
     tr.appendChild(tdCb);
 
-    // ID
     tr.appendChild(_td(user.id));
 
-    // Username
     const tdUser = _td(user.username);
-    if (isMe) tdUser.appendChild(createElement('span', { textContent: ' (вы)', style: { color: '#888' } }));
+    if (isMe) {
+        tdUser.appendChild(createElement('span', {
+            textContent: t('admin_users.me_suffix', ' (you)'),
+            style: { color: '#888' },
+        }));
+    }
     tr.appendChild(tdUser);
 
-    // Email
     tr.appendChild(_td(user.email || ''));
 
-    // Роль
     const roleSpan = createElement('span', { className: `role-badge ${user.role}`,
-        textContent: ROLE_NAMES[user.role] || user.role });
+        textContent: roleName(user.role) });
     const tdRole = document.createElement('td');
     tdRole.appendChild(roleSpan);
     tr.appendChild(tdRole);
 
-    // Статус
     const statusSpan = createElement('span', {
         className:   `status-badge ${user.is_active ? 'active' : 'inactive'}`,
-        textContent: user.is_active ? 'Активен' : 'Неактивен',
+        textContent: user.is_active
+            ? t('admin_users.status_active', 'Active')
+            : t('admin_users.status_inactive', 'Inactive'),
     });
     const tdStatus = document.createElement('td');
     tdStatus.appendChild(statusSpan);
     tr.appendChild(tdStatus);
 
-    // 2FA
     const twofaSpan = createElement('span', {
         className:   `twofa-badge ${user.otp_secret ? 'enabled' : 'disabled'}`,
-        title:        user.otp_secret ? '2FA включена' : '2FA отключена',
+        title:        user.otp_secret
+            ? t('admin_users.twofa_on_title', '2FA enabled')
+            : t('admin_users.twofa_off_title', '2FA disabled'),
         textContent:  user.otp_secret ? '✅' : '❌',
     });
     const td2fa = document.createElement('td');
     td2fa.appendChild(twofaSpan);
     tr.appendChild(td2fa);
 
-    // Кнопки
     const wrap = createElement('div', { className: 'action-buttons' });
 
     const mkBtn = (cls, label, handler, disabled = false) => {
@@ -173,7 +197,7 @@ function _errorCell(text, colspan) {
     return td;
 }
 
-// ── Пагинация ─────────────────────────────────────────────────────────────────
+// ── Pagination ───────────────────────────────────────────────────────────────
 
 export function renderPagination() {
     const pagination = document.getElementById('pagination');
@@ -211,7 +235,7 @@ function _changePage(page) {
     loadUsers();
 }
 
-// ── Фильтры ───────────────────────────────────────────────────────────────────
+// ── Filters ──────────────────────────────────────────────────────────────────
 
 export function applyFilters() {
     setFilters({
@@ -239,7 +263,7 @@ export function debounceSearch() {
     _searchTimeout = setTimeout(applyFilters, 500);
 }
 
-// ── Выбор пользователей ───────────────────────────────────────────────────────
+// ── Selection ────────────────────────────────────────────────────────────────
 
 export function toggleAllCheckboxes() {
     const selectAll  = document.getElementById('selectAllCheckbox');
@@ -273,7 +297,9 @@ function _syncSelectedCount() {
     checkboxes.forEach(cb => selectedUsers.add(parseInt(cb.value)));
 
     const countEl = document.getElementById('selectedCount');
-    if (countEl) countEl.textContent = `Выбрано: ${selectedUsers.size}`;
+    if (countEl) {
+        countEl.textContent = t('admin_users.selected', 'Selected: {{count}}', { count: selectedUsers.size });
+    }
 
     const total   = document.querySelectorAll('.user-checkbox:not(:disabled)').length;
     const checked = checkboxes.length;
@@ -287,47 +313,67 @@ function _syncSelectedCount() {
     bulkCtrl?.classList.toggle('has-selection', selectedUsers.size > 0);
 }
 
-// ── Массовые действия ─────────────────────────────────────────────────────────
+// ── Bulk actions ─────────────────────────────────────────────────────────────
 
 export async function executeBulkAction() {
     const action = document.getElementById('bulkActionSelect')?.value;
-    if (!action) { showNotification('Выберите действие', 'warning'); return; }
-    if (selectedUsers.size === 0) { showNotification('Выберите пользователей', 'warning'); return; }
+    if (!action) {
+        showNotification(t('admin_users.select_action', 'Select an action'), 'warning');
+        return;
+    }
+    if (selectedUsers.size === 0) {
+        showNotification(t('admin_users.select_users_first', 'Select users'), 'warning');
+        return;
+    }
 
     let role = null;
     let msg  = '';
+    const count = selectedUsers.size;
 
-    if (action === 'activate')       msg = `Активировать ${selectedUsers.size} пользователей?`;
-    else if (action === 'deactivate') msg = `Деактивировать ${selectedUsers.size} пользователей?`;
-    else if (action === 'change_role') {
+    if (action === 'activate') {
+        msg = t('admin_users.confirm_activate', 'Activate {{count}} user(s)?', { count });
+    } else if (action === 'deactivate') {
+        msg = t('admin_users.confirm_deactivate', 'Deactivate {{count}} user(s)?', { count });
+    } else if (action === 'change_role') {
         role = document.getElementById('bulkRoleSelect')?.value;
-        if (!role) { showNotification('Выберите новую роль', 'warning'); return; }
-        msg = `Изменить роль ${selectedUsers.size} пользователей на «${ROLE_NAMES[role]}»?`;
+        if (!role) {
+            showNotification(t('admin_users.select_new_role', 'Select a new role'), 'warning');
+            return;
+        }
+        msg = t('admin_users.confirm_change_role',
+            'Change role of {{count}} user(s) to «{{role}}»?',
+            { count, role: roleName(role) },
+        );
     } else if (action === 'delete') {
-        msg = `⚠️ УДАЛИТЬ ${selectedUsers.size} пользователей? Это необратимо!`;
-    } else return;
+        msg = `⚠️ ${t('admin_users.confirm_delete_bulk', 'DELETE {{count}} user(s)? This is irreversible!', { count })}`;
+    } else {
+        return;
+    }
 
     showConfirm(msg, async () => {
         try {
             const result = await adminUsersAPI.bulk(action, Array.from(selectedUsers), role);
             showNotification(
-                `${result.message || 'Выполнено'} — изменено ${result.affected ?? selectedUsers.size}`,
+                t('admin_users.bulk_done', '{{message}} — {{count}} updated', {
+                    message: result.message || t('admin_users.bulk_done_default', 'Done'),
+                    count:   result.affected ?? count,
+                }),
                 'success'
             );
             clearSelection();
             await loadUsers();
             await loadUserStats();
         } catch (error) {
-            if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-            showNotification(`Ошибка: ${error.message}`, 'error');
+            handleApiError(error);
         }
     });
 }
 
-// ── CRUD ──────────────────────────────────────────────────────────────────────
+// ── CRUD ─────────────────────────────────────────────────────────────────────
 
 export function showCreateUserModal() {
-    document.getElementById('modalTitle').textContent = '➕ Создание пользователя';
+    document.getElementById('modalTitle').textContent =
+        `➕ ${t('admin_users.modal_create_header', 'Create user')}`;
     document.getElementById('userId').value           = '';
     document.getElementById('modalUsername').value    = '';
     document.getElementById('modalUsername').disabled  = false;
@@ -337,7 +383,7 @@ export function showCreateUserModal() {
     document.getElementById('modalRole').value         = 'user';
     document.getElementById('modalIsActive').checked   = true;
     document.getElementById('reset2faGroup').style.display = 'none';
-    document.getElementById('modalSubmitBtn').textContent  = 'Создать';
+    document.getElementById('modalSubmitBtn').textContent  = t('admin_users.btn_create', 'Create');
     document.getElementById('userModal').style.display     = 'block';
 }
 
@@ -345,7 +391,8 @@ export async function editUser(userId) {
     try {
         const user = await adminUsersAPI.get(userId);
 
-        document.getElementById('modalTitle').textContent    = '✏️ Редактирование';
+        document.getElementById('modalTitle').textContent    =
+            `✏️ ${t('admin_users.modal_edit_header', 'Edit')}`;
         document.getElementById('userId').value              = user.id;
         document.getElementById('modalUsername').value       = user.username;
         document.getElementById('modalUsername').disabled     = true;
@@ -356,12 +403,11 @@ export async function editUser(userId) {
         document.getElementById('modalIsActive').checked     = user.is_active;
         document.getElementById('reset2faGroup').style.display = user.otp_secret ? 'block' : 'none';
         document.getElementById('modalReset2fa').checked     = false;
-        document.getElementById('modalSubmitBtn').textContent = 'Сохранить';
+        document.getElementById('modalSubmitBtn').textContent = t('admin_users.btn_save', 'Save');
         document.getElementById('userModal').style.display   = 'block';
 
     } catch (error) {
-        if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-        showNotification(`Ошибка: ${error.message}`, 'error');
+        handleApiError(error);
     }
 }
 
@@ -383,23 +429,33 @@ export async function handleUserSubmit(event) {
     const passwordEl = document.getElementById('modalPassword');
     const password   = passwordEl.value;
 
-    // Валидация
     if (!username || username.length < 3 || username.length > 50 || !/^[a-zA-Z0-9_]+$/.test(username)) {
-        showNotification('Логин: 3–50 символов, буквы/цифры/_', 'error'); return;
+        showNotification(t('admin_users.validate_username', 'Username: 3–50 characters, letters/digits/_'), 'error');
+        return;
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        showNotification('Неверный формат email', 'error'); return;
+        showNotification(t('admin_users.validate_email', 'Invalid email format'), 'error');
+        return;
     }
 
     const formData = { username, email, role, is_active };
 
     if (!isEdit) {
-        if (!password) { showNotification('Введите пароль', 'error'); return; }
-        if (password.length < 8) { showNotification('Пароль минимум 8 символов', 'error'); return; }
+        if (!password) {
+            showNotification(t('admin_users.enter_password', 'Enter a password'), 'error');
+            return;
+        }
+        if (password.length < 8) {
+            showNotification(t('admin_users.password_min', 'Password must be at least 8 characters'), 'error');
+            return;
+        }
         formData.password = password;
     } else {
         if (password) {
-            if (password.length < 8) { showNotification('Пароль минимум 8 символов', 'error'); return; }
+            if (password.length < 8) {
+                showNotification(t('admin_users.password_min', 'Password must be at least 8 characters'), 'error');
+                return;
+            }
             formData.reset_password = true;
             formData.new_password   = password;
         }
@@ -414,69 +470,97 @@ export async function handleUserSubmit(event) {
         } else {
             await adminUsersAPI.create(formData);
         }
-        showNotification(isEdit ? 'Пользователь обновлён' : 'Пользователь создан', 'success');
+        showNotification(
+            isEdit
+                ? t('admin_users.updated', 'User updated')
+                : t('admin_users.created', 'User created'),
+            'success',
+        );
         closeUserModal();
         await loadUsers();
         await loadUserStats();
     } catch (error) {
-        if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-        showNotification(`Ошибка: ${error.message}`, 'error');
+        handleApiError(error);
     }
 }
 
 export function resetPassword(userId, username) {
-    showConfirm(`Сбросить пароль пользователя ${username}?`, async () => {
-        const newPassword = prompt('Введите новый пароль (минимум 8 символов):');
-        if (!newPassword || newPassword.length < 8) {
-            showNotification('Пароль должен быть минимум 8 символов', 'error'); return;
-        }
-        try {
-            await adminUsersAPI.resetPassword(userId, newPassword);
-            showNotification(`Пароль пользователя ${username} сброшен`, 'success');
-        } catch (error) {
-            if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-            showNotification(`Ошибка: ${error.message}`, 'error');
-        }
-    });
+    showConfirm(
+        t('admin_users.confirm_reset_pw', 'Reset password for user {{username}}?', { username }),
+        async () => {
+            const newPassword = prompt(
+                t('admin_users.prompt_new_pw', 'Enter a new password (at least 8 characters):'),
+            );
+            if (!newPassword || newPassword.length < 8) {
+                showNotification(
+                    t('admin_users.password_min', 'Password must be at least 8 characters'),
+                    'error',
+                );
+                return;
+            }
+            try {
+                await adminUsersAPI.resetPassword(userId, newPassword);
+                showNotification(
+                    t('admin_users.pw_reset', 'Password for {{username}} has been reset', { username }),
+                    'success',
+                );
+            } catch (error) {
+                handleApiError(error);
+            }
+        },
+    );
 }
 
 export function reset2FA(userId, username) {
-    showConfirm(`Сбросить 2FA для ${username}?`, async () => {
-        try {
-            await adminUsersAPI.update(userId, { reset_2fa: true });
-            showNotification(`2FA для ${username} сброшена`, 'success');
-            await loadUsers();
-        } catch (error) {
-            if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-            showNotification(`Ошибка: ${error.message}`, 'error');
-        }
-    });
+    showConfirm(
+        t('admin_users.confirm_reset_2fa', 'Reset 2FA for {{username}}?', { username }),
+        async () => {
+            try {
+                await adminUsersAPI.update(userId, { reset_2fa: true });
+                showNotification(
+                    t('admin_users.twofa_reset', '2FA for {{username}} has been reset', { username }),
+                    'success',
+                );
+                await loadUsers();
+            } catch (error) {
+                handleApiError(error);
+            }
+        },
+    );
 }
 
 export function deleteUser(userId, username) {
-    showConfirm(`⚠️ УДАЛИТЬ пользователя ${username}? Это необратимо!`, async () => {
-        try {
-            await adminUsersAPI.delete(userId);
-            showNotification(`Пользователь ${username} удалён`, 'success');
-            await loadUsers();
-            await loadUserStats();
-        } catch (error) {
-            if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
-            showNotification(`Ошибка: ${error.message}`, 'error');
-        }
-    });
+    showConfirm(
+        `⚠️ ${t('admin_users.confirm_delete', 'DELETE user {{username}}? This is irreversible!', { username })}`,
+        async () => {
+            try {
+                await adminUsersAPI.delete(userId);
+                showNotification(
+                    t('admin_users.deleted', 'User {{username}} deleted', { username }),
+                    'success',
+                );
+                await loadUsers();
+                await loadUserStats();
+            } catch (error) {
+                handleApiError(error);
+            }
+        },
+    );
 }
 
-// ── Logout ────────────────────────────────────────────────────────────────────
+// ── Logout ───────────────────────────────────────────────────────────────────
 
 export async function logout() {
-    if (!confirm('Вы уверены?')) return;
+    if (!confirm(t('admin_users.confirm_logout', 'Are you sure?'))) return;
     try {
         const { auth: authAPI } = await import('../core/api.js');
         const res = await authAPI.logout();
         if (res.ok) window.location.href = '/';
-        else showNotification('Ошибка выхода', 'error');
+        else showNotification(t('admin_users.logout_error', 'Logout error'), 'error');
     } catch (e) {
-        showNotification('Ошибка: ' + e.message, 'error');
+        showNotification(
+            t('admin_users.generic_error', 'Error: {{message}}', { message: e.message }),
+            'error',
+        );
     }
 }

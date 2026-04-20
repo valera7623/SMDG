@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSystemStats();
 });
 
+// Re-render when the active language changes so dynamically generated
+// buttons, headings and list entries pick up the new strings.
+window.addEventListener('i18n:updated', () => {
+    loadFiles();
+    loadSystemStats();
+});
+
 // ── Экспорт в window (для onclick-атрибутов в admin.html) ────────────────────
 window.loadFiles        = loadFiles;
 window.getCleanupStats  = getCleanupStats;

@@ -186,6 +186,41 @@ async def _resolve_scoped_user_id(db: AsyncSession, current_user: TokenData, ten
     return result.scalar_one_or_none()
 
 
+def _apply_scope_filter(stmt, current_user: TokenData, tenant_id: int, scoped_user_id: int | None):
+    """Применяет фильтр видимости webhook-подписок по роли текущего пользователя.
+
+    - super_admin видит всё;
+    - admin/doctor — все подписки своего тенанта;
+    - остальные — только свои подписки.
+    """
+    if current_user.role == "super_admin":
+        return stmt
+    if current_user.role in ("admin", "doctor"):
+        return stmt.join(User, User.id == WebhookSubscription.user_id).where(
+            User.tenant_id == tenant_id
+        )
+    return stmt.where(WebhookSubscription.user_id == scoped_user_id)
+
+
+async def _get_scoped_subscription(
+    db: AsyncSession,
+    subscription_id: int,
+    current_user: TokenData,
+    tenant,
+) -> WebhookSubscription:
+    """Загрузить webhook-подписку с учётом роли пользователя и тенанта.
+
+    Бросает HTTPException(404), если подписка не найдена или недоступна.
+    """
+    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
+    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
+    stmt = _apply_scope_filter(stmt, current_user, tenant.id, scoped_user_id)
+    subscription = (await db.execute(stmt)).scalar_one_or_none()
+    if not subscription:
+        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
+    return subscription
+
+
 # ==================== CRUD Endpoints ====================
 
 @router.post("", response_model=WebhookSubscriptionResponse, status_code=201)
@@ -241,13 +276,7 @@ async def list_webhook_subscriptions(
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
     stmt = select(WebhookSubscription).order_by(WebhookSubscription.created_at.desc())
-
-    # Обычные пользователи видят только свои подписки
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
+    stmt = _apply_scope_filter(stmt, current_user, tenant.id, scoped_user_id)
 
     result = await db.execute(stmt)
     subscriptions = result.scalars().all()
@@ -269,22 +298,7 @@ async def get_webhook_subscription(
     """Получить информацию о конкретной webhook-подписке."""
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
-    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-
-    # Обычные пользователи видят только свои подписки
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
-
-    result = await db.execute(stmt)
-    subscription = result.scalar_one_or_none()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
-
+    subscription = await _get_scoped_subscription(db, subscription_id, current_user, tenant)
     return _serialize_subscription(subscription)
 
 
@@ -302,21 +316,7 @@ async def update_webhook_subscription(
 
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
-    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-
-    # Обычные пользователи могут редактировать только свои подписки
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
-
-    result = await db.execute(stmt)
-    subscription = result.scalar_one_or_none()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
+    subscription = await _get_scoped_subscription(db, subscription_id, current_user, tenant)
 
     # Обновляем только переданные поля
     update_data = data.model_dump(exclude_unset=True)
@@ -352,21 +352,7 @@ async def delete_webhook_subscription(
     """Удалить webhook-подписку."""
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
-    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-
-    # Обычные пользователи могут удалять только свои подписки
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
-
-    result = await db.execute(stmt)
-    subscription = result.scalar_one_or_none()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
+    subscription = await _get_scoped_subscription(db, subscription_id, current_user, tenant)
 
     await db.delete(subscription)
     await db.commit()
@@ -398,20 +384,7 @@ async def list_webhook_deliveries(
     """Получить историю доставки для webhook-подписки."""
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
-    # Проверяем существование подписки
-    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
-
-    result = await db.execute(stmt)
-    subscription = result.scalar_one_or_none()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
+    await _get_scoped_subscription(db, subscription_id, current_user, tenant)
 
     # Получаем доставки
     delivery_stmt = (
@@ -453,19 +426,7 @@ async def ping_webhook(
 
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    scoped_user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
-    stmt = select(WebhookSubscription).where(WebhookSubscription.id == subscription_id)
-    if current_user.role != "super_admin":
-        if current_user.role in ("admin", "doctor"):
-            stmt = stmt.join(User, User.id == WebhookSubscription.user_id).where(User.tenant_id == tenant.id)
-        else:
-            stmt = stmt.where(WebhookSubscription.user_id == scoped_user_id)
-
-    result = await db.execute(stmt)
-    subscription = result.scalar_one_or_none()
-
-    if not subscription:
-        raise HTTPException(status_code=404, detail="Webhook-подписка не найдена")
+    subscription = await _get_scoped_subscription(db, subscription_id, current_user, tenant)
 
     # Создаём тестовый payload
     payload = WebhookPayload(

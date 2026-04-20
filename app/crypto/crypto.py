@@ -16,6 +16,46 @@ from app.core.constants import ENCRYPTED_DIR, PRIVATE_KEY_PATH
 from app.core import audit_logger
 
 
+async def _run_age(cmd: list[str], err_prefix: str, err_cls: type = Exception) -> tuple[bytes, bytes]:
+    """Запустить бинарник age/age-keygen и вернуть (stdout, stderr).
+
+    Бросает исключение ``err_cls`` с префиксом ``err_prefix``, если процесс завершился с ошибкой.
+    """
+    process = await asyncio.create_subprocess_exec(
+        *cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout_data, stderr_data = await process.communicate()
+
+    if process.returncode != 0:
+        error_msg = stderr_data.decode("utf-8", errors="replace").strip()
+        raise err_cls(f"{err_prefix}: {error_msg}")
+
+    return stdout_data, stderr_data
+
+
+def _parse_age_public_key(output_text: str) -> str | None:
+    """Извлечь публичный ключ age из текстового вывода age-keygen.
+
+    Поддерживает как новый формат (строка `age1...`), так и старый (`# public key: ...`
+    или `Public key: ...` в разном регистре).
+    """
+    for raw in output_text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if line.startswith("age1"):
+            return line
+        if line.startswith("Public key: ") or line.startswith("# public key: "):
+            return line.split(":", 1)[1].strip()
+        if "public key:" in line.lower():
+            parts = line.lower().split("public key:")
+            if len(parts) > 1:
+                return parts[1].strip()
+    return None
+
+
 class CryptoManager:
     """Менеджер для асинхронной работы с age"""
 
@@ -38,42 +78,17 @@ class CryptoManager:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         cmd = ["age-keygen", "-o", str(output_path.absolute())]
-
         print(f"🔑 Генерация ключевой пары → {output_path.name}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout_data, stderr_data = await process.communicate()
+        stdout_data, stderr_data = await _run_age(cmd, "Ошибка генерации ключей age")
 
-        if process.returncode != 0:
-            error_msg = stderr_data.decode('utf-8', errors='replace').strip()
-            raise Exception(f"Ошибка генерации ключей age: {error_msg}")
-
-        # Публичный ключ в stderr
-        stderr_text = stderr_data.decode('utf-8', errors='replace')
-        lines = stderr_text.splitlines()
-
-        public_key = None
-        for line in lines:
-            line = line.strip()
-            if line.startswith("Public key: "):
-                public_key = line.split(":", 1)[1].strip()
-                break
-            elif line.startswith("# public key: "):
-                public_key = line.split(":", 1)[1].strip()
-                break
-            elif "public key:" in line.lower():
-                parts = line.lower().split("public key:")
-                if len(parts) > 1:
-                    public_key = parts[1].strip()
-                    break
+        # Публичный ключ может быть в stderr (старые версии) или stdout (новые)
+        output_text = (stdout_data + stderr_data).decode("utf-8", errors="replace")
+        public_key = _parse_age_public_key(output_text)
 
         if not public_key:
-            print("Полный stderr для диагностики:")
-            print(stderr_text)
+            print("Полный вывод age-keygen для диагностики:")
+            print(output_text)
             raise Exception("Не удалось извлечь публичный ключ из вывода age-keygen")
 
         print(f"   ✅ Ключи сгенерированы. Публичный: {public_key[:20]}...")
@@ -96,16 +111,7 @@ class CryptoManager:
 
         print(f"🔒 Шифрование: {' '.join(cmd)}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-
-        if process.returncode != 0:
-            error_msg = stderr.decode('utf-8', errors='replace').strip()
-            raise Exception(f"Ошибка шифрования age: {error_msg}")
+        await _run_age(cmd, "Ошибка шифрования age")
 
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise Exception(f"Зашифрованный файл не создан или пуст: {output_path}")
@@ -131,23 +137,13 @@ class CryptoManager:
 
         print(f"🔓 Расшифровка: {' '.join(cmd)}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout, stderr = await process.communicate()
-
-        if process.returncode != 0:
-            error_msg = stderr.decode('utf-8', errors='replace').strip()
-            raise Exception(f"Ошибка расшифровки age: {error_msg}")
+        await _run_age(cmd, "Ошибка расшифровки age")
 
         if not output_path.exists() or output_path.stat().st_size == 0:
             raise Exception(f"Расшифрованный файл не создан или пуст: {output_path}")
 
         print(f"   ✅ Файл успешно расшифрован → {output_path.name}")
 
-        # Возвращаем хэш расшифрованного файла (если нужно)
         return await calculate_hash_async(output_path)
 
     @staticmethod
@@ -157,34 +153,10 @@ class CryptoManager:
         cmd = ["age-keygen", "-o", str(new_private_path.absolute())]
         print(f"🔑 Генерация новой пары ключей → {new_private_path.name}")
 
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
-        )
-        stdout_data, stderr_data = await process.communicate()
+        stdout_data, stderr_data = await _run_age(cmd, "age-keygen failed", err_cls=RuntimeError)
 
-        if process.returncode != 0:
-            error_msg = stderr_data.decode('utf-8', errors='replace').strip()
-            raise RuntimeError(f"age-keygen failed: {error_msg}")
-
-        # Публичный ключ обычно в stdout в новых версиях, но может быть в stderr в старых
-        output_text = (stdout_data + stderr_data).decode('utf-8', errors='replace').strip()
-        lines = [line.strip() for line in output_text.splitlines() if line.strip()]
-
-        public_key = None
-        for line in lines:
-            if line.startswith("age1"):  # новый формат — просто публичный ключ
-                public_key = line
-                break
-            if line.startswith("# public key: "):
-                public_key = line.split(":", 1)[1].strip()
-                break
-            if "public key:" in line.lower():
-                parts = line.lower().split("public key:")
-                if len(parts) > 1:
-                    public_key = parts[1].strip()
-                    break
+        output_text = (stdout_data + stderr_data).decode("utf-8", errors="replace").strip()
+        public_key = _parse_age_public_key(output_text)
 
         if not public_key:
             print("Полный вывод age-keygen для диагностики:")
@@ -193,7 +165,8 @@ class CryptoManager:
 
         print(f"✅ Новая пара сгенерирована. Публичный: {public_key[:20]}...")
         return new_private_path, public_key
-    
+
+
 
     async def reencrypt_file(self, file_path: Path, old_private_key_path: Path, new_public_key: str) -> None:
         """Перешифровывает один файл: old → plaintext → new"""
@@ -216,15 +189,11 @@ class CryptoManager:
                 str(tmp_plain.absolute())
             ]
 
-            process = await asyncio.create_subprocess_exec(
-                *cmd_encrypt,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+            await _run_age(
+                cmd_encrypt,
+                f"Перешифровка {file_path.name} провалилась",
+                err_cls=RuntimeError,
             )
-            _, stderr = await process.communicate()
-
-            if process.returncode != 0:
-                raise RuntimeError(f"Перешифровка {file_path.name} провалилась: {stderr.decode()}")
 
             # 3. Проверяем, что новый файл не пустой
             if tmp_new_enc.stat().st_size == 0:

@@ -1,4 +1,6 @@
 # app/api/stats.py
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Depends, Request
 from typing import Dict, Any
 import logging
@@ -171,10 +173,18 @@ def _get_files_stats_sync() -> Dict[str, Any]:
         return asyncio.run(_get_files_stats())
 
 
-def _get_cleanup_stats() -> Dict[str, Any]:
+async def _get_cleanup_stats() -> Dict[str, Any]:
     try:
+        cleanup_payload: Any = {}
+        if hasattr(cleanup_manager, "get_cleanup_stats"):
+            result = cleanup_manager.get_cleanup_stats()
+            # get_cleanup_stats теперь async — но поддерживаем и sync (для тестовых моков)
+            if asyncio.iscoroutine(result):
+                cleanup_payload = await result
+            else:
+                cleanup_payload = result
         return {
-            "cleanup_manager": cleanup_manager.get_cleanup_stats() if hasattr(cleanup_manager, "get_cleanup_stats") else {},
+            "cleanup_manager": cleanup_payload,
             "temporary_files": file_storage.get_stats() if hasattr(file_storage, "get_stats") else {},
         }
     except Exception as e:
@@ -200,7 +210,7 @@ async def get_system_stats(
             "system": _get_system_stats(),
             "storage": await _get_storage_stats(),
             "files": await _get_files_stats(),
-            "cleanup": _get_cleanup_stats(),
+            "cleanup": await _get_cleanup_stats(),
         }
 
         stats["summary"] = {

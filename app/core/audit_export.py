@@ -96,6 +96,24 @@ def shorten_cell(text: str, max_len: int = 2000) -> str:
     return t[: max_len - 1] + "…"
 
 
+# Единый заголовок для всех форматов экспорта.
+AUDIT_ROW_HEADERS: list[str] = [
+    "Дата", "Пользователь", "Действие", "IP", "Статус", "Доп.данные",
+]
+
+
+def audit_row(entry: dict[str, Any]) -> list[str]:
+    """Сформировать строку аудита в едином порядке колонок для всех форматов."""
+    return [
+        entry.get("timestamp", ""),
+        entry.get("user", ""),
+        entry.get("action", ""),
+        entry.get("ip", ""),
+        format_status(entry.get("success")),
+        format_extra_column(entry),
+    ]
+
+
 async def iter_audit_log_entries(
     logs_dir: Path,
     start_date: date,
@@ -181,19 +199,9 @@ def build_excel_bytes(
     ws_sum.append(["Неудачных", stats.failed])
 
     ws_det = wb.create_sheet("Детали", 1)
-    headers = ["Дата", "Пользователь", "Действие", "IP", "Статус", "Доп.данные"]
-    ws_det.append(headers)
+    ws_det.append(AUDIT_ROW_HEADERS)
     for entry in rows:
-        ws_det.append(
-            [
-                entry.get("timestamp", ""),
-                entry.get("user", ""),
-                entry.get("action", ""),
-                entry.get("ip", ""),
-                format_status(entry.get("success")),
-                format_extra_column(entry),
-            ]
-        )
+        ws_det.append(audit_row(entry))
 
     ws_det.auto_filter.ref = ws_det.dimensions
     ws_det.freeze_panes = "A2"
@@ -272,19 +280,15 @@ def build_pdf_bytes(
     story.append(Paragraph(" &nbsp;|&nbsp; ".join(filt_parts), small_style))
     story.append(Spacer(1, 10))
 
-    header = ["Дата", "Пользователь", "Действие", "IP", "Статус", "Доп.данные"]
-    data: list[list[str]] = [header]
+    # Соответствует порядку AUDIT_ROW_HEADERS: Дата, Пользователь, Действие, IP, Статус, Доп.данные.
+    column_max_lens = [40, 24, 48, 18, None, 120]
+    data: list[list[str]] = [list(AUDIT_ROW_HEADERS)]
     for entry in rows:
-        data.append(
-            [
-                shorten_cell(str(entry.get("timestamp", "")), 40),
-                shorten_cell(str(entry.get("user", "")), 24),
-                shorten_cell(str(entry.get("action", "")), 48),
-                shorten_cell(str(entry.get("ip", "")), 18),
-                format_status(entry.get("success")),
-                shorten_cell(format_extra_column(entry), 120),
-            ]
-        )
+        row = audit_row(entry)
+        data.append([
+            shorten_cell(str(cell), max_len) if max_len is not None else str(cell)
+            for cell, max_len in zip(row, column_max_lens)
+        ])
 
     tbl = Table(data, repeatRows=1, colWidths=[None, 22 * mm, 42 * mm, 22 * mm, 18 * mm, 52 * mm])
     tbl.setStyle(
@@ -320,24 +324,13 @@ def build_pdf_bytes(
 
 def iter_csv_chunks(rows: Iterable[dict[str, Any]]) -> Iterable[bytes]:
     """Генератор байтовых фрагментов CSV (;, utf-8-sig) для StreamingResponse."""
-    header = ["Дата", "Пользователь", "Действие", "IP", "Статус", "Доп.данные"]
     sio = io.StringIO()
     writer = csv_module.writer(sio, delimiter=";")
-    writer.writerow(header)
-    first = sio.getvalue().encode("utf-8-sig")
-    yield first
+    writer.writerow(AUDIT_ROW_HEADERS)
+    yield sio.getvalue().encode("utf-8-sig")
 
     for entry in rows:
         sio.seek(0)
         sio.truncate(0)
-        writer.writerow(
-            [
-                entry.get("timestamp", ""),
-                entry.get("user", ""),
-                entry.get("action", ""),
-                entry.get("ip", ""),
-                format_status(entry.get("success")),
-                format_extra_column(entry),
-            ]
-        )
+        writer.writerow(audit_row(entry))
         yield sio.getvalue().encode("utf-8")

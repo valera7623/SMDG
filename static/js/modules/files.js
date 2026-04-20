@@ -5,20 +5,21 @@ import { showNotification } from '../utils/notifications.js';
 import { formatBytes } from '../utils/formats.js';
 import { FILE_AUTO_REMOVE_DELAY, FILE_REFRESH_INTERVAL } from '../core/config.js';
 import { setVisible } from '../utils/dom.js';
+import { t, currentLocale } from '../utils/i18n.js';
 
-// ── Список файлов ─────────────────────────────────────────────────────────────
+// ── File list ────────────────────────────────────────────────────────────────
 
 export async function loadFileList() {
     const fileList = document.getElementById('fileList');
     if (!fileList) return;
 
-    fileList.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
+    fileList.innerHTML = `<div class="loading">⏳ ${t('common.loading', 'Loading…')}</div>`;
 
     try {
         const data = await filesAPI.list();
 
         if (data.count === 0) {
-            fileList.innerHTML = '<div class="empty">📭 Нет загруженных файлов</div>';
+            fileList.innerHTML = `<div class="empty">📭 ${t('files.list_empty', 'No uploaded files')}</div>`;
             return;
         }
 
@@ -40,7 +41,6 @@ function _createFileItem(file) {
     const originalName = file.original_name
         ?? encryptedName.replace(/^[a-f0-9]+_/, '').replace(/\.age$/, '');
 
-    // Определяем DICOM-файл
     const isDicom = file.mime_type === 'application/dicom'
         || file.original_name?.match(/\.(dcm|dicom)$/i);
 
@@ -50,29 +50,31 @@ function _createFileItem(file) {
     const infoDiv = document.createElement('div');
     infoDiv.className = 'file-info';
     const fileIcon = isDicom ? '🔬' : '📄';
+    const patientLine = file.patient_id
+        ? `<div class="patient-id">🆔 ${t('files.patient_label', 'Patient: {{id}}', { id: file.patient_id })}</div>`
+        : '';
     infoDiv.innerHTML = `
         <div class="file-name">${fileIcon} ${originalName}</div>
         <div class="file-size">📏 ${formatBytes(file.size)}</div>
-        ${file.patient_id ? `<div class="patient-id">🆔 Пациент: ${file.patient_id}</div>` : ''}
+        ${patientLine}
         <div class="file-id">🔐 <small>${encryptedName}</small></div>
     `;
 
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'file-actions';
 
-    // Кнопка «Просмотр» для DICOM-файлов (если viewer включён)
     if (isDicom && window.__DICOM_VIEWER_ENABLED__) {
         const btnView = document.createElement('button');
         btnView.className = 'btn-info btn-small dicom-view-btn';
-        btnView.textContent = '👁️ Просмотр';
-        btnView.title = 'Открыть встроенный DICOM Viewer';
+        btnView.textContent = `👁️ ${t('files.btn_view', 'View')}`;
+        btnView.title = t('files.btn_view_title', 'Open embedded DICOM Viewer');
         btnView.addEventListener('click', () => openDicomViewer(file.id, originalName));
         actionsDiv.appendChild(btnView);
 
         const btnOHIF = document.createElement('button');
         btnOHIF.className = 'btn-info btn-small dicom-view-btn';
-        btnOHIF.textContent = '🏥 OHIF';
-        btnOHIF.title = 'Открыть OHIF Viewer (DICOMweb)';
+        btnOHIF.textContent = `🏥 ${t('files.btn_ohif', 'OHIF')}`;
+        btnOHIF.title = t('files.btn_ohif_title', 'Open OHIF Viewer (DICOMweb)');
         btnOHIF.addEventListener('click', () => openOHIFViewer(file.id, originalName));
         actionsDiv.appendChild(btnOHIF);
     }
@@ -82,19 +84,19 @@ function _createFileItem(file) {
         link.href = file.download_url;
         link.target = '_blank';
         link.className = 'btn-secondary btn-small';
-        link.textContent = '📥 Скачать';
+        link.textContent = `📥 ${t('files.btn_download', 'Download')}`;
         actionsDiv.appendChild(link);
     } else {
         const btnDl = document.createElement('button');
         btnDl.className = 'btn-secondary btn-small';
-        btnDl.textContent = '📥 Скачать';
+        btnDl.textContent = `📥 ${t('files.btn_download', 'Download')}`;
         btnDl.addEventListener('click', () => downloadFile(encryptedName));
         actionsDiv.appendChild(btnDl);
     }
 
     const btnDel = document.createElement('button');
     btnDel.className = 'btn-danger btn-small';
-    btnDel.textContent = '🗑️ Удалить';
+    btnDel.textContent = `🗑️ ${t('files.btn_delete', 'Delete')}`;
     btnDel.addEventListener('click', () => deleteUserFile(encryptedName, originalName));
     actionsDiv.appendChild(btnDel);
 
@@ -103,7 +105,7 @@ function _createFileItem(file) {
     return item;
 }
 
-// ── Загрузка файла ────────────────────────────────────────────────────────────
+// ── Upload ───────────────────────────────────────────────────────────────────
 
 export async function handleFileUpload(event) {
     event.preventDefault();
@@ -111,51 +113,47 @@ export async function handleFileUpload(event) {
     const form = event.target;
     const fileInput = form.querySelector('input[type="file"]');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const nameEl = form.querySelector('#fileInputName');
 
     if (!fileInput?.files.length) {
-        showNotification('Выберите файл', 'error');
+        showNotification(t('files.select_file', 'Select a file'), 'error');
         return;
     }
 
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = '⏳ Шифрование...';
+    submitBtn.textContent = `⏳ ${t('files.btn_encrypting', 'Encrypting…')}`;
     submitBtn.disabled = true;
 
     try {
         const data = await filesAPI.upload(fileInput.files[0]);
-        
-        // ОТЛАДКА: выводим ответ сервера в консоль
-        console.log('Upload response:', data);
-        console.log('Has download_url:', !!data.download_url);
-        console.log('download_url value:', data.download_url);
 
-        // Проверяем разные возможные варианты поля
+        console.log('Upload response:', data);
+
         const downloadUrl = data.download_url || data.downloadUrl || data.url;
-        
+
         if (downloadUrl) {
-            // Добавляем download_url в объект, если его там не было
             if (!data.download_url && downloadUrl) {
                 data.download_url = downloadUrl;
             }
             showUploadResult(data);
         } else {
-            // Если нет ссылки, но загрузка успешна - просто показываем уведомление
-            showNotification(`✅ Файл «${data.original_name || 'файл'}» загружен!`, 'success');
+            const name = data.original_name || t('files.unnamed', 'file');
+            showNotification(`✅ ${t('files.uploaded_named', 'File «{{name}}» uploaded!', { name })}`, 'success');
         }
 
         await loadFileList();
         fileInput.value = '';
+        _resetFilePickerName(nameEl);
 
-        // Очищаем предыдущий результат при успешной загрузке
         const resultDiv = document.getElementById('uploadResult');
         if (resultDiv && !downloadUrl) {
-            // Если ссылки нет, но есть ID - можно показать альтернативную информацию
             if (data.id || data.file_id) {
+                const id = data.id || data.file_id;
                 resultDiv.innerHTML = `
                     <div class="download-link">
-                        <p><strong>✅ Файл загружен!</strong></p>
-                        <p>ID: ${data.id || data.file_id}</p>
-                        <p><small>Ссылка для скачивания будет доступна в списке файлов</small></p>
+                        <p><strong>✅ ${t('files.uploaded_short', 'File uploaded!')}</strong></p>
+                        <p>${t('files.uploaded_id', 'ID: {{id}}', { id })}</p>
+                        <p><small>${t('files.uploaded_link_in_list', 'The download link will be available in the file list')}</small></p>
                     </div>
                 `;
                 setTimeout(() => {
@@ -166,14 +164,17 @@ export async function handleFileUpload(event) {
 
     } catch (error) {
         console.error('Upload error:', error);
-        showNotification(`Ошибка загрузки: ${error.message}`, 'error');
+        showNotification(
+            t('files.upload_error', 'Upload error: {{message}}', { message: error.message }),
+            'error',
+        );
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     }
 }
 
-// ── Скачивание ────────────────────────────────────────────────────────────────
+// ── Download ─────────────────────────────────────────────────────────────────
 
 export async function downloadFile(encryptedFilename) {
     try {
@@ -183,7 +184,10 @@ export async function downloadFile(encryptedFilename) {
 
         _triggerDownload(blob, name);
     } catch (error) {
-        showNotification(`Ошибка скачивания: ${error.message}`, 'error');
+        showNotification(
+            t('files.download_error', 'Download error: {{message}}', { message: error.message }),
+            'error',
+        );
     }
 }
 
@@ -201,21 +205,25 @@ function _triggerDownload(blob, filename) {
     }, 100);
 }
 
-// ── Удаление ──────────────────────────────────────────────────────────────────
+// ── Delete ───────────────────────────────────────────────────────────────────
 
 export async function deleteUserFile(filename, originalName) {
-    if (!confirm(`Удалить файл «${originalName || filename}»?`)) return;
+    const name = originalName || filename;
+    if (!confirm(t('files.delete_confirm_named', 'Delete file «{{name}}»?', { name }))) return;
 
     try {
         const result = await filesAPI.deleteUserFile(filename);
-        showNotification(result.message || 'Файл удалён', 'success');
+        showNotification(result.message || t('files.delete_done', 'File deleted'), 'success');
         await loadFileList();
     } catch (error) {
-        showNotification(`Ошибка: ${error.message}`, 'error');
+        showNotification(
+            t('files.generic_error', 'Error: {{message}}', { message: error.message }),
+            'error',
+        );
     }
 }
 
-// ── Блок результата загрузки ──────────────────────────────────────────────────
+// ── Upload result block ──────────────────────────────────────────────────────
 
 export function showUploadResult(data) {
     const resultDiv = document.getElementById('uploadResult');
@@ -224,21 +232,18 @@ export function showUploadResult(data) {
         return;
     }
 
-    console.log('showUploadResult called with:', data);
-
     const downloadUrl = data.download_url || data.downloadUrl || data.url;
-    
+
     if (!downloadUrl) {
         console.warn('No download URL in response:', data);
-        showNotification('Файл загружен, но ссылка не получена', 'warning');
+        showNotification(t('files.uploaded_no_link', 'File uploaded, but no link was returned'), 'warning');
         return;
     }
 
     const expiresDate = data.expires_at
-        ? new Date(data.expires_at).toLocaleString('ru-RU')
-        : 'Не указано';
+        ? new Date(data.expires_at).toLocaleString(currentLocale())
+        : t('files.not_specified', 'Not specified');
 
-    // Очищаем предыдущий результат
     resultDiv.innerHTML = '';
 
     const container = document.createElement('div');
@@ -252,17 +257,15 @@ export function showUploadResult(data) {
         animation: slideIn 0.3s ease;
     `;
 
-    // Заголовок
+    const displayName = escapeHtml(data.original_name || t('files.unnamed', 'file'));
     const title = document.createElement('p');
-    title.innerHTML = `<strong>✅ Файл «${escapeHtml(data.original_name || 'файл')}» загружен!</strong>`;
+    title.innerHTML = `<strong>✅ ${t('files.uploaded_named', 'File «{{name}}» uploaded!', { name: displayName })}</strong>`;
     container.appendChild(title);
 
-    // Подпись для ссылки
     const linkLabel = document.createElement('p');
-    linkLabel.innerHTML = '<strong>Ссылка для скачивания:</strong>';
+    linkLabel.innerHTML = `<strong>${t('files.download_link_label', 'Download link:')}</strong>`;
     container.appendChild(linkLabel);
 
-    // Поле ввода со ссылкой
     const linkInput = document.createElement('input');
     linkInput.type = 'text';
     linkInput.value = downloadUrl;
@@ -270,28 +273,29 @@ export function showUploadResult(data) {
     linkInput.style.cssText = 'width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;';
     container.appendChild(linkInput);
 
-    // Кнопка копирования
     const copyBtn = document.createElement('button');
-    copyBtn.textContent = '📋 Копировать ссылку';
+    copyBtn.textContent = `📋 ${t('files.copy_link', 'Copy link')}`;
     copyBtn.className = 'btn-secondary';
     copyBtn.style.marginBottom = '10px';
     copyBtn.addEventListener('click', () => {
         linkInput.select();
         document.execCommand('copy');
-        showNotification('Ссылка скопирована!', 'success');
+        showNotification(t('files.link_copied', 'Link copied!'), 'success');
     });
     container.appendChild(copyBtn);
 
-    // Дополнительная информация
     const info = document.createElement('p');
-    info.innerHTML = `<small>⏰ Срок действия: ${expiresDate} | 🔢 Макс. загрузок: ${data.max_downloads ?? 'Не ограничено'}</small>`;
+    const maxDownloads = data.max_downloads ?? t('files.unlimited', 'Unlimited');
+    info.innerHTML = `<small>⏰ ${t('files.expires_info', 'Expires: {{date}} | Max downloads: {{count}}', {
+        date: expiresDate,
+        count: maxDownloads,
+    })}</small>`;
     info.style.marginTop = '10px';
     info.style.color = '#666';
     container.appendChild(info);
 
     resultDiv.appendChild(container);
 
-    // Автоудаление через указанное время
     setTimeout(() => {
         if (container.parentNode) {
             container.style.animation = 'slideOut 0.3s ease';
@@ -302,7 +306,6 @@ export function showUploadResult(data) {
     }, FILE_AUTO_REMOVE_DELAY);
 }
 
-// Вспомогательная функция для escapeHtml (если нет в dom.js)
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') return '';
     return unsafe
@@ -317,15 +320,15 @@ export function copyToClipboard(inputEl) {
     if (inputEl.select) {
         inputEl.select();
         document.execCommand('copy');
-        showNotification('Ссылка скопирована!', 'success');
+        showNotification(t('files.link_copied', 'Link copied!'), 'success');
     }
 }
 
 // ── DICOM Viewer ─────────────────────────────────────────────────────────────
 
 /**
- * Открывает DICOM viewer в модальном окне с iframe.
- * Запрашивает у бэкенда view-токен и встраивает viewer через iframe.
+ * Opens the DICOM viewer in a modal iframe. Requests a view token from the
+ * backend and embeds the viewer via an iframe.
  */
 export async function openDicomViewer(fileId, fileName) {
     try {
@@ -342,13 +345,15 @@ export async function openDicomViewer(fileId, fileName) {
         const data = await response.json();
         _showDicomViewerModal(data.view_url, data.file_name || fileName, data.expires_at);
     } catch (error) {
-        showNotification(`Ошибка открытия viewer: ${error.message}`, 'error');
+        showNotification(
+            t('files.viewer_open_error', 'Failed to open viewer: {{message}}', { message: error.message }),
+            'error',
+        );
     }
 }
 
 /**
- * Открывает OHIF Viewer в модальном окне.
- * Запрашивает у бэкенда URL с DICOMweb endpoints.
+ * Opens the OHIF Viewer in a modal iframe (DICOMweb endpoints).
  */
 export async function openOHIFViewer(fileId, fileName) {
     try {
@@ -365,21 +370,25 @@ export async function openOHIFViewer(fileId, fileName) {
         const data = await response.json();
         _showOHIFViewerModal(data.ohif_url, data.file_name || fileName, data.expires_at);
     } catch (error) {
-        showNotification(`Ошибка открытия OHIF Viewer: ${error.message}`, 'error');
+        showNotification(
+            t('files.ohif_open_error', 'Failed to open OHIF Viewer: {{message}}', { message: error.message }),
+            'error',
+        );
     }
 }
 
 /**
- * Показывает модальное окно с iframe для DICOM viewer.
+ * Renders the modal holding the DICOM viewer iframe.
  */
 function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
-    // Проверяем, нет ли уже открытого viewer
     const existing = document.getElementById('dicomViewerModal');
     if (existing) existing.remove();
 
     const expiresLabel = expiresAt
-        ? new Date(expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(expiresAt).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' })
         : '—';
+    const expiresTitle = t('files.session_expires_at', 'Session expires at {{time}}', { time: expiresLabel });
+    const closeLabel = t('files.modal_close', 'Close');
 
     const modal = document.createElement('div');
     modal.id = 'dicomViewerModal';
@@ -389,18 +398,18 @@ function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
             <div class="dicom-modal-title">
                 <span class="dicom-modal-icon">🔬</span>
                 <span class="dicom-modal-filename">${escapeHtml(fileName)}</span>
-                <span class="dicom-modal-expires" title="Сессия истекает в ${expiresLabel}">⏰ ${expiresLabel}</span>
+                <span class="dicom-modal-expires" title="${expiresTitle}">⏰ ${expiresLabel}</span>
             </div>
             <div class="dicom-modal-actions">
-                <button class="dicom-modal-btn dicom-modal-btn-close" id="dicomModalClose" title="Закрыть">
-                    ✕ Закрыть
+                <button class="dicom-modal-btn dicom-modal-btn-close" id="dicomModalClose" title="${closeLabel}">
+                    ✕ ${closeLabel}
                 </button>
             </div>
         </div>
         <div class="dicom-modal-body">
             <div class="dicom-modal-loading" id="dicomModalLoading">
                 <div class="dicom-modal-spinner"></div>
-                <p>Загрузка DICOM viewer...</p>
+                <p>${t('files.viewer_loading', 'Loading DICOM viewer…')}</p>
             </div>
             <iframe
                 id="dicomModalIframe"
@@ -416,11 +425,9 @@ function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
     document.body.appendChild(modal);
     document.body.style.overflow = 'hidden';
 
-    // Закрытие
     const closeBtn = modal.querySelector('#dicomModalClose');
     closeBtn.addEventListener('click', () => _closeDicomViewerModal());
 
-    // Закрытие по Escape
     const onKeydown = (e) => {
         if (e.key === 'Escape') {
             _closeDicomViewerModal();
@@ -429,12 +436,10 @@ function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
     };
     document.addEventListener('keydown', onKeydown);
 
-    // Закрытие по клику на overlay
     modal.addEventListener('click', (e) => {
         if (e.target === modal) _closeDicomViewerModal();
     });
 
-    // Когда iframe загрузится — убираем loader
     const iframe = modal.querySelector('#dicomModalIframe');
     const loading = modal.querySelector('#dicomModalLoading');
     iframe.addEventListener('load', () => {
@@ -442,10 +447,9 @@ function _showDicomViewerModal(iframeUrl, fileName, expiresAt) {
         loading.style.display = 'none';
     });
 
-    // Таймаут на случай если iframe не загрузился
     setTimeout(() => {
         if (loading.style.display !== 'none') {
-            loading.innerHTML = '<p class="dicom-modal-error">Viewer не загрузился. <a href="#" onclick="location.reload()">Обновить</a></p>';
+            loading.innerHTML = `<p class="dicom-modal-error">${t('files.viewer_failed', 'Viewer failed to load.')} <a href="#" onclick="location.reload()">${t('files.reload_link', 'Reload')}</a></p>`;
         }
     }, 15000);
 }
@@ -459,15 +463,17 @@ function _closeDicomViewerModal() {
 }
 
 /**
- * Показывает модальное окно с OHIF Viewer.
+ * Renders the modal holding the OHIF Viewer iframe.
  */
 function _showOHIFViewerModal(iframeUrl, fileName, expiresAt) {
     const existing = document.getElementById('ohifViewerModal');
     if (existing) existing.remove();
 
     const expiresLabel = expiresAt
-        ? new Date(expiresAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+        ? new Date(expiresAt).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' })
         : '—';
+    const expiresTitle = t('files.session_expires_at', 'Session expires at {{time}}', { time: expiresLabel });
+    const closeLabel = t('files.modal_close', 'Close');
 
     const modal = document.createElement('div');
     modal.id = 'ohifViewerModal';
@@ -477,18 +483,18 @@ function _showOHIFViewerModal(iframeUrl, fileName, expiresAt) {
             <div class="dicom-modal-title">
                 <span class="dicom-modal-icon">🏥</span>
                 <span class="dicom-modal-filename">${escapeHtml(fileName)}</span>
-                <span class="dicom-modal-expires" title="Сессия истекает в ${expiresLabel}">⏰ ${expiresLabel}</span>
+                <span class="dicom-modal-expires" title="${expiresTitle}">⏰ ${expiresLabel}</span>
             </div>
             <div class="dicom-modal-actions">
-                <button class="dicom-modal-btn dicom-modal-btn-close" id="ohifModalClose" title="Закрыть">
-                    ✕ Закрыть
+                <button class="dicom-modal-btn dicom-modal-btn-close" id="ohifModalClose" title="${closeLabel}">
+                    ✕ ${closeLabel}
                 </button>
             </div>
         </div>
         <div class="dicom-modal-body">
             <div class="dicom-modal-loading" id="ohifModalLoading">
                 <div class="dicom-modal-spinner"></div>
-                <p>Загрузка OHIF Viewer...</p>
+                <p>${t('files.ohif_loading', 'Loading OHIF Viewer…')}</p>
             </div>
             <iframe
                 id="ohifModalIframe"
@@ -523,12 +529,46 @@ function _showOHIFViewerModal(iframeUrl, fileName, expiresAt) {
     setTimeout(() => {
         const loading = document.getElementById('ohifModalLoading');
         if (loading && loading.style.display !== 'none') {
-            loading.innerHTML = '<p class="dicom-modal-error">Viewer не загрузился. <a href="#" onclick="location.reload()">Обновить</a></p>';
+            loading.innerHTML = `<p class="dicom-modal-error">${t('files.viewer_failed', 'Viewer failed to load.')} <a href="#" onclick="location.reload()">${t('files.reload_link', 'Reload')}</a></p>`;
         }
     }, 15000);
 }
 
-// ── Инициализация ─────────────────────────────────────────────────────────────
+// ── Custom file picker (replaces the browser's native file widget) ───────────
+
+/**
+ * Keep the custom file-picker label in sync with the selected file and
+ * clear it back to the translated "no file chosen" string when empty.
+ */
+function _bindFilePicker() {
+    const input = document.getElementById('fileInput');
+    const nameEl = document.getElementById('fileInputName');
+    if (!input || !nameEl) return;
+
+    const sync = () => {
+        const file = input.files && input.files[0];
+        if (file) {
+            nameEl.textContent = file.name;
+            nameEl.classList.add('has-file');
+            nameEl.removeAttribute('data-i18n');
+        } else {
+            _resetFilePickerName(nameEl);
+        }
+    };
+
+    input.addEventListener('change', sync);
+    sync();
+}
+
+function _resetFilePickerName(nameEl) {
+    const el = nameEl || document.getElementById('fileInputName');
+    if (!el) return;
+    el.setAttribute('data-i18n', 'files.no_file_chosen');
+    el.classList.remove('has-file');
+    el.textContent = t('files.no_file_chosen', 'No file chosen');
+}
+
+// ── Initialisation ───────────────────────────────────────────────────────────
 
 export function initFiles() {
     const uploadForm = document.getElementById('uploadForm');
@@ -545,6 +585,15 @@ export function initFiles() {
         console.log('Refresh button initialized');
     }
 
-    // Автообновление каждые N секунд
+    _bindFilePicker();
+
     setInterval(loadFileList, FILE_REFRESH_INTERVAL);
+
+    window.addEventListener('i18n:updated', () => {
+        loadFileList();
+        const input = document.getElementById('fileInput');
+        if (input && (!input.files || !input.files.length)) {
+            _resetFilePickerName();
+        }
+    });
 }

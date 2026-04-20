@@ -84,6 +84,28 @@ class UserStatsResponse(BaseModel):
     users_with_2fa: int
 
 
+# ==================== Helpers ====================
+
+async def _load_tenant_user(
+    db: AsyncSession,
+    user_id: int,
+    current_admin: TokenData,
+    tenant,
+) -> User:
+    """Загрузить пользователя по id с учётом tenant-скопа текущего админа.
+
+    Для super_admin — без фильтра по тенанту; для остальных админов — только внутри их тенанта.
+    Бросает HTTPException(404), если пользователь не найден или недоступен.
+    """
+    stmt = select(User).where(User.id == user_id)
+    if current_admin.role != "super_admin":
+        stmt = stmt.where(User.tenant_id == tenant.id)
+    user = (await db.execute(stmt)).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return user
+
+
 # ==================== Эндпоинты ====================
 
 @router.get("/", response_model=List[UserResponse])
@@ -141,14 +163,7 @@ async def get_user(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
-    stmt = select(User).where(User.id == user_id)
-    if current_admin.role != "super_admin":
-        stmt = stmt.where(User.tenant_id == tenant.id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_tenant_user(db, user_id, current_admin, tenant)
 
     audit_logger.log_operation(
         action="admin_view_user",
@@ -217,14 +232,7 @@ async def update_user(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
-    stmt = select(User).where(User.id == user_id)
-    if current_admin.role != "super_admin":
-        stmt = stmt.where(User.tenant_id == tenant.id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_tenant_user(db, user_id, current_admin, tenant)
 
     if user.username == current_admin.sub:
         raise HTTPException(status_code=400, detail="change-password")
@@ -289,14 +297,7 @@ async def delete_user(
     if not confirm:
         raise HTTPException(status_code=400, detail="Требуется подтверждение удаления (confirm=true)")
 
-    stmt = select(User).where(User.id == user_id)
-    if current_admin.role != "super_admin":
-        stmt = stmt.where(User.tenant_id == tenant.id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_tenant_user(db, user_id, current_admin, tenant)
 
     if user.username == current_admin.sub:
         raise HTTPException(status_code=400, detail="Нельзя удалить свою учётную запись")
@@ -332,14 +333,7 @@ async def reset_user_password(
 ):
     tenant = require_tenant(request)
     assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
-    stmt = select(User).where(User.id == user_id)
-    if current_admin.role != "super_admin":
-        stmt = stmt.where(User.tenant_id == tenant.id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    user = await _load_tenant_user(db, user_id, current_admin, tenant)
 
     if user.username == current_admin.sub:
         raise HTTPException(status_code=400, detail="Используйте /auth/change-password для смены своего пароля")

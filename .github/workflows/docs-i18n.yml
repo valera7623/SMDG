@@ -1,0 +1,78 @@
+name: Sync Documentation Translations
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "docs/src/**"
+      - "docs/generate_i18n.py"
+      - "README.md"
+  pull_request:
+    paths:
+      - "docs/src/**"
+      - "docs/generate_i18n.py"
+  schedule:
+    # Every Monday at 00:00 UTC.
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    name: Check translation freshness
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fail on missing / stale translations
+        run: python docs/generate_i18n.py --strict --dry-run
+
+  sync:
+    name: Sync translation stubs
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate missing translation stubs
+        run: python docs/generate_i18n.py
+
+      - name: Create pull request for translation updates
+        uses: peter-evans/create-pull-request@v6
+        with:
+          title: "docs(i18n): sync translation stubs"
+          commit-message: "docs(i18n): sync translation stubs"
+          body: |
+            Automated sync of translation stubs.
+
+            The English source documentation under `docs/src/` has changed.
+            Please translate the following files before merging:
+
+            - `docs/locales/ru/*.md`
+            - `docs/locales/de/*.md`
+            - `docs/locales/fr/*.md`
+
+            Stubs contain a `needs-translation` marker and a SHA-1 header
+            used by `docs/generate_i18n.py` to detect drift.
+          branch: docs/i18n-sync
+          base: ${{ github.ref_name }}
+          delete-branch: true
+          labels: |
+            documentation
+            i18n

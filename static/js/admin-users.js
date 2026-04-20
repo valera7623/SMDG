@@ -42,6 +42,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         ?.addEventListener('submit', handleUserSubmit);
 });
 
+// Re-render the user table and stats when the active language changes.
+window.addEventListener('i18n:updated', () => {
+    loadUserStats();
+    loadUsers();
+});
+
 // ── Экспорт в window (для onclick-атрибутов в admin_users.html) ───────────────
 window.loadUsers           = loadUsers;
 window.applyFilters        = applyFilters;

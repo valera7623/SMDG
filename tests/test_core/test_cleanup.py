@@ -1,10 +1,8 @@
 import os
 import pytest
-import asyncio
 import time
 from pathlib import Path
-from datetime import datetime, timedelta
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
+from unittest.mock import patch, MagicMock
 from app.core.cleanup import FileCleanupManager
 
 
@@ -16,7 +14,10 @@ def temp_dir(tmp_path):
 
 @pytest.fixture
 def cleanup_manager(temp_dir):
-    """Создает FileCleanupManager для тестов"""
+    """Создает FileCleanupManager для тестов.
+
+    Без явного storage_backend менеджер сам обернёт temp_dir в LocalStorageBackend.
+    """
     return FileCleanupManager(temp_dir, ttl_days=30)
 
 
@@ -25,6 +26,8 @@ def test_cleanup_manager_initialization(cleanup_manager, temp_dir):
     assert cleanup_manager.encrypted_dir == temp_dir
     assert cleanup_manager.ttl_days == 30
     assert cleanup_manager.logger is not None
+    # storage_backend должен быть автоматически создан (LocalStorageBackend)
+    assert cleanup_manager.storage_backend is not None
 
     assert cleanup_manager.retention_policies == {
         '.txt': 30,
@@ -35,9 +38,9 @@ def test_cleanup_manager_initialization(cleanup_manager, temp_dir):
     }
 
 
-def test_get_ttl_for_file():
+def test_get_ttl_for_file(tmp_path):
     """Тест получения TTL для разных типов файлов"""
-    manager = FileCleanupManager(Path("/test"), ttl_days=30)
+    manager = FileCleanupManager(tmp_path, ttl_days=30)
 
     test_cases = [
         ("file.txt", 30),
@@ -55,10 +58,9 @@ def test_get_ttl_for_file():
 
 
 @pytest.mark.asyncio
-async def test_cleanup_old_files_empty_directory(cleanup_manager, temp_dir):
+async def test_cleanup_old_files_empty_directory(cleanup_manager):
     """Тест очистки пустой директории"""
     result = await cleanup_manager._cleanup_old_files()
-    # FIX: функция возвращает dict, не None
     assert result is not None
     assert result["deleted"] == 0
     assert result["errors"] == []
@@ -87,12 +89,10 @@ async def test_cleanup_old_files_with_old_files(cleanup_manager, temp_dir):
     old_time = time.time() - (40 * 24 * 3600)
     os.utime(old_file, (old_time, old_time))
 
-    with patch.object(cleanup_manager.logger, 'info') as mock_info:
-        with patch.object(cleanup_manager.logger, 'error') as mock_error:
-            await cleanup_manager._cleanup_old_files()
+    with patch.object(cleanup_manager.logger, 'info'):
+        await cleanup_manager._cleanup_old_files()
 
-            assert not old_file.exists()
-            assert mock_info.called
+    assert not old_file.exists()
 
 
 @pytest.mark.asyncio
@@ -104,15 +104,16 @@ async def test_cleanup_old_files_error_on_delete(cleanup_manager, temp_dir):
     old_time = time.time() - (40 * 24 * 3600)
     os.utime(old_file, (old_time, old_time))
 
-    # FIX: cleanup.py использует file_path.unlink(), а не os.remove()
-    # Патчим unlink на уровне Path
-    with patch.object(Path, "unlink", side_effect=PermissionError("Permission denied")):
-        with patch.object(cleanup_manager.logger, 'error') as mock_error:
-            await cleanup_manager._cleanup_old_files()
+    # Патчим delete_many у backend, чтобы симулировать ошибку
+    async def fake_delete_many(keys):
+        return {"deleted_count": 0, "errors": [f"Permission denied: {k}" for k in keys]}
 
-            # unlink замокан — файл физически не удалён
-            assert old_file.exists()
-            mock_error.assert_called()
+    with patch.object(cleanup_manager.storage_backend, 'delete_many', side_effect=fake_delete_many):
+        result = await cleanup_manager._cleanup_old_files()
+
+    assert old_file.exists()
+    assert result["deleted"] == 0
+    assert result["errors"]
 
 
 @pytest.mark.asyncio
@@ -129,7 +130,7 @@ async def test_cleanup_old_files_different_file_types(cleanup_manager, temp_dir)
         ("new.dcm", 200, False),
     ]
 
-    for filename, age_days, should_delete in files:
+    for filename, age_days, _should_delete in files:
         file_path = temp_dir / filename
         file_path.write_text("content")
 
@@ -138,7 +139,7 @@ async def test_cleanup_old_files_different_file_types(cleanup_manager, temp_dir)
 
     await cleanup_manager._cleanup_old_files()
 
-    for filename, age_days, should_delete in files:
+    for filename, _age_days, should_delete in files:
         file_path = temp_dir / filename
         if should_delete:
             assert not file_path.exists(), f"{filename} должен был быть удален"
@@ -149,8 +150,6 @@ async def test_cleanup_old_files_different_file_types(cleanup_manager, temp_dir)
 @pytest.mark.asyncio
 async def test_start_cleanup_task(cleanup_manager):
     """Тест запуска задачи очистки через APScheduler"""
-    # FIX: start_cleanup_task использует APScheduler, не while-loop
-    # Мокаем scheduler чтобы не запускать реальный
     mock_scheduler = MagicMock()
     mock_scheduler.add_job = MagicMock()
     mock_scheduler.start = MagicMock()
@@ -158,17 +157,11 @@ async def test_start_cleanup_task(cleanup_manager):
 
     await cleanup_manager.start_cleanup_task()
 
-    # Проверяем что job был зарегистрирован
     mock_scheduler.add_job.assert_called_once()
     call_kwargs = mock_scheduler.add_job.call_args
-
-    # Первый позиционный аргумент — функция очистки
     assert call_kwargs[0][0] == cleanup_manager._cleanup_old_files
 
-    # Проверяем что scheduler был запущен
     mock_scheduler.start.assert_called_once()
-
-    # Проверяем флаг
     assert cleanup_manager._started is True
 
 
@@ -177,11 +170,10 @@ async def test_start_cleanup_task_idempotent(cleanup_manager):
     """Повторный вызов start_cleanup_task не запускает scheduler дважды"""
     mock_scheduler = MagicMock()
     cleanup_manager.scheduler = mock_scheduler
-    cleanup_manager._started = True  # Симулируем уже запущенный
+    cleanup_manager._started = True
 
     await cleanup_manager.start_cleanup_task()
 
-    # scheduler.start не должен вызываться повторно
     mock_scheduler.start.assert_not_called()
     mock_scheduler.add_job.assert_not_called()
 
@@ -189,7 +181,6 @@ async def test_start_cleanup_task_idempotent(cleanup_manager):
 @pytest.mark.asyncio
 async def test_start_cleanup_task_with_error(cleanup_manager):
     """Тест что ошибка в add_job пробрасывается"""
-    # FIX: тестируем что ошибка scheduler пробрасывается наружу
     mock_scheduler = MagicMock()
     mock_scheduler.add_job.side_effect = Exception("Scheduler error")
     cleanup_manager.scheduler = mock_scheduler
@@ -198,16 +189,18 @@ async def test_start_cleanup_task_with_error(cleanup_manager):
         await cleanup_manager.start_cleanup_task()
 
 
-def test_get_cleanup_stats_empty_directory(cleanup_manager, temp_dir):
+@pytest.mark.asyncio
+async def test_get_cleanup_stats_empty_directory(cleanup_manager):
     """Тест статистики для пустой директории"""
-    stats = cleanup_manager.get_cleanup_stats()
+    stats = await cleanup_manager.get_cleanup_stats()
 
     assert stats["total"] == 0
     assert stats["to_delete"] == 0
     assert stats["files"] == []
 
 
-def test_get_cleanup_stats_with_files(cleanup_manager, temp_dir):
+@pytest.mark.asyncio
+async def test_get_cleanup_stats_with_files(cleanup_manager, temp_dir):
     """Тест статистики с файлами"""
     files = [
         ("new.txt", 10),
@@ -223,7 +216,7 @@ def test_get_cleanup_stats_with_files(cleanup_manager, temp_dir):
         old_time = time.time() - (age_days * 24 * 3600)
         os.utime(file_path, (old_time, old_time))
 
-    stats = cleanup_manager.get_cleanup_stats()
+    stats = await cleanup_manager.get_cleanup_stats()
 
     assert stats["total"] == 4
     assert stats["to_delete"] == 2
@@ -240,16 +233,23 @@ def test_get_cleanup_stats_with_files(cleanup_manager, temp_dir):
         assert file_info["age_days"] > file_info["ttl_days"]
 
 
-def test_get_cleanup_stats_directory_not_exists(cleanup_manager):
-    """Тест статистики когда директория не существует"""
-    non_existent_dir = Path("/non/existent/dir")
-    manager = FileCleanupManager(non_existent_dir)
+@pytest.mark.asyncio
+async def test_get_cleanup_stats_directory_not_exists(tmp_path):
+    """Статистика корректно обрабатывает недоступную директорию"""
+    # LocalStorageBackend сам создаст директорию при инициализации,
+    # поэтому эмулируем ошибку на уровне list_objects.
+    manager = FileCleanupManager(tmp_path / "ghost", ttl_days=30)
 
-    stats = manager.get_cleanup_stats()
+    async def raise_err(*_a, **_kw):
+        raise OSError("dir missing")
+
+    with patch.object(manager.storage_backend, 'list_objects', side_effect=raise_err):
+        stats = await manager.get_cleanup_stats()
 
     assert stats["total"] == 0
     assert stats["to_delete"] == 0
     assert stats["files"] == []
+    assert "error" in stats
 
 
 if __name__ == "__main__":
