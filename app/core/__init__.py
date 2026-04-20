@@ -2,7 +2,7 @@
 from pathlib import Path
 import asyncio
 from app.core.storage import FileStorageManager
-from app.core.storage_backend import StorageBackend, StorageFactory
+from app.core.storage_backend import StorageBackend, get_storage_backend
 from .cleanup import FileCleanupManager
 from .audit import AuditLogger
 from .config import settings
@@ -42,18 +42,8 @@ PRIVATE_KEY_PATH = BASE_DIR / "keys" / "age.key"
 # TTL для временных файлов (в секундах, 1 час по умолчанию)
 TEMP_TTL_SECONDS = 3600
 
-# Инициализация хранилища через фабрику
-# encrypted_storage — основной бэкенд для зашифрованных файлов
-encrypted_storage: StorageBackend = StorageFactory.create_backend(
-    s3_enabled=settings.s3_enabled,
-    s3_endpoint_url=settings.s3_endpoint_url,
-    s3_access_key=settings.s3_access_key,
-    s3_secret_key=settings.s3_secret_key,
-    s3_bucket=settings.s3_bucket_encrypted,
-    s3_region=settings.s3_region,
-    s3_use_ssl=settings.s3_use_ssl,
-    local_base_dir=ENCRYPTED_DIR,
-)
+# Инициализация хранилища: профиль развёртывания + обратная совместимость по S3_* из .env
+encrypted_storage: StorageBackend = get_storage_backend(local_base_dir=ENCRYPTED_DIR)
 
 # Глобальные менеджеры
 file_storage = FileStorageManager(DECRYPTED_DIR, TEMP_TTL_SECONDS)
@@ -73,7 +63,9 @@ _PUBLIC_KEY = None
 
 async def init_keys():
     """Инициализация ключей шифрования"""
-    from app.crypto.crypto import crypto_manager  # ← Ленивый импорт — правильно!
+    from app.crypto import get_crypto_backend
+
+    crypto_manager = get_crypto_backend()
 
     global _PUBLIC_KEY
     if _PUBLIC_KEY is None:
@@ -121,5 +113,5 @@ __all__ = [
     'cleanup_storage',
     'audit_logger',
     'init_keys',
-    'settings'
+    'settings',
 ]

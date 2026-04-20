@@ -82,7 +82,50 @@ async def resolve_tenant_from_request(
     - ``super_admin``: при явной подсказке (Host / заголовки) используется она; иначе — tenant из JWT.
 
     Без JWT / без ``tenant_id`` в токене поведение как раньше — только подсказки запроса.
+
+    При выключенном ``MULTI_TENANCY`` контекст всегда ровно один — tenant с
+    ``tenant_default_subdomain``. Это относится и к ``super_admin``: переключение через
+    Host или ``X-Tenant-*`` отключено, чтобы single-tenant-профиль не имел скрытого multi-tenant.
     """
+    from app.core.config import settings
+    from app.core.feature_flags import Feature, is_enabled
+
+    if not is_enabled(Feature.MULTI_TENANCY):
+        result = await db.execute(
+            select(Tenant).where(
+                func.lower(Tenant.subdomain) == settings.tenant_default_subdomain.lower()
+            )
+        )
+        tenant_default = result.scalar_one_or_none()
+        if tenant_default is None:
+            return await _resolve_tenant_from_headers_and_host(db, request)
+
+        tid_i: int | None = None
+        if jwt_tenant_id is not None:
+            try:
+                tid_i = int(jwt_tenant_id)
+            except (TypeError, ValueError):
+                tid_i = None
+
+        role = (jwt_role or "").strip() or "user"
+
+        # super_admin в single-tenant не выбирает организацию по Host/заголовкам — только default.
+        if role != "super_admin":
+            if tid_i is not None and tid_i != tenant_default.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Для режима без multi-tenancy допустим только tenant по умолчанию",
+                )
+
+            hints = await _resolve_tenant_from_headers_and_host(db, request)
+            if hints is not None and hints.id != tenant_default.id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Запрос указывает другой tenant; включён режим одной организации",
+                )
+
+        return tenant_default
+
     tenant_hints = await _resolve_tenant_from_headers_and_host(db, request)
 
     tid: int | None = None

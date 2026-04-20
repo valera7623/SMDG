@@ -1,0 +1,12 @@
+# Overlay: одиночный self-hosted — простота, локальное хранилище по умолчанию.
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.single.yml up -d
+services:
+  smdg:
+    environment:
+      DEPLOYMENT_TYPE: single
+      S3_ENABLED: "${S3_ENABLED:-false}"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.5"
+          memory: 2G

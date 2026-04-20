@@ -2,7 +2,7 @@
 
 **Безопасная передача медицинских файлов с end-to-end шифрованием**
 
-**Текущая версия продукта:** **3.0.0** (ядро и DICOM Viewer); экспорт аудита — **3.1.0**.
+**Текущая версия продукта:** **4.0.0** (ядро и DICOM Viewer); экспорт аудита — **3.1.0**.
 
 SMDG — self-hosted решение для безопасного обмена медицинскими данными между врачами, клиниками и пациентами.
 Все файлы шифруются на сервере, имеют временные защищённые ссылки и полный аудит действий.
@@ -61,7 +61,7 @@ SMDG — self-hosted решение для безопасного обмена �
 
 | Требование              | Минимальная версия           | Рекомендуется          |
 |-------------------------|------------------------------|------------------------|
-| Docker + Compose        | Docker 24+, Compose v2     | Docker Desktop 4.20+   |
+| Docker + Compose        | Docker 24+, Compose v2       | Docker Desktop 4.20+   |
 | Python                  | 3.10+                        | 3.12.x                 |
 | ОЗУ                     | 4 ГБ                         | 8 ГБ+                  |
 | CPU                     | 2 ядра                       | 4+ ядра                |
@@ -114,6 +114,21 @@ python scripts/migrate_to_s3.py --delete-local
 
 ---
 
+## Типы развёртывания (Feature Flags)
+
+Один код собирается под несколько профилей через **`DEPLOYMENT_TYPE`** (`russia` | `intl` | `single` | `saas`): матрица фич в `app/core/feature_flags.py`, проверки в `GET /health/features` и CLI `python -m app.cli feature-info`.
+
+| Профиль  | Кратко                                                                                        |
+|----------|-----------------------------------------------------------------------------------------------|
+| `russia` | ФЗ-152: локальное хранилище, DICOM, обязательная 2FA в политике, аудит 3 года, задел под ГОСТ |
+| `intl`   | S3/MinIO, DICOM, GDPR/HIPAA-ориентированные фичи, 2FA                                         |
+| `single` | Один tenant, упрощённая админка,DICOM, 2FA, локальный диск по умолчанию                       |
+| `saas`   | Multi-tenant, биллинг/white-label в матрице, объектное хранилище, DICOM, 2FA                  |
+
+Подробнее: [DEPLOYMENT.md](DEPLOYMENT.md), список фич: [FEATURES.md](FEATURES.md).
+
+---
+
 ## 📁 Структура проекта
 
 ```
@@ -141,14 +156,14 @@ smdg/
 └── README.md
 ```
 
-| Файл | Назначение |
-|------|------------|
-| `app/main.py` | Lifespan, middleware, роутеры |
-| `app/core/config.py` | Настройки (Pydantic Settings) |
-| `app/core/audit_export.py` | Чтение логов, Excel/PDF/CSV экспорт |
-| `app/api/admin_audit_export.py` | `GET /api/admin/audit/export` |
-| `app/core/storage_backend.py` | Local / S3 |
-| `scripts/migrate_to_s3.py` | Миграция в объектное хранилище |
+| Файл                            | Назначение                          |
+|---------------------------------|-------------------------------------|
+| `app/main.py`                   | Lifespan, middleware, роутеры       |
+| `app/core/config.py`            | Настройки (Pydantic Settings)       |
+| `app/core/audit_export.py`      | Чтение логов, Excel/PDF/CSV экспорт |
+| `app/api/admin_audit_export.py` | `GET /api/admin/audit/export`       |
+| `app/core/storage_backend.py`   | Local / S3                          |
+| `scripts/migrate_to_s3.py`      | Миграция в объектное хранилище      |
 
 ---
 
@@ -162,30 +177,30 @@ smdg/
 
 ## 📄 Документация
 
-| Документ | Описание |
-|----------|----------|
-| [docs/API_GUIDE.md](docs/API_GUIDE.md) | API: аутентификация, лимиты, DICOM, **экспорт аудита** |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура, ERD, диаграммы |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Развёртывание, зависимости экспорта аудита |
-| [docs/DICOM_VIEWER.md](docs/DICOM_VIEWER.md) | DICOM Viewer |
-| [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md) | Multi-tenancy |
-| [docs/CHANGELOG.md](docs/CHANGELOG.md) | История версий |
-| [docs/SECURITY.md](docs/SECURITY.md) | Безопасность |
-| [docs/TESTING.md](docs/TESTING.md) | Стратегия тестирования |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Участие в проекте |
-| [docs/COMPLIANCE_TEMPLATE.md](docs/COMPLIANCE_TEMPLATE.md) | Шаблон соответствия ФЗ-152 / GDPR |
+| Документ                                                   | Описание                                               |
+|------------------------------------------------------------|--------------------------------------------------------|
+| [docs/API_GUIDE.md](docs/API_GUIDE.md)                     | API: аутентификация, лимиты, DICOM, **экспорт аудита** |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)               | Архитектура, ERD, диаграммы                            |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                   | Развёртывание, зависимости экспорта аудита             |
+| [docs/DICOM_VIEWER.md](docs/DICOM_VIEWER.md)               | DICOM Viewer                                           |
+| [docs/MULTI_TENANCY.md](docs/MULTI_TENANCY.md)             | Multi-tenancy                                          |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md)                     | История версий                                         |
+| [docs/SECURITY.md](docs/SECURITY.md)                       | Безопасность                                           |
+| [docs/TESTING.md](docs/TESTING.md)                         | Стратегия тестирования                                 |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)               | Участие в проекте                                      |
+| [docs/COMPLIANCE_TEMPLATE.md](docs/COMPLIANCE_TEMPLATE.md) | Шаблон соответствия ФЗ-152 / GDPR                      |
 
 ---
 
 ## 📊 Интерфейсы
 
-| Интерфейс | URL |
-|-----------|-----|
-| Веб-UI | `/` |
-| Админ-панель | `/admin` |
-| Swagger | `/docs` |
-| Health | `/health` |
-| Метрики | `/metrics` |
+| Интерфейс    | URL        |
+|--------------|------------|
+| Веб-UI       | `/`        |
+| Админ-панель | `/admin`   |
+| Swagger      | `/docs`    |
+| Health       | `/health`  |
+| Метрики      | `/metrics` |
 
 ---
 

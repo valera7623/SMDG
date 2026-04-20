@@ -348,5 +348,36 @@ def rotate_keys(
         raise typer.Exit(code=1)
 
 
+@cli.command(name="feature-info")
+def feature_info():
+    """Показать профиль развёртывания и включённые фичи."""
+    from app.core.feature_flags import get_deployment_info
+    import json
+
+    info = get_deployment_info()
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+
+
+@cli.command(name="feature-check")
+def feature_check(
+    feature: str = typer.Option(..., "--feature", help="Имя фичи, например DICOM_VIEWER"),
+):
+    """Проверить, включена ли указанная фича для текущего DEPLOYMENT_TYPE."""
+    from app.core.feature_flags import Feature, is_enabled
+
+    try:
+        f = Feature[feature.strip().upper()]
+    except KeyError:
+        try:
+            f = Feature(feature.strip().lower())
+        except ValueError:
+            print(f"Неизвестная фича: {feature}")
+            raise typer.Exit(code=2)
+
+    ok = is_enabled(f)
+    print(f"{f.value}: {'enabled' if ok else 'disabled'}")
+    raise typer.Exit(code=0 if ok else 1)
+
+
 if __name__ == "__main__":
     cli()

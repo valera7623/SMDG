@@ -1,0 +1,15 @@
+# Overlay для профиля Russia (ФЗ-152): локальное хранилище, без MinIO/S3 API.
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.russia.yml up -d
+services:
+  smdg:
+    environment:
+      DEPLOYMENT_TYPE: russia
+      S3_ENABLED: "false"
+      S3_ENDPOINT_URL: ""
+      S3_ACCESS_KEY: ""
+      S3_SECRET_KEY: ""
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G

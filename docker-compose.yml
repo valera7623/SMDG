@@ -57,6 +57,9 @@ services:
 
       DEV_MODE: "${DEV_MODE:-true}"
 
+      # Профиль развёртывания: intl = международный (S3 + MinIO), как прежний docker-стек
+      DEPLOYMENT_TYPE: "${DEPLOYMENT_TYPE:-intl}"
+
       REDIS_URL: "redis://redis:6379/0"
 
       # S3 / MinIO Configuration

@@ -1,0 +1,19 @@
+# Overlay: международный профиль (S3/MinIO, GDPR-ориентированные флаги по умолчанию).
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.intl.yml up -d
+services:
+  smdg:
+    environment:
+      DEPLOYMENT_TYPE: intl
+      S3_ENABLED: "${S3_ENABLED:-true}"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 3G
+
+  minio:
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G

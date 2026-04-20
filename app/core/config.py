@@ -1,9 +1,12 @@
 # app/core/config.py
 import os
 from pathlib import Path
-from pydantic import Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+
+from pydantic import Field, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.core.feature_flags import DeploymentType, Feature, is_enabled
 
 
 def read_secret(secret_name: str, env_var: str = None, default: str = None) -> str:
@@ -108,6 +111,12 @@ class Settings(BaseSettings):
     debug: bool = False
     dev_mode: bool = False
 
+    # Профиль развёртывания (см. docs/DEPLOYMENT.md, app/core/feature_flags.py)
+    deployment_type: DeploymentType = Field(
+        default=DeploymentType.SINGLE_TENANT,
+        description="Тип развёртывания: russia | intl | single | saas",
+    )
+
     # Multi-tenant: поддомен резервного tenant при Host без поддомена (см. resolve_tenant_by_host)
     tenant_default_subdomain: str = "default"
     # Если true — для Host localhost / 127.0.0.1 / ::1 без поддомена подставляется tenant_default_subdomain (удобно для https://localhost)
@@ -157,6 +166,25 @@ class Settings(BaseSettings):
     s3_use_ssl: bool = False
     s3_enabled: bool = False
 
+    @model_validator(mode="after")
+    def validate_deployment_consistency(self) -> "Settings":
+        """
+        Согласованность DEPLOYMENT_TYPE с критичными флагами.
+        Не ломает существующие .env: жёстко проверяем только obviously неверные пары.
+        """
+        if self.deployment_type == DeploymentType.RUSSIA and self.s3_enabled:
+            raise ValueError(
+                "Для deployment_type=RUSSIA требуется локальное хранилище: "
+                "установите S3_ENABLED=false"
+            )
+        if self.deployment_type == DeploymentType.SAAS and not self.s3_enabled:
+            # SaaS-профиль предполагает объектное хранилище; допускаем только явную конфигурацию S3.
+            if not self.dev_mode:
+                raise ValueError(
+                    "Для deployment_type=SAAS включите S3 (S3_ENABLED=true и учётные данные endpoint/key)."
+                )
+        return self
+
     @property
     def is_s3_enabled(self) -> bool:
         """Проверяет, включён ли S3 режим."""
@@ -176,6 +204,19 @@ class Settings(BaseSettings):
     )
     # Префикс имени скачиваемого файла (без расширения)
     audit_export_download_prefix: str = "smdg_audit"
+
+    @property
+    def audit_retention_days(self) -> int:
+        """Срок хранения записей аудита (календарные дни) по профилю развёртывания."""
+        return 1095 if is_enabled(Feature.AUDIT_3_YEARS) else 365
+
+    @property
+    def billing_enabled(self) -> bool:
+        return is_enabled(Feature.BILLING)
+
+    @property
+    def white_label_enabled(self) -> bool:
+        return is_enabled(Feature.WHITE_LABEL)
 
 
 settings = Settings()

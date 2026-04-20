@@ -27,7 +27,7 @@
             <div id="cleanupStats"></div>
         </section>
 
-        <section class="section">
+        <section id="admin-advanced-wrap" class="section">
             <h2>👥 Управление пользователями</h2>
             <div class="controls">
                 <a href="/admin/users" class="btn-primary">📋 Перейти к управлению пользователями</a>
@@ -40,7 +40,7 @@
             <div id="statsInfo"></div>
         </section>
 
-        <section class="section danger">
+        <section id="admin-danger-wrap" class="section danger">
             <h2>⚠️ Опасные операции</h2>
             <div class="danger-zone">
                 <p><strong>Полная очистка системы:</strong></p>
@@ -51,6 +51,19 @@
             </div>
         </section>
     </div>
+    <script>
+      (async function adminSimpleMode() {
+        try {
+          const r = await fetch('/health/deployment');
+          if (!r.ok) return;
+          const d = await r.json();
+          if (d.simple_admin) {
+            document.getElementById('admin-advanced-wrap')?.setAttribute('hidden', 'hidden');
+            document.getElementById('admin-danger-wrap')?.setAttribute('hidden', 'hidden');
+          }
+        } catch (e) { /* offline */ }
+      })();
+    </script>
 </body>
 
 </html>

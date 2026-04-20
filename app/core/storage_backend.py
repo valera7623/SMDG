@@ -559,6 +559,43 @@ class S3StorageBackend(StorageBackend):
             self._client_context = None
 
 
+def get_storage_backend(
+    *,
+    local_base_dir: Path,
+    s3_bucket: str | None = None,
+) -> StorageBackend:
+    """
+    Выбор бэкенда хранилища по feature flags и настройкам.
+
+    Для профиля ``russia`` всегда локальное хранилище (ФЗ-152).
+    Обратная совместимость: если в окружении включён S3 с валидными учётными данными,
+    используется S3 даже при профиле ``single`` (типичные существующие установки).
+    """
+    from app.core.config import settings
+    from app.core.feature_flags import DeploymentType, Feature, is_enabled
+
+    bucket = s3_bucket or settings.s3_bucket_encrypted
+
+    if settings.deployment_type == DeploymentType.RUSSIA:
+        return LocalStorageBackend(base_dir=local_base_dir)
+
+    prefer_s3 = is_enabled(Feature.S3_STORAGE) and settings.is_s3_enabled
+    if not prefer_s3 and settings.s3_enabled and settings.is_s3_enabled:
+        prefer_s3 = True
+
+    if prefer_s3 and settings.s3_endpoint_url and settings.s3_access_key and settings.s3_secret_key:
+        return S3StorageBackend(
+            endpoint_url=settings.s3_endpoint_url,
+            access_key=settings.s3_access_key,
+            secret_key=settings.s3_secret_key,
+            bucket=bucket,
+            region=settings.s3_region,
+            use_ssl=settings.s3_use_ssl,
+        )
+
+    return LocalStorageBackend(base_dir=local_base_dir)
+
+
 class StorageFactory:
     """
     Фабрика для создания и выбора бэкенда хранилища.

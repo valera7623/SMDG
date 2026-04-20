@@ -1,4 +1,4 @@
-# app/audit/audit.py
+# app/core/audit.py
 import json
 import csv
 import zipfile
@@ -15,6 +15,9 @@ class AuditLogger:
 
     - JSON-логи по дням (audit_YYYY-MM-DD.log)
     - CSV-лог с автоматической ротацией и архивацией
+
+    Политика хранения по умолчанию — ``settings.audit_retention_days``
+    (1095 дней для профиля с ``AUDIT_3_YEARS``, иначе 365).
     """
 
     MAX_CSV_SIZE = 10 * 1024 * 1024  # 10 МБ
@@ -30,6 +33,12 @@ class AuditLogger:
         # CSV-лог с ротацией
         self.csv_log = self.log_dir / "audit.csv"
         self._init_csv()
+
+    @property
+    def retention_days(self) -> int:
+        from app.core.config import settings
+
+        return settings.audit_retention_days
 
     def _init_csv(self) -> None:
         """Создаёт CSV-файл с заголовками, если его ещё нет."""

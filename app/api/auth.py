@@ -16,6 +16,7 @@ from app.core.security import verify_password, get_password_hash
 from app.core import audit_logger
 from app.core.rate_limiter import limiter, get_remote_address
 from app.core.tenant import require_tenant, assert_tenant_access
+from app.core.feature_flags import Feature, is_enabled, is_2fa_required_for_user
 from datetime import timedelta
 import pyotp
 
@@ -164,6 +165,12 @@ async def login(
         print("[LOGIN] ❌ Неверный пароль")
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
+    if is_enabled(Feature.MANDATORY_2FA) and not user.otp_secret:
+        raise HTTPException(
+            status_code=403,
+            detail="Для данного развёртывания требуется 2FA. Настройте секрет через администратора или CLI",
+        )
+
     # === ОБРАБОТКА 2FA ===
     if user.otp_secret:
         if not otp_code:
@@ -179,6 +186,16 @@ async def login(
         print("[LOGIN] ✅ Код 2FA верный")
     else:
         print("[LOGIN] 2FA отключена — вход без кода")
+
+
+    # === ПРОВЕРКА: ДОЛЖНА ЛИ БЫТЬ 2FA ВКЛЮЧЕНА ===
+    if is_2fa_required_for_user(user.role) and not user.otp_secret:
+        # Требуется 2FA, но она не настроена
+        raise HTTPException(
+            status_code=400,
+            detail="2FA обязательна. Пожалуйста, настройте двухфакторную аутентификацию"
+        )
+        
 
     # Создание токена
     access_token = create_access_token(subject=user.username, role=user.role, tenant_id=user.tenant_id)
@@ -307,6 +324,12 @@ async def disable_2fa(
 
     if not verify_otp_code(user.otp_secret, otp_code):
         raise HTTPException(status_code=401, detail="Неверный код 2FA")
+
+    if is_enabled(Feature.MANDATORY_2FA):
+        raise HTTPException(
+            status_code=403,
+            detail="Отключение 2FA запрещено политикой развёртывания",
+        )
 
     await db.execute(update(User).where(User.id == user.id).values(otp_secret=None))
     await db.commit()

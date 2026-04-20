@@ -1,5 +1,8 @@
 FROM python:3.10
 
+ARG DEPLOYMENT_TYPE=single
+ENV DEPLOYMENT_TYPE=${DEPLOYMENT_TYPE}
+
 WORKDIR /app
 
 # Устанавливаем минимально необходимое + curl для healthcheck
@@ -21,6 +24,14 @@ RUN pip install --no-cache-dir poetry && \
 RUN pip install --no-cache-dir "setuptools<81"
 
 COPY . .
+
+# Шаблон окружения под выбранный профиль (docker build --build-arg DEPLOYMENT_TYPE=russia)
+RUN set -eux; \
+    if [ -f ".env.${DEPLOYMENT_TYPE}.example" ]; then \
+      cp ".env.${DEPLOYMENT_TYPE}.example" /app/.env; \
+    elif [ -f ".env.single.example" ]; then \
+      cp ".env.single.example" /app/.env; \
+    fi
 
 # Создаём директории для данных
 RUN mkdir -p /app/uploads /app/encrypted /app/decrypted /app/keys /app/certs /app/scripts

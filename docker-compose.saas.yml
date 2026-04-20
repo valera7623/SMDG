@@ -1,0 +1,23 @@
+# Overlay: SaaS (multi-tenant, биллинг). Требуются S3 и полноценные секреты.
+# Запуск: docker compose -f docker-compose.yml -f docker-compose.saas.yml up -d
+services:
+  smdg:
+    environment:
+      DEPLOYMENT_TYPE: saas
+      S3_ENABLED: "${S3_ENABLED:-true}"
+      DEV_MODE: "${DEV_MODE:-false}"
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4G
+
+  # Заглушка для приёма Stripe webhooks (замените на stripe listen / свой прокси)
+  stripe-webhook:
+    image: alpine:3.20
+    command: ["sleep", "infinity"]
+    restart: "no"
+    profiles:
+      - billing
+    networks:
+      - backend

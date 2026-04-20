@@ -6,6 +6,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from limits.typing import RedisClient
 from app.core.auth import get_current_user, TokenData
 from app.core.config import settings
+from app.core.feature_flags import get_deployment_info
 from app.core.rate_limiter import limiter, check_redis_connection
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler, Limiter
@@ -31,6 +32,7 @@ from app.core.tenant import resolve_tenant_from_request
 
 from app.core.middleware import AuditMiddleware
 from app.api.auth import router as auth_router
+from app.api.health import router as health_router
 from app.api.admin_users import router as admin_users_router
 from app.api.admin_audit_export import router as admin_audit_export_router
 from app.api.delete_user import router as delete_user_router
@@ -354,6 +356,7 @@ app.include_router(admin_users_router, prefix="/api")
 app.include_router(admin_audit_export_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")
 app.include_router(dicom.router, prefix="/api")
+app.include_router(health_router)
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
@@ -480,10 +483,12 @@ async def admin():
 @app.get("/health")
 async def health_check():
     """Проверка работоспособности системы"""
+    dep = get_deployment_info()
     return {
         "status": "healthy",
         "service": "smdg",
-        "version": "0.1.0",
+        "version": "3.1.0",
+        "deployment_type": dep["deployment_type"],
         "features": {
             "encryption": True,
             "cleanup": True,

@@ -332,5 +332,33 @@ class CryptoManager:
         await self.decrypt(encrypted_path, private_key_path, output_path)
 
 
-# Глобальный экземпляр менеджера
-crypto_manager = CryptoManager()
+class _CryptoBackendProxy:
+    """Ленивая загрузка реализации age vs ГОСТ после инициализации настроек."""
+
+    __slots__ = ("_impl",)
+
+    def __init__(self) -> None:
+        self._impl: CryptoManager | None = None
+
+    def _ensure(self) -> CryptoManager:
+        if self._impl is None:
+            from app.core.feature_flags import Feature, is_enabled
+
+            if is_enabled(Feature.GOST_CRYPTO):
+                from app.crypto.gost import GOSTCrypto
+
+                self._impl = GOSTCrypto()
+            else:
+                self._impl = CryptoManager()
+        return self._impl
+
+    def __getattr__(self, name: str):
+        return getattr(self._ensure(), name)
+
+
+crypto_manager = _CryptoBackendProxy()
+
+
+def get_crypto_backend() -> CryptoManager:
+    """Текущий криптобэкенд в соответствии с DEPLOYMENT_TYPE и FEATURE_MATRIX."""
+    return crypto_manager._ensure()
