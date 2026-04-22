@@ -9,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from app.core.storage_backend import StorageBackend, LocalStorageBackend
 from app.core.config import settings
 from app.core.timeout import TimeoutError, run_with_timeout
+from app.services.dead_letter_service import dlq
 
 
 class FileCleanupManager:
@@ -116,9 +117,23 @@ class FileCleanupManager:
                 operation="cleanup_collect_expired",
             )
         except TimeoutError as e:
+            await dlq.send_to_dlq(
+                queue_name="cleanup",
+                payload={"phase": "collect_expired"},
+                error=e,
+                max_retries=3,
+                metadata={"source": "cleanup_manager"},
+            )
             self.logger.error("Cleanup task timed out: %s", e)
             return {"total": 0, "deleted": 0, "errors": [str(e)]}
         except Exception as e:
+            await dlq.send_to_dlq(
+                queue_name="cleanup",
+                payload={"phase": "collect_expired"},
+                error=e,
+                max_retries=3,
+                metadata={"source": "cleanup_manager"},
+            )
             return {"total": 0, "deleted": 0, "errors": [str(e)]}
 
         deleted_count = 0
@@ -135,6 +150,16 @@ class FileCleanupManager:
             except Exception as e:
                 errors.append(f"Batch delete error: {e}")
                 self.logger.error(f"Ошибка пакетного удаления: {e}")
+                try:
+                    await dlq.send_to_dlq(
+                        queue_name="cleanup",
+                        payload={"phase": "delete_many", "keys": batch},
+                        error=e,
+                        max_retries=3,
+                        metadata={"batch_size": len(batch), "source": "cleanup_manager"},
+                    )
+                except Exception:
+                    self.logger.exception("Не удалось отправить cleanup ошибку в DLQ")
 
             await asyncio.sleep(0.05)  # небольшая пауза между батчами
 
@@ -144,6 +169,7 @@ class FileCleanupManager:
             "deleted": deleted_count,
             "errors": errors,
         }
+
 
     async def get_cleanup_stats(self) -> dict:
         """Статистика по файлам, которые будут удалены при следующей очистке."""
@@ -158,3 +184,22 @@ class FileCleanupManager:
             "to_delete": len(files),
             "files": files,
         }
+
+
+async def _cleanup_dlq_handler(payload: dict) -> bool:
+    """Replay handler for cleanup DLQ messages."""
+    phase = payload.get("phase")
+    if phase != "delete_many":
+        return False
+
+    keys = payload.get("keys") or []
+    if not isinstance(keys, list) or not keys:
+        return False
+
+    from app.core import cleanup_manager
+
+    result = await cleanup_manager.storage_backend.delete_many(keys)
+    return not bool(result.get("errors"))
+
+
+dlq.register_handler("cleanup", _cleanup_dlq_handler)

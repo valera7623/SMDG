@@ -160,6 +160,61 @@ class Settings(BaseSettings):
     # === Webhook ===
     WEBHOOK_CALL_TIMEOUT_SECONDS: int = 10
 
+    # === Bulkhead настройки ===
+    BULKHEAD_ENABLED: bool = True
+
+    # API Bulkhead
+    API_BULKHEAD_MAX_CONCURRENT: int = 100
+    API_BULKHEAD_QUEUE_SIZE: int = 200
+    API_BULKHEAD_TIMEOUT: int = 30
+
+    # DICOM Bulkhead
+    DICOM_BULKHEAD_MAX_CONCURRENT: int = 5
+    DICOM_BULKHEAD_QUEUE_SIZE: int = 20
+    DICOM_BULKHEAD_TIMEOUT: int = 60
+
+    # Upload Bulkhead
+    UPLOAD_BULKHEAD_MAX_CONCURRENT: int = 10
+    UPLOAD_BULKHEAD_QUEUE_SIZE: int = 50
+    UPLOAD_BULKHEAD_TIMEOUT: int = 120
+
+    # Download Bulkhead
+    DOWNLOAD_BULKHEAD_MAX_CONCURRENT: int = 20
+    DOWNLOAD_BULKHEAD_QUEUE_SIZE: int = 100
+    DOWNLOAD_BULKHEAD_TIMEOUT: int = 60
+
+    # ClamAV Bulkhead
+    CLAMAV_BULKHEAD_MAX_CONCURRENT: int = 3
+    CLAMAV_BULKHEAD_QUEUE_SIZE: int = 10
+    CLAMAV_BULKHEAD_TIMEOUT: int = 30
+
+    # S3 Bulkhead
+    S3_BULKHEAD_MAX_CONCURRENT: int = 10
+    S3_BULKHEAD_QUEUE_SIZE: int = 50
+    S3_BULKHEAD_TIMEOUT: int = 60
+
+    # Audit Export Bulkhead
+    AUDIT_EXPORT_BULKHEAD_MAX_CONCURRENT: int = 2
+    AUDIT_EXPORT_BULKHEAD_QUEUE_SIZE: int = 5
+    AUDIT_EXPORT_BULKHEAD_TIMEOUT: int = 120
+
+    # Webhook Bulkhead
+    WEBHOOK_BULKHEAD_MAX_CONCURRENT: int = 5
+    WEBHOOK_BULKHEAD_QUEUE_SIZE: int = 100
+    WEBHOOK_BULKHEAD_TIMEOUT: int = 10
+
+    # Cleanup Bulkhead
+    CLEANUP_BULKHEAD_MAX_CONCURRENT: int = 1
+    CLEANUP_BULKHEAD_TIMEOUT: int = 300
+
+    # === Dead Letter Queue ===
+    DLQ_ENABLED: bool = True
+    DLQ_MAX_RETRIES: int = 5
+    DLQ_RETRY_DELAY_SECONDS: int = 60
+    DLQ_RETRY_BACKOFF_MULTIPLIER: float = 2.0
+    DLQ_CLEANUP_DAYS: int = 30
+    DLQ_MAX_MESSAGE_SIZE_BYTES: int = 1024 * 1024
+
     # Максимальный размер файла
     MAX_UPLOAD_SIZE_MB: int = 600
 

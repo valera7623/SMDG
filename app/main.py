@@ -20,7 +20,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.openapi.utils import get_openapi
-from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test
+from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test, bulkhead
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core import encrypted_storage, cleanup_storage
 from app.core.webhook import webhook_dispatcher
@@ -34,6 +34,7 @@ from app.core.tenant import resolve_tenant_from_request
 from app.core.middleware import (
     AuditMiddleware,
     ActiveRequestsMiddleware,
+    BulkheadMiddleware,
     TracingMiddleware,
     SLOMiddleware,
     TimeoutMiddleware,
@@ -50,10 +51,14 @@ from app.api.tracing import router as tracing_router
 from app.api.alert_webhook import router as alert_webhook_router
 from app.api.slo import router as slo_router
 from app.api.circuit_breaker import router as circuit_breaker_router
+from app.api.dead_letter import router as dead_letter_router
 from app.core.health_collector import collect_health_metrics
 from app.core.log_utils import ThrottledErrorLogger
 from app.core.metrics import smdg_version_info
 from app.core.timeout import TimeoutError
+from app.core.bulkhead import BulkheadRejectedError, BulkheadTimeoutError, initialize_bulkheads
+from app.services.dead_letter_service import dlq
+from app.services import email_service as _email_service  # noqa: F401
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core import cleanup_manager
 import asyncio
@@ -294,6 +299,10 @@ async def lifespan(app: FastAPI):
     app.state.background_tasks.append(webhook_task)
     logger.info("✅ Webhook retry scheduler запущен")
 
+    # DLQ worker
+    dlq.start()
+    logger.info("✅ DLQ worker запущен")
+
     # Health collector — фоновый сбор метрик для алертинга. Обновляет
     # smdg_*_up gauges и бизнес-метрики. Работает полностью изолированно:
     # падение здесь не повлияет на hot-path обработки запросов.
@@ -347,6 +356,12 @@ async def lifespan(app: FastAPI):
     except Exception as _exc:  # pragma: no cover — не критично для старта
         logger.warning("Не удалось предрегистрировать Circuit Breakers: %s", _exc)
 
+    try:
+        initialize_bulkheads()
+        logger.info("✅ Bulkheads предварительно зарегистрированы")
+    except Exception as _exc:  # pragma: no cover — не критично для старта
+        logger.warning("Не удалось предрегистрировать Bulkheads: %s", _exc)
+
     logger.info("✅ Приложение готово принимать трафик")
 
     # ──────────────────────────────────────────────────────────────
@@ -384,6 +399,13 @@ async def lifespan(app: FastAPI):
         for task, result in zip(app.state.background_tasks, results):
             if isinstance(result, Exception) and not isinstance(result, asyncio.CancelledError):
                 logger.warning("⚠️ Фоновая задача %s завершилась с ошибкой: %s", task.get_name(), result)
+
+    # Шаг 3: APScheduler cleanup.
+    try:
+        await dlq.stop()
+        logger.info("🔒 DLQ worker остановлен")
+    except Exception as e:
+        logger.warning("⚠️ Ошибка остановки DLQ worker: %s", e)
 
     # Шаг 3: APScheduler cleanup.
     try:
@@ -623,6 +645,7 @@ app.add_middleware(SLOMiddleware)
 # а TracingMiddleware работает внутри серверного span от FastAPIInstrumentor.
 app.add_middleware(TracingMiddleware)
 app.add_middleware(TimeoutMiddleware)
+app.add_middleware(BulkheadMiddleware)
 
 # ────────────────────────────────────────────────────────────────
 # Graceful shutdown: отслеживание активных запросов
@@ -678,6 +701,20 @@ async def timeout_exception_handler(request: Request, exc: TimeoutError):
     return JSONResponse(status_code=504, content={"detail": str(exc)})
 
 
+@app.exception_handler(BulkheadRejectedError)
+async def bulkhead_rejected_exception_handler(request: Request, exc: BulkheadRejectedError):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": str(exc)},
+        headers={"Retry-After": "5"},
+    )
+
+
+@app.exception_handler(BulkheadTimeoutError)
+async def bulkhead_timeout_exception_handler(request: Request, exc: BulkheadTimeoutError):
+    return JSONResponse(status_code=504, content={"detail": str(exc)})
+
+
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -700,6 +737,8 @@ app.include_router(health_router)
 app.include_router(alert_webhook_router)
 app.include_router(slo_router)
 app.include_router(circuit_breaker_router)
+app.include_router(dead_letter_router)
+app.include_router(bulkhead.router)
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
@@ -941,6 +980,23 @@ async def admin_users():
             <body>
                 <h1>Управление пользователями</h1>
                 <p>Ошибка: не найден файл admin_users.html</p>
+            </body>
+        </html>
+        """
+
+
+@app.get("/admin/dlq", response_class=HTMLResponse)
+async def admin_dlq():
+    """Страница управления DLQ."""
+    try:
+        with open("static/html/admin_dlq.html", "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return """
+        <html>
+            <body>
+                <h1>Управление DLQ</h1>
+                <p>Ошибка: не найден файл admin_dlq.html</p>
             </body>
         </html>
         """

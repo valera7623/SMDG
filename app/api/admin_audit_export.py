@@ -19,6 +19,8 @@ from app.core.auth import get_current_admin
 from app.core.auth_utils import TokenData
 from app.core.config import settings
 from app.core.timeout import timeout
+from app.core.bulkhead import bulkhead
+from app.services.dead_letter_service import dlq
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,39 @@ class AuditExportFormat(str, Enum):
     excel = "excel"
     pdf = "pdf"
     csv = "csv"
+
+
+async def _audit_dlq_handler(payload: dict) -> bool:
+    """Replay handler for audit export failures."""
+    operation = payload.get("operation")
+    start_raw = payload.get("start_date")
+    end_raw = payload.get("end_date")
+    if not operation or not start_raw or not end_raw:
+        return False
+
+    start_date = date.fromisoformat(start_raw)
+    end_date = date.fromisoformat(end_raw)
+    user_id = payload.get("user_id")
+    event_type = payload.get("event_type")
+    rows, stats = await load_filtered_audit_entries(settings, start_date, end_date, user_id, event_type)
+    if not rows:
+        return False
+
+    if operation == "load_filtered_audit_entries":
+        return True
+
+    export_format = payload.get("format")
+    if export_format == AuditExportFormat.csv.value:
+        # Проверяем генерацию CSV чанков.
+        next(iter(iter_csv_chunks(rows)))
+        return True
+    if export_format == AuditExportFormat.excel.value:
+        build_excel_bytes(rows, stats, start_date, end_date, user_id, event_type)
+        return True
+    if export_format == AuditExportFormat.pdf.value:
+        build_pdf_bytes(settings, rows, stats, start_date, end_date, user_id, event_type)
+        return True
+    return False
 
 
 def _period_filename(start: date, end: date, ext: str) -> str:
@@ -46,6 +81,12 @@ def _validate_dates_or_400(start_date: date, end_date: date) -> None:
 
 @router.get("/export")
 @timeout(120.0, "Audit export timed out", service="api", operation="export_audit_logs")
+@bulkhead(
+    "audit_export",
+    max_concurrent=settings.AUDIT_EXPORT_BULKHEAD_MAX_CONCURRENT,
+    queue_size=settings.AUDIT_EXPORT_BULKHEAD_QUEUE_SIZE,
+    timeout_seconds=settings.AUDIT_EXPORT_BULKHEAD_TIMEOUT,
+)
 async def export_audit_logs(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     export_format: AuditExportFormat = Query(..., alias="format", description="Формат: excel, pdf, csv"),
@@ -86,7 +127,20 @@ async def export_audit_logs(
         rows, stats = await load_filtered_audit_entries(
             settings, start_date, end_date, user_id, event_type
         )
-    except Exception:
+    except Exception as exc:
+        await dlq.send_to_dlq(
+            queue_name="audit",
+            payload={
+                "operation": "load_filtered_audit_entries",
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "user_id": user_id,
+                "event_type": event_type,
+            },
+            error=exc,
+            max_retries=2,
+            metadata={"source": "admin_audit_export"},
+        )
         logger.exception("Ошибка чтения журналов аудита")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -136,9 +190,26 @@ async def export_audit_logs(
         )
     except HTTPException:
         raise
-    except Exception:
+    except Exception as exc:
+        await dlq.send_to_dlq(
+            queue_name="audit",
+            payload={
+                "operation": "generate_export",
+                "format": export_format.value,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "user_id": user_id,
+                "event_type": event_type,
+            },
+            error=exc,
+            max_retries=2,
+            metadata={"source": "admin_audit_export"},
+        )
         logger.exception("Ошибка генерации отчёта аудита (%s)", export_format.value)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка генерации отчёта",
         )
+
+
+dlq.register_handler("audit", _audit_dlq_handler)

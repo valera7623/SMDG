@@ -38,6 +38,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
 from app.core.timeout import TimeoutError, timeout
+from app.core.bulkhead import bulkhead
 from app.services.clamav_service import scan_file as clamav_scan_file
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,12 @@ def validate_file_safety(
 @router.post("/upload")
 @limiter.limit("10/minute")
 @timeout(60.0, "File upload timed out after 60 seconds", service="api", operation="upload_file")
+@bulkhead(
+    "upload",
+    max_concurrent=settings.UPLOAD_BULKHEAD_MAX_CONCURRENT,
+    queue_size=settings.UPLOAD_BULKHEAD_QUEUE_SIZE,
+    timeout_seconds=settings.UPLOAD_BULKHEAD_TIMEOUT,
+)
 async def upload_file(
     request: Request,
     file: UploadFile = Form(...),

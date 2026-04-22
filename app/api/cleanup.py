@@ -12,6 +12,8 @@ from app.core.constants import ENCRYPTED_DIR
 from app.core.database import get_db
 from app.core.tenant import require_tenant, assert_tenant_access
 import logging
+from app.core.bulkhead import bulkhead
+from app.core.config import settings
 
 router = APIRouter(prefix="/cleanup", tags=["Cleanup"])
 logger = logging.getLogger(__name__)
@@ -127,6 +129,11 @@ async def list_temp_files(
 
 
 @router.post("/force")
+@bulkhead(
+    "cleanup",
+    max_concurrent=settings.CLEANUP_BULKHEAD_MAX_CONCURRENT,
+    timeout_seconds=settings.CLEANUP_BULKHEAD_TIMEOUT,
+)
 async def force_cleanup(
     request: Request,
     current_user: TokenData = Depends(get_current_admin)

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from app.core.config import settings
 from app.core.timeout import run_with_timeout
+from app.core.bulkhead import get_bulkhead
 
 logger = logging.getLogger(__name__)
 
@@ -346,6 +347,7 @@ def _s3_protected(method):
     @wraps(method)
     async def wrapper(self, *args, **kwargs):
         cb = _s3_circuit_breaker()
+        bulkhead = get_bulkhead("s3")
         timeout_seconds = settings.S3_UPLOAD_TIMEOUT_SECONDS
         method_name = method.__name__
         if method_name in {"download", "download_bytes"}:
@@ -353,7 +355,8 @@ def _s3_protected(method):
         elif method_name in {"exists", "stat", "list_objects", "get_storage_stats", "delete", "delete_many"}:
             timeout_seconds = settings.S3_CONNECTION_TIMEOUT_SECONDS
 
-        return await run_with_timeout(
+        return await bulkhead.execute(
+            run_with_timeout,
             cb.call(method, self, *args, **kwargs),
             timeout_seconds=float(timeout_seconds),
             error_message=f"S3 {method_name} timeout",

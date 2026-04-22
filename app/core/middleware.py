@@ -20,6 +20,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core import audit_logger
+from app.core.bulkhead import BulkheadRejectedError, BulkheadTimeoutError, get_bulkhead
 from app.core.config import settings
 from app.core.slo_metrics import (
     slo_latency_bucket,
@@ -198,6 +199,47 @@ class TimeoutMiddleware:
             await response(scope, receive, send)
 
 
+class BulkheadMiddleware:
+    """ASGI middleware for API-level bulkhead isolation."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        if not settings.BULKHEAD_ENABLED:
+            await self.app(scope, receive, send)
+            return
+
+        bulkhead = get_bulkhead("api")
+        try:
+            await bulkhead.execute(self.app, scope, receive, send)
+        except BulkheadRejectedError:
+            response = JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "Service is overloaded. Please try again later.",
+                    "retry_after": 5,
+                },
+                headers={"Retry-After": "5"},
+            )
+            await response(scope, receive, send)
+        except BulkheadTimeoutError:
+            response = JSONResponse(
+                status_code=504,
+                content={"detail": "Gateway timeout while waiting for API worker slot"},
+            )
+            await response(scope, receive, send)
+
+
 class TracingMiddleware:
     """ASGI-middleware, пробрасывающий ``X-Trace-Id`` в ответы клиентам.
 
@@ -339,6 +381,7 @@ __all__ = [
     "AuditMiddleware",
     "ActiveRequestsMiddleware",
     "TimeoutMiddleware",
+    "BulkheadMiddleware",
     "TracingMiddleware",
     "SLOMiddleware",
 ]

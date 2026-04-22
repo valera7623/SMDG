@@ -20,6 +20,8 @@ from app.models.file import File
 from app.models.file_link import FileLink
 from datetime import datetime, timezone
 from app.core.tenant import require_tenant
+from app.core.bulkhead import bulkhead
+from app.core.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -39,6 +41,12 @@ def delete_file_after_response(path: Path):
 
 @router.get("/download")
 @limiter.limit("10/minute")
+@bulkhead(
+    "download",
+    max_concurrent=settings.DOWNLOAD_BULKHEAD_MAX_CONCURRENT,
+    queue_size=settings.DOWNLOAD_BULKHEAD_QUEUE_SIZE,
+    timeout_seconds=settings.DOWNLOAD_BULKHEAD_TIMEOUT,
+)
 async def download_by_token(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -152,6 +160,12 @@ async def download_by_token(
 
 @router.post("/download")
 @limiter.limit("10/minute")
+@bulkhead(
+    "download",
+    max_concurrent=settings.DOWNLOAD_BULKHEAD_MAX_CONCURRENT,
+    queue_size=settings.DOWNLOAD_BULKHEAD_QUEUE_SIZE,
+    timeout_seconds=settings.DOWNLOAD_BULKHEAD_TIMEOUT,
+)
 async def download_file_post(
     request: Request,
     background_tasks: BackgroundTasks,

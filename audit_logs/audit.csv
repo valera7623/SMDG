@@ -50783,3 +50783,923 @@ DETAIL:  Key (id)=(9) is still referenced from table ""dicom_view_tokens"".
 2026-04-22T14:55:36.767339,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
 2026-04-22T14:55:37.141671,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
 2026-04-22T14:55:37.641585,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:15:41.875238,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:15:48.321025,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:15:52.200830,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:15:53.078552,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:16:03.326195,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:07.196142,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:08.074691,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:16:11.990111,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:16:18.322801,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:22.201626,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:23.076973,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:16:29.370895,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:16:33.322088,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:37.195429,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:38.077929,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:16:42.128878,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:16:48.322277,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:52.199667,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:16:53.079084,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:17:03.320913,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:07.198532,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:08.085491,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:17:12.248746,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:17:18.321528,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:22.197364,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:23.079136,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:17:29.410901,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:17:33.320877,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:37.196802,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:38.077006,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:17:42.359612,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:17:48.324881,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:52.681293,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:17:53.555696,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:18:03.799842,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:07.678616,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:08.554923,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:18:12.952476,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:18:18.800370,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:22.679279,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:23.554893,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:18:29.449286,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:18:33.801865,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:37.674259,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:38.555113,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:18:43.053938,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:18:48.801370,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:52.681420,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:18:53.553613,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:19:03.803116,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:07.678932,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:08.555032,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:19:13.158786,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:19:18.802462,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:22.680841,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:23.557590,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:19:29.359839,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:19:33.801211,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:37.677003,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:38.555663,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:19:43.260892,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:19:48.799205,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:52.678319,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:19:53.554290,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:20:03.800682,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:07.678480,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:08.556516,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:20:13.362225,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:20:18.802564,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:22.678412,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:23.554279,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:20:29.393033,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:20:33.804656,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:37.675436,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:38.558173,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:20:43.467804,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:20:48.802779,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:52.681513,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:20:53.556415,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:21:13.582184,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:21:43.684180,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:22:55.622669,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:22:55.658571,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:22:55.693675,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:23:01.484978,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:10.598329,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:23:10.657182,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:16.410626,GET /,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:16.489535,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:16.540903,GET /health,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:16.565739,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:23:25.610857,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-22T15:23:25.613086,POST /api/auth/login,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:25.629356,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:23:25.656481,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:23:25.659232,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:25.663802,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:25.803853,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:23:30.343339,GET /admin,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:30.400924,GET /health/deployment,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:30.466047,GET /api/health,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:23:30.477644,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:23:30.479743,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:31.480910,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:38.704727,GET /admin/dlq,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:38.806017,GET /favicon.ico,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:23:38.815677,GET /api/dlq/stats,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:38.843825,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:40.603291,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:23:40.654112,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:46.481251,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:48.865730,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:48.870080,GET /api/dlq/stats,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:49.969743,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:55.605436,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:23:55.653517,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:23:55.910469,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:23:58.952676,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:58.955548,GET /api/dlq/stats,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:23:59.340647,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:00.339612,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:01.481500,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:08.897218,GET /api/dlq/messages,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:08.902921,GET /api/dlq/stats,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:10.599984,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:24:10.653822,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:16.485490,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:18.309595,GET /admin,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:18.364079,GET /health/deployment,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:18.401440,GET /api/health,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:24:18.411675,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:24:18.413037,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:22.980250,GET /api/health,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:24:22.988587,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:24:22.990176,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:25.379201,GET /api/health,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:24:25.386818,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:24:25.388337,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:25.600267,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:24:25.652225,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:26.023741,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:24:27.908659,GET /api/health,,0,api,172.18.0.15,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:24:27.914985,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:24:27.916114,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:24:31.481293,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:40.601901,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:24:40.657210,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:46.482430,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:55.604319,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:24:55.655623,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:24:56.133725,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:25:01.482809,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:10.722919,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:25:10.736574,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:16.486039,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:16.633935,GET /,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:16.723546,GET /health,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:16.750700,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:25:16.751938,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:21.260247,GET /,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:21.318983,GET /health,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:21.343867,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:25:21.345130,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:25.602462,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:25:25.653792,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:26.243043,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:25:31.484861,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:40.602921,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:25:40.656426,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:46.482393,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:51.401294,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:25:51.402757,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:25:55.601324,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:25:55.652885,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:25:56.357114,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:26:01.482457,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:10.604347,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:26:10.655990,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:16.482601,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:21.419646,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:26:21.421260,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:26:25.599618,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:26:25.654153,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:26.457663,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:26:31.482996,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:40.602307,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:26:40.656761,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:46.483782,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:51.418266,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:26:51.419569,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:26:55.602773,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:26:55.655173,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:26:56.567232,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:27:01.481338,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:10.600704,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:27:10.655649,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:16.482472,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:21.453207,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:27:21.454739,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:27:25.605576,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:27:25.651866,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:26.672232,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:27:31.480784,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:40.599553,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:27:40.653421,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:46.481835,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:51.467961,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:27:51.469095,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:27:55.598909,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:27:55.651934,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:27:56.795751,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:28:01.481764,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:10.605656,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:28:10.656610,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:16.482631,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:21.479572,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:28:21.480681,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:28:25.599081,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:28:25.652672,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:26.890826,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:28:31.481298,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:40.608036,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:28:40.657878,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:46.481951,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:55.599956,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:28:55.652570,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:28:56.992765,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:29:01.483511,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:10.602529,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:29:10.658777,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:16.485291,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:25.602671,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:29:25.655853,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:27.100984,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:29:29.474945,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:29:29.476310,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:29:31.480191,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:40.602669,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:29:40.657076,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:46.484131,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:55.603016,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:29:55.654639,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:29:57.223945,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:30:01.482329,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:10.603387,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:30:10.657611,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:16.484365,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:25.602854,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:30:25.654784,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:27.331227,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:30:29.491505,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:30:29.492876,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:30:31.481905,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:40.602649,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:30:40.657652,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:46.483623,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:55.603750,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:30:55.654303,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:30:57.433613,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:31:01.486249,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:10.599947,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:31:10.654039,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:16.483307,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:25.603856,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:31:25.654083,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:27.548292,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:31:29.498162,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:31:29.499994,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:31:31.482743,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:40.603909,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:31:40.656673,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:46.483378,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:55.603899,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:31:55.657473,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:31:57.676234,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:32:01.481589,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:10.603265,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:32:10.657895,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:16.483537,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:25.614750,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:32:25.656954,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:27.782159,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:32:29.486130,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:32:29.487627,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:32:31.481485,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:40.602979,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:32:40.658240,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:46.484161,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:55.603841,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:32:55.655560,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:32:57.891578,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:33:01.483098,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:10.599724,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:33:10.654092,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:16.483865,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:25.605571,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:33:25.655977,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:28.004643,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:33:29.432256,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:33:29.433441,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:33:31.480567,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:40.602381,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:33:40.657044,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:46.483462,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:55.600783,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:33:55.650640,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:33:58.123365,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:34:01.483898,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:10.600723,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:34:10.659248,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:16.483058,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:25.604591,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:34:25.655355,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:28.241463,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:34:29.358649,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:34:29.359772,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:34:31.483471,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:40.604652,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:34:40.657977,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:46.484280,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:55.600429,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:34:55.651907,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:34:58.359882,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:35:01.483007,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:10.605134,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:35:10.659974,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:16.482631,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:25.602631,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:35:25.655057,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:28.480172,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:35:29.413498,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:35:29.414806,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:35:31.480428,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:40.602424,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:35:40.657200,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:46.483119,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:55.599695,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:35:55.651869,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:35:58.594260,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:36:01.482883,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:10.599861,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:36:10.652252,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:16.480563,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:25.602443,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:36:25.656303,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:28.693703,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:36:29.452702,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:36:29.453930,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:36:31.480625,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:40.603826,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:36:40.660544,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:46.482778,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:55.603182,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:36:55.655225,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:36:58.813850,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:37:01.480935,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:10.602208,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:37:10.657697,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:16.481571,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:25.602285,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:37:25.655219,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:28.911934,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:37:29.485463,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:37:29.486857,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:37:31.481489,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:40.600935,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:37:40.656291,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:46.482473,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:55.601865,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:37:55.654146,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:37:59.047876,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:38:01.483397,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:10.602931,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:38:10.655831,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:16.483309,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:25.602871,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:38:25.653685,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:29.153629,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:38:29.508967,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:38:29.510453,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:38:31.481836,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:40.602842,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:38:40.656059,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:46.480695,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:55.602442,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:38:55.663291,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:38:59.266012,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:39:01.482262,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:10.599999,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:39:10.657062,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:16.481916,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:25.600793,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:39:25.654035,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:29.373779,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:39:29.494970,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:39:29.496249,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:39:31.482442,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:40.602968,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:39:40.658092,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:46.481648,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:55.600878,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:39:55.656969,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:39:59.465659,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:40:01.487846,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:10.601783,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:40:10.657424,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:16.481718,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:25.599626,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:40:25.655752,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:29.456908,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:40:29.458285,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:40:29.602393,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:40:31.483038,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:40.603491,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:40:40.656063,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:46.480630,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:55.604379,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:40:55.658042,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:40:59.698458,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:41:01.481612,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:10.602366,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:41:10.657382,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:16.483878,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:25.606980,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:41:25.657196,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:29.368056,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:41:29.369135,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:41:29.810870,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:41:31.481781,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:40.602385,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:41:40.655953,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:46.481735,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:55.601822,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:41:55.653782,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:41:59.937294,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:42:01.486334,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:10.602623,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:42:10.657439,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:16.482468,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:25.599603,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:42:25.653429,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:29.408373,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:42:29.409730,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:42:30.049067,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:42:31.482415,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:40.603520,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:42:40.657615,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:46.481984,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:42:55.603683,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:42:55.658365,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:00.137995,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:43:01.487616,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:10.604119,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:43:10.659550,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:16.485285,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:25.601830,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:43:25.652466,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:29.442562,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:43:29.443821,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:43:30.258765,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:43:31.483429,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:40.601040,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:43:40.646169,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:43:46.481116,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:43:55.601315,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:43:55.644803,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:44:00.378674,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:44:01.480930,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:44:10.599852,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:44:10.645481,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:44:16.480699,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:44:25.599704,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:44:25.646011,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:44:30.477842,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:44:40.612544,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:44:40.659395,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:44:41.835673,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:44:46.488565,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:44:47.155043,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-22T15:44:47.156871,POST /api/auth/login,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:44:55.511807,ALERT_RECEIVED,,0,alertmanager,internal,,SLO breach: availability < 99% (target 99.9%),True
+2026-04-22T15:44:55.600616,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:44:55.658606,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:44:56.215715,POST /api/alerts/webhook,,0,api,172.18.0.9,,"Status: 200, UA: Alertmanager/0.27.0",True
+2026-04-22T15:45:01.482034,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:02.167378,GET /api/bulkhead/status,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.491294,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.492959,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.497968,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.505918,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.511657,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.514033,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.515962,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.520328,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.529152,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.532387,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.544353,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.552167,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.610384,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.638013,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.650248,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.668392,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.692722,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.702566,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:45:03.713668,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.719541,GET /api/list,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:03.755018,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.760812,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.825124,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.848445,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.848880,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.859510,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.916663,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.946010,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:03.984470,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.024873,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.070356,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.070791,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.077428,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.077939,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.078281,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.079002,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.079631,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.105061,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.145604,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.153893,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.162149,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.177298,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.242198,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.242622,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.246861,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.247320,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.247623,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.247940,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.248241,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.285093,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.295534,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.315269,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.331506,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.363469,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.378670,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.385608,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.386195,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.386632,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.395888,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.442410,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.459077,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.469408,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.474301,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.479792,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.499719,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.520403,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.529239,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.529974,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.541066,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.553957,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.554448,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.573123,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.588871,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.598419,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.607381,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.623598,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.633966,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.634374,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.640707,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.641312,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.641801,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.649351,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.662584,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.663025,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.681467,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.695390,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.706143,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.717322,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.717861,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.731652,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.741571,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.741966,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.747801,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.748273,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.748575,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.748886,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.754583,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.766710,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.767479,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.780446,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.803987,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.815774,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.816419,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.820828,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.824182,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.826538,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.827634,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.833918,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.834515,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:04.852589,GET /api/list,,0,api,172.18.0.1,,"Status: 429, UA: curl/8.5.0",False
+2026-04-22T15:45:10.600270,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:45:10.655056,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:11.931776,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:45:15.035537,GET /metrics,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:45:16.480093,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:25.602552,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:45:25.656480,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:29.500712,GET /api/list,,0,api,172.18.0.15,,"Status: 429, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T15:45:31.481823,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:40.598618,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:45:40.651244,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:42.031388,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:45:46.483541,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:45:55.601887,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:45:55.656479,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:01.483559,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:10.601685,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:46:10.653609,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:12.136636,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:46:16.482284,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:25.599885,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:46:25.655417,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:29.497721,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:46:29.499051,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:46:31.482896,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:40.601471,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:46:40.654236,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:42.253423,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:46:46.483902,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:46:55.603425,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:46:55.658339,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:01.481554,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:10.600046,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:47:10.652128,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:12.405752,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:47:16.480272,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:25.600668,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:47:25.656189,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:29.437558,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:47:29.439037,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:47:31.481738,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:40.602218,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:47:40.654870,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:42.493362,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:47:46.483535,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:47:55.603400,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:47:55.657078,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:01.484292,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:10.602282,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:48:10.654782,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:12.591648,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:48:16.484285,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:25.603296,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:48:25.656729,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:29.355851,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:48:29.357268,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:48:31.484610,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:40.603071,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:48:40.657479,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:42.692051,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:48:46.481509,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:47.556284,GET /api/bulkhead/status,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:48:55.600699,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:48:55.660259,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:48:59.182726,GET /metrics,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T15:49:01.483511,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:10.603785,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:49:10.658756,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:12.787880,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:49:16.485510,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:25.604494,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:49:25.662301,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:29.515981,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:49:29.517176,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:49:31.484243,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:40.601326,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:49:40.655101,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:42.910476,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:49:46.484364,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:49:55.600848,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:49:55.654708,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:01.484284,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:10.603824,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:50:10.654314,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:13.033756,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:50:16.483957,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:25.617452,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:50:25.657084,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:29.433389,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:50:29.434522,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:50:31.483187,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:40.602399,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:50:40.658361,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:43.145990,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:50:46.484204,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:50:55.604309,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:50:55.656170,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:01.481474,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:10.599923,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:51:10.653940,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:13.269011,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:51:16.480578,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:25.604366,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:51:25.663631,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:29.474455,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:51:29.476047,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:51:31.483775,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:40.597959,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:51:40.654159,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:43.360482,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:51:46.480550,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:51:55.603299,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:51:55.658651,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:01.480488,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:10.602005,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:52:10.656224,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:13.460151,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:52:16.483524,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:25.601458,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:52:25.655656,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:29.501386,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:52:29.502784,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:52:31.484154,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:40.599714,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:52:40.653465,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:43.578474,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:52:46.483326,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:52:55.602937,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:52:55.659313,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:01.481171,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:10.600660,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:53:10.654043,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:13.704091,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:53:16.484228,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:25.604578,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:53:25.657509,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:29.510293,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:53:29.511918,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:53:31.483591,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:40.602274,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:53:40.656216,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:43.816633,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:53:46.483516,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:53:55.604004,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:53:55.657754,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:01.485204,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:10.603077,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:54:10.655829,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:13.937889,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:54:16.482195,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:25.602742,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:54:25.657923,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:29.448196,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:54:29.449720,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:54:31.483814,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:40.602180,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:54:40.656723,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:44.057187,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:54:46.484000,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:54:55.602226,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:54:55.657497,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:01.483862,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:10.600189,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:55:10.652925,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:14.190854,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:55:16.484536,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:25.602011,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:55:25.658940,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:29.348889,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:55:29.350539,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:55:31.485624,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:40.603409,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:55:40.654982,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:44.320033,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:55:46.484705,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:55:55.602265,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:55:55.658420,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:01.484296,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:10.603025,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:56:10.658794,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:14.440572,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:56:16.481254,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:25.601038,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:56:25.655160,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:29.392106,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:56:29.393532,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:56:31.484281,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:40.602327,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:56:40.656305,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:44.520553,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:56:46.484118,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:56:55.601875,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:56:55.659772,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:01.483752,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:10.603390,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:57:10.660013,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:14.621558,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:57:16.484314,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:25.602326,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:57:25.658410,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:29.432508,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:57:29.433772,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:57:31.483937,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:40.602500,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:57:40.656957,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:44.735934,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:57:46.484359,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:57:55.600783,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:57:55.660656,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:01.484185,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:10.602215,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:58:10.655778,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:14.843490,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:58:16.484008,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:25.603472,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:58:25.657810,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:29.473317,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:58:29.474686,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:58:31.484981,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:40.602669,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:58:40.649006,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:58:44.941901,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:58:46.482043,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:58:55.601468,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:58:55.646103,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:59:01.481733,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:59:10.599845,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:59:10.646665,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:59:15.066826,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:59:16.484926,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:59:25.600566,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:59:25.646933,GET /health/ready,,0,api,172.18.0.10,,"Status: 503, UA: SMDG-Blackbox/1.0",False
+2026-04-22T15:59:31.480580,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:59:45.081372,GET /,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:59:45.207689,GET /health,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:59:45.247437,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-22T15:59:45.248686,GET /api/list,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:59:45.899418,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T15:59:46.482217,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:59:50.440230,POST /api/auth/logout,,0,api,172.18.0.15,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-22T15:59:55.603103,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T15:59:55.655361,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T15:59:59.769738,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-22T15:59:59.771097,POST /api/auth/login,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T16:00:01.481492,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:10.610846,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:00:10.665293,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:13.917038,GET /metrics,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T16:00:15.271788,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:00:16.011827,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:00:16.482231,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:25.604119,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:00:25.655529,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:31.481749,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:32.529945,POST /api/bulkhead/warmup,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T16:00:40.601749,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:00:40.659026,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:45.291767,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:00:46.115014,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:00:46.482778,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:46.519516,GET /metrics,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T16:00:55.598526,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:00:55.652107,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:00:56.911779,GET /api/bulkhead/metrics,,0,api,172.18.0.1,,"Status: 200, UA: curl/8.5.0",True
+2026-04-22T16:01:01.481984,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:10.600975,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:01:10.654688,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:15.433212,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:01:16.208770,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:01:16.482553,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:25.605352,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:01:25.655172,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:31.482607,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:40.606377,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:01:40.662689,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:45.445662,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:01:46.310501,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:01:46.482086,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:01:55.600012,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:01:55.654531,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:01.482934,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:10.602261,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:02:10.656507,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:15.461645,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:02:16.427493,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:02:16.483850,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:25.603405,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:02:25.655779,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:31.482530,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:40.602115,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:02:40.656736,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:45.483035,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:02:46.485727,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:02:46.550974,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:02:55.604849,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:02:55.657327,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:01.482348,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:10.600478,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:03:10.657138,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:16.481121,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:16.652247,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:03:25.601320,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:03:25.652793,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:29.377790,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:03:31.483223,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:40.604466,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:03:40.657420,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:46.485240,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:03:46.756691,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:03:55.723260,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:03:55.739763,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:01.480626,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:10.599089,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:04:10.654929,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:16.481994,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:16.850822,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-22T16:04:25.601024,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:04:25.651557,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:29.430988,GET /api/list,,0,api,172.18.0.15,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-22T16:04:31.484440,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:40.602308,GET /metrics,,0,api,172.18.0.12,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-22T16:04:40.657931,GET /health/ready,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:46.481825,GET /health/live,,0,api,172.18.0.10,,"Status: 200, UA: SMDG-Blackbox/1.0",True
+2026-04-22T16:04:46.975710,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True

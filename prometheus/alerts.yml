@@ -216,6 +216,43 @@ groups:
           runbook: "https://wiki.smdg/runbooks/circuit-breaker-flapping"
 
   # ===========================================================================
+  # 2c. Resilience: Bulkhead (см. app/core/bulkhead_metrics.py)
+  # ===========================================================================
+  - name: smdg_bulkhead_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGBulkheadHighUtilization
+        expr: smdg_bulkhead_utilization_percent > 85
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: bulkhead
+        annotations:
+          summary: "Bulkhead {{ $labels.name }} utilization > 85%"
+          description: |
+            Bulkhead {{ $labels.name }} держит {{ $value | printf "%.1f" }}% загрузки
+            более 2 минут. Риск очередей/429 растёт — проверьте upstream traffic,
+            размер пулов и задержки зависимостей.
+          runbook: "https://wiki.smdg/runbooks/bulkhead-high-utilization"
+
+      - alert: SMDGBulkheadHighRejectedRate
+        expr: sum by (name) (rate(smdg_bulkhead_rejected_total[5m])) * 60 > 20
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: bulkhead
+        annotations:
+          summary: "Bulkhead {{ $labels.name }} rejects > 20 req/min"
+          description: |
+            В bulkhead {{ $labels.name }} более 20 отклонений/мин (429 fast-fail).
+            Это признак устойчивой перегрузки или слишком маленького лимита
+            max_concurrent/queue_size.
+          runbook: "https://wiki.smdg/runbooks/bulkhead-high-rejected-rate"
+
+  # ===========================================================================
   # 3. Business-level: upload/download/auth failures
   # ===========================================================================
   - name: smdg_business_alerts

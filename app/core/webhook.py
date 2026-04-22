@@ -28,6 +28,8 @@ from app.models.webhook import (
     WebhookDelivery,
     DeliveryStatus,
 )
+from app.services.dead_letter_service import dlq
+from app.core.bulkhead import get_bulkhead
 
 logger = logging.getLogger(__name__)
 
@@ -113,12 +115,14 @@ class WebhookDispatcher:
             logger.info(f"🔔 Webhook dispatch: {event} ({len(subscriptions)} подписок)")
 
             tasks = []
+            bulkhead = get_bulkhead("webhook")
             for sub in subscriptions:
                 task = asyncio.create_task(
-                    self._send_with_retry(
+                    bulkhead.execute(
+                        self._send_with_retry,
                         subscription=sub,
                         payload_json=payload_json,
-                        db=db
+                        db=db,
                     )
                 )
                 tasks.append(task)
@@ -261,6 +265,20 @@ class WebhookDispatcher:
 
         if delivery.status not in (DeliveryStatus.SUCCESS.value,):
             delivery.status = DeliveryStatus.FAILED.value
+            try:
+                await dlq.send_to_dlq(
+                    queue_name="webhook",
+                    payload={
+                        "url": subscription.url,
+                        "payload": json.loads(payload_json),
+                        "webhook_id": subscription.id,
+                    },
+                    error=Exception(delivery.error_message or "Webhook delivery failed"),
+                    max_retries=subscription.max_retries,
+                    metadata={"source": "webhook_dispatcher"},
+                )
+            except Exception as dlq_exc:  # noqa: BLE001
+                logger.error("Failed to enqueue webhook to DLQ: %s", dlq_exc)
 
         try:
             payload_data = json.loads(payload_json)
@@ -270,6 +288,22 @@ class WebhookDispatcher:
 
         await db.commit()
 
+    async def process_dlq_webhook(self, payload: Dict[str, Any]) -> bool:
+        """DLQ handler for webhook payloads."""
+        url = payload.get("url")
+        webhook_payload = payload.get("payload")
+        if not url or webhook_payload is None:
+            logger.error("Invalid DLQ webhook payload: %s", payload)
+            return False
+
+        session = await self._get_session()
+        timeout = aiohttp.ClientTimeout(total=settings.WEBHOOK_CALL_TIMEOUT_SECONDS)
+        async with session.post(url, json=webhook_payload, timeout=timeout) as response:
+            return response.ok
+
 
 # Глобальный экземпляр
 webhook_dispatcher = WebhookDispatcher()
+
+# Регистрация обработчика webhook для DLQ replay.
+dlq.register_handler("webhook", webhook_dispatcher.process_dlq_webhook)

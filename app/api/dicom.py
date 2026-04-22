@@ -34,9 +34,37 @@ from app.models.file import File
 from app.models.dicom_view_token import DicomViewToken
 from app.crypto.crypto import crypto_manager
 from app.core.timeout import timeout, run_with_timeout
+from app.core.bulkhead import bulkhead
+from app.services.dead_letter_service import dlq
 
 router = APIRouter(prefix="/dicom", tags=["dicom"])
 logger = logging.getLogger(__name__)
+
+
+async def _enqueue_dicom_dlq(
+    *,
+    operation: str,
+    file_id: int | None,
+    encrypted_path: str | None,
+    error: Exception,
+    extra: dict | None = None,
+) -> None:
+    payload = {
+        "operation": operation,
+        "file_id": file_id,
+        "encrypted_path": encrypted_path,
+        "extra": extra or {},
+    }
+    try:
+        await dlq.send_to_dlq(
+            queue_name="dicom",
+            payload=payload,
+            error=error,
+            max_retries=2,
+            metadata={"source": "dicom_api"},
+        )
+    except Exception:
+        logger.exception("Не удалось отправить DICOM ошибку в DLQ")
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -714,6 +742,12 @@ async def wado_retrieve(
         decrypted_bytes = await _decrypt_dicom_to_memory(data["encrypted_path"])
     except Exception as e:
         logger.error(f"[DICOM WADO] Ошибка расшифровки: {e}")
+        await _enqueue_dicom_dlq(
+            operation="wado_retrieve_decrypt",
+            file_id=data["file_id"],
+            encrypted_path=data["encrypted_path"],
+            error=e,
+        )
         audit_logger.log_operation(
             action="dicom.stream_failed",
             filename=data["original_name"],
@@ -770,6 +804,12 @@ async def wado_legacy(
         decrypted_bytes = await _decrypt_dicom_to_memory(data["encrypted_path"])
     except Exception as e:
         logger.error(f"[DICOM WADO] Ошибка: {e}")
+        await _enqueue_dicom_dlq(
+            operation="wado_legacy_decrypt",
+            file_id=file_id,
+            encrypted_path=data.get("encrypted_path"),
+            error=e,
+        )
         raise HTTPException(status_code=500, detail="Ошибка расшифровки DICOM")
 
     max_size = settings.dicom_max_stream_size_mb * 1024 * 1024
@@ -797,6 +837,12 @@ async def wado_legacy(
     "DICOM render timed out",
     service="dicom",
     operation="render_dicom_png",
+)
+@bulkhead(
+    "dicom",
+    max_concurrent=settings.DICOM_BULKHEAD_MAX_CONCURRENT,
+    queue_size=settings.DICOM_BULKHEAD_QUEUE_SIZE,
+    timeout_seconds=settings.DICOM_BULKHEAD_TIMEOUT,
 )
 async def render_dicom_png(
     file_id: int,
@@ -860,6 +906,13 @@ async def render_dicom_png(
     try:
         decrypted_bytes = await _decrypt_dicom_to_memory(data["encrypted_path"])
     except Exception as e:
+        await _enqueue_dicom_dlq(
+            operation="render_decrypt",
+            file_id=file_id,
+            encrypted_path=data["encrypted_path"],
+            error=e,
+            extra={"frame": frame, "center": center, "width": width},
+        )
         raise HTTPException(status_code=500, detail=f"Ошибка расшифровки: {e}")
 
     try:
@@ -946,19 +999,46 @@ async def render_dicom_png(
         )
 
     except ImportError as e:
+        await _enqueue_dicom_dlq(
+            operation="render_import_error",
+            file_id=file_id,
+            encrypted_path=data["encrypted_path"],
+            error=e,
+        )
         raise HTTPException(status_code=500, detail=f"Зависимость не установлена: {e}")
     except RuntimeError as e:
         # GDCM ошибки распаковки
         error_msg = str(e).lower()
         if 'gdcm' in error_msg or 'jpeg' in error_msg or 'codec' in error_msg:
             logger.error(f"[DICOM RENDER] GDCM decompression error: {e}")
+            await _enqueue_dicom_dlq(
+                operation="render_decompress",
+                file_id=file_id,
+                encrypted_path=data["encrypted_path"],
+                error=e,
+                extra={"frame": frame},
+            )
             raise HTTPException(
                 status_code=500,
                 detail=f"Не удалось распаковать сжатый DICOM (JPEG2000/JPEG-LS/RLE). Установите pydicom[gdcm]. Ошибка: {e}"
             )
+        await _enqueue_dicom_dlq(
+            operation="render_runtime",
+            file_id=file_id,
+            encrypted_path=data["encrypted_path"],
+            error=e,
+            extra={"frame": frame},
+        )
         raise HTTPException(status_code=500, detail=f"Ошибка рендера: {e}")
     except Exception as e:
         logger.error(f"[DICOM RENDER] Ошибка: {e}")
+        await _enqueue_dicom_dlq(
+            operation="render_unknown",
+            file_id=file_id,
+            encrypted_path=data["encrypted_path"],
+            error=e,
+            extra={"frame": frame},
+        )
         raise HTTPException(status_code=500, detail=f"Ошибка рендера: {e}")
 
     return StreamingResponse(
@@ -1066,3 +1146,20 @@ async def _decrypt_dicom_to_memory(encrypted_path: str) -> bytes:
                     path.unlink()
             except Exception as e:
                 logger.warning(f"[DICOM] Не удалось удалить {path}: {e}")
+
+
+async def _dicom_dlq_handler(payload: dict) -> bool:
+    """Replay handler for DICOM DLQ messages."""
+    encrypted_path = payload.get("encrypted_path")
+    operation = payload.get("operation")
+    if not encrypted_path or not operation:
+        return False
+
+    if operation.startswith("wado") or operation.startswith("render"):
+        await _decrypt_dicom_to_memory(encrypted_path)
+        return True
+
+    return False
+
+
+dlq.register_handler("dicom", _dicom_dlq_handler)
