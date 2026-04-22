@@ -31,12 +31,26 @@ from app.models import User, File, FileLink, WebhookSubscription, WebhookDeliver
 from app.core.security import get_password_hash, verify_password
 from app.core.tenant import resolve_tenant_from_request
 
-from app.core.middleware import AuditMiddleware, ActiveRequestsMiddleware
+from app.core.middleware import (
+    AuditMiddleware,
+    ActiveRequestsMiddleware,
+    TracingMiddleware,
+    SLOMiddleware,
+)
+from app.core.slo_collector import slo_collector
+from app.core.tracing import setup_tracing, shutdown_tracing
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
 from app.api.admin_users import router as admin_users_router
 from app.api.admin_audit_export import router as admin_audit_export_router
 from app.api.delete_user import router as delete_user_router
+from app.api.deploy_metrics import register_deploy_metrics
+from app.api.tracing import router as tracing_router
+from app.api.alert_webhook import router as alert_webhook_router
+from app.api.slo import router as slo_router
+from app.core.health_collector import collect_health_metrics
+from app.core.log_utils import ThrottledErrorLogger
+from app.core.metrics import smdg_version_info
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core import cleanup_manager
 import asyncio
@@ -46,6 +60,28 @@ import signal
 
 from app.models.webhook import DeliveryStatus, WebhookDelivery
 
+
+# ──────────────────────────────────────────────────────────────────────
+# Logging configuration
+# ──────────────────────────────────────────────────────────────────────
+# Python по умолчанию использует уровень WARNING для root-логгера, поэтому
+# все ``logger.info(...)`` из ``app.*`` молча проглатываются. Это приводит
+# к тому, что в ``docker compose logs`` видны только ``print()`` и строки
+# от Uvicorn, а сообщения о старте tracing/ключей/Redis теряются.
+#
+# Uvicorn не настраивает root-логгер сам (он настраивает только свои
+# ``uvicorn``/``uvicorn.access``), поэтому делаем это однократно здесь,
+# до первого ``logger.info`` в этом модуле. Уровень управляется переменной
+# окружения ``LOG_LEVEL`` (по умолчанию INFO).
+_LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=_LOG_LEVEL,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+# Шумные сторонние логгеры режем до WARNING, чтобы не забивать поток.
+for _noisy in ("botocore", "aiobotocore", "urllib3", "asyncio"):
+    logging.getLogger(_noisy).setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
@@ -63,13 +99,32 @@ SHUTDOWN_LOG_INTERVAL_SEC: int = 5
 
 
 async def webhook_retry_scheduler():
-    """Фоновая задача для повторной отправки неудачных webhook доставок."""
+    """Фоновая задача для повторной отправки неудачных webhook доставок.
+
+    Логирование throttled через ``ThrottledErrorLogger`` (см.
+    ``app/core/log_utils.py``): первый фейл — WARNING, повторы той же
+    сигнатуры — DEBUG, каждые ~5 мин — напоминание в WARNING, при
+    восстановлении — INFO. Это не даёт шедулеру затопить лог при
+    длительной деградации (БД остановлена, DNS не резолвится и т.п.).
+
+    Backoff на sleep: при штатной работе ``BASE_SLEEP``, при длительных
+    сбоях растёт до ``MAX_SLEEP`` — чтобы не долбить разрушенную
+    зависимость каждые 10 секунд.
+    """
     from sqlalchemy import select, exc
     from datetime import datetime, timezone
-    import time
 
     # Ждём чтобы миграции успели примениться
     await asyncio.sleep(5)
+
+    # Backoff для sleep между итерациями.
+    BASE_SLEEP: int = 10
+    MAX_SLEEP: int = 60
+    # Напоминание раз в 30 итераций ≈ каждые 5 минут при BASE_SLEEP=10.
+    throttled = ThrottledErrorLogger(logger=logger, remind_every=30)
+    # Ключ для throttled-логгера — разные типы ошибок (DB vs всё остальное)
+    # пишем под одним логическим именем, чтобы recovery-сообщение было одно.
+    LOG_KEY = "webhook_retry"
 
     while True:
         try:
@@ -106,13 +161,32 @@ async def webhook_retry_scheduler():
 
                 await db.commit()
 
+            throttled.recovered(
+                LOG_KEY,
+                message="✅ %s recovered after %d failed attempts",
+            )
+            await asyncio.sleep(BASE_SLEEP)
+
+        except asyncio.CancelledError:
+            # Корректное завершение при shutdown — пробрасываем наверх.
+            raise
         except (exc.ProgrammingError, exc.OperationalError) as e:
-            # Таблицы ещё не существуют — ждём
-            logger.debug(f"Webhook retry: таблицы ещё не готовы ({e}), повтор через 10с")
-            await asyncio.sleep(10)
+            # Ожидаемая деградация: миграции ещё не применены / БД легла /
+            # connection pool умер. Throttled-логгер не даст спамить.
+            throttled.failure(LOG_KEY, e, message="%s failed: %s")
+            failures = throttled.failures(LOG_KEY)
+            await asyncio.sleep(min(BASE_SLEEP * max(1, failures // 10), MAX_SLEEP))
         except Exception as e:
-            logger.error(f"Webhook retry scheduler error: {e}")
-            await asyncio.sleep(10)
+            # Неожиданная ошибка — первый раз пишем traceback, дальше тоже
+            # throttled. Используем тот же ключ, чтобы recovery был один.
+            throttled.failure(
+                LOG_KEY,
+                e,
+                message="%s unexpected error: %s",
+                include_traceback_on_new=True,
+            )
+            failures = throttled.failures(LOG_KEY)
+            await asyncio.sleep(min(BASE_SLEEP * max(1, failures // 10), MAX_SLEEP))
 
         await asyncio.sleep(30)  # Проверка каждые 30 секунд
 
@@ -153,6 +227,12 @@ async def lifespan(app: FastAPI):
 
     await check_redis_connection()
     logger.info("✅ Rate limiter: Redis проверен")
+
+    # NB: ``setup_tracing`` намеренно НЕ вызывается здесь. FastAPIInstrumentor
+    # дергает ``app.add_middleware`` под капотом, а Starlette замораживает
+    # middleware-стек до первого вызова lifespan. Поэтому инициализация
+    # tracing выполняется на модульном уровне (см. ниже сразу после создания
+    # FastAPI-приложения), а в lifespan мы делаем только shutdown.
 
     # S3 Lifecycle Policies — применяем при использовании S3
     from app.core.storage_backend import S3StorageBackend
@@ -205,6 +285,32 @@ async def lifespan(app: FastAPI):
     app.state.background_tasks.append(webhook_task)
     logger.info("✅ Webhook retry scheduler запущен")
 
+    # Health collector — фоновый сбор метрик для алертинга. Обновляет
+    # smdg_*_up gauges и бизнес-метрики. Работает полностью изолированно:
+    # падение здесь не повлияет на hot-path обработки запросов.
+    try:
+        smdg_version_info.info({
+            "version": _APP_VERSION,
+            "deployment_type": get_deployment_info().get("deployment_type", "unknown"),
+            "git_sha": os.getenv("GIT_SHA", "unknown"),
+        })
+    except Exception as _exc:  # noqa: BLE001
+        logger.debug("Не удалось установить smdg_version_info: %s", _exc)
+    health_task = asyncio.create_task(
+        collect_health_metrics(), name="health_collector"
+    )
+    app.state.background_tasks.append(health_task)
+    logger.info("✅ Health metrics collector запущен")
+
+    # SLO collector — отдельная задача, рассчитывает compliance/error budget
+    # раз в минуту. Работает независимо от health_collector, чтобы падение
+    # одного не останавливало другой. См. ``app/core/slo_collector.py``.
+    slo_task = asyncio.create_task(
+        slo_collector.collect_slo_metrics(), name="slo_collector"
+    )
+    app.state.background_tasks.append(slo_task)
+    logger.info("✅ SLO metrics collector запущен")
+
     try:
         await redis_client.set("test_key_startup", "test_value", ex=60)
         value = await redis_client.get("test_key_startup")
@@ -213,6 +319,8 @@ async def lifespan(app: FastAPI):
         logger.warning("Ошибка тестовой записи в Redis: %s", e)
 
     await create_first_admin()
+
+    register_deploy_metrics(app)
 
     logger.info("✅ Приложение готово принимать трафик")
 
@@ -226,6 +334,14 @@ async def lifespan(app: FastAPI):
     # ──────────────────────────────────────────────────────────────
     logger.info("🛑 Graceful shutdown initiated...")
     app.state.shutting_down = True
+
+    try:
+        import socket as _socket
+        from app.api.deploy_metrics import READINESS_GAUGE
+        _replica = os.getenv("HOSTNAME") or _socket.gethostname()
+        READINESS_GAUGE.labels(replica=_replica).set(0)
+    except Exception as _exc:
+        logger.debug("Не удалось обновить smdg_ready gauge: %s", _exc)
 
     # Шаг 1: дождаться завершения in-flight запросов (новые уже получают 503).
     await _wait_for_inflight_requests(app, timeout=SHUTDOWN_GRACE_PERIOD_SEC)
@@ -257,6 +373,14 @@ async def lifespan(app: FastAPI):
         logger.info("🔒 Webhook dispatcher закрыт")
     except Exception as e:
         logger.warning("⚠️ Ошибка закрытия webhook dispatcher: %s", e)
+
+    # Шаг 4a: Telegram alerter (httpx client).
+    try:
+        from app.services.telegram_alerter import get_telegram_alerter
+        await get_telegram_alerter().close()
+        logger.info("🔒 Telegram alerter закрыт")
+    except Exception as e:
+        logger.warning("⚠️ Ошибка закрытия Telegram alerter: %s", e)
 
     # Шаг 5: сброс аудит-логов на диск (AuditLogger работает синхронно,
     # но принудительный flush защищает от потери последних записей).
@@ -290,6 +414,13 @@ async def lifespan(app: FastAPI):
         logger.info("🔒 PostgreSQL connection pool закрыт")
     except Exception as e:
         logger.warning("⚠️ Ошибка закрытия PostgreSQL: %s", e)
+
+    # Шаг 9: сброс буфера трассировки + остановка tracer provider.
+    # Делаем в самом конце, чтобы захватить спаны всех предыдущих шагов.
+    try:
+        await shutdown_tracing()
+    except Exception as e:
+        logger.warning("⚠️ Ошибка остановки tracing: %s", e)
 
     logger.info("✅ Graceful shutdown complete")
 
@@ -337,6 +468,23 @@ app = FastAPI(
     redoc_url="/redoc",      
     openapi_url="/openapi.json"
 )
+
+# ────────────────────────────────────────────────────────────────
+# OpenTelemetry tracing — инициализация ДО любых ``add_middleware``.
+#
+# ``FastAPIInstrumentor.instrument_app()`` регистрирует собственную
+# ``OpenTelemetryMiddleware`` через ``app.add_middleware()``. Starlette
+# собирает middleware-стек один раз (при первом ASGI-вызове, в т.ч. при
+# lifespan.startup) и после этого ``add_middleware`` бросает
+# ``RuntimeError: Cannot add middleware after an application has started``.
+# Поэтому trace-инициализация строго здесь — между созданием ``FastAPI`` и
+# первым ``app.add_middleware``. При OTEL_ENABLED != "true" setup_tracing
+# сразу возвращает None (fail-open, никаких соединений).
+# ────────────────────────────────────────────────────────────────
+try:
+    setup_tracing(app, service_name=os.getenv("OTEL_SERVICE_NAME", "smdg"))
+except Exception as _tracing_exc:  # pragma: no cover - защита от неожиданных ошибок
+    logger.warning("⚠️ Не удалось инициализировать tracing: %s", _tracing_exc)
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
@@ -436,6 +584,20 @@ async def set_user_context(request: Request, call_next):
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(AuditMiddleware)
 
+# SLOMiddleware: считает SLI-метрики (success/total requests, latency)
+# для SLO-расчётов. Стоит ниже ActiveRequestsMiddleware — так запросы,
+# которые были отклонены 503-м во время shutdown, не попадают в
+# availability-статистику (это намеренный graceful shutdown, не отказ).
+app.add_middleware(SLOMiddleware)
+
+# TracingMiddleware добавляет в ответы заголовок ``X-Trace-Id`` — операторам
+# достаточно ``curl -I`` чтобы получить идентификатор трассы в Jaeger.
+# Регистрируется ПОСЛЕ аудита/SlowAPI, но ДО ActiveRequestsMiddleware —
+# порядок в Starlette таков, что следующий add_middleware становится более
+# внешним слоем. ActiveRequestsMiddleware должен оставаться самым внешним,
+# а TracingMiddleware работает внутри серверного span от FastAPIInstrumentor.
+app.add_middleware(TracingMiddleware)
+
 # ────────────────────────────────────────────────────────────────
 # Graceful shutdown: отслеживание активных запросов
 # ────────────────────────────────────────────────────────────────
@@ -448,15 +610,20 @@ app.add_middleware(ActiveRequestsMiddleware, fastapi_app=app)
 
 # Rate limiter с логами
 def custom_key_func(request: Request) -> str:
+    # Логируем на DEBUG, т.к. функция вызывается на КАЖДЫЙ HTTP-запрос
+    # (включая healthcheck'и от docker/nginx и /metrics от Prometheus).
+    # На INFO это создавало шум в несколько строк/сек и затирало полезные
+    # события в stdout. Для отладки rate-limit'а достаточно поднять уровень
+    # логгера точечно: LOG_LEVEL=DEBUG или logger.setLevel(DEBUG) в REPL.
     user = request.scope.get("user")
     if user and hasattr(user, "sub"):
         key = f"rate_limit:user:{user.sub}"
-        logger.info(f"Rate limit: пользователь {user.sub} → ключ {key}")
+        logger.debug("Rate limit: пользователь %s → ключ %s", user.sub, key)
         return key
-    
+
     ip = get_remote_address(request)
     key = f"rate_limit:ip:{ip}"
-    logger.info(f"Rate limit: аноним → ключ {key}")
+    logger.debug("Rate limit: аноним → ключ %s", key)
     return key
 
 limiter = Limiter(
@@ -496,7 +663,10 @@ app.include_router(admin_users_router, prefix="/api")
 app.include_router(admin_audit_export_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")
 app.include_router(dicom.router, prefix="/api")
+app.include_router(tracing_router)
 app.include_router(health_router)
+app.include_router(alert_webhook_router)
+app.include_router(slo_router)
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):

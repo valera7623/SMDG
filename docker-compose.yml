@@ -51,6 +51,15 @@ services:
     stop_grace_period: 60s
     stop_signal: SIGTERM
     # Liveness probe — Docker сам перезапускает unhealthy контейнер.
+    #
+    # ВАЖНО: используем именно /health/live (а НЕ /health/ready), потому что
+    #   • Docker HEALTHCHECK умеет только перезапускать контейнеры, он не
+    #     управляет маршрутизацией трафика;
+    #   • при временной потере БД/Redis readiness probe вернёт 503 — если
+    #     повесить это на HEALTHCHECK, контейнер будет бесконечно
+    #     перезапускаться, что ухудшает situation, а не лечит её.
+    # /health/ready предназначен для оркестратора (Kubernetes, Swarm, LB),
+    # который при 503 просто перестаёт слать трафик на под до восстановления.
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health/live"]
       interval: 30s
@@ -62,11 +71,11 @@ services:
         limits:
           cpus: '2'
           memory: 2G
-      restart_policy:
-        condition: any
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+      # ВАЖНО: не указываем здесь restart_policy. Docker Engine отказывает
+      # в restart policy "any" + max_attempts (ограничение счётчика допустимо
+      # только для "on-failure"). Политику "any/max_attempts/window" использует
+      # Docker Swarm (см. docker-compose.prod.yml), а для локального
+      # ``docker compose up`` достаточно ``restart: unless-stopped`` ниже.
     depends_on:
       db:
         condition: service_healthy
@@ -88,6 +97,11 @@ services:
 
       REDIS_URL: "redis://redis:6379/0"
 
+      # Readiness / Liveness probes
+      MAX_CONCURRENT_REQUESTS: "${MAX_CONCURRENT_REQUESTS:-100}"
+      READINESS_CHECK_TIMEOUT: "${READINESS_CHECK_TIMEOUT:-2}"
+      READINESS_CACHE_TTL: "${READINESS_CACHE_TTL:-1.5}"
+
       # S3 / MinIO Configuration
       S3_ENABLED: "${S3_ENABLED:-true}"
       S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-http://minio:9000}"
@@ -99,6 +113,53 @@ services:
       S3_REGION: "${S3_REGION:-us-east-1}"
       S3_USE_SSL: "${S3_USE_SSL:-false}"
 
+      # ──────────────────────────────────────────────────────────
+      # Distributed tracing (OpenTelemetry → Jaeger via otel-collector)
+      # ──────────────────────────────────────────────────────────
+      # Compose не инжектит .env в контейнер автоматически (он используется
+      # только для подстановки ``${VAR}`` в YAML). Поэтому переменные OTEL_*
+      # обязаны быть здесь, иначе setup_tracing() увидит OTEL_ENABLED=unset
+      # и переключится в no-op режим → спаны в Jaeger не придут.
+      #
+      # Стек observability поднимается отдельно:
+      #   docker compose -f docker-compose.observability.yml up -d
+      #
+      # Чтобы включить трассировку, задайте в .env:  OTEL_ENABLED=true
+      OTEL_ENABLED: "${OTEL_ENABLED:-false}"
+      OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-smdg}"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}"
+      OTEL_PROPAGATORS: "${OTEL_PROPAGATORS:-b3multi}"
+      OTEL_TRACES_SAMPLER: "${OTEL_TRACES_SAMPLER:-parentbased_always_on}"
+      OTEL_TRACES_SAMPLER_ARG: "${OTEL_TRACES_SAMPLER_ARG:-1.0}"
+      ENVIRONMENT: "${ENVIRONMENT:-development}"
+      JAEGER_QUERY_URL: "${JAEGER_QUERY_URL:-http://jaeger:16686}"
+
+      # ──────────────────────────────────────────────────────────
+      # Alerting / Telegram integration
+      # ──────────────────────────────────────────────────────────
+      # Compose не инжектит .env в контейнер автоматически, поэтому все
+      # переменные, которые читает ``app.services.telegram_alerter`` и
+      # ``app.api.alert_webhook``, должны быть перечислены здесь явно.
+      #
+      # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID — если пустые, alerter
+      # переходит в noop-режим (алерты пишутся только в audit log).
+      # Получить токен: https://t.me/BotFather → /newbot
+      # Получить chat_id: https://t.me/userinfobot или Telegram API.
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+
+      # Ссылки в inline-кнопках алертов. Если не заданы — используются
+      # дефолтные placeholder'ы (https://monitoring.smdg.local и т.п.).
+      SMDG_DASHBOARD_URL: "${SMDG_DASHBOARD_URL:-http://localhost:3000}"
+      SMDG_TRACING_URL: "${SMDG_TRACING_URL:-http://localhost:16686}"
+      SMDG_LOGS_URL: "${SMDG_LOGS_URL:-}"
+
+      # Shared secret для защиты /api/alerts/webhook. Если задан —
+      # Alertmanager должен отправлять заголовок X-Alert-Secret с тем же
+      # значением, иначе webhook вернёт 401. Пустая строка = auth выключен.
+      SMDG_ALERT_WEBHOOK_SECRET: "${SMDG_ALERT_WEBHOOK_SECRET:-}"
+
     volumes:
       - ./migrations:/app/migrations
       - ./uploads:/app/uploads
@@ -109,6 +170,23 @@ services:
       - ./app:/app/app:ro
       - smdg_keys:/app/keys
       - smdg_backups:/app/backups
+    # Кастомный DNS для исходящих запросов во внешнюю сеть (Telegram API,
+    # Slack webhook, SMTP, клиентские webhook subscription'ы).
+    #
+    # Зачем это нужно:
+    # Embedded Docker DNS (127.0.0.11) форвардит запросы на DNS-сервер
+    # хоста, взятый из /etc/resolv.conf. В WSL2 там прописан адрес
+    # Windows-хоста (172.24.32.1 / 10.255.255.254), который доступен
+    # ТОЛЬКО с самого WSL, но НЕ из docker-сетей — резолвинг внешних
+    # имён падает с "Temporary failure in name resolution".
+    #
+    # Указываем публичные DNS'ы явно — локальные имена сервисов
+    # (db/redis/minio/etc.) продолжат резолвиться через embedded DNS,
+    # потому что Docker вставляет его первым при использовании option
+    # ``dns:`` на сервисе.
+    dns:
+      - 1.1.1.1        # Cloudflare
+      - 8.8.8.8        # Google (fallback)
     networks:
       - backend
     restart: unless-stopped
@@ -238,12 +316,20 @@ services:
     restart: always
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # Правила алертов (smdg_service_alerts, smdg_slo_alerts и т.п.).
+      # Файл подхватывается через ``rule_files`` в prometheus.yml.
+      # Без этого маунта контейнер стартует без правил, и
+      # ``/api/v1/rules`` возвращает пустой список.
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+      # Включаем lifecycle API: POST /-/reload перечитывает rules/config
+      # без рестарта контейнера — нужно при изменении alerts.yml.
+      - '--web.enable-lifecycle'
     ports:
       - "9090:9090"   # Prometheus UI
     networks:
@@ -256,6 +342,11 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+      # JSON-дашборды (smdg_alerts.json, slo-dashboard.json и т.п.).
+      # Путь должен совпадать с ``options.path`` из
+      # grafana/provisioning/dashboards/smdg.yml — там указан
+      # ``/var/lib/grafana/dashboards``.
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin123   # меняй в проде!
       - GF_USERS_ALLOW_SIGN_UP=false

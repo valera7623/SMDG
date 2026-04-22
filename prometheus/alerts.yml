@@ -1,0 +1,509 @@
+# =============================================================================
+# SMDG Prometheus Alerting Rules
+# =============================================================================
+# Группы алертов, привязанных к метрикам из ``app/core/metrics.py`` и
+# стандартным exporter'ам (node_exporter, cadvisor, postgres_exporter,
+# redis_exporter, blackbox_exporter).
+#
+# Severity:
+#   critical — требуется немедленное вмешательство on-call (SLA < 15 мин);
+#   warning  — стоит разобраться в рабочее время;
+#   info     — информативные события.
+#
+# Все аннотации содержат:
+#   - summary:     короткий заголовок для Telegram/PagerDuty;
+#   - description: полный контекст с $value / $labels;
+#   - runbook:     URL на wiki-страницу с пошаговыми действиями.
+#
+# Метки ``service`` и ``component`` позволяют роутить алерты в Alertmanager.
+# =============================================================================
+
+groups:
+
+  # ===========================================================================
+  # 1. Service availability
+  # ===========================================================================
+  - name: smdg_service_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGApiDown
+        expr: up{job="smdg"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: smdg
+          component: api
+        annotations:
+          summary: "SMDG API is down on {{ $labels.instance }}"
+          description: |
+            Prometheus не может достать /metrics у SMDG API более 1 минуты
+            на {{ $labels.instance }}. Возможны причины: контейнер упал,
+            OOM-kill, сеть или deadlock в worker'е.
+          runbook: "https://wiki.smdg/runbooks/api-down"
+
+      - alert: SMDGHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="smdg",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="smdg"}[5m]))
+          ) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          service: smdg
+          component: api
+        annotations:
+          summary: "SMDG error rate > 5% за последние 5 мин"
+          description: |
+            Общая доля 5xx-ответов: {{ $value | humanizePercentage }}.
+            Начинается массовая регрессия — проверить последние релизы,
+            логи SMDG и статус зависимостей (БД / Redis / S3).
+          runbook: "https://wiki.smdg/runbooks/high-error-rate"
+
+      - alert: SMDGHighLatency
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(api_latency_seconds_bucket[5m])) by (le, method, endpoint)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: api
+        annotations:
+          summary: "SMDG p95 latency > 5s для {{ $labels.method }} {{ $labels.endpoint }}"
+          description: |
+            95-й перцентиль: {{ $value }}s. Проверить нагрузку на БД,
+            профили long-running query и DICOM render очередь.
+          runbook: "https://wiki.smdg/runbooks/high-latency"
+
+      - alert: SMDGReadinessFailing
+        expr: max_over_time(probe_success{job="blackbox",instance=~".*/health/ready"}[5m]) == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: smdg
+          component: api
+        annotations:
+          summary: "SMDG /health/ready постоянно возвращает 503"
+          description: |
+            Blackbox exporter в течение 5 мин не получил ни одного успешного
+            200 от /health/ready. Оркестратор (k8s/compose) скоро начнёт
+            выводить под из балансировщика.
+          runbook: "https://wiki.smdg/runbooks/readiness-failing"
+
+  # ===========================================================================
+  # 2. Dependencies (PostgreSQL / Redis / Storage)
+  # ===========================================================================
+  - name: smdg_dependencies_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGDatabaseDown
+        expr: smdg_db_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: smdg
+          component: postgresql
+        annotations:
+          summary: "PostgreSQL недоступен"
+          description: |
+            Внутренняя проверка SELECT 1 не проходит более 1 минуты.
+            Приложение не сможет обслуживать запросы. Пойдут каскадные
+            502/503 на фронте.
+          runbook: "https://wiki.smdg/runbooks/database-down"
+
+      - alert: SMDGRedisDown
+        expr: smdg_redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: smdg
+          component: redis
+        annotations:
+          summary: "Redis недоступен"
+          description: |
+            PING не проходит более 1 минуты. Rate-limiter и DICOM viewer
+            токены не работают — ожидай 429/401 на критичных маршрутах.
+          runbook: "https://wiki.smdg/runbooks/redis-down"
+
+      - alert: SMDGStorageDegraded
+        expr: smdg_storage_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: smdg
+          component: storage
+        annotations:
+          summary: "File storage (Local/S3) недоступен"
+          description: |
+            Upload/Download будут падать. Проверить S3 credentials / права
+            на директорию / network ACL.
+          runbook: "https://wiki.smdg/runbooks/storage-down"
+
+  # ===========================================================================
+  # 3. Business-level: upload/download/auth failures
+  # ===========================================================================
+  - name: smdg_business_alerts
+    interval: 1m
+    rules:
+
+      - alert: SMDGUploadFailures
+        expr: sum(rate(upload_failures_total[5m])) * 60 > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: upload
+        annotations:
+          summary: "Высокая частота отказов upload"
+          description: |
+            {{ $value | printf "%.1f" }} upload-ошибок в минуту за 5 мин.
+            Проверить storage-метрики и logs с 'upload failed'.
+          runbook: "https://wiki.smdg/runbooks/upload-failures"
+
+      - alert: SMDGDownloadFailures
+        expr: sum(rate(download_failures_total[5m])) * 60 > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: download
+        annotations:
+          summary: "Высокая частота отказов download"
+          description: |
+            {{ $value | printf "%.1f" }} download-ошибок/мин. Возможные
+            причины: expired links / storage 5xx / rights revocation.
+          runbook: "https://wiki.smdg/runbooks/download-failures"
+
+      - alert: SMDGAuthFailures
+        expr: sum(rate(auth_failures_total[5m])) * 60 > 20
+        for: 3m
+        labels:
+          severity: warning
+          service: smdg
+          component: auth
+        annotations:
+          summary: "Возможная brute-force атака"
+          description: |
+            {{ $value | printf "%.1f" }} неуспешных логинов/мин. Проверить
+            источники в логах, рассмотреть временный IP-блок / tightening
+            rate-limit на /api/auth/login.
+          runbook: "https://wiki.smdg/runbooks/auth-bruteforce"
+
+      - alert: SMDG2FAFailures
+        expr: rate(auth_2fa_failures_total[5m]) * 60 > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: auth
+        annotations:
+          summary: "Высокий поток 2FA-ошибок"
+          description: |
+            {{ $value | printf "%.1f" }} 2FA-failures/мин. Или пользователи
+            массово теряют ключи (sync-проблема TOTP), или идёт подбор.
+          runbook: "https://wiki.smdg/runbooks/2fa-failures"
+
+  # ===========================================================================
+  # 4. Security
+  # ===========================================================================
+  - name: smdg_security_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGRateLimitExceeded
+        expr: sum by (endpoint) (rate(rate_limit_exceeded_total[5m])) * 60 > 50
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: rate_limit
+        annotations:
+          summary: "Rate limit массово срабатывает на {{ $labels.endpoint }}"
+          description: |
+            {{ $value | printf "%.1f" }} блокировок/мин. Возможна атака
+            или неправильный клиент. Проверить IP-распределение.
+          runbook: "https://wiki.smdg/runbooks/rate-limit-exceeded"
+
+      - alert: SMDGCrossTenantAccess
+        expr: increase(cross_tenant_access_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          service: smdg
+          component: security
+        annotations:
+          summary: "Попытка cross-tenant доступа"
+          description: |
+            Зафиксировано {{ $value }} попыток cross-tenant доступа за 5 мин.
+            Это ИНЦИДЕНТ БЕЗОПАСНОСТИ. Немедленно: искать trace_id в логах,
+            поднимать IR playbook, уведомлять DPO.
+          runbook: "https://wiki.smdg/runbooks/cross-tenant-access"
+
+  # ===========================================================================
+  # 5. Resource (cgroup / cadvisor)
+  # ===========================================================================
+  - name: smdg_resource_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGHighMemoryUsage
+        expr: |
+          (
+            container_memory_working_set_bytes{container="smdg"}
+            /
+            container_spec_memory_limit_bytes{container="smdg"}
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: resource
+        annotations:
+          summary: "Потребление памяти > 85% лимита"
+          description: |
+            Memory utilization: {{ $value | humanizePercentage }}. Ещё
+            немного — и OOM-kill. Проверить утечки, снять heap-profile.
+          runbook: "https://wiki.smdg/runbooks/high-memory"
+
+      - alert: SMDGHighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{container="smdg"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: resource
+        annotations:
+          summary: "Высокое потребление CPU"
+          description: |
+            CPU utilization: {{ $value | humanizePercentage }}. Возможна
+            горячая петля / тяжёлая задача. Снять py-spy.
+          runbook: "https://wiki.smdg/runbooks/high-cpu"
+
+      - alert: SMDGTooManyActiveRequests
+        expr: smdg_active_requests > 400
+        for: 3m
+        labels:
+          severity: warning
+          service: smdg
+          component: api
+        annotations:
+          summary: "Много in-flight запросов ({{ $value }})"
+          description: |
+            Приближаемся к max_concurrent_requests. Readiness скоро
+            начнёт возвращать 503 из-за overload. Масштабировать реплики.
+          runbook: "https://wiki.smdg/runbooks/overload"
+
+  # ===========================================================================
+  # 6. DICOM
+  # ===========================================================================
+  - name: smdg_dicom_alerts
+    interval: 1m
+    rules:
+
+      - alert: SMDGDICOMViewerDown
+        expr: smdg_dicom_up == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: dicom
+        annotations:
+          summary: "DICOM Viewer недоступен"
+          description: |
+            Включённый DICOM Viewer не отвечает. Проверить Redis (токены),
+            OHIF static-файлы, права на файлы.
+          runbook: "https://wiki.smdg/runbooks/dicom-down"
+
+      - alert: SMDGDICOMRenderSlow
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(dicom_render_duration_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: dicom
+        annotations:
+          summary: "DICOM рендер медленный (p95 > 10s)"
+          description: |
+            p95 рендера: {{ $value | printf "%.1f" }}s. Либо слишком
+            большие студии, либо CPU bottleneck.
+          runbook: "https://wiki.smdg/runbooks/dicom-slow"
+
+      - alert: SMDGDICOMRenderFailures
+        expr: sum(rate(dicom_render_failures_total[5m])) * 60 > 5
+        for: 3m
+        labels:
+          severity: warning
+          service: smdg
+          component: dicom
+        annotations:
+          summary: "DICOM рендер массово падает"
+          description: |
+            {{ $value | printf "%.1f" }} отказов рендера в минуту.
+          runbook: "https://wiki.smdg/runbooks/dicom-render-failures"
+
+  # ===========================================================================
+  # 7. Audit / queues
+  # ===========================================================================
+  - name: smdg_audit_alerts
+    interval: 1m
+    rules:
+
+      - alert: SMDGAuditLogGap
+        expr: (time() - smdg_last_audit_timestamp) > 300
+        for: 5m
+        labels:
+          severity: critical
+          service: smdg
+          component: audit
+        annotations:
+          summary: "Аудит молчит > 5 минут"
+          description: |
+            smdg_last_audit_timestamp не обновлялся. Возможно, упал audit
+            pipeline — это прямой регуляторный риск (HIPAA/152-FZ).
+          runbook: "https://wiki.smdg/runbooks/audit-gap"
+
+      - alert: SMDGWebhookRetryBacklog
+        expr: smdg_webhook_retry_queue_size > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: webhooks
+        annotations:
+          summary: "Очередь webhook-retry растёт"
+          description: |
+            В очереди {{ $value }} доставок. Вероятно, подписчик лежит
+            или рассылка не успевает. Проверить webhook_dispatcher.
+          runbook: "https://wiki.smdg/runbooks/webhook-backlog"
+
+      - alert: SMDGCleanupTaskBacklog
+        expr: smdg_cleanup_queue_size > 1000
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: cleanup
+        annotations:
+          summary: "Cleanup-очередь перегружена"
+          description: |
+            {{ $value }} задач на очистку ждут. Диск заполнится.
+          runbook: "https://wiki.smdg/runbooks/cleanup-backlog"
+
+  # ===========================================================================
+  # 8. SLO / SLI — алерты на нарушение объявленных SLO
+  # ===========================================================================
+  # SLO-метрики обновляет ``app.core.slo_collector`` раз в минуту.
+  # Источник истины для compliance — ``smdg_slo_compliance{slo_name=...}``;
+  # для availability 2xx/total — стандартный ``http_requests_total``
+  # от prometheus-fastapi-instrumentator.
+  - name: smdg_slo_alerts
+    interval: 1m
+    rules:
+
+      - alert: SMDGSLOBreachAvailability
+        expr: smdg_slo_compliance{slo_name="api_availability"} < 99
+        for: 15m
+        labels:
+          severity: critical
+          service: smdg
+          component: slo
+          slo: api_availability
+        annotations:
+          summary: "SLO breach: availability < 99% (target 99.9%)"
+          description: |
+            Compliance={{ $value | printf "%.3f" }}% в течение 15 мин.
+            Пора: проверить error budget, остановить рискованные
+            релизы, запустить IR-процедуру.
+          runbook: "https://wiki.smdg/runbooks/slo-breach-availability"
+
+      - alert: SMDGSLOBreachLatency
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: slo
+          slo: api_latency
+        annotations:
+          summary: "Latency SLO нарушен: p99 > 2s (target 0.5s)"
+          description: |
+            p99={{ $value | printf "%.2f" }}s. Достоверно тратим
+            latency error budget. Смотреть API traces и очереди.
+          runbook: "https://wiki.smdg/runbooks/slo-breach-latency"
+
+      - alert: SMDGErrorBudgetBurnFast
+        # Burn-rate 14.4x за 1h = 2% годового budget за час (классический
+        # Google SRE high-burn page). 99.9% SLO допускает 0.1% ошибок,
+        # умножаем на 14.4 → 1.44% порог error rate.
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total[1h]))
+          ) > (14.4 * 0.001)
+        for: 5m
+        labels:
+          severity: critical
+          service: smdg
+          component: slo
+          slo: api_availability
+          burn_rate: fast
+        annotations:
+          summary: "Error budget сжигается в 14.4× быстрее нормы"
+          description: |
+            Error rate {{ $value | humanizePercentage }} за 1h.
+            При такой скорости 30-дневный budget будет выгорать за ~2д.
+            Немедленно: freeze релизов, откат последнего деплоя.
+          runbook: "https://wiki.smdg/runbooks/error-budget-burn"
+
+      - alert: SMDGErrorBudgetBurnSlow
+        # Burn-rate 6x за 6h — «медленный» burn (10% budget/6h).
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[6h]))
+            /
+            sum(rate(http_requests_total[6h]))
+          ) > (6 * 0.001)
+        for: 30m
+        labels:
+          severity: warning
+          service: smdg
+          component: slo
+          slo: api_availability
+          burn_rate: slow
+        annotations:
+          summary: "Error budget сжигается в 6× быстрее нормы (slow-burn)"
+          description: |
+            Error rate {{ $value | humanizePercentage }} за 6h.
+            Тренд к нарушению месячного SLO. Разобрать top error-routes.
+          runbook: "https://wiki.smdg/runbooks/error-budget-burn"
+
+      - alert: SMDGSLOCollectorStale
+        # Коллектор упал / застрял — данные SLO устаревают.
+        expr: (time() - smdg_slo_last_update) > 300
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: slo
+        annotations:
+          summary: "SLO collector молчит > 5 мин"
+          description: |
+            Последнее обновление SLO-метрик было {{ $value | humanizeDuration }}
+            назад. Смотреть логи slo_collector и рестарт task'а.
+          runbook: "https://wiki.smdg/runbooks/slo-collector-stale"

@@ -142,6 +142,32 @@ class Settings(BaseSettings):
         "application/json", "application/xml"
     ]
 
+    # ──────────────────────────────────────────────────────────────
+    # Readiness / Liveness probes
+    # ──────────────────────────────────────────────────────────────
+    # Максимальное количество параллельных in-flight HTTP-запросов.
+    # При превышении readiness probe возвращает 503 (overloaded),
+    # и оркестратор (k8s/Docker Swarm) временно перестаёт слать трафик.
+    max_concurrent_requests: int = Field(
+        default=100,
+        alias="MAX_CONCURRENT_REQUESTS",
+        description="Порог перегрузки для readiness probe (in-flight запросы).",
+    )
+    # Таймаут на одну проверку зависимости (БД / Redis / storage) внутри
+    # readiness probe. Общая длительность probe < таймаута Docker HEALTHCHECK.
+    readiness_check_timeout: float = Field(
+        default=2.0,
+        alias="READINESS_CHECK_TIMEOUT",
+        description="Таймаут одной проверки зависимости в readiness probe (сек).",
+    )
+    # TTL кэша результатов readiness checks. При частых probe (каждые ~2с)
+    # избавляет БД/Redis от постоянной нагрузки `SELECT 1` / `PING`.
+    readiness_cache_ttl: float = Field(
+        default=1.5,
+        alias="READINESS_CACHE_TTL",
+        description="Время жизни кэша результатов readiness checks (сек).",
+    )
+
     # DICOM Viewer
     dicom_viewer_enabled: bool = True
     dicom_view_token_ttl_seconds: int = 900          # 15 минут

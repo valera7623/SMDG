@@ -5,6 +5,8 @@ Middleware-слои SMDG.
 - :class:`AuditMiddleware` — сквозное аудит-логирование HTTP-запросов.
 - :class:`ActiveRequestsMiddleware` — отслеживание активных in-flight запросов
   и мягкое отклонение новых во время graceful shutdown.
+- :class:`TracingMiddleware` — проброс ``X-Trace-Id`` в ответы клиентам,
+  чтобы операторы могли легко найти конкретный запрос в Jaeger.
 """
 from __future__ import annotations
 
@@ -17,6 +19,12 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core import audit_logger
+from app.core.slo_metrics import (
+    slo_latency_bucket,
+    slo_success_requests,
+    slo_total_requests,
+)
+from app.core.tracing import get_current_trace_id
 
 logger = logging.getLogger(__name__)
 
@@ -154,4 +162,146 @@ class ActiveRequestsMiddleware:
             logger.debug("← active_requests=%d (%s %s)", current, scope.get("method"), path)
 
 
-__all__ = ["AuditMiddleware", "ActiveRequestsMiddleware"]
+class TracingMiddleware:
+    """ASGI-middleware, пробрасывающий ``X-Trace-Id`` в ответы клиентам.
+
+    Работает поверх инструментации FastAPI от OpenTelemetry: когда
+    ``FastAPIInstrumentor`` создаёт серверный span для запроса, его
+    ``trace_id`` становится "текущим" в контексте. Мы оборачиваем ``send``,
+    чтобы добавить к ``http.response.start`` заголовок ``X-Trace-Id`` —
+    это позволяет в логах/ответах клиента видеть идентификатор трассы
+    и искать её в Jaeger без дополнительных запросов.
+
+    Если tracing отключён (``OTEL_ENABLED=false``) или OpenTelemetry не
+    установлен, ``get_current_trace_id()`` вернёт пустую строку и
+    middleware не добавит заголовок — поведение полностью прозрачно.
+
+    Важно: по семантике Starlette этот класс должен быть зарегистрирован
+    ПОСЛЕ всех других ASGI-слоёв, чтобы к моменту вызова ``send`` уже
+    был активен серверный span (его создаёт ``FastAPIInstrumentor``
+    изнутри при обработке запроса).
+    """
+
+    TRACE_HEADER: bytes = b"x-trace-id"
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                trace_id = get_current_trace_id()
+                if trace_id:
+                    headers = list(message.get("headers") or [])
+                    # Удаляем дубликаты, если кто-то уже выставил заголовок.
+                    headers = [
+                        (k, v) for (k, v) in headers if k.lower() != self.TRACE_HEADER
+                    ]
+                    headers.append((self.TRACE_HEADER, trace_id.encode("ascii")))
+                    message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
+
+
+# Пути, которые не должны попадать в SLO-счётчики: инфраструктурные
+# probes и собственный /metrics (иначе Prometheus сам генерит «success»
+# и искажает availability).
+_SLO_EXCLUDED_PATHS: frozenset[str] = frozenset(
+    {
+        "/metrics",
+        "/health",
+        "/health/live",
+        "/health/ready",
+        "/health/features",
+        "/health/deployment",
+    }
+)
+
+
+class SLOMiddleware:
+    """ASGI-middleware, собирающий SLI-метрики для SLO-расчётов.
+
+    На каждый HTTP-запрос (кроме health/metrics) инкрементирует:
+
+    - ``smdg_slo_total_requests_total{slo_name="api_availability"}``
+    - ``smdg_slo_success_requests_total{slo_name="api_availability"}``
+      для ответов 2xx-3xx (4xx и 5xx считаются ошибками SLO).
+
+    Также кладёт длительность запроса в histogram
+    ``smdg_slo_latency_seconds`` — на этой основе коллектор считает
+    p50/p90/p99.
+
+    Важно:
+        Middleware не трогает стандартные ``http_requests_total`` /
+        ``http_request_duration_seconds_*`` от
+        ``prometheus-fastapi-instrumentator`` — они экспонируются
+        параллельно и используются в PromQL-запросах дашборда.
+
+    Порядок регистрации:
+        SLO-middleware должен быть максимально внешним слоем, чтобы
+        учитывать запросы, отклонённые rate-limiter'ом и
+        ActiveRequests. См. ``app/main.py``.
+    """
+
+    SLO_NAME: str = "api_availability"
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path: str = scope.get("path", "")
+        if path in _SLO_EXCLUDED_PATHS:
+            await self.app(scope, receive, send)
+            return
+
+        import time as _time  # local import: не нужен для non-http веток
+
+        start = _time.perf_counter()
+        status_holder: dict[str, int] = {"code": 500}
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                status_holder["code"] = int(message.get("status", 500))
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        except Exception:
+            # Любое необработанное исключение — SLO-ошибка. Код
+            # по умолчанию (500) уже стоит, просто инкрементируем
+            # total и пробрасываем исключение дальше по стеку.
+            status_holder["code"] = 500
+            raise
+        finally:
+            duration = _time.perf_counter() - start
+            slo_total_requests.labels(slo_name=self.SLO_NAME).inc()
+            if 200 <= status_holder["code"] < 400:
+                slo_success_requests.labels(slo_name=self.SLO_NAME).inc()
+            slo_latency_bucket.observe(duration)
+
+
+__all__ = [
+    "AuditMiddleware",
+    "ActiveRequestsMiddleware",
+    "TracingMiddleware",
+    "SLOMiddleware",
+]

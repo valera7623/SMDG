@@ -49,6 +49,18 @@ psutil = "7.2.2"
 apscheduler = "^3.10.4"
 requests = "2.32.5"
 
+# ─── OpenTelemetry (distributed tracing) ─────────────────────────
+# Все пакеты опциональны: если они не установлены, app/core/tracing.py
+# переключается в no-op режим и приложение продолжает работать без трассировки.
+opentelemetry-api = "^1.28.0"
+opentelemetry-sdk = "^1.28.0"
+opentelemetry-exporter-otlp-proto-grpc = "^1.28.0"
+opentelemetry-instrumentation-fastapi = "^0.49b0"
+opentelemetry-instrumentation-sqlalchemy = "^0.49b0"
+opentelemetry-instrumentation-redis = "^0.49b0"
+opentelemetry-instrumentation-httpx = "^0.49b0"
+opentelemetry-propagator-b3 = "^1.28.0"
+
 # Тестирование / dev
 pytest = "9.0.2"
 pytest-asyncio = "1.3.0"

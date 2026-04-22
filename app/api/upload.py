@@ -20,6 +20,12 @@ from app.core import (
 )
 from app.core.webhook import webhook_dispatcher
 from app.core.rate_limiter import limiter
+from app.core.tracing import get_tracer
+
+try:
+    from opentelemetry import trace  # type: ignore
+except ImportError:  # pragma: no cover - tracing is optional
+    trace = None  # type: ignore[assignment]
 from app.crypto.crypto import crypto_manager
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.auth import get_current_user, TokenData
@@ -34,6 +40,10 @@ from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Отдельный tracer для upload-пути. Безопасен даже при отключённом tracing:
+# :func:`get_tracer` возвращает no-op при недоступности OpenTelemetry.
+tracer = get_tracer(__name__)
 
 
 # ==================== Константы (для тестов) ====================
@@ -151,6 +161,20 @@ async def upload_file(
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
 
+    # Внешний серверный span создаётся FastAPIInstrumentor автоматически.
+    # Мы добавляем кастомные вложенные спаны для ключевых фаз upload-пайплайна.
+    # В атрибуты НЕ кладём PII (имя файла, patient_id) — только безопасные
+    # метаданные (размер, mime, tenant_id, расширение).
+    current_span = trace.get_current_span() if trace is not None else None
+    if current_span is not None:
+        try:
+            current_span.set_attribute("tenant.id", str(tenant.id))
+            current_span.set_attribute(
+                "file.extension", Path(original_filename).suffix.lower() or "unknown"
+            )
+        except Exception:
+            pass
+
     try:
         params = UploadParams(
             ttl_days=ttl_days,
@@ -161,12 +185,18 @@ async def upload_file(
 
         safe_filename = sanitize_filename(original_filename)
 
-        preview = await file.read(8192)
-        await file.seek(0)
-
-        mime_type, _ = validate_file_safety(original_filename, preview, 0)
+        with tracer.start_as_current_span("upload.validate_mime"):
+            preview = await file.read(8192)
+            await file.seek(0)
+            mime_type, _ = validate_file_safety(original_filename, preview, 0)
 
         file_content = await file.read()
+        if current_span is not None:
+            try:
+                current_span.set_attribute("file.size_bytes", len(file_content))
+                current_span.set_attribute("file.mime_type", mime_type)
+            except Exception:
+                pass
 
         if len(file_content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
             raise HTTPException(413, f"Файл слишком большой (макс. {settings.MAX_UPLOAD_SIZE_MB}MB)")
@@ -199,32 +229,42 @@ async def upload_file(
         # ClamAV
         virus_detected = False
         virus_name = None
-        try:
-            cd = clamd.ClamdNetworkSocket(
-                host=settings.CLAMAV_HOST,
-                port=settings.CLAMAV_PORT,
-                timeout=settings.CLAMAV_TIMEOUT
-            )
-            loop = asyncio.get_running_loop()
-            with open(temp_upload_path, "rb") as f:
-                scan_result = await loop.run_in_executor(None, cd.instream, f)
+        with tracer.start_as_current_span("upload.clamav_scan") as scan_span:
+            try:
+                cd = clamd.ClamdNetworkSocket(
+                    host=settings.CLAMAV_HOST,
+                    port=settings.CLAMAV_PORT,
+                    timeout=settings.CLAMAV_TIMEOUT
+                )
+                loop = asyncio.get_running_loop()
+                with open(temp_upload_path, "rb") as f:
+                    scan_result = await loop.run_in_executor(None, cd.instream, f)
 
-            if scan_result and isinstance(scan_result, dict):
-                stream_result = scan_result.get('stream')
-                if stream_result and stream_result[0] == "FOUND":
-                    virus_detected = True
-                    virus_name = stream_result[1] if len(stream_result) > 1 else "unknown"
-        except Exception as e:
-            logger.error(f"ClamAV error: {e}")
-            audit_logger.log_operation(
-                action="clamav_error",
-                filename=original_filename,
-                user=current_user.sub,
-                reason=str(e),
-                success=False
-            )
-            if not settings.dev_mode:
-                raise HTTPException(503, "Антивирусный сервис недоступен")
+                if scan_result and isinstance(scan_result, dict):
+                    stream_result = scan_result.get('stream')
+                    if stream_result and stream_result[0] == "FOUND":
+                        virus_detected = True
+                        virus_name = stream_result[1] if len(stream_result) > 1 else "unknown"
+                try:
+                    scan_span.set_attribute("clamav.virus_detected", bool(virus_detected))
+                except Exception:
+                    pass
+            except Exception as e:
+                try:
+                    scan_span.set_attribute("clamav.error", type(e).__name__)
+                    scan_span.record_exception(e)
+                except Exception:
+                    pass
+                logger.error(f"ClamAV error: {e}")
+                audit_logger.log_operation(
+                    action="clamav_error",
+                    filename=original_filename,
+                    user=current_user.sub,
+                    reason=str(e),
+                    success=False
+                )
+                if not settings.dev_mode:
+                    raise HTTPException(503, "Антивирусный сервис недоступен")
 
         if virus_detected:
             audit_logger.log_operation(
@@ -242,23 +282,39 @@ async def upload_file(
         # Для локального режима используем старый путь, для S3 — ключ объекта
         final_encrypted_path = ENCRYPTED_DIR / final_encrypted_name
 
-        await crypto_manager.encrypt_file(
-            input_path=temp_upload_path,
-            public_key=get_public_key(),
-            output_path=final_encrypted_path
-        )
+        with tracer.start_as_current_span("upload.age_encrypt") as enc_span:
+            try:
+                enc_span.set_attribute("crypto.algorithm", "age")
+            except Exception:
+                pass
+            await crypto_manager.encrypt_file(
+                input_path=temp_upload_path,
+                public_key=get_public_key(),
+                output_path=final_encrypted_path
+            )
 
-        original_hash = await calculate_hash_async(temp_upload_path)
+        with tracer.start_as_current_span("upload.hash_original"):
+            original_hash = await calculate_hash_async(temp_upload_path)
 
         # Загрузка в хранилище (S3 или локальное)
         storage_key = final_encrypted_name  # S3 key или относительный путь
-        metadata = await encrypted_storage.upload(
-            key=storage_key,
-            file_path=final_encrypted_path,
-            content_type="application/octet-stream"
-        )
+        with tracer.start_as_current_span("upload.storage_save") as storage_span:
+            try:
+                storage_span.set_attribute("storage.backend", type(encrypted_storage).__name__)
+            except Exception:
+                pass
+            metadata = await encrypted_storage.upload(
+                key=storage_key,
+                file_path=final_encrypted_path,
+                content_type="application/octet-stream"
+            )
 
         encrypted_size = metadata.size
+        if current_span is not None:
+            try:
+                current_span.set_attribute("file.encrypted_size_bytes", encrypted_size)
+            except Exception:
+                pass
 
         user_id = None
         result = await db.execute(
@@ -294,9 +350,10 @@ async def upload_file(
             expires_at=datetime.now(timezone.utc) + timedelta(days=params.ttl_days)
         )
 
-        db.add(new_file)
-        await db.commit()
-        await db.refresh(new_file)
+        with tracer.start_as_current_span("upload.db_save_file"):
+            db.add(new_file)
+            await db.commit()
+            await db.refresh(new_file)
 
         token = str(uuid.uuid4())
         link = FileLink(
@@ -305,8 +362,9 @@ async def upload_file(
             max_downloads=params.max_downloads,
             expires_at=datetime.now(timezone.utc) + timedelta(days=params.ttl_days)
         )
-        db.add(link)
-        await db.commit()
+        with tracer.start_as_current_span("upload.db_save_link"):
+            db.add(link)
+            await db.commit()
 
         download_url = str(request.url_for('download_by_token')) + f"?token={token}"
 

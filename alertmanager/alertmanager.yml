@@ -1,0 +1,138 @@
+# =============================================================================
+# Alertmanager configuration for SMDG
+# =============================================================================
+# Стратегия доставки (в dev и minimal-production):
+#   * Все алерты → Webhook в SMDG (http://smdg:8000/api/alerts/webhook).
+#     Там они:
+#       - пишутся в audit log (регуляторное требование);
+#       - форматируются и уходят в Telegram, если заданы
+#         TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID.
+#
+# Для production-каналов (email, PagerDuty, Slack) смотри комментарии ниже —
+# раскомментируй нужные receiver'ы и укажи реальные значения (или
+# подставляй через envsubst при деплое).
+#
+# ВАЖНО: Alertmanager НЕ умеет раскрывать ${VAR} из окружения сам. Любые
+# placeholder'ы вроде "${SMTP_PASSWORD}" попадают в конфиг литерально и
+# ломают валидацию (например, `slack_api_url` должен быть валидным URL).
+# Поэтому здесь секций `global.smtp_*` / `global.slack_api_url` нет:
+# включай их только когда реально готов подать валидные значения.
+# =============================================================================
+
+global:
+  resolve_timeout: 5m
+
+
+# ---------------------------------------------------------------------------
+# Templates (опционально, можно добавить свои *.tmpl в alertmanager/templates/)
+# ---------------------------------------------------------------------------
+# templates:
+#   - "/etc/alertmanager/templates/*.tmpl"
+
+
+# ---------------------------------------------------------------------------
+# Routing tree
+# ---------------------------------------------------------------------------
+route:
+  group_by: ["alertname", "cluster", "service"]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 12h
+  receiver: "smdg-webhook"
+
+  routes:
+    # Security — дублирующий путь для отдельного audit trail.
+    - matchers:
+        - alertname = "SMDGCrossTenantAccess"
+      receiver: "smdg-webhook"
+      continue: true
+      group_wait: 0s
+      repeat_interval: 30m
+
+    # Critical — минимальный интервал повтора.
+    - matchers:
+        - severity = "critical"
+      receiver: "smdg-webhook"
+      continue: true
+      group_wait: 0s
+      repeat_interval: 1h
+
+    # Warning — умеренный.
+    - matchers:
+        - severity = "warning"
+      receiver: "smdg-webhook"
+      continue: true
+      repeat_interval: 4h
+
+
+# ---------------------------------------------------------------------------
+# Receivers
+# ---------------------------------------------------------------------------
+receivers:
+
+  - name: "smdg-webhook"
+    webhook_configs:
+      - url: "http://smdg:8000/api/alerts/webhook"
+        send_resolved: true
+        max_alerts: 50
+
+  # -------------------------------------------------------------------------
+  # PRODUCTION ТЕМПЛЕЙТЫ — скопируй и раскомментируй нужное.
+  # Держим здесь для удобства: меньше шансов написать их заново с ошибкой.
+  # -------------------------------------------------------------------------
+  #
+  # - name: "email-oncall"
+  #   email_configs:
+  #     - to: "oncall@smdg-project.org"
+  #       from: "alerts@smdg-project.org"
+  #       smarthost: "smtp.gmail.com:587"
+  #       auth_username: "REPLACE_ME"
+  #       auth_password: "REPLACE_ME"
+  #       require_tls: true
+  #       send_resolved: true
+  #       headers:
+  #         Subject: "[CRITICAL] SMDG {{ .GroupLabels.alertname }}"
+  #
+  # - name: "pagerduty-oncall"
+  #   pagerduty_configs:
+  #     - service_key: "REPLACE_ME"
+  #       send_resolved: true
+  #       description: "{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}"
+  #
+  # - name: "slack-info"
+  #   slack_configs:
+  #     - api_url: "https://hooks.slack.com/services/REPLACE_ME"
+  #       channel: "#smdg-alerts"
+  #       title: "SMDG Info Alert"
+  #       text: |
+  #         {{ range .Alerts }}
+  #         *{{ .Annotations.summary }}*
+  #         {{ .Annotations.description }}
+  #         {{ end }}
+  #       send_resolved: true
+
+
+# ---------------------------------------------------------------------------
+# Inhibit rules
+# ---------------------------------------------------------------------------
+inhibit_rules:
+  # critical подавляет одноимённые warning.
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    equal: ["alertname", "service", "instance"]
+
+  # DB упала → не спамим SMDGApiDown (это следствие).
+  - source_matchers:
+      - alertname = "SMDGDatabaseDown"
+    target_matchers:
+      - alertname = "SMDGApiDown"
+    equal: ["service"]
+
+  # Redis упал → не спамим SMDGReadinessFailing.
+  - source_matchers:
+      - alertname = "SMDGRedisDown"
+    target_matchers:
+      - alertname = "SMDGReadinessFailing"
+    equal: ["service"]

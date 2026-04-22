@@ -88,10 +88,20 @@ if ! nc -z db 5432 >/dev/null 2>&1; then
 fi
 
 # ────────────────────────────────────────────────────────────────
-# ТОЛЬКО МИГРАЦИИ - никаких ручных созданий таблиц!
+# Миграции БД
+#
+# В prod (rolling update) миграции выполняет отдельный one-shot сервис
+# `migrations` из docker-compose.prod.yml — он держит advisory lock
+# и гарантирует, что схема применяется ровно один раз, даже если
+# параллельно стартуют N реплик smdg. В dev/single-режиме миграции
+# по-прежнему прогоняются отсюда.
 # ────────────────────────────────────────────────────────────────
-echo "🛠️ Applying database migrations..."
-alembic upgrade head
+if [ "${SKIP_MIGRATIONS_IN_ENTRYPOINT:-false}" = "true" ]; then
+    echo "⏭️  SKIP_MIGRATIONS_IN_ENTRYPOINT=true — миграции выполняет отдельный сервис"
+else
+    echo "🛠️ Applying database migrations..."
+    alembic upgrade head
+fi
 
 # ────────────────────────────────────────────────────────────────
 # Создаём админа (уже через миграции данные должны быть)

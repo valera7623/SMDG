@@ -100,6 +100,13 @@ def get_public_key() -> str:
         raise RuntimeError("Публичный ключ не инициализирован. Вызовите await init_keys() при старте.")
     return _PUBLIC_KEY
 
+# Метрики и фоновый сборщик для алертинга. Импортируем здесь, чтобы любой
+# код, уже подтянувший ``from app.core import ...``, мог получить их без
+# отдельного импорта. Модуль metrics спроектирован как side-effect-free:
+# регистрация Gauge/Counter в default prometheus REGISTRY безопасна.
+from . import metrics  # noqa: E402,F401 — публичный sub-namespace
+from . import health_collector  # noqa: E402,F401 — публичный sub-namespace
+
 # Экспорт всех объектов, используемых в других модулях
 __all__ = [
     'UPLOAD_DIR',
@@ -114,4 +121,6 @@ __all__ = [
     'audit_logger',
     'init_keys',
     'settings',
+    'metrics',
+    'health_collector',
 ]

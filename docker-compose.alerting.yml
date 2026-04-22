@@ -1,0 +1,239 @@
+# =============================================================================
+# docker-compose.alerting.yml — стек мониторинга и алертинга SMDG
+# =============================================================================
+# Поднимает:
+#   * prometheus        — сбор метрик и evaluation alert rules.
+#   * alertmanager      — маршрутизация алертов в каналы уведомлений.
+#   * grafana           — визуализация (дашборды alerting/observability).
+#   * blackbox-exporter — внешние HTTP/TCP probes для healthcheck'ов.
+#   * node-exporter     — хост-метрики.
+#   * cadvisor          — контейнерные метрики (memory/cpu).
+#
+# Запуск вместе с основным стеком:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.alerting.yml \
+#     up -d
+#
+# Требуемые переменные окружения (в .env):
+#   SMTP_USERNAME / SMTP_PASSWORD   — для email в alertmanager
+#   PAGERDUTY_SERVICE_KEY           — (опц.) для critical-алертов
+#   SLACK_WEBHOOK_URL               — (опц.) для info-алертов
+#   TELEGRAM_BOT_TOKEN / CHAT_ID    — для Telegram (используется SMDG-приложением)
+#   SMDG_ALERT_WEBHOOK_SECRET       — (опц.) HMAC-секрет между Alertmanager и SMDG
+#   GRAFANA_PASSWORD                — admin-пароль Grafana
+#   ENVIRONMENT                     — external_label в Prometheus (production/staging)
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Prometheus
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: smdg-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--storage.tsdb.retention.size=10GB"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+    environment:
+      ENVIRONMENT: "${ENVIRONMENT:-production}"
+    ports:
+      - "9090:9090"
+    networks:
+      - backend
+    depends_on:
+      - alertmanager
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+
+  # ---------------------------------------------------------------------------
+  # Alertmanager
+  # ---------------------------------------------------------------------------
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: smdg-alertmanager
+    restart: unless-stopped
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+      - "--storage.path=/alertmanager"
+      - "--web.external-url=http://alertmanager:9093"
+      - "--cluster.listen-address="
+    environment:
+      SMTP_USERNAME: "${SMTP_USERNAME:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      PAGERDUTY_SERVICE_KEY: "${PAGERDUTY_SERVICE_KEY:-}"
+      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL:-}"
+    ports:
+      - "9093:9093"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.3"
+
+  # ---------------------------------------------------------------------------
+  # Grafana
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.4.5
+    container_name: smdg-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_PASSWORD:-admin}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # GF_INSTALL_PLUGINS удалён: piechart-panel никем не используется
+      # в наших дашбордах (smdg_alerts, slo-dashboard) и при старте
+      # вызывал `dial tcp: lookup grafana.com: server misbehaving` в
+      # окружениях с ограниченным DNS (WSL2 Docker). Если плагин
+      # понадобится — монтируйте его офлайн через volume в /var/lib/grafana/plugins.
+      GF_SERVER_ROOT_URL: "${GRAFANA_ROOT_URL:-http://localhost:3000}"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # ---------------------------------------------------------------------------
+  # Blackbox exporter — внешние HTTP/TCP probes
+  # ---------------------------------------------------------------------------
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: smdg-blackbox
+    restart: unless-stopped
+    volumes:
+      - ./blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - "--config.file=/etc/blackbox_exporter/config.yml"
+    ports:
+      - "9115:9115"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.2"
+
+  # ---------------------------------------------------------------------------
+  # Node exporter — хост-метрики.
+  #
+  # ВАЖНО: на WSL2 и некоторых Docker Desktop-установках корень `/` не
+  # помечен как shared/slave, поэтому `rslave` propagation падает:
+  #   Error: path / is mounted on / but it is not a shared or slave mount
+  # Решение: монтируем конкретные виртуальные файловые системы `/proc` и
+  # `/sys` (этого достаточно для всех ключевых коллекторов NE), без
+  # rslave-propagation. Такой подход рекомендован в README node-exporter
+  # для Docker Desktop / WSL2 / Podman.
+  #
+  # Сервис вынесен в профиль `host-metrics`, чтобы не падал стек на
+  # машинах без поддержки этих коллекторов.
+  #   docker compose --profile host-metrics -f ... up -d
+  # ---------------------------------------------------------------------------
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: smdg-node-exporter
+    restart: unless-stopped
+    profiles: ["host-metrics"]
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.2"
+
+  # ---------------------------------------------------------------------------
+  # cAdvisor — контейнерные метрики.
+  #
+  # Как и node-exporter, полностью корректно работает не на всех хостах
+  # (macOS/Windows/WSL2). Монтаж `/` несёт WSL2-проблему propagation, поэтому
+  # убираем его — cadvisor прекрасно собирает cgroup v2 метрики через
+  # /sys/fs/cgroup без /rootfs. Сервис тоже в профиле `host-metrics`.
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: smdg-cadvisor
+    restart: unless-stopped
+    profiles: ["host-metrics"]
+    volumes:
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - backend
+    privileged: true
+    devices:
+      - /dev/kmsg
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+
+networks:
+  # Подключаемся к существующей сети основного compose.
+  backend:
+    external: true
+    name: smdg_backend
+
+
+volumes:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:

@@ -1,0 +1,96 @@
+# =============================================================================
+# OpenTelemetry Collector configuration for SMDG
+#
+# Pipeline:
+#   receivers[otlp] → processors[memory_limiter → batch] → exporters[otlphttp -> Jaeger]
+#
+# Backend: Jaeger all-in-one (docker-compose.observability.yml) принимает
+# OTLP gRPC на порту 4317 и HTTP на 4318. Мы используем HTTP-экспортер, т.к.
+# он более терпим к перезапускам контейнера Jaeger (не держит постоянное
+# gRPC-соединение).
+#
+# Безопасность:
+# * receiver OTLP открыт только внутри docker-сети backend;
+# * memory_limiter защищает коллектор от OOM при пиках;
+# * batch processor уменьшает количество сетевых запросов к Jaeger.
+# =============================================================================
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        # 4 MiB — штатный дефолт, хватает для любых нормальных спанов.
+        max_recv_msg_size_mib: 4
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # ── memory_limiter ───────────────────────────────────────────────
+  # Мягко отбрасывает спаны, если коллектор начинает тратить слишком много
+  # памяти (например, при недоступности Jaeger). Первый processor в цепочке
+  # по рекомендации OpenTelemetry.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+  # ── batch ────────────────────────────────────────────────────────
+  # Группировка спанов перед отправкой снижает нагрузку на бекэнд.
+  batch:
+    timeout: 2s
+    send_batch_size: 512
+    send_batch_max_size: 1024
+
+  # ── resource ─────────────────────────────────────────────────────
+  # Добавляем метку collector.name, чтобы в Jaeger можно было отличать
+  # трассы от разных окружений (staging/production).
+  resource:
+    attributes:
+      - key: collector.name
+        value: smdg-otel-collector
+        action: upsert
+
+exporters:
+  # Современный Jaeger (≥1.35) поддерживает OTLP напрямую, поэтому
+  # отдельный jaeger-exporter (который deprecated) не нужен.
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+    # Ретраи — на случай временной недоступности Jaeger.
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 2000
+
+  # Полезно включить на время отладки конфигурации.
+  # debug:
+  #   verbosity: normal
+
+extensions:
+  # health_check отдаёт 200 OK на :13133 — используется docker healthcheck.
+  health_check:
+    endpoint: 0.0.0.0:13133
+  # zpages полезна для интроспекции коллектора по адресу :55679/debug.
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [health_check, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp/jaeger]
+  telemetry:
+    logs:
+      level: info
+    metrics:
+      level: basic
+      address: 0.0.0.0:8888

@@ -1,0 +1,110 @@
+# =============================================================================
+# docker-compose.observability.prod.yml — production-override для
+# observability-стека SMDG (Jaeger + OpenTelemetry Collector).
+#
+# Что делает этот override:
+#   * Закрывает внешние порты (``ports: !reset []`` + ``expose:``).
+#     Для общения внутри Docker-сети порты остаются доступными через
+#     ``expose``, но из внешнего мира (через публичный IP VPS) больше
+#     ничего не светит наружу. Единственная точка входа — nginx.
+#   * Публикует Jaeger Query UI под sub-path ``/jaeger/`` через nginx
+#     c Basic Auth (см. ``nginx/nginx-zero-downtime.conf``).
+#   * Указывает Jaeger'у ``QUERY_BASE_PATH=/jaeger`` — без этого UI
+#     будет генерировать неправильные ссылки на свои ассеты.
+#   * Усиливает политику рестартов и ограничения по ресурсам.
+#
+# Запуск вместе с prod-стеком:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.prod.yml \
+#     -f docker-compose.observability.yml \
+#     -f docker-compose.observability.prod.yml \
+#     up -d
+#
+# Порядок файлов важен: более поздний оверрайдит более ранний.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Jaeger — UI доступен только через nginx (https://<domain>/jaeger/)
+  # с Basic Auth. Прямой 16686 наружу НЕ торчит.
+  # OTLP-приёмник (4317) оставляем только внутри сети — в него шлёт
+  # otel-collector.
+  # ---------------------------------------------------------------------------
+  jaeger:
+    # Сбрасываем все ``ports:`` из базового observability-файла — ни один
+    # порт Jaeger'а больше не публикуется на хост. Внутри сети ``smdg_backend``
+    # контейнеры всё равно видят друг друга по именам сервисов.
+    ports: !reset []
+    expose:
+      # UI — читает только nginx (location /jaeger/)
+      - "16686"
+      # OTLP gRPC — читает только otel-collector
+      - "4317"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      MEMORY_MAX_TRACES: "100000"
+      SPAN_STORAGE_TYPE: "memory"
+      # Sub-path: UI будет отдаваться по /jaeger/, все внутренние ссылки
+      # (CSS/JS/API) перестраиваются автоматически. Без этой переменной
+      # страницы загрузятся, но ассеты ломаются на 404.
+      QUERY_BASE_PATH: "/jaeger"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ---------------------------------------------------------------------------
+  # OTEL Collector — закрываем вообще всё от внешнего мира.
+  # В проде он нужен ИСКЛЮЧИТЕЛЬНО для внутрисетевого приёма OTLP от smdg.
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    ports: !reset []
+    expose:
+      # OTLP gRPC — только для smdg-приложения
+      - "4317"
+      # OTLP HTTP — оставляем для совместимости (браузерные SDK, curl-дебаг
+      # из той же сети). Если не нужно — можно удалить.
+      - "4318"
+      # health_check extension — только для docker healthcheck.
+      - "13133"
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# -----------------------------------------------------------------------------
+# Сеть.
+#
+# В ``docker-compose.observability.yml`` сеть объявлена как ``external: true``
+# — это корректно, если observability-стек запускается ОТДЕЛЬНОЙ командой
+# уже после базового (в dev). Но в prod мы запускаем всё одной командой:
+#
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.prod.yml \
+#                  -f docker-compose.observability.yml \
+#                  -f docker-compose.observability.prod.yml up -d
+#
+# В этом случае Compose управляет сетью сам (имя ``{project}_backend``,
+# автоматически создаётся), и внешний ``external: true`` приводит к
+# конфликту с базовым ``backend``. Сбрасываем обратно в не-external.
+# -----------------------------------------------------------------------------
+networks:
+  backend:
+    external: false
+    name: smdg_backend

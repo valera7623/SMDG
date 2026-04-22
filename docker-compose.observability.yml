@@ -1,0 +1,104 @@
+# =============================================================================
+# docker-compose.observability.yml — распределённая трассировка SMDG
+#
+# Поднимает:
+#   * otel-collector — принимает OTLP gRPC/HTTP от приложения и экспортит в Jaeger.
+#   * jaeger         — хранит и отдаёт трассы, UI на порту 16686.
+#
+# Запуск вместе с основным стеком:
+#   docker compose \
+#     -f docker-compose.yml \
+#     -f docker-compose.observability.yml \
+#     up -d
+#
+# После запуска:
+#   * Приложение шлёт спаны в otel-collector:4317 (gRPC).
+#   * otel-collector экспортит их в jaeger:4317 (OTLP gRPC).
+#   * UI Jaeger:  http://localhost:16686
+#
+# В production порты 4317/4318/16686 должны быть закрыты firewall'ом или
+# проброшены через nginx с Basic Auth (аналогично Prometheus/Grafana).
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Jaeger (all-in-one) — приёмник, хранилище (in-memory) и UI в одном контейнере.
+  # Для продакшена следует заменить на распределённый деплой (collector +
+  # query + Elasticsearch/Cassandra), но all-in-one идеально для dev/staging.
+  # ---------------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: smdg-jaeger
+    restart: unless-stopped
+    environment:
+      # Включаем встроенный OTLP-приёмник (gRPC 4317 + HTTP 4318).
+      COLLECTOR_OTLP_ENABLED: "true"
+      # Ограничим хранение в памяти (100k spans) — безопасный дефолт для dev.
+      MEMORY_MAX_TRACES: "100000"
+      # Span storage TTL — трассы живут 24 часа в памяти.
+      SPAN_STORAGE_TYPE: "memory"
+    ports:
+      # Jaeger UI
+      - "16686:16686"
+      # OTLP gRPC — смотрит otel-collector (внутри сети)
+      - "14317:4317"
+      # OTLP HTTP — для ad-hoc отправки (curl, тесты)
+      - "14318:4318"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry Collector — буферизует и экспортит спаны в Jaeger.
+  # Наличие отдельного коллектора полезно даже для all-in-one Jaeger:
+  #   * единая точка конфигурации ресурсов / sampling / атрибутов;
+  #   * прозрачная замена backend'а (Tempo, Honeycomb, Datadog) без правок
+  #     приложения;
+  #   * защитный батчинг / memory_limiter.
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    container_name: smdg-otel-collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+    ports:
+      # OTLP gRPC — сюда шлёт приложение (SMDG_OTEL_EXPORTER_OTLP_ENDPOINT).
+      - "4317:4317"
+      # OTLP HTTP — для браузерных клиентов и curl.
+      - "4318:4318"
+      # health_check extension — удобно мониторить работу коллектора.
+      - "13133:13133"
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - backend
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+networks:
+  backend:
+    external: true
+    name: smdg_backend

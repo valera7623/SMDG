@@ -35,3 +35,4 @@ secrets/*
 *.age.coverage
 .cursor/
 poetry.toml
+.htpasswd-jaeger
