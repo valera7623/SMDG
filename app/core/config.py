@@ -127,6 +127,39 @@ class Settings(BaseSettings):
     CLAMAV_PORT: int = 3310
     CLAMAV_TIMEOUT: int = 60  
 
+    # === HTTP таймауты ===
+    HTTP_REQUEST_TIMEOUT_SECONDS: int = 30
+    HTTP_CONNECT_TIMEOUT_SECONDS: int = 5
+    HTTP_READ_TIMEOUT_SECONDS: int = 25
+
+    # === База данных ===
+    DB_QUERY_TIMEOUT_SECONDS: int = 10
+    DB_CONNECTION_TIMEOUT_SECONDS: int = 5
+    DB_TRANSACTION_TIMEOUT_SECONDS: int = 30
+
+    # === Redis ===
+    REDIS_OPERATION_TIMEOUT_SECONDS: int = 3
+    REDIS_CONNECTION_TIMEOUT_SECONDS: int = 2
+
+    # === S3/MinIO ===
+    S3_UPLOAD_TIMEOUT_SECONDS: int = 60
+    S3_DOWNLOAD_TIMEOUT_SECONDS: int = 60
+    S3_CONNECTION_TIMEOUT_SECONDS: int = 10
+
+    # === ClamAV ===
+    CLAMAV_SCAN_TIMEOUT_SECONDS: int = 30
+    CLAMAV_CONNECTION_TIMEOUT_SECONDS: int = 5
+
+    # === DICOM ===
+    DICOM_RENDER_TIMEOUT_SECONDS: int = 60
+    DICOM_DOWNLOAD_TIMEOUT_SECONDS: int = 120
+
+    # === Фоновые задачи ===
+    BACKGROUND_TASK_TIMEOUT_SECONDS: int = 300
+
+    # === Webhook ===
+    WEBHOOK_CALL_TIMEOUT_SECONDS: int = 10
+
     # Максимальный размер файла
     MAX_UPLOAD_SIZE_MB: int = 600
 
@@ -166,6 +199,37 @@ class Settings(BaseSettings):
         default=1.5,
         alias="READINESS_CACHE_TTL",
         description="Время жизни кэша результатов readiness checks (сек).",
+    )
+
+    # ──────────────────────────────────────────────────────────────
+    # Circuit Breaker (см. app/core/circuit_breaker.py)
+    # ──────────────────────────────────────────────────────────────
+    # Порог последовательных ошибок, при достижении которого брейкер
+    # переходит CLOSED → OPEN и начинает мгновенно отклонять вызовы.
+    circuit_breaker_failure_threshold: int = Field(
+        default=5,
+        alias="CIRCUIT_BREAKER_FAILURE_THRESHOLD",
+        description="Количество подряд идущих ошибок для открытия брейкера.",
+    )
+    # Сколько секунд держим OPEN перед пробным HALF_OPEN.
+    circuit_breaker_recovery_timeout: float = Field(
+        default=60.0,
+        alias="CIRCUIT_BREAKER_RECOVERY_TIMEOUT",
+        description="Секунд в состоянии OPEN перед переходом в HALF_OPEN.",
+    )
+    # Верхняя граница времени в HALF_OPEN без активности (страховка
+    # от «подвисшего» downstream): по истечении вернёмся в OPEN.
+    circuit_breaker_half_open_timeout: float = Field(
+        default=30.0,
+        alias="CIRCUIT_BREAKER_HALF_OPEN_TIMEOUT",
+        description="Секунд в HALF_OPEN без активности до возврата в OPEN.",
+    )
+    # Сколько одновременных пробных вызовов разрешено в HALF_OPEN.
+    # Столько же подряд успехов нужно, чтобы вернуться в CLOSED.
+    circuit_breaker_half_open_max_calls: int = Field(
+        default=3,
+        alias="CIRCUIT_BREAKER_HALF_OPEN_MAX_CALLS",
+        description="Лимит параллельных проб в HALF_OPEN / число успехов для CLOSED.",
     )
 
     # DICOM Viewer

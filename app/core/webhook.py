@@ -22,6 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
+from app.core.config import settings
 from app.models.webhook import (
     WebhookSubscription,
     WebhookDelivery,
@@ -148,7 +149,11 @@ class WebhookDispatcher:
         Отправить webhook с retry и exponential backoff.
         """
         max_attempts = subscription.max_retries or 3
-        timeout = aiohttp.ClientTimeout(total=subscription.timeout_seconds or 10)
+        timeout_value = min(
+            subscription.timeout_seconds or settings.WEBHOOK_CALL_TIMEOUT_SECONDS,
+            settings.WEBHOOK_CALL_TIMEOUT_SECONDS,
+        )
+        timeout = aiohttp.ClientTimeout(total=timeout_value)
 
         delivery = WebhookDelivery(
             subscription_id=subscription.id,

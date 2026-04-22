@@ -1,0 +1,386 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "SMDG Circuit Breakers — состояние, частота открытий, отклонённые вызовы, ошибки зависимостей.",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "uid": "smdg-circuit-breakers",
+  "title": "SMDG Circuit Breakers",
+  "tags": ["smdg", "resilience", "circuit-breaker"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-6h", "to": "now"},
+  "templating": {
+    "list": [
+      {
+        "current": {"selected": false, "text": "Prometheus", "value": "prometheus"},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "name": "breaker",
+        "label": "Breaker",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+        "query": "label_values(smdg_circuit_breaker_state, name)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "sort": 1,
+        "current": {"selected": true, "text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 0},
+      "id": 100,
+      "panels": [],
+      "title": "Текущее состояние",
+      "type": "row"
+    },
+    {
+      "id": 1,
+      "title": "Состояние всех Circuit Breaker'ов",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 1},
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "CLOSED", "color": "green"}}},
+            {"type": "value", "options": {"1": {"text": "OPEN", "color": "red"}}},
+            {"type": "value", "options": {"2": {"text": "HALF_OPEN", "color": "orange"}}}
+          ],
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "orange", "value": 1},
+              {"color": "red", "value": 2}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "auto",
+        "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+      },
+      "targets": [
+        {
+          "expr": "smdg_circuit_breaker_state{name=~\"$breaker\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Сколько брейкеров открыто прямо сейчас",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 6, "x": 12, "y": 1},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "orange", "value": 1},
+              {"color": "red", "value": 2}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value_and_name",
+        "reduceOptions": {"calcs": ["lastNotNull"]}
+      },
+      "targets": [
+        {
+          "expr": "count(smdg_circuit_breaker_state == 1) OR on() vector(0)",
+          "legendFormat": "OPEN",
+          "refId": "A"
+        },
+        {
+          "expr": "count(smdg_circuit_breaker_state == 2) OR on() vector(0)",
+          "legendFormat": "HALF_OPEN",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Отклонённые вызовы (rate/min)",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 8, "w": 6, "x": 18, "y": 1},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"color": "green", "value": null},
+              {"color": "orange", "value": 0.1},
+              {"color": "red", "value": 1}
+            ]
+          }
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": {"calcs": ["lastNotNull"]}
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(smdg_circuit_breaker_rejected_calls_total{name=~\"$breaker\"}[5m]))",
+          "legendFormat": "rejected/s",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 9},
+      "id": 101,
+      "panels": [],
+      "title": "Динамика состояния и событий",
+      "type": "row"
+    },
+    {
+      "id": 4,
+      "title": "Состояние брейкера во времени",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 10},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "stepAfter",
+            "fillOpacity": 20,
+            "stacking": {"mode": "none", "group": "A"}
+          },
+          "min": 0,
+          "max": 2,
+          "mappings": [
+            {"type": "value", "options": {"0": {"text": "CLOSED"}}},
+            {"type": "value", "options": {"1": {"text": "OPEN"}}},
+            {"type": "value", "options": {"2": {"text": "HALF_OPEN"}}}
+          ]
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "calcs": ["lastNotNull"], "placement": "right"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {
+          "expr": "smdg_circuit_breaker_state{name=~\"$breaker\"}",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Открытия брейкеров (CLOSED/HALF_OPEN → OPEN)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 10},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {"drawStyle": "bars", "fillOpacity": 60}
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "calcs": ["sum"], "placement": "right"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {
+          "expr": "rate(smdg_circuit_breaker_opens_total{name=~\"$breaker\"}[5m])",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Ошибки зависимостей (rate/sec)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 19},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "calcs": ["mean", "max"], "placement": "right"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {
+          "expr": "rate(smdg_circuit_breaker_failures_total{name=~\"$breaker\"}[5m])",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Отклонённые вызовы (fast-fail перед downstream)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 19},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {"drawStyle": "line", "lineInterpolation": "smooth", "fillOpacity": 10}
+        }
+      },
+      "options": {
+        "legend": {"displayMode": "table", "calcs": ["mean", "max"], "placement": "right"},
+        "tooltip": {"mode": "multi"}
+      },
+      "targets": [
+        {
+          "expr": "rate(smdg_circuit_breaker_rejected_calls_total{name=~\"$breaker\"}[5m])",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 28},
+      "id": 102,
+      "panels": [],
+      "title": "Сводная таблица",
+      "type": "row"
+    },
+    {
+      "id": 8,
+      "title": "Breakers overview",
+      "type": "table",
+      "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 29},
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {"show": false}
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {"align": "auto", "displayMode": "color-background"}
+        },
+        "overrides": [
+          {
+            "matcher": {"id": "byName", "options": "state"},
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {"type": "value", "options": {"0": {"text": "CLOSED", "color": "green"}}},
+                  {"type": "value", "options": {"1": {"text": "OPEN", "color": "red"}}},
+                  {"type": "value", "options": {"2": {"text": "HALF_OPEN", "color": "orange"}}}
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "targets": [
+        {
+          "expr": "smdg_circuit_breaker_state{name=~\"$breaker\"}",
+          "legendFormat": "{{name}}",
+          "refId": "state",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "sum by (name) (increase(smdg_circuit_breaker_failures_total{name=~\"$breaker\"}[1h]))",
+          "legendFormat": "{{name}}",
+          "refId": "failures_1h",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "sum by (name) (increase(smdg_circuit_breaker_opens_total{name=~\"$breaker\"}[1h]))",
+          "legendFormat": "{{name}}",
+          "refId": "opens_1h",
+          "format": "table",
+          "instant": true
+        },
+        {
+          "expr": "sum by (name) (increase(smdg_circuit_breaker_rejected_calls_total{name=~\"$breaker\"}[1h]))",
+          "legendFormat": "{{name}}",
+          "refId": "rejected_1h",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {"byField": "name", "mode": "outer"}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "renameByName": {
+              "Value #state": "state",
+              "Value #failures_1h": "failures (1h)",
+              "Value #opens_1h": "opens (1h)",
+              "Value #rejected_1h": "rejected (1h)"
+            },
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

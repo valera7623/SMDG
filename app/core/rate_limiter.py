@@ -1,5 +1,7 @@
 # app/core/rate_limiter.py
 import logging
+from typing import Any, Awaitable, Callable, Optional, TypeVar
+
 from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -11,6 +13,54 @@ logger = logging.getLogger(__name__)
 # Асинхронный клиент Redis — используется только для check/reset, НЕ для rate limiter
 redis_url = settings.redis_url or "redis://redis:6379/0"
 redis_client = Redis.from_url(redis_url, decode_responses=True)
+
+T = TypeVar("T")
+
+REDIS_CIRCUIT_BREAKER_NAME = "redis"
+
+
+def _get_redis_circuit_breaker():
+    """Ленивый импорт + общий брейкер на все Redis-операции."""
+    from app.core.circuit_breaker import get_circuit_breaker
+
+    return get_circuit_breaker(REDIS_CIRCUIT_BREAKER_NAME)
+
+
+async def redis_call_with_fallback(
+    func: Callable[..., Awaitable[T]],
+    *args: Any,
+    fallback: Optional[T] = None,
+    **kwargs: Any,
+) -> Optional[T]:
+    """Выполнить Redis-операцию с fallback при открытом Circuit Breaker.
+
+    Redis в SMDG используется для rate limiter'а и кэша — это НЕ критичные
+    зависимости. При деградации Redis'а мы предпочитаем работать в
+    degraded-режиме (без rate-limit / без кэша) вместо отказа запроса.
+
+    Пример использования::
+
+        from app.core.rate_limiter import redis_call_with_fallback, redis_client
+
+        value = await redis_call_with_fallback(redis_client.get, "key", fallback=None)
+    """
+    from app.core.circuit_breaker import CircuitBreakerOpenError
+    from app.core.circuit_breaker_metrics import record_rejected_call
+
+    cb = _get_redis_circuit_breaker()
+    try:
+        return await cb.call(func, *args, **kwargs)
+    except CircuitBreakerOpenError:
+        record_rejected_call(REDIS_CIRCUIT_BREAKER_NAME)
+        logger.debug(
+            "Redis circuit breaker is OPEN — using fallback (value=%r)", fallback
+        )
+        return fallback
+    except RedisError as exc:
+        # CircuitBreaker уже зафиксировал ошибку внутри call(); здесь мы просто
+        # гасим её и отдаём fallback, чтобы не ронять bus-критичный запрос.
+        logger.warning("Redis call failed, using fallback: %s", exc)
+        return fallback
 
 
 def custom_key_func(request: Request) -> str:
@@ -70,5 +120,7 @@ __all__ = [
     "limiter",
     "custom_key_func",
     "check_redis_connection",
-    "reset_rate_limit_cache"
+    "reset_rate_limit_cache",
+    "redis_call_with_fallback",
+    "REDIS_CIRCUIT_BREAKER_NAME",
 ]

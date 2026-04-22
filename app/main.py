@@ -20,7 +20,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.openapi.utils import get_openapi
-from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom
+from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core import encrypted_storage, cleanup_storage
 from app.core.webhook import webhook_dispatcher
@@ -36,6 +36,7 @@ from app.core.middleware import (
     ActiveRequestsMiddleware,
     TracingMiddleware,
     SLOMiddleware,
+    TimeoutMiddleware,
 )
 from app.core.slo_collector import slo_collector
 from app.core.tracing import setup_tracing, shutdown_tracing
@@ -48,9 +49,11 @@ from app.api.deploy_metrics import register_deploy_metrics
 from app.api.tracing import router as tracing_router
 from app.api.alert_webhook import router as alert_webhook_router
 from app.api.slo import router as slo_router
+from app.api.circuit_breaker import router as circuit_breaker_router
 from app.core.health_collector import collect_health_metrics
 from app.core.log_utils import ThrottledErrorLogger
 from app.core.metrics import smdg_version_info
+from app.core.timeout import TimeoutError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.core import cleanup_manager
 import asyncio
@@ -211,6 +214,12 @@ async def lifespan(app: FastAPI):
     # ──────────────────────────────────────────────────────────────
     # Startup
     # ──────────────────────────────────────────────────────────────
+    # Event loop для ``schedule_dependency_failure`` / ``schedule_batch_worker_success``
+    # (OTLP export из worker-потока OpenTelemetry → async Circuit Breaker).
+    from app.core.circuit_breaker import set_circuit_breaker_event_loop
+
+    set_circuit_breaker_event_loop(asyncio.get_running_loop())
+
     logger.info("🚀 Запуск SMDG v%s...", _APP_VERSION)
 
     # Graceful shutdown state (используется ActiveRequestsMiddleware и /health/ready)
@@ -321,6 +330,22 @@ async def lifespan(app: FastAPI):
     await create_first_admin()
 
     register_deploy_metrics(app)
+
+    # Предварительно регистрируем известные Circuit Breaker'ы, чтобы
+    # /api/circuit-breaker/status и Prometheus показывали их ДО первого
+    # реального вызова. Значения берутся из settings.*
+    try:
+        from app.core.circuit_breaker import get_circuit_breaker as _get_cb
+        from fastapi import HTTPException as _HTTPException
+
+        _get_cb("postgresql", exclude_exceptions=(_HTTPException,))
+        _get_cb("redis")
+        _get_cb("clamav")
+        _get_cb("s3_storage")
+        _get_cb("jaeger")
+        logger.info("✅ Circuit Breakers предварительно зарегистрированы")
+    except Exception as _exc:  # pragma: no cover — не критично для старта
+        logger.warning("Не удалось предрегистрировать Circuit Breakers: %s", _exc)
 
     logger.info("✅ Приложение готово принимать трафик")
 
@@ -597,6 +622,7 @@ app.add_middleware(SLOMiddleware)
 # внешним слоем. ActiveRequestsMiddleware должен оставаться самым внешним,
 # а TracingMiddleware работает внутри серверного span от FastAPIInstrumentor.
 app.add_middleware(TracingMiddleware)
+app.add_middleware(TimeoutMiddleware)
 
 # ────────────────────────────────────────────────────────────────
 # Graceful shutdown: отслеживание активных запросов
@@ -647,6 +673,11 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     )
 
 
+@app.exception_handler(TimeoutError)
+async def timeout_exception_handler(request: Request, exc: TimeoutError):
+    return JSONResponse(status_code=504, content={"detail": str(exc)})
+
+
 # Монтирование статических файлов
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -663,10 +694,12 @@ app.include_router(admin_users_router, prefix="/api")
 app.include_router(admin_audit_export_router, prefix="/api")
 app.include_router(delete_user_router, prefix="/api")
 app.include_router(dicom.router, prefix="/api")
+app.include_router(test.router, prefix="/api")
 app.include_router(tracing_router)
 app.include_router(health_router)
 app.include_router(alert_webhook_router)
 app.include_router(slo_router)
+app.include_router(circuit_breaker_router)
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):

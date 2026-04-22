@@ -7,6 +7,8 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from app.core.storage_backend import StorageBackend, LocalStorageBackend
+from app.core.config import settings
+from app.core.timeout import TimeoutError, run_with_timeout
 
 
 class FileCleanupManager:
@@ -106,7 +108,16 @@ class FileCleanupManager:
         self.logger.info("🚮 Запуск периодической очистки старых файлов")
 
         try:
-            keys_to_delete, _meta, total_scanned = await self._collect_expired()
+            keys_to_delete, _meta, total_scanned = await run_with_timeout(
+                self._collect_expired(),
+                timeout_seconds=float(settings.BACKGROUND_TASK_TIMEOUT_SECONDS),
+                error_message="Cleanup task timeout",
+                service="background",
+                operation="cleanup_collect_expired",
+            )
+        except TimeoutError as e:
+            self.logger.error("Cleanup task timed out: %s", e)
+            return {"total": 0, "deleted": 0, "errors": [str(e)]}
         except Exception as e:
             return {"total": 0, "deleted": 0, "errors": [str(e)]}
 

@@ -10,6 +10,9 @@ from typing import Optional, Dict, Any, List
 import logging
 from dataclasses import dataclass
 
+from app.core.config import settings
+from app.core.timeout import run_with_timeout
+
 logger = logging.getLogger(__name__)
 
 
@@ -320,11 +323,57 @@ class LocalStorageBackend(StorageBackend):
         }
 
 
+S3_CIRCUIT_BREAKER_NAME = "s3_storage"
+
+
+def _s3_circuit_breaker():
+    """Ленивый импорт, чтобы модуль не зависел от circuit_breaker на уровне
+    импорта (часть тестов инстанцируют S3StorageBackend в изоляции).
+    """
+    from app.core.circuit_breaker import get_circuit_breaker
+
+    return get_circuit_breaker(S3_CIRCUIT_BREAKER_NAME)
+
+
+def _s3_protected(method):
+    """Декоратор: обернуть метод ``S3StorageBackend`` в Circuit Breaker ``s3_storage``.
+
+    При открытом брейкере метод бросит ``CircuitBreakerOpenError`` —
+    вызывающий код обязан маппить её в HTTP 503.
+    """
+    from functools import wraps
+
+    @wraps(method)
+    async def wrapper(self, *args, **kwargs):
+        cb = _s3_circuit_breaker()
+        timeout_seconds = settings.S3_UPLOAD_TIMEOUT_SECONDS
+        method_name = method.__name__
+        if method_name in {"download", "download_bytes"}:
+            timeout_seconds = settings.S3_DOWNLOAD_TIMEOUT_SECONDS
+        elif method_name in {"exists", "stat", "list_objects", "get_storage_stats", "delete", "delete_many"}:
+            timeout_seconds = settings.S3_CONNECTION_TIMEOUT_SECONDS
+
+        return await run_with_timeout(
+            cb.call(method, self, *args, **kwargs),
+            timeout_seconds=float(timeout_seconds),
+            error_message=f"S3 {method_name} timeout",
+            service="s3",
+            operation=method_name,
+        )
+
+    return wrapper
+
+
 class S3StorageBackend(StorageBackend):
     """
     Реализация хранилища на основе S3/MinIO.
 
     Использует aiobotocore для асинхронной работы с S3-совместимыми хранилищами.
+
+    Все публичные методы обёрнуты в Circuit Breaker ``s3_storage``. Если
+    брейкер открыт, попытка ``upload`` / ``download`` / ``stat`` и т.п.
+    бросает :class:`app.core.circuit_breaker.CircuitBreakerOpenError` —
+    вызывающий код (FastAPI-ручки) обязан маппить её в HTTP 503.
     """
 
     def __init__(
@@ -359,6 +408,7 @@ class S3StorageBackend(StorageBackend):
         """Ленивая инициализация S3 клиента."""
         if self._client is None:
             from aiobotocore.session import get_session
+            from botocore.config import Config as BotoConfig
 
             session = get_session()
             protocol = "https" if self.use_ssl else "http"
@@ -372,6 +422,10 @@ class S3StorageBackend(StorageBackend):
                 aws_secret_access_key=self.secret_key,
                 region_name=self.region,
                 verify=self.use_ssl,
+                config=BotoConfig(
+                    connect_timeout=float(settings.S3_CONNECTION_TIMEOUT_SECONDS),
+                    read_timeout=float(settings.S3_DOWNLOAD_TIMEOUT_SECONDS),
+                ),
             )
             self._client = await self._client_context.__aenter__()
         return self._client
@@ -390,6 +444,7 @@ class S3StorageBackend(StorageBackend):
                 logger.error(f"❌ Ошибка создания бакета {self.bucket}: {e}")
                 raise
 
+    @_s3_protected
     async def upload(self, key: str, file_path: Path, content_type: Optional[str] = None) -> ObjectMetadata:
         """Загрузить файл в S3."""
         client = await self._get_client()
@@ -419,6 +474,7 @@ class S3StorageBackend(StorageBackend):
             etag=response.get('ETag', '').strip('"')
         )
 
+    @_s3_protected
     async def download(self, key: str, destination_path: Path) -> Path:
         """Скачать объект из S3 в локальный файл."""
         client = await self._get_client()
@@ -435,6 +491,7 @@ class S3StorageBackend(StorageBackend):
         logger.debug(f"📥 S3 Download: {key} -> {destination_path}")
         return destination_path
 
+    @_s3_protected
     async def download_bytes(self, key: str) -> bytes:
         """Скачать объект из S3 как байты."""
         client = await self._get_client()
@@ -442,6 +499,7 @@ class S3StorageBackend(StorageBackend):
         response = await client.get_object(Bucket=self.bucket, Key=key)
         return await response['Body'].read()
 
+    @_s3_protected
     async def delete(self, key: str) -> bool:
         """Удалить объект из S3."""
         client = await self._get_client()
@@ -453,6 +511,7 @@ class S3StorageBackend(StorageBackend):
             logger.error(f"❌ Ошибка удаления {key}: {e}")
             return False
 
+    @_s3_protected
     async def delete_many(self, keys: List[str]) -> Dict[str, Any]:
         """Удалить несколько объектов из S3 (batch операция)."""
         client = await self._get_client()
@@ -489,6 +548,7 @@ class S3StorageBackend(StorageBackend):
             "total_requested": len(keys)
         }
 
+    @_s3_protected
     async def exists(self, key: str) -> bool:
         """Проверить существование объекта в S3."""
         client = await self._get_client()
@@ -496,8 +556,13 @@ class S3StorageBackend(StorageBackend):
             await client.head_object(Bucket=self.bucket, Key=key)
             return True
         except Exception:
+            # Возвращаем False для штатной ситуации "нет такого объекта".
+            # Брейкер при этом всё равно получит успех — потому что мы
+            # не пробрасываем исключение. Это корректно: "ключа нет" —
+            # это не ошибка S3, а штатный ответ.
             return False
 
+    @_s3_protected
     async def stat(self, key: str) -> Optional[ObjectMetadata]:
         """Получить метаданные объекта из S3."""
         client = await self._get_client()
@@ -513,6 +578,7 @@ class S3StorageBackend(StorageBackend):
         except Exception:
             return None
 
+    @_s3_protected
     async def list_objects(self, prefix: str = "") -> List[ObjectMetadata]:
         """Список объектов в S3 с префиксом."""
         client = await self._get_client()
@@ -531,6 +597,7 @@ class S3StorageBackend(StorageBackend):
 
         return objects
 
+    @_s3_protected
     async def get_storage_stats(self) -> Dict[str, Any]:
         """Статистика S3 хранилища."""
         client = await self._get_client()

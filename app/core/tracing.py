@@ -10,6 +10,9 @@ Design goals
 * **Fail-open** — if the OTLP endpoint is unreachable or OpenTelemetry is not
   installed at all, the application must keep serving requests. All tracing
   calls must degrade to no-ops.
+* **Resilience** — OTLP export / ``force_flush`` участвуют в Circuit Breaker
+  ``"jaeger"`` (см. :class:`_CircuitAwareOTLPExporter`, :func:`shutdown_tracing`):
+  при деградации collector'а снижается нагрузка и не копятся бесконечные retry.
 * **Low overhead** — sampling is controlled via
   ``OTEL_TRACES_SAMPLER``/``OTEL_TRACES_SAMPLER_ARG`` (parent-based ratio
   sampler at 10% by default). Span export uses ``BatchSpanProcessor`` to
@@ -53,6 +56,91 @@ if TYPE_CHECKING:
     from fastapi import FastAPI
 
 logger = logging.getLogger(__name__)
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Circuit Breaker integration (Jaeger / OTLP collector)
+# ──────────────────────────────────────────────────────────────────────
+#
+# ``OTLPSpanExporter`` и ``BatchSpanProcessor`` работают из **отдельного
+# worker-потока SDK**, поэтому async-:class:`CircuitBreaker.call` там
+# напрямую не вызвать. Решение:
+#
+# 1. Обёртка экспортёра — при OPEN брейкера «jaeger» не ходим в сеть
+#    (возвращаем SUCCESS, чтобы batch не ушёл в бесконечный retry).
+# 2. Успех/провал экспорта планируем на основной event loop через
+#    ``schedule_batch_worker_success`` / ``schedule_dependency_failure``.
+# 3. Подкласс ``BatchSpanProcessor.force_flush`` — при OPEN не вызываем
+#    блокирующий flush (синхронная проверка ``state``).
+# 4. ``shutdown_tracing`` — flush оборачиваем в ``await cb.call(...)``.
+
+
+class _CircuitAwareOTLPExporter:
+    """Оборачивает OTLP trace exporter: учёт сбоев в ``jaeger`` circuit breaker."""
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+
+    def export(self, spans: Any) -> Any:
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        from app.core.circuit_breaker import (
+            CircuitState,
+            get_circuit_breaker,
+            schedule_batch_worker_success,
+            schedule_dependency_failure,
+        )
+        from app.core.circuit_breaker_metrics import record_rejected_call
+
+        jcb = get_circuit_breaker("jaeger")
+        if jcb.state is CircuitState.OPEN:
+            # Не шлём в collector — считаем батч «обработанным», иначе SDK
+            # будет бомбить недоступный endpoint.
+            record_rejected_call("jaeger")
+            return SpanExportResult.SUCCESS
+
+        try:
+            res = self._inner.export(spans)
+            if res is SpanExportResult.SUCCESS:
+                # В CLOSED с нулевым failure_count планировщик не обязателен.
+                st = jcb.state
+                if st is CircuitState.HALF_OPEN or jcb.failure_count:
+                    schedule_batch_worker_success("jaeger")
+            else:
+                schedule_dependency_failure(
+                    "jaeger",
+                    RuntimeError(f"OTLP span export did not succeed: {res!r}"),
+                )
+            return res
+        except Exception as exc:
+            schedule_dependency_failure("jaeger", exc)
+            return SpanExportResult.FAILURE
+
+    def shutdown(self) -> None:
+        return self._inner.shutdown()
+
+
+class _JaegerBatchSpanProcessor:
+    """Proxy над ``BatchSpanProcessor`` с защитой ``force_flush`` при OPEN."""
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        self._impl = BatchSpanProcessor(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._impl, name)
+
+    def force_flush(self, timeout_millis: int = 30000) -> bool:
+        from app.core.circuit_breaker import CircuitState, get_circuit_breaker
+
+        jcb = get_circuit_breaker("jaeger")
+        if jcb.state is CircuitState.OPEN:
+            logger.debug(
+                "Jaeger circuit breaker OPEN: skipping OTLP BatchSpanProcessor.force_flush"
+            )
+            return True
+        return self._impl.force_flush(timeout_millis=timeout_millis)
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -206,7 +294,6 @@ def setup_tracing(
         from opentelemetry.propagators.b3 import B3MultiFormat
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
-        from opentelemetry.sdk.trace.export import BatchSpanProcessor
     except ImportError as exc:
         logger.warning(
             "OpenTelemetry packages not installed (%s); tracing disabled", exc
@@ -230,8 +317,9 @@ def setup_tracing(
             "http://otel-collector:4317",
         )
         otlp_exporter = OTLPSpanExporter(endpoint=endpoint, insecure=True)
-        span_processor = BatchSpanProcessor(
-            otlp_exporter,
+        wrapped_exporter = _CircuitAwareOTLPExporter(otlp_exporter)
+        span_processor = _JaegerBatchSpanProcessor(
+            wrapped_exporter,
             max_queue_size=2048,
             schedule_delay_millis=5000,
             max_export_batch_size=512,
@@ -298,16 +386,41 @@ async def shutdown_tracing() -> None:
 
     Must be called from the lifespan shutdown hook to avoid losing the
     last batch of spans. Safe to call when tracing was never initialised.
+
+    ``force_flush`` обёрнут в :func:`get_circuit_breaker` (``"jaeger"``):
+    при открытом брейкере сетевой flush не вызывается, чтобы не крутить
+    зависший collector при shutdown. Затем ``shutdown`` завершает
+    фоновые воркеры SDK (отдельно от FSM).
     """
+    import asyncio
+
+    from app.core.circuit_breaker import (
+        CircuitBreakerOpenError,
+        get_circuit_breaker,
+    )
+
     global _TRACING_ENABLED, _TRACER_PROVIDER, _TRACER
 
     provider = _TRACER_PROVIDER
     if provider is None:
         return
 
+    jcb = get_circuit_breaker("jaeger")
     try:
-        if hasattr(provider, "force_flush"):
-            provider.force_flush(timeout_millis=3000)
+
+        async def _flush_to_collector() -> None:
+            def _sync_flush() -> None:
+                if hasattr(provider, "force_flush"):
+                    provider.force_flush(timeout_millis=3000)
+
+            await asyncio.to_thread(_sync_flush)
+
+        try:
+            await jcb.call(_flush_to_collector)
+        except CircuitBreakerOpenError:
+            logger.info(
+                "Jaeger circuit breaker OPEN — пропускаем OTLP force_flush при shutdown"
+            )
         if hasattr(provider, "shutdown"):
             provider.shutdown()
         logger.info("🔒 OpenTelemetry tracer provider остановлен")

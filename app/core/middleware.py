@@ -11,6 +11,7 @@ Middleware-слои SMDG.
 from __future__ import annotations
 
 import logging
+import asyncio
 from typing import Awaitable, Callable
 
 from fastapi import FastAPI, Request
@@ -19,6 +20,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core import audit_logger
+from app.core.config import settings
 from app.core.slo_metrics import (
     slo_latency_bucket,
     slo_success_requests,
@@ -162,6 +164,40 @@ class ActiveRequestsMiddleware:
             logger.debug("← active_requests=%d (%s %s)", current, scope.get("method"), path)
 
 
+class TimeoutMiddleware:
+    """ASGI middleware that caps total request processing time."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(
+        self,
+        scope: Scope,
+        receive: Receive,
+        send: Send,
+    ) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        try:
+            await asyncio.wait_for(
+                self.app(scope, receive, send),
+                timeout=float(settings.HTTP_REQUEST_TIMEOUT_SECONDS),
+            )
+        except asyncio.TimeoutError:
+            response = JSONResponse(
+                status_code=504,
+                content={
+                    "detail": (
+                        f"Request timeout after "
+                        f"{settings.HTTP_REQUEST_TIMEOUT_SECONDS} seconds"
+                    )
+                },
+            )
+            await response(scope, receive, send)
+
+
 class TracingMiddleware:
     """ASGI-middleware, пробрасывающий ``X-Trace-Id`` в ответы клиентам.
 
@@ -302,6 +338,7 @@ class SLOMiddleware:
 __all__ = [
     "AuditMiddleware",
     "ActiveRequestsMiddleware",
+    "TimeoutMiddleware",
     "TracingMiddleware",
     "SLOMiddleware",
 ]

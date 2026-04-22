@@ -33,7 +33,7 @@ from app.core.tenant import require_tenant, assert_tenant_access
 from app.models.file import File
 from app.models.dicom_view_token import DicomViewToken
 from app.crypto.crypto import crypto_manager
-from app.crypto.crypto import crypto_manager
+from app.core.timeout import timeout, run_with_timeout
 
 router = APIRouter(prefix="/dicom", tags=["dicom"])
 logger = logging.getLogger(__name__)
@@ -792,6 +792,12 @@ async def wado_legacy(
 # ─────────────────────────────────────────────────────────────────────
 
 @router.get("/render/{file_id}")
+@timeout(
+    settings.DICOM_RENDER_TIMEOUT_SECONDS,
+    "DICOM render timed out",
+    service="dicom",
+    operation="render_dicom_png",
+)
 async def render_dicom_png(
     file_id: int,
     token: str = Query(..., description="View-токен"),
@@ -1031,14 +1037,26 @@ async def _decrypt_dicom_to_memory(encrypted_path: str) -> bytes:
     tmp_dec = DECRYPTED_DIR / f"dec_dicom_{uuid.uuid4()}.dcm"
 
     try:
-        await encrypted_storage.download(
-            key=encrypted_path,
-            destination_path=tmp_enc,
+        await run_with_timeout(
+            encrypted_storage.download(
+                key=encrypted_path,
+                destination_path=tmp_enc,
+            ),
+            timeout_seconds=float(settings.DICOM_DOWNLOAD_TIMEOUT_SECONDS),
+            error_message="DICOM encrypted payload download timeout",
+            service="dicom",
+            operation="dicom_download",
         )
-        await crypto_manager.decrypt_file(
-            encrypted_path=tmp_enc,
-            private_key_path=PRIVATE_KEY_PATH,
-            output_path=tmp_dec,
+        await run_with_timeout(
+            crypto_manager.decrypt_file(
+                encrypted_path=tmp_enc,
+                private_key_path=PRIVATE_KEY_PATH,
+                output_path=tmp_dec,
+            ),
+            timeout_seconds=float(settings.DICOM_DOWNLOAD_TIMEOUT_SECONDS),
+            error_message="DICOM decrypt timeout",
+            service="dicom",
+            operation="dicom_decrypt",
         )
         return tmp_dec.read_bytes()
     finally:

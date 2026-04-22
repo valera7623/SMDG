@@ -18,6 +18,7 @@ from app.core.audit_export import (
 from app.core.auth import get_current_admin
 from app.core.auth_utils import TokenData
 from app.core.config import settings
+from app.core.timeout import timeout
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def _validate_dates_or_400(start_date: date, end_date: date) -> None:
 
 
 @router.get("/export")
+@timeout(120.0, "Audit export timed out", service="api", operation="export_audit_logs")
 async def export_audit_logs(
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     export_format: AuditExportFormat = Query(..., alias="format", description="Формат: excel, pdf, csv"),

@@ -146,6 +146,76 @@ groups:
           runbook: "https://wiki.smdg/runbooks/storage-down"
 
   # ===========================================================================
+  # 2b. Resilience: Circuit Breaker (см. app/core/circuit_breaker_metrics.py)
+  # ===========================================================================
+  - name: smdg_circuit_breaker_alerts
+    interval: 30s
+    rules:
+
+      - alert: SMDGCircuitBreakerOpen
+        expr: smdg_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+          service: smdg
+          component: circuit_breaker
+        annotations:
+          summary: "Circuit breaker {{ $labels.name }} в состоянии OPEN"
+          description: |
+            smdg_circuit_breaker_state=1 (OPEN) для name={{ $labels.name }}.
+            Вызовы к зависимости fast-fail (или fallback). Проверить целевой
+            сервис (PostgreSQL, Redis, ClamAV, S3, Jaeger) и /api/circuit-breaker/status.
+          runbook: "https://wiki.smdg/runbooks/circuit-breaker-open"
+
+      - alert: SMDGCircuitBreakerStuckHalfOpen
+        expr: smdg_circuit_breaker_state == 2
+        for: 5m
+        labels:
+          severity: warning
+          service: smdg
+          component: circuit_breaker
+        annotations:
+          summary: "Circuit breaker {{ $labels.name }} дольше 5 мин в HALF_OPEN"
+          description: |
+            name={{ $labels.name }}: HALF_OPEN (2) без перехода в CLOSED/OPEN
+            (возможны редкие пробы, зависший downstream, или слишком большой
+            half_open_max_calls / half_open_timeout). Проверить метрику
+            smdg_circuit_breaker_rejected_calls_total и логи приложения.
+          runbook: "https://wiki.smdg/runbooks/circuit-breaker-half-open"
+
+      - alert: SMDGCircuitBreakerHighRejectionRate
+        expr: |
+          sum by (name) (rate(smdg_circuit_breaker_rejected_calls_total[5m])) * 60 > 30
+        for: 2m
+        labels:
+          severity: warning
+          service: smdg
+          component: circuit_breaker
+        annotations:
+          summary: "Много fast-fail вызовов ({{ $labels.name }})"
+          description: |
+            >30 отклонённых вызовов/мин к {{ $labels.name }}: зависимость
+            недоступна или брейкер ещё открыт. Смотреть граф
+            `rate(smdg_circuit_breaker_rejected_calls_total[5m])`.
+          runbook: "https://wiki.smdg/runbooks/circuit-breaker-rejections"
+
+      - alert: SMDGCircuitBreakerFrequentOpens
+        expr: |
+          sum by (name) (increase(smdg_circuit_breaker_opens_total[15m])) >= 3
+        for: 1m
+        labels:
+          severity: warning
+          service: smdg
+          component: circuit_breaker
+        annotations:
+          summary: "Частые открытия брейкера {{ $labels.name }} (нестабильная зависимость)"
+          description: |
+            За 15 минут smdg_circuit_breaker_opens_total вырос >= 3: зависимость
+            ведёт себя флаппинг. Расследовать исчерпывающе network/SLO/нагрузку
+            на целевом сервисе.
+          runbook: "https://wiki.smdg/runbooks/circuit-breaker-flapping"
+
+  # ===========================================================================
   # 3. Business-level: upload/download/auth failures
   # ===========================================================================
   - name: smdg_business_alerts

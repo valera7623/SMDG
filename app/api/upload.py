@@ -4,7 +4,6 @@ from fastapi import APIRouter, UploadFile, HTTPException, Depends, Form, Request
 from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationError
 import magic
 import uuid
-import clamd
 import asyncio
 import json
 from pathlib import Path
@@ -30,6 +29,7 @@ from app.crypto.crypto import crypto_manager
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
+from app.core.database import execute_with_timeout as execute_db_with_timeout
 from app.models.file import File
 from app.models.file_link import FileLink
 from app.models.user import User
@@ -37,6 +37,8 @@ from app.core.tenant import require_tenant, assert_tenant_access
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
+from app.core.timeout import TimeoutError, timeout
+from app.services.clamav_service import scan_file as clamav_scan_file
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -146,6 +148,7 @@ def validate_file_safety(
 
 @router.post("/upload")
 @limiter.limit("10/minute")
+@timeout(60.0, "File upload timed out after 60 seconds", service="api", operation="upload_file")
 async def upload_file(
     request: Request,
     file: UploadFile = Form(...),
@@ -226,29 +229,57 @@ async def upload_file(
         with open(temp_upload_path, "wb") as buffer:
             buffer.write(file_content)
 
-        # ClamAV
+        # ClamAV (c Circuit Breaker)
         virus_detected = False
         virus_name = None
         with tracer.start_as_current_span("upload.clamav_scan") as scan_span:
-            try:
-                cd = clamd.ClamdNetworkSocket(
-                    host=settings.CLAMAV_HOST,
-                    port=settings.CLAMAV_PORT,
-                    timeout=settings.CLAMAV_TIMEOUT
-                )
-                loop = asyncio.get_running_loop()
-                with open(temp_upload_path, "rb") as f:
-                    scan_result = await loop.run_in_executor(None, cd.instream, f)
+            from app.core.circuit_breaker import (
+                CircuitBreakerOpenError,
+                get_circuit_breaker,
+            )
+            from app.core.circuit_breaker_metrics import record_rejected_call
 
-                if scan_result and isinstance(scan_result, dict):
-                    stream_result = scan_result.get('stream')
-                    if stream_result and stream_result[0] == "FOUND":
-                        virus_detected = True
-                        virus_name = stream_result[1] if len(stream_result) > 1 else "unknown"
+            clamav_cb = get_circuit_breaker("clamav")
+
+            try:
+                scan_result = await clamav_cb.call(clamav_scan_file, temp_upload_path)
+                if scan_result.get("status") == "infected":
+                    virus_detected = True
+                    virus_name = scan_result.get("virus_name", "unknown")
+                if scan_result.get("status") == "skipped":
+                    audit_logger.log_operation(
+                        action="clamav_skipped_timeout",
+                        filename=original_filename,
+                        user=current_user.sub,
+                        reason="ClamAV scan timeout",
+                        success=False,
+                    )
                 try:
                     scan_span.set_attribute("clamav.virus_detected", bool(virus_detected))
                 except Exception:
                     pass
+            except CircuitBreakerOpenError:
+                # Брейкер открыт — ClamAV считаем «всё ещё лежит». Чтобы не
+                # блокировать весь upload-канал, пропускаем проверку: это
+                # осознанный availability vs security trade-off (см. ТЗ).
+                record_rejected_call("clamav")
+                logger.warning(
+                    "ClamAV circuit breaker is OPEN — skipping virus scan "
+                    "for upload by user=%s",
+                    current_user.sub,
+                )
+                try:
+                    scan_span.set_attribute("clamav.skipped", True)
+                    scan_span.set_attribute("clamav.skip_reason", "circuit_breaker_open")
+                except Exception:
+                    pass
+                audit_logger.log_operation(
+                    action="clamav_skipped_cb_open",
+                    filename=original_filename,
+                    user=current_user.sub,
+                    reason="ClamAV circuit breaker is OPEN",
+                    success=False,
+                )
             except Exception as e:
                 try:
                     scan_span.set_attribute("clamav.error", type(e).__name__)
@@ -317,8 +348,11 @@ async def upload_file(
                 pass
 
         user_id = None
-        result = await db.execute(
-            select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+        result = await execute_db_with_timeout(
+            db.execute(
+                select(User).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+            ),
+            operation="upload_select_user",
         )
         db_user = result.scalar_one_or_none()
         if db_user:
@@ -352,8 +386,8 @@ async def upload_file(
 
         with tracer.start_as_current_span("upload.db_save_file"):
             db.add(new_file)
-            await db.commit()
-            await db.refresh(new_file)
+            await execute_db_with_timeout(db.commit(), operation="upload_commit_file")
+            await execute_db_with_timeout(db.refresh(new_file), operation="upload_refresh_file")
 
         token = str(uuid.uuid4())
         link = FileLink(
@@ -364,7 +398,7 @@ async def upload_file(
         )
         with tracer.start_as_current_span("upload.db_save_link"):
             db.add(link)
-            await db.commit()
+            await execute_db_with_timeout(db.commit(), operation="upload_commit_link")
 
         download_url = str(request.url_for('download_by_token')) + f"?token={token}"
 
@@ -410,6 +444,8 @@ async def upload_file(
             "max_downloads": link.max_downloads
         }
 
+    except TimeoutError as e:
+        raise HTTPException(status_code=504, detail=str(e))
     except HTTPException:
         raise
     except ValidationError:
