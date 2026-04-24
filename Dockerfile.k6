@@ -1,0 +1,7 @@
+FROM grafana/k6:latest
+
+COPY ./scripts/load-tests/ /scripts/
+
+WORKDIR /scripts
+
+ENTRYPOINT ["k6"]

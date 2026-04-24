@@ -74,7 +74,11 @@ services:
       db:
         condition: service_healthy
     secrets:
-      - postgres_password
+      - source: postgres_password
+        target: postgres_password
+        uid: "10001"
+        gid: "10001"
+        mode: 0440
     environment:
       DEV_MODE: "false"
       LOG_LEVEL: "INFO"

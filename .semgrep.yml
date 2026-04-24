@@ -1,0 +1,104 @@
+rules:
+  - id: fastapi-debug-mode
+    pattern: app = FastAPI(..., debug=True, ...)
+    message: FastAPI debug mode enabled in production
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-489"
+
+  - id: hardcoded-secret
+    pattern-either:
+      - pattern: $SECRET = "..."
+      - pattern: API_KEY = "..."
+      - pattern: SECRET_KEY = "..."
+    message: Possible hardcoded secret detected
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-798"
+
+  - id: sql-injection-fstring
+    patterns:
+      - pattern: $CURSOR.execute(f"...{$INPUT}...")
+    message: Possible SQL injection via f-string
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-89"
+
+  - id: command-injection-shell-true
+    patterns:
+      - pattern-either:
+          - pattern: subprocess.Popen(..., shell=True, ...)
+          - pattern: subprocess.run(..., shell=True, ...)
+          - pattern: os.system(...)
+    message: Potential command injection vector
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-78"
+
+  - id: open-redirect
+    pattern: RedirectResponse($URL)
+    message: Possible open redirect, validate target URL
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-601"
+
+  - id: insecure-cors-wildcard
+    pattern: allow_origins=["*"]
+    message: Insecure CORS wildcard origin
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-942"
+
+  - id: insecure-cookie
+    pattern-either:
+      - pattern: $RESP.set_cookie(..., secure=False, ...)
+      - pattern: $RESP.set_cookie(..., httponly=False, ...)
+    message: Insecure cookie flags detected
+    severity: WARNING
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-614"
+
+  - id: path-traversal-risk
+    pattern-either:
+      - pattern: open(f"...{$USER_INPUT}...", ...)
+      - pattern: Path(f"...{$USER_INPUT}...")
+    message: Potential path traversal, sanitize user input
+    severity: ERROR
+    languages: [python]
+    metadata:
+      category: security
+      cwe: "CWE-22"
+
+  - id: auth-endpoint-without-rate-limit-decorator
+    patterns:
+      - pattern-inside: |
+          @router.post(...)
+          async def $FUNC(...):
+            ...
+      - pattern-not-inside: |
+          @limiter.limit(...)
+          @router.post(...)
+          async def $FUNC(...):
+            ...
+    message: Sensitive POST endpoint may miss explicit rate limiting
+    severity: WARNING
+    languages: [python]
+    paths:
+      include:
+        - app/api/auth.py
+    metadata:
+      category: security

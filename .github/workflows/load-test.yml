@@ -1,0 +1,84 @@
+name: Load Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Test scenario"
+        required: false
+        default: "api-load"
+        type: choice
+        options:
+          - smoke
+          - api-load
+          - upload-load
+          - auth-load
+          - mixed-load
+          - dicom-load
+          - stress-test
+          - soak
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: http://localhost:8000
+      ADMIN_USER: admin
+      ADMIN_PASSWORD: admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start SMDG stack
+        run: docker compose up -d
+
+      - name: Wait for health endpoint
+        run: |
+          for i in {1..60}; do
+            if curl -fsS "$BASE_URL/health" > /dev/null; then
+              echo "SMDG is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "SMDG did not become healthy in time"
+          exit 1
+
+      - name: Build k6 image
+        run: docker compose -f docker-compose.load-test.yml build k6
+
+      - name: Run selected load test
+        run: |
+          mkdir -p load-test-results
+          SCENARIO="${{ github.event.inputs.scenario || 'api-load' }}"
+          case "$SCENARIO" in
+            smoke)
+              SCRIPT="/scripts/smoke-tests/smoke.js"
+              OUTPUT="smoke-summary.json"
+              ;;
+            soak)
+              SCRIPT="/scripts/smoke-tests/soak.js"
+              OUTPUT="soak-summary.json"
+              ;;
+            *)
+              SCRIPT="/scripts/scenarios/${SCENARIO}.js"
+              OUTPUT="${SCENARIO}-summary.json"
+              ;;
+          esac
+
+          docker compose -f docker-compose.load-test.yml run --rm \
+            -e BASE_URL="$BASE_URL" \
+            -e ADMIN_USER="$ADMIN_USER" \
+            -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            k6 run "$SCRIPT" --summary-export="/results/$OUTPUT"
+
+      - name: Upload load-test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-results
+          path: load-test-results/
+
+      - name: Stop stack
+        if: always()
+        run: docker compose down -v

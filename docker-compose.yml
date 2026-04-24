@@ -83,11 +83,29 @@ services:
         condition: service_healthy
       clamav:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     secrets:
-      - age_private_key
-      - admin_password
-      - jwt_secret_key          # если хочешь вынести
-      - postgres_password       # если smdg тоже должен знать пароль БД
+      - source: age_private_key
+        target: age_private_key
+        uid: "10001"
+        gid: "10001"
+        mode: 0440
+      - source: admin_password
+        target: admin_password
+        uid: "10001"
+        gid: "10001"
+        mode: 0440
+      - source: jwt_secret_key
+        target: jwt_secret_key
+        uid: "10001"
+        gid: "10001"
+        mode: 0440
+      - source: postgres_password
+        target: postgres_password
+        uid: "10001"
+        gid: "10001"
+        mode: 0440
     environment:
 
       DEV_MODE: "${DEV_MODE:-true}"

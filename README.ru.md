@@ -60,6 +60,43 @@ docker compose up --build
   и `/openapi.{ru,de,fr}.json`.
 - Документация: `docs/src/` (английский) + `docs/locales/<lang>/`.
 
+## Security Scanning
+
+CI workflow [`security-scan.yml`](.github/workflows/security-scan.yml) запускает
+SAST, SCA, secrets, container и DAST проверки для `push`, `pull_request`,
+`schedule` и ручного запуска.
+
+### Автопереключение режимов (`SECURITY_SCAN_MODE`)
+
+Workflow автоматически выбирает режим по событию:
+
+- `schedule` -> `audit`
+- `push` / `pull_request` / `workflow_dispatch` -> `balanced` (по умолчанию)
+- для несcheduled-событий можно переопределить через repository variable
+  `SECURITY_SCAN_MODE=strict` (или `balanced`)
+
+Фактическое выражение в workflow:
+
+```yaml
+env:
+  SECURITY_SCAN_MODE: ${{ github.event_name == 'schedule' && 'audit' || (vars.SECURITY_SCAN_MODE == 'strict' && 'strict' || 'balanced') }}
+```
+
+Как настроить repository variable в GitHub:
+
+1. Откройте репозиторий -> **Settings** -> **Secrets and variables** -> **Actions**.
+2. Перейдите на вкладку **Variables**.
+3. Нажмите **New repository variable**.
+4. Укажите:
+   - Name: `SECURITY_SCAN_MODE`
+   - Value: `strict` (или `balanced`)
+
+Пример через GitHub CLI:
+
+```bash
+gh variable set SECURITY_SCAN_MODE --body strict
+```
+
 ## Лицензия
 
 MIT. Автор: Валерий Попов.

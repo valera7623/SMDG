@@ -58,3 +58,34 @@ docker compose -f docker-compose.yml -f docker-compose.saas.yml up -d
 3. Перезапустите сервисы.
 
 Шаблоны `.env`: `.env.<profile>.example` в корне репозитория.
+
+## Runbooks для эксплуатации
+
+Для production-операций и инцидентов используйте:
+
+- Главный индекс: [`docs/runbooks/README.md`](../../runbooks/README.md)
+
+Ежедневные/регулярные операции:
+
+- Daily checks: [`docs/runbooks/operations/daily-checks.md`](../../runbooks/operations/daily-checks.md)
+- Weekly maintenance: [`docs/runbooks/operations/weekly-maintenance.md`](../../runbooks/operations/weekly-maintenance.md)
+- Monthly tasks: [`docs/runbooks/operations/monthly-tasks.md`](../../runbooks/operations/monthly-tasks.md)
+- Backup and recovery: [`docs/runbooks/operations/backup-recovery.md`](../../runbooks/operations/backup-recovery.md)
+
+Компонентные playbooks:
+
+- API: [`docs/runbooks/components/smdg-api.md`](../../runbooks/components/smdg-api.md)
+- PostgreSQL: [`docs/runbooks/components/smdg-database.md`](../../runbooks/components/smdg-database.md)
+- Redis: [`docs/runbooks/components/smdg-redis.md`](../../runbooks/components/smdg-redis.md)
+- Storage: [`docs/runbooks/components/smdg-storage.md`](../../runbooks/components/smdg-storage.md)
+- DICOM: [`docs/runbooks/components/smdg-dicom.md`](../../runbooks/components/smdg-dicom.md)
+- Auth: [`docs/runbooks/components/smdg-auth.md`](../../runbooks/components/smdg-auth.md)
+- Audit: [`docs/runbooks/components/smdg-audit.md`](../../runbooks/components/smdg-audit.md)
+- Webhooks: [`docs/runbooks/components/smdg-webhooks.md`](../../runbooks/components/smdg-webhooks.md)
+
+Ключевые инциденты:
+
+- High CPU: [`docs/runbooks/incidents/high-cpu.md`](../../runbooks/incidents/high-cpu.md)
+- High memory: [`docs/runbooks/incidents/high-memory.md`](../../runbooks/incidents/high-memory.md)
+- DB connection limit: [`docs/runbooks/incidents/db-connection-limit.md`](../../runbooks/incidents/db-connection-limit.md)
+- Disk full: [`docs/runbooks/incidents/disk-full.md`](../../runbooks/incidents/disk-full.md)

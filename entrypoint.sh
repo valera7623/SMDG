@@ -53,9 +53,6 @@ echo "✅ Приватный ключ age найден"
 # Инициализация S3/MinIO (если включено)
 # ────────────────────────────────────────────────────────────────
 if [ "${S3_ENABLED:-false}" = "true" ]; then
-    echo "🪣 S3 режим включён — инициализация бакетов..."
-    bash /app/scripts/init_s3_buckets.sh
-
     echo "⏳ Ожидание готовности MinIO/S3..."
     # Ждём S3 endpoint
     for i in {1..30}; do
@@ -65,6 +62,21 @@ if [ "${S3_ENABLED:-false}" = "true" ]; then
         fi
         echo "S3 ещё не готов... ($i/30)"
         sleep 2
+    done
+
+    echo "🪣 S3 режим включён — инициализация бакетов..."
+    # Небольшие ретраи на случай, когда health уже green, но S3 API
+    # ещё возвращает connection errors в первые секунды.
+    for i in {1..5}; do
+        if bash /app/scripts/init_s3_buckets.sh; then
+            break
+        fi
+        if [ "$i" -eq 5 ]; then
+            echo "❌ Не удалось инициализировать S3 бакеты после 5 попыток"
+            exit 1
+        fi
+        echo "⚠️  Инициализация бакетов не удалась, повтор через 3с ($i/5)"
+        sleep 3
     done
 else
     echo "ℹ️  S3 отключён — используется локальное хранилище"
@@ -163,6 +175,14 @@ fi
 echo "✅ Директория бэкапов $BACKUP_DIR готова"
 
 # ────────────────────────────────────────────────────────────────
+# Права на каталоги, в которые пишет runtime под пользователем smdg
+# ────────────────────────────────────────────────────────────────
+mkdir -p /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted
+touch "/app/audit_logs/audit_$(date +%Y-%m-%d).log" /app/audit_logs/audit.csv 2>/dev/null || true
+chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted 2>/dev/null || true
+chmod -R u+rwX,g+rwX /app/audit_logs /app/backups 2>/dev/null || true
+
+# ────────────────────────────────────────────────────────────────
 # Информация о режиме хранилища
 # ────────────────────────────────────────────────────────────────
 if [ "${S3_ENABLED:-false}" = "true" ]; then
@@ -177,4 +197,8 @@ fi
 # Запуск приложения
 # ────────────────────────────────────────────────────────────────
 echo "🖥️ Starting Uvicorn..."
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
+if id smdg >/dev/null 2>&1; then
+    exec gosu smdg uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
+else
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
+fi

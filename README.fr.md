@@ -60,6 +60,43 @@ Détails : [`docs/locales/fr/DEPLOYMENT.md`](docs/locales/fr/DEPLOYMENT.md).
   `/docs/fr` et `/openapi.{ru,de,fr}.json`.
 - Documentation utilisateur : `docs/src/` (anglais) + `docs/locales/<lang>/`.
 
+## Security Scanning
+
+Le workflow CI [`security-scan.yml`](.github/workflows/security-scan.yml) exécute
+les scans SAST, SCA, secrets, conteneur et DAST pour `push`, `pull_request`,
+`schedule` et l'exécution manuelle.
+
+### Bascule automatique du mode (`SECURITY_SCAN_MODE`)
+
+Le workflow sélectionne automatiquement le mode selon l'événement :
+
+- `schedule` -> `audit`
+- `push` / `pull_request` / `workflow_dispatch` -> `balanced` (par défaut)
+- Pour les événements non planifiés, surcharge possible via la variable
+  de dépôt `SECURITY_SCAN_MODE=strict` (ou `balanced`)
+
+Expression effective dans le workflow :
+
+```yaml
+env:
+  SECURITY_SCAN_MODE: ${{ github.event_name == 'schedule' && 'audit' || (vars.SECURITY_SCAN_MODE == 'strict' && 'strict' || 'balanced') }}
+```
+
+Comment configurer la variable de dépôt dans GitHub :
+
+1. Ouvrez le dépôt -> **Settings** -> **Secrets and variables** -> **Actions**.
+2. Allez à l'onglet **Variables**.
+3. Cliquez sur **New repository variable**.
+4. Définissez :
+   - Name: `SECURITY_SCAN_MODE`
+   - Value: `strict` (ou `balanced`)
+
+Exemple via GitHub CLI :
+
+```bash
+gh variable set SECURITY_SCAN_MODE --body strict
+```
+
 ## Licence
 
 MIT. Auteur : Valeriy Popov.

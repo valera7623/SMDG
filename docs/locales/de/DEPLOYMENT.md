@@ -16,3 +16,11 @@ smdg-i18n-header-end -->
 **English source preview:**
 
 # SMDG deployment profiles  The environment variable **`DEPLOYMENT_TYPE`** accepts one of: `russia` | `intl` | `single` | `saas`.  ## Russia (`russia`)  - Local storage (`S3_ENABLED=false`). - Mandato…
+
+## Betriebs-Runbooks
+
+- Hauptindex: [`docs/runbooks/README.md`](../../runbooks/README.md)
+- Tägliche Checks: [`docs/runbooks/operations/daily-checks.md`](../../runbooks/operations/daily-checks.md)
+- Wöchentliche Wartung: [`docs/runbooks/operations/weekly-maintenance.md`](../../runbooks/operations/weekly-maintenance.md)
+- Monatliche Aufgaben: [`docs/runbooks/operations/monthly-tasks.md`](../../runbooks/operations/monthly-tasks.md)
+- Backup und Wiederherstellung: [`docs/runbooks/operations/backup-recovery.md`](../../runbooks/operations/backup-recovery.md)

@@ -16,3 +16,5 @@ smdg-i18n-header-end -->
 **English source preview:**
 
 # Secure Medical Data Gateway (SMDG)  **Secure transfer of medical files with end-to-end encryption**  **Current version:** **4.0.0** (core and DICOM Viewer); audit export — **3.1.0**.  SMDG is a self…
+
+Hinweis: Operative Playbooks sind zentral unter [`docs/runbooks/README.md`](../../runbooks/README.md) dokumentiert.

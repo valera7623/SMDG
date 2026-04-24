@@ -1,40 +1,43 @@
-# SMDG Alert Runbooks
+# SMDG Runbooks
 
-Каждый алерт из `prometheus/alerts.yml` содержит аннотацию `runbook` со
-ссылкой на страницу в этой директории. Используйте их как **чек-листы
-для on-call** — цель: предсказуемо устранить инцидент за ≤ 15 минут.
+## Оглавление
 
-Общий алгоритм при любом алерте:
+- [Ежедневные операции](operations/daily-checks.md)
+- [Еженедельное обслуживание](operations/weekly-maintenance.md)
+- [Ежемесячные задачи](operations/monthly-tasks.md)
+- [Бэкап и восстановление](operations/backup-recovery.md)
+- [Компоненты системы](components/)
+- [Аварийные сценарии](incidents/)
+- [Устранение неисправностей](troubleshooting/)
 
-1. **Acknowledge** в Alertmanager UI (`http://alertmanager:9093`), чтобы не
-   нотифицировать остальных дублирующими сообщениями.
-2. Открыть дашборд **SMDG — Alerts overview** в Grafana.
-3. Проверить соответствующий раздел runbook'а (см. ниже).
-4. После устранения — убедиться, что алерт перешёл в `resolved` и
-   сработал `send_resolved` в канале.
-5. Если инцидент был > 5 минут — создать post-mortem в Linear.
+## Быстрая навигация
 
-| Alert                       | Severity  | Runbook file                                     |
-|-----------------------------|-----------|--------------------------------------------------|
-| SMDGApiDown                 | critical  | [api-down.md](./api-down.md)                     |
-| SMDGHighErrorRate           | critical  | [high-error-rate.md](./high-error-rate.md)       |
-| SMDGHighLatency             | warning   | [high-latency.md](./high-latency.md)             |
-| SMDGReadinessFailing        | critical  | [readiness-failing.md](./readiness-failing.md)   |
-| SMDGDatabaseDown            | critical  | [database-down.md](./database-down.md)           |
-| SMDGRedisDown               | critical  | [redis-down.md](./redis-down.md)                 |
-| SMDGStorageDegraded         | critical  | [storage-down.md](./storage-down.md)             |
-| SMDGUploadFailures          | warning   | [upload-failures.md](./upload-failures.md)       |
-| SMDGDownloadFailures        | warning   | [download-failures.md](./download-failures.md)   |
-| SMDGAuthFailures            | warning   | [auth-bruteforce.md](./auth-bruteforce.md)       |
-| SMDG2FAFailures             | warning   | [2fa-failures.md](./2fa-failures.md)             |
-| SMDGRateLimitExceeded       | warning   | [rate-limit-exceeded.md](./rate-limit-exceeded.md) |
-| SMDGCrossTenantAccess       | critical  | [cross-tenant-access.md](./cross-tenant-access.md) |
-| SMDGHighMemoryUsage         | warning   | [high-memory.md](./high-memory.md)               |
-| SMDGHighCPUUsage            | warning   | [high-cpu.md](./high-cpu.md)                     |
-| SMDGTooManyActiveRequests   | warning   | [overload.md](./overload.md)                     |
-| SMDGDICOMViewerDown         | warning   | [dicom-down.md](./dicom-down.md)                 |
-| SMDGDICOMRenderSlow         | warning   | [dicom-slow.md](./dicom-slow.md)                 |
-| SMDGDICOMRenderFailures     | warning   | [dicom-render-failures.md](./dicom-render-failures.md) |
-| SMDGAuditLogGap             | critical  | [audit-gap.md](./audit-gap.md)                   |
-| SMDGWebhookRetryBacklog     | warning   | [webhook-backlog.md](./webhook-backlog.md)       |
-| SMDGCleanupTaskBacklog      | warning   | [cleanup-backlog.md](./cleanup-backlog.md)       |
+| Проблема | Куда смотреть |
+|----------|---------------|
+| API не отвечает | [SMDG API Runbook](components/smdg-api.md#диагностика-проблем) |
+| База данных медленная | [Database Runbook](components/smdg-database.md#производительность) |
+| Ошибки аутентификации | [Auth Runbook](components/smdg-auth.md#диагностика-проблем) |
+| DICOM не рендерится | [DICOM Runbook](components/smdg-dicom.md#диагностика-проблем) |
+| Высокая нагрузка | [High CPU Incident](incidents/high-cpu.md) |
+| Заполнен диск | [Disk Full Incident](incidents/disk-full.md) |
+
+## Общий алгоритм on-call
+
+1. Подтвердить алерт в Alertmanager (`http://alertmanager:9093`).
+2. Открыть Grafana dashboard `SMDG - Alerts overview`.
+3. Выполнить соответствующий runbook из этой директории.
+4. Проверить `resolved` статус алерта и стабильность метрик 10-15 минут.
+5. Создать post-mortem для инцидентов длительностью более 5 минут.
+
+## Контакты
+
+- **Primary On-call:** +7 XXX XXX-XX-XX
+- **Secondary On-call:** +7 XXX XXX-XX-XX
+- **Engineering Lead:** @username
+- **Security Team:** security@smdg.local
+
+## Legacy runbooks
+
+Ранее созданные файлы верхнего уровня (`api-down.md`, `database-down.md`,
+`system-compromise.md` и другие) остаются валидными и могут использоваться как
+дополнение к новой структуре.

@@ -176,3 +176,28 @@ If the issue is not resolved, open an Issue and attach:
 - Output of `docker compose ps -a`
 - The last 100 lines of `docker compose logs smdg --tail=100`
 - A description of the steps that led to the error
+
+## 5. One-click runbook navigation
+
+Use these playbooks for fast incident response:
+
+| Symptom | Runbook |
+|---|---|
+| API unavailable / high latency | [`docs/runbooks/components/smdg-api.md`](../runbooks/components/smdg-api.md) |
+| PostgreSQL errors / slow queries | [`docs/runbooks/components/smdg-database.md`](../runbooks/components/smdg-database.md) |
+| Redis issues / rate limiter anomalies | [`docs/runbooks/components/smdg-redis.md`](../runbooks/components/smdg-redis.md) |
+| Upload/download storage failures | [`docs/runbooks/components/smdg-storage.md`](../runbooks/components/smdg-storage.md) |
+| DICOM rendering/viewer issues | [`docs/runbooks/components/smdg-dicom.md`](../runbooks/components/smdg-dicom.md) |
+| Auth / login / 401/403/429 issues | [`docs/runbooks/components/smdg-auth.md`](../runbooks/components/smdg-auth.md) |
+| Audit inconsistencies | [`docs/runbooks/components/smdg-audit.md`](../runbooks/components/smdg-audit.md) |
+| Webhook backlog / failures | [`docs/runbooks/components/smdg-webhooks.md`](../runbooks/components/smdg-webhooks.md) |
+
+Priority incident playbooks:
+
+- High CPU: [`docs/runbooks/incidents/high-cpu.md`](../runbooks/incidents/high-cpu.md)
+- High memory: [`docs/runbooks/incidents/high-memory.md`](../runbooks/incidents/high-memory.md)
+- DB connection saturation: [`docs/runbooks/incidents/db-connection-limit.md`](../runbooks/incidents/db-connection-limit.md)
+- Disk full: [`docs/runbooks/incidents/disk-full.md`](../runbooks/incidents/disk-full.md)
+- DICOM slow: [`docs/runbooks/incidents/dicom-slow.md`](../runbooks/incidents/dicom-slow.md)
+- Auth failure: [`docs/runbooks/incidents/auth-failure.md`](../runbooks/incidents/auth-failure.md)
+- Audit gap: [`docs/runbooks/incidents/audit-gap.md`](../runbooks/incidents/audit-gap.md)

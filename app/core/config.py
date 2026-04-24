@@ -14,6 +14,14 @@ def read_secret(secret_name: str, env_var: str = None, default: str = None) -> s
     Читает секрет из Docker secret или переменной окружения.
     Приоритет: Docker secret > переменная окружения > default
     """
+    # Сначала пробуем переменную окружения (entrypoint уже экспортирует секреты).
+    # Это защищает от кейсов, когда /run/secrets/* доступен только root, а
+    # приложение работает под non-root пользователем.
+    if env_var:
+        value = os.getenv(env_var)
+        if value:
+            return value
+
     # Пути к Docker secrets
     secret_paths = [
         Path(f"/run/secrets/{secret_name}"),
@@ -22,14 +30,12 @@ def read_secret(secret_name: str, env_var: str = None, default: str = None) -> s
     
     for secret_path in secret_paths:
         if secret_path.exists():
-            with open(secret_path, 'r') as f:
-                return f.read().strip()
-    
-    # Если secret не найден, пробуем переменную окружения
-    if env_var:
-        value = os.getenv(env_var)
-        if value:
-            return value
+            try:
+                with open(secret_path, 'r') as f:
+                    return f.read().strip()
+            except PermissionError:
+                # Не прерываемся: можем взять значение из default ниже.
+                continue
     
     # Возвращаем default если ничего не найдено
     if default is not None:

@@ -1,0 +1,43 @@
+title = "SMDG Security Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "key"]
+
+[[rules]]
+id = "jwt-token"
+description = "JWT Token"
+regex = '''eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*'''
+tags = ["jwt", "token"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA|DSA|EC|PGP|OPENSSH) PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+[[rules]]
+id = "postgres-password"
+description = "PostgreSQL Password in URL"
+regex = '''postgres(?:ql)?://[^:]+:([^@]+)@'''
+tags = ["database", "password"]
+
+[[rules]]
+id = "admin-password"
+description = "Admin Password in env"
+regex = '''ADMIN_PASSWORD=.*'''
+tags = ["password", "admin"]
+
+[allowlist]
+description = "Allowlisted paths for test fixtures"
+paths = [
+  '''^\.git/''',
+  '''^secrets/''',
+  '''.*\.test\.py$''',
+  '''.*/test_.*''',
+]

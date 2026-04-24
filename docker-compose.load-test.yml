@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  k6:
+    build:
+      context: .
+      dockerfile: Dockerfile.k6
+    environment:
+      BASE_URL: ${BASE_URL:-http://smdg:8000}
+      VIRTUAL_USERS: ${VIRTUAL_USERS:-100}
+      DURATION: ${DURATION:-5m}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      K6_WEB_DASHBOARD: "true"
+      K6_WEB_DASHBOARD_EXPORT: /results/web-dashboard.html
+    volumes:
+      - ./scripts/load-tests:/scripts
+      - ./test_data:/scripts/test_data
+      - ./load-test-results:/results
+    command: run /scripts/scenarios/api-load.js --summary-export=/results/api-load-summary.json
+    networks:
+      - smdg_network
+
+  k6-dashboard:
+    image: ghcr.io/grafana/k6-dashboard:latest
+    ports:
+      - "5665:5665"
+    environment:
+      K6_DASHBOARD_PORT: 5665
+    volumes:
+      - ./load-test-results:/results
+    command: --folder /results
+
+  influxdb:
+    image: influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: admin12345
+      DOCKER_INFLUXDB_INIT_ORG: smdg
+      DOCKER_INFLUXDB_INIT_BUCKET: k6
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: smdg-k6-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+
+networks:
+  smdg_network:
+    external: true
+
+volumes:
+  influxdb_data:

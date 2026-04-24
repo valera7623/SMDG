@@ -60,3 +60,34 @@ docker compose -f docker-compose.yml -f docker-compose.saas.yml up -d
 3. Restart the services.
 
 `.env` templates: `.env.<profile>.example` in the repository root.
+
+## Operations runbooks
+
+For production operations and incidents, use the runbook index:
+
+- Main index: [`docs/runbooks/README.md`](../runbooks/README.md)
+
+Daily/periodic operations:
+
+- Daily checks: [`docs/runbooks/operations/daily-checks.md`](../runbooks/operations/daily-checks.md)
+- Weekly maintenance: [`docs/runbooks/operations/weekly-maintenance.md`](../runbooks/operations/weekly-maintenance.md)
+- Monthly tasks: [`docs/runbooks/operations/monthly-tasks.md`](../runbooks/operations/monthly-tasks.md)
+- Backup and recovery: [`docs/runbooks/operations/backup-recovery.md`](../runbooks/operations/backup-recovery.md)
+
+Component playbooks:
+
+- API: [`docs/runbooks/components/smdg-api.md`](../runbooks/components/smdg-api.md)
+- PostgreSQL: [`docs/runbooks/components/smdg-database.md`](../runbooks/components/smdg-database.md)
+- Redis: [`docs/runbooks/components/smdg-redis.md`](../runbooks/components/smdg-redis.md)
+- Storage (S3/MinIO/local): [`docs/runbooks/components/smdg-storage.md`](../runbooks/components/smdg-storage.md)
+- DICOM: [`docs/runbooks/components/smdg-dicom.md`](../runbooks/components/smdg-dicom.md)
+- Auth: [`docs/runbooks/components/smdg-auth.md`](../runbooks/components/smdg-auth.md)
+- Audit: [`docs/runbooks/components/smdg-audit.md`](../runbooks/components/smdg-audit.md)
+- Webhooks: [`docs/runbooks/components/smdg-webhooks.md`](../runbooks/components/smdg-webhooks.md)
+
+Key incidents:
+
+- High CPU: [`docs/runbooks/incidents/high-cpu.md`](../runbooks/incidents/high-cpu.md)
+- High memory: [`docs/runbooks/incidents/high-memory.md`](../runbooks/incidents/high-memory.md)
+- DB connection limit: [`docs/runbooks/incidents/db-connection-limit.md`](../runbooks/incidents/db-connection-limit.md)
+- Disk full: [`docs/runbooks/incidents/disk-full.md`](../runbooks/incidents/disk-full.md)

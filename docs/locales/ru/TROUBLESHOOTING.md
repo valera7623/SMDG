@@ -145,3 +145,28 @@ ClamAV: docker compose logs clamav
 Вывод docker compose ps -a
 Последние 100 строк логов docker compose logs smdg --tail=100
 Описание действий, которые привели к ошибке
+
+## 5. Быстрая навигация по runbooks (one-click)
+
+Используйте эти playbooks для быстрого реагирования:
+
+| Симптом | Runbook |
+|---|---|
+| API недоступен / высокая латентность | [`docs/runbooks/components/smdg-api.md`](../../runbooks/components/smdg-api.md) |
+| Ошибки PostgreSQL / медленные запросы | [`docs/runbooks/components/smdg-database.md`](../../runbooks/components/smdg-database.md) |
+| Проблемы Redis / аномалии rate limiter | [`docs/runbooks/components/smdg-redis.md`](../../runbooks/components/smdg-redis.md) |
+| Ошибки upload/download хранилища | [`docs/runbooks/components/smdg-storage.md`](../../runbooks/components/smdg-storage.md) |
+| Проблемы DICOM рендера/viewer | [`docs/runbooks/components/smdg-dicom.md`](../../runbooks/components/smdg-dicom.md) |
+| Auth / login / 401/403/429 | [`docs/runbooks/components/smdg-auth.md`](../../runbooks/components/smdg-auth.md) |
+| Проблемы аудита | [`docs/runbooks/components/smdg-audit.md`](../../runbooks/components/smdg-audit.md) |
+| Webhook backlog / ошибки доставки | [`docs/runbooks/components/smdg-webhooks.md`](../../runbooks/components/smdg-webhooks.md) |
+
+Ключевые incident playbooks:
+
+- High CPU: [`docs/runbooks/incidents/high-cpu.md`](../../runbooks/incidents/high-cpu.md)
+- High memory: [`docs/runbooks/incidents/high-memory.md`](../../runbooks/incidents/high-memory.md)
+- DB connection limit: [`docs/runbooks/incidents/db-connection-limit.md`](../../runbooks/incidents/db-connection-limit.md)
+- Disk full: [`docs/runbooks/incidents/disk-full.md`](../../runbooks/incidents/disk-full.md)
+- DICOM slow: [`docs/runbooks/incidents/dicom-slow.md`](../../runbooks/incidents/dicom-slow.md)
+- Auth failure: [`docs/runbooks/incidents/auth-failure.md`](../../runbooks/incidents/auth-failure.md)
+- Audit gap: [`docs/runbooks/incidents/audit-gap.md`](../../runbooks/incidents/audit-gap.md)
