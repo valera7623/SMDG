@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
-from app.core.database import get_db
+from app.core.dependencies import get_db_for_read
 from app.core import ENCRYPTED_DIR, audit_logger, encrypted_storage
 from app.core.rate_limiter import limiter
 from app.models.file import File
@@ -52,7 +52,7 @@ class FileListResponse(BaseModel):
 async def list_files(
     request: Request,
     current_user: TokenData = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db_for_read)
 ) -> FileListResponse:
     """Получить список файлов текущего пользователя (или всех для doctor/admin)"""
     logger.info(f"📋 Запрос списка файлов от {current_user.sub} (роль: {current_user.role})")

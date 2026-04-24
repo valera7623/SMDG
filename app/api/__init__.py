@@ -8,3 +8,4 @@ from . import cleanup
 from . import stats
 from . import auth
 from . import admin_users
+from . import archive

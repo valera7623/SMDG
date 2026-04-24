@@ -25,6 +25,8 @@ class File(Base):
     medical_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True, default=dict)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.current_timestamp())
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_archived: Mapped[bool] = mapped_column(nullable=False, default=False, server_default="false")
+    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     links = relationship('FileLink', back_populates='file', cascade='all, delete-orphan')
     view_tokens = relationship('DicomViewToken', back_populates='file', cascade='all, delete-orphan')

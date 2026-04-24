@@ -26,7 +26,7 @@ import logging
 import os
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 
 from app.core import audit_logger
 from app.services.telegram_alerter import get_telegram_alerter
@@ -82,6 +82,7 @@ def _audit_alerts(alerts: List[Dict[str, Any]]) -> None:
 )
 async def handle_alertmanager_webhook(
     request: Request,
+    channel: str | None = Query(default=None, description="Delivery channel override, e.g. archive"),
     x_alert_secret: str | None = Header(default=None, alias="X-Alert-Secret"),
 ) -> Dict[str, Any]:
     """Принять webhook от Alertmanager и распределить его по каналам.
@@ -110,10 +111,11 @@ async def handle_alertmanager_webhook(
         )
 
     logger.info(
-        "Alert webhook received: receiver=%s group=%s count=%d",
+        "Alert webhook received: receiver=%s group=%s count=%d channel=%s",
         data.get("receiver"),
         data.get("groupKey"),
         len(alerts),
+        channel or "default",
     )
 
     # 1. В audit log (синхронно, это быстро и никогда не должно тормозить Alertmanager).
@@ -126,14 +128,28 @@ async def handle_alertmanager_webhook(
     #      c) синхронное поведение упрощает трактовку логов/тестов.
     alerter = get_telegram_alerter()
     delivered = 0
+    target_chat_id: str | None = None
+    normalized_channel = (channel or "").strip().lower()
+    if normalized_channel == "archive":
+        target_chat_id = os.getenv("TELEGRAM_ARCHIVE_CHAT_ID", "").strip() or None
+        if target_chat_id is None:
+            logger.warning(
+                "Alert webhook archive channel requested, but TELEGRAM_ARCHIVE_CHAT_ID is empty; "
+                "falling back to TELEGRAM_CHAT_ID"
+            )
     if alerts:
         try:
-            delivered = await alerter.send_batch_alerts(alerts)
+            delivered = await alerter.send_batch_alerts(alerts, chat_id_override=target_chat_id)
         except Exception as exc:  # noqa: BLE001
             # Никогда не пробрасываем — Alertmanager иначе заретраит и засыпет нас.
             logger.warning("Telegram delivery failed: %s", exc)
 
-    return {"status": "received", "count": len(alerts), "delivered": delivered}
+    return {
+        "status": "received",
+        "count": len(alerts),
+        "delivered": delivered,
+        "channel": normalized_channel or "default",
+    }
 
 
 @router.get(
@@ -146,6 +162,7 @@ async def alert_webhook_health() -> Dict[str, Any]:
     return {
         "ok": True,
         "telegram_enabled": alerter.enabled,
+        "archive_channel_configured": bool(os.getenv("TELEGRAM_ARCHIVE_CHAT_ID", "").strip()),
         "shared_secret_required": bool(os.getenv("SMDG_ALERT_WEBHOOK_SECRET")),
     }
 

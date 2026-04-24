@@ -1,0 +1,51 @@
+name: Disaster Recovery Test
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+jobs:
+  dr-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start SMDG stack
+        run: docker compose up -d
+
+      - name: Wait for API
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health/live >/dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "API health/live is not ready"
+          exit 1
+
+      - name: Create backup
+        run: ./scripts/backup.sh
+
+      - name: Simulate DB failure
+        run: docker compose stop db
+
+      - name: Run auto recovery for DB
+        run: python scripts/auto_recovery.py --service db --once
+
+      - name: Verify DB recovery
+        run: |
+          docker compose exec -T db pg_isready -U smdg_user
+          curl -fsS http://localhost:8000/health/ready >/dev/null
+
+      - name: Full restore test
+        run: |
+          docker compose down
+          ./scripts/restore.sh /backups/smdg/manifest_latest.txt
+          curl -fsS http://localhost:8000/health/ready >/dev/null
+
+      - name: Backup freshness monitor check
+        run: python scripts/monitor_backups.py --backup-dir /backups/smdg --once

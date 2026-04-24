@@ -109,6 +109,32 @@ cross_tenant_access_total = Counter(
     "Cross-tenant access attempts (security incident)",
 )
 
+# Read replicas: распределение read-трафика по целям роутинга.
+# target: replica_0 | replica_1 | ... | master_fallback
+read_distribution_total = Counter(
+    "smdg_read_distribution_total",
+    "Read traffic distribution by DB target",
+    labelnames=("target",),
+)
+
+archived_total = Counter(
+    "archived_total",
+    "Archived entities total",
+    labelnames=("source_type",),
+)
+
+archive_failures_total = Counter(
+    "archive_failures_total",
+    "Archive operation failures total",
+    labelnames=("operation", "source_type"),
+)
+
+restore_duration_seconds = Histogram(
+    "restore_duration_seconds",
+    "Archive restore duration in seconds",
+    buckets=(0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300),
+)
+
 # DICOM операции (если включен).
 dicom_render_duration_seconds = Histogram(
     "dicom_render_duration_seconds",
@@ -185,6 +211,10 @@ __all__ = [
     "auth_2fa_failures_total",
     "rate_limit_exceeded_total",
     "cross_tenant_access_total",
+    "read_distribution_total",
+    "archived_total",
+    "archive_failures_total",
+    "restore_duration_seconds",
     "dicom_render_duration_seconds",
     "dicom_render_failures_total",
     "api_latency_seconds",

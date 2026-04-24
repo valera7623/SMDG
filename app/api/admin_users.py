@@ -9,6 +9,7 @@ import re
 from app.core.database import get_db
 from app.core.auth import get_current_admin, TokenData
 from app.core.security import get_password_hash, verify_password
+from app.models.deleted_user import DeletedUser
 from app.models.user import User
 from app.core import audit_logger
 from app.core.tenant import require_tenant, assert_tenant_access
@@ -309,6 +310,15 @@ async def delete_user(
             raise HTTPException(status_code=400, detail="Нельзя удалить последнего администратора")
 
     username = user.username
+    tombstone = DeletedUser(
+        original_user_id=user.id,
+        tenant_id=user.tenant_id,
+        username=user.username,
+        email=user.email,
+        role=user.role,
+        metadata_json={"is_active": user.is_active},
+    )
+    db.add(tombstone)
     await db.delete(user)
     await db.commit()
 
@@ -413,6 +423,21 @@ async def bulk_user_actions(
         )
         if result.scalar_one_or_none():
             raise HTTPException(status_code=400, detail="Нельзя удалять администраторов")
+        to_delete_result = await db.execute(
+            select(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id)
+        )
+        to_delete_users = to_delete_result.scalars().all()
+        for user in to_delete_users:
+            db.add(
+                DeletedUser(
+                    original_user_id=user.id,
+                    tenant_id=user.tenant_id,
+                    username=user.username,
+                    email=user.email,
+                    role=user.role,
+                    metadata_json={"is_active": user.is_active},
+                )
+            )
         result = await db.execute(delete(User).where(User.id.in_(action_data.user_ids), User.tenant_id == tenant.id))
         affected_count = result.rowcount
 

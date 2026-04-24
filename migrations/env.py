@@ -23,6 +23,8 @@ from app.models.base import Base
 from app.models.user import User
 from app.models.file import File
 from app.models.file_link import FileLink
+from app.models.archive import ArchiveRecord, ArchiveRestoreRequest
+from app.models.deleted_user import DeletedUser
 try:
     from app.models.webhook import WebhookSubscription, WebhookDelivery
 except ImportError:

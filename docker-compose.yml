@@ -146,8 +146,11 @@ services:
       # переходит в noop-режим (алерты пишутся только в audit log).
       # Получить токен: https://t.me/BotFather → /newbot
       # Получить chat_id: https://t.me/userinfobot или Telegram API.
+      # TELEGRAM_ARCHIVE_CHAT_ID — отдельный чат для archive-alerts
+      # (используется при webhook ?channel=archive).
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
+      TELEGRAM_ARCHIVE_CHAT_ID: "${TELEGRAM_ARCHIVE_CHAT_ID:-}"
 
       # Ссылки в inline-кнопках алертов. Если не заданы — используются
       # дефолтные placeholder'ы (https://monitoring.smdg.local и т.п.).

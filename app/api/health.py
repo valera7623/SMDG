@@ -25,7 +25,7 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable, Dict, Optional
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
@@ -33,6 +33,7 @@ from app.core.auth import get_current_admin
 from app.core.auth_utils import TokenData
 from app.core.config import settings
 from app.core.feature_flags import get_deployment_info
+from app.core.database_router import get_db_router
 
 logger = logging.getLogger(__name__)
 
@@ -428,6 +429,45 @@ async def detailed_checks(
             "readiness_cache_ttl": settings.readiness_cache_ttl,
             "max_concurrent_requests": settings.max_concurrent_requests,
         },
+    }
+
+
+@router.get("/health/replication", summary="Read-replica health (admin only)")
+async def replication_health(
+    _admin: TokenData = Depends(get_current_admin),
+) -> Dict[str, Any]:
+    """Replication status endpoint for master/replicas."""
+    router_obj = get_db_router()
+    if router_obj is None or not router_obj.read_replicas_enabled:
+        raise HTTPException(status_code=503, detail="Read replicas are not enabled")
+
+    health = await router_obj.health_check()
+    replica_lag = await router_obj.get_replica_lag()
+
+    replica_statuses = [item.get("status", False) for item in health.get("replicas", [])]
+    status = "healthy" if health.get("master") and all(replica_statuses) else "degraded"
+    return {
+        "status": status,
+        "health": health,
+        "replica_lag": replica_lag,
+        "distribution": router_obj.get_read_distribution(),
+        "timestamp": _utcnow_iso(),
+    }
+
+
+@router.get("/health/replication/distribution", summary="Read traffic distribution (admin only)")
+async def replication_distribution(
+    _admin: TokenData = Depends(get_current_admin),
+) -> Dict[str, Any]:
+    """Read traffic distribution across replicas + master fallback."""
+    router_obj = get_db_router()
+    if router_obj is None or not router_obj.read_replicas_enabled:
+        raise HTTPException(status_code=503, detail="Read replicas are not enabled")
+
+    return {
+        "status": "ok",
+        "distribution": router_obj.get_read_distribution(),
+        "timestamp": _utcnow_iso(),
     }
 
 

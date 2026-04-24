@@ -244,9 +244,10 @@ class TelegramAlerter:
     # Публичное API
     # ------------------------------------------------------------------
 
-    async def send_alert(self, alert: Dict[str, Any]) -> bool:
+    async def send_alert(self, alert: Dict[str, Any], *, chat_id_override: str | None = None) -> bool:
         """Отправить один алерт. Возвращает ``True`` если доставка удалась."""
-        if not self.enabled:
+        target_chat_id = (chat_id_override or self.chat_id or "").strip()
+        if not self.bot_token or not target_chat_id:
             logger.info(
                 "Telegram noop: alert=%s severity=%s",
                 (alert.get("labels") or {}).get("alertname"),
@@ -261,7 +262,7 @@ class TelegramAlerter:
             logs_url=self.logs_url,
         )
         payload: Dict[str, Any] = {
-            "chat_id": self.chat_id,
+            "chat_id": target_chat_id,
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
@@ -297,7 +298,12 @@ class TelegramAlerter:
             )
             return False
 
-    async def send_batch_alerts(self, alerts: List[Dict[str, Any]]) -> int:
+    async def send_batch_alerts(
+        self,
+        alerts: List[Dict[str, Any]],
+        *,
+        chat_id_override: str | None = None,
+    ) -> int:
         """Отправить пачку алертов.
 
         При >1 алертов пытаемся отдать одно групповое сообщение (чтобы
@@ -310,10 +316,11 @@ class TelegramAlerter:
         if not alerts:
             return 0
         if len(alerts) == 1:
-            ok = await self.send_alert(alerts[0])
+            ok = await self.send_alert(alerts[0], chat_id_override=chat_id_override)
             return 1 if ok else 0
 
-        if not self.enabled:
+        target_chat_id = (chat_id_override or self.chat_id or "").strip()
+        if not self.bot_token or not target_chat_id:
             logger.info("Telegram noop: batch of %d alerts", len(alerts))
             return 0
 
@@ -331,7 +338,7 @@ class TelegramAlerter:
         text = "\n".join(lines)[:_TELEGRAM_MAX_LEN]
 
         payload = {
-            "chat_id": self.chat_id,
+            "chat_id": target_chat_id,
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": True,

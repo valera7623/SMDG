@@ -41,6 +41,18 @@ route:
   receiver: "smdg-webhook"
 
   routes:
+    # Archive alerts — отдельный канал/чат для архивного контура.
+    # В webhook передаём channel=archive, чтобы downstream-маршрутизатор
+    # (SMDG webhook handler / Telegram bridge) мог развести уведомления.
+    - matchers:
+        - component = "archive"
+      receiver: "smdg-webhook-archive"
+      continue: false
+      group_by: ["alertname", "service", "component"]
+      group_wait: 0s
+      group_interval: 30s
+      repeat_interval: 1h
+
     # Security — дублирующий путь для отдельного audit trail.
     - matchers:
         - alertname = "SMDGCrossTenantAccess"
@@ -73,6 +85,12 @@ receivers:
   - name: "smdg-webhook"
     webhook_configs:
       - url: "http://smdg:8000/api/alerts/webhook"
+        send_resolved: true
+        max_alerts: 50
+
+  - name: "smdg-webhook-archive"
+    webhook_configs:
+      - url: "http://smdg:8000/api/alerts/webhook?channel=archive"
         send_resolved: true
         max_alerts: 50
 

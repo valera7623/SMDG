@@ -1,0 +1,22 @@
+services:
+  minio-cold:
+    image: minio/minio:latest
+    container_name: smdg-minio-cold
+    command: server /data --console-address ":9002"
+    environment:
+      MINIO_ROOT_USER: ${COLD_STORAGE_ACCESS_KEY:-coldadmin}
+      MINIO_ROOT_PASSWORD: ${COLD_STORAGE_SECRET_KEY:-coldadmin123}
+    volumes:
+      - minio_cold_data:/data
+    ports:
+      - "9100:9000"
+      - "9101:9002"
+    networks:
+      - backend
+
+volumes:
+  minio_cold_data:
+
+networks:
+  backend:
+    external: true

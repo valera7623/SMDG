@@ -7,6 +7,8 @@ from app.models.file_link import FileLink
 from app.models.webhook import WebhookSubscription, WebhookDelivery
 from app.models.dicom_view_token import DicomViewToken
 from app.models.dead_letter import DeadLetterMessage, DeadLetterLog
+from app.models.archive import ArchiveRecord, ArchiveRestoreRequest
+from app.models.deleted_user import DeletedUser
 
 __all__ = [
     'User',
@@ -18,4 +20,7 @@ __all__ = [
     'DicomViewToken',
     'DeadLetterMessage',
     'DeadLetterLog',
+    'ArchiveRecord',
+    'ArchiveRestoreRequest',
+    'DeletedUser',
 ]

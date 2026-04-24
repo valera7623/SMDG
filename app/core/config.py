@@ -136,6 +136,32 @@ class Settings(BaseSettings):
     DB_QUERY_TIMEOUT_SECONDS: int = 10
     DB_CONNECTION_TIMEOUT_SECONDS: int = 5
     DB_TRANSACTION_TIMEOUT_SECONDS: int = 30
+    READ_REPLICAS_ENABLED: bool = False
+    DB_REPLICA_URLS: str = ""
+    READ_REPLICA_LOAD_BALANCING: str = "round_robin"
+    READ_REPLICA_MAX_LAG_BYTES: int = 104857600
+    READ_REPLICA_HEALTH_TTL_SECONDS: float = 5.0
+
+    # === Архивация ===
+    ARCHIVE_ENABLED: bool = True
+    COLD_STORAGE_TYPE: str = "filesystem"  # s3_glacier | minio_cold | filesystem
+    COLD_STORAGE_ENDPOINT: str = "http://minio-cold:9000"
+    COLD_STORAGE_BUCKET: str = "smdg-archive"
+    COLD_STORAGE_ACCESS_KEY: str = ""
+    COLD_STORAGE_SECRET_KEY: str = ""
+
+    ARCHIVE_FILE_AGE_DAYS: int = 30
+    ARCHIVE_AUDIT_AGE_DAYS: int = 365
+    ARCHIVE_DICOM_AGE_DAYS: int = 365
+    ARCHIVE_DELETED_USER_AGE_DAYS: int = 30
+
+    ARCHIVE_RETENTION_DAYS: int = 2555
+    ARCHIVE_DEEP_RETENTION_DAYS: int = 3650
+
+    ARCHIVE_BATCH_SIZE: int = 100
+    ARCHIVE_VERIFY_CHECKSUM: bool = True
+    ARCHIVE_ENCRYPT: bool = True
+    ARCHIVE_COMPRESS: bool = True
 
     # === Redis ===
     REDIS_OPERATION_TIMEOUT_SECONDS: int = 3

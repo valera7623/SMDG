@@ -145,6 +145,67 @@ groups:
             на директорию / network ACL.
           runbook: "https://wiki.smdg/runbooks/storage-down"
 
+      - alert: SMDGReadReplicaFallbackHigh
+        expr: |
+          (
+            sum(rate(smdg_read_distribution_total{target="master_fallback"}[5m]))
+            /
+            clamp_min(sum(rate(smdg_read_distribution_total[5m])), 0.000001)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: postgresql
+        annotations:
+          summary: "Read replicas деградировали: fallback на master > 5%"
+          description: |
+            Доля чтений, ушедших в master_fallback, превышает 5% более 10 минут.
+            Текущее значение: {{ $value | humanizePercentage }}.
+            Возможные причины: отставание replica (lag), недоступность replica,
+            проблемы streaming replication.
+          runbook: "https://wiki.smdg/runbooks/read-replica-fallback-high"
+
+      - alert: SMDGReadReplicaFallbackCriticalFast
+        expr: |
+          (
+            sum(rate(smdg_read_distribution_total{target="master_fallback"}[5m]))
+            /
+            clamp_min(sum(rate(smdg_read_distribution_total[5m])), 0.000001)
+          ) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+          service: smdg
+          component: postgresql
+        annotations:
+          summary: "CRITICAL: fallback на master > 10% (10m)"
+          description: |
+            Быстрая критическая деградация read-replica слоя:
+            fallback ratio > 10% в течение 10 минут.
+            Текущее значение: {{ $value | humanizePercentage }}.
+          runbook: "https://wiki.smdg/runbooks/read-replica-fallback-high"
+
+      - alert: SMDGReadReplicaFallbackCriticalSustained
+        expr: |
+          (
+            sum(rate(smdg_read_distribution_total{target="master_fallback"}[5m]))
+            /
+            clamp_min(sum(rate(smdg_read_distribution_total[5m])), 0.000001)
+          ) > 0.05
+        for: 30m
+        labels:
+          severity: critical
+          service: smdg
+          component: postgresql
+        annotations:
+          summary: "CRITICAL: fallback на master > 5% (30m)"
+          description: |
+            Длительная критическая деградация read-replica слоя:
+            fallback ratio > 5% в течение 30 минут.
+            Текущее значение: {{ $value | humanizePercentage }}.
+          runbook: "https://wiki.smdg/runbooks/read-replica-fallback-high"
+
   # ===========================================================================
   # 2b. Resilience: Circuit Breaker (см. app/core/circuit_breaker_metrics.py)
   # ===========================================================================
@@ -614,3 +675,70 @@ groups:
             Последнее обновление SLO-метрик было {{ $value | humanizeDuration }}
             назад. Смотреть логи slo_collector и рестарт task'а.
           runbook: "https://wiki.smdg/runbooks/slo-collector-stale"
+
+  # ===========================================================================
+  # 9. Archive / Cold storage operations
+  # ===========================================================================
+  - name: smdg_archive_alerts
+    interval: 1m
+    rules:
+
+      - alert: SMDGArchiveWorkerStalled
+        expr: increase(archived_total[6h]) == 0
+        for: 6h
+        labels:
+          severity: warning
+          service: smdg
+          component: archive
+        annotations:
+          summary: "Archive pipeline не архивирует данные > 6 часов"
+          description: |
+            Метрика archived_total не изменилась за 6 часов.
+            Возможны причины: worker не запущен, ошибки cold storage, неверные TTL.
+          runbook: "https://wiki.smdg/runbooks/archive-worker-stalled"
+
+      - alert: SMDGArchiveFailuresHigh
+        expr: sum(rate(archive_failures_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: archive
+        annotations:
+          summary: "Повышенный уровень ошибок архивации"
+          description: |
+            Суммарный rate archive_failures_total > 0.05 req/s в течение 10 минут.
+            Нужно проверить хранилище cold tier, права доступа и сериализацию payload.
+          runbook: "https://wiki.smdg/runbooks/archive-failures-high"
+
+      - alert: SMDGArchiveFailuresCritical
+        expr: sum(rate(archive_failures_total[5m])) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+          service: smdg
+          component: archive
+        annotations:
+          summary: "CRITICAL: массовые ошибки архивации"
+          description: |
+            archive_failures_total > 0.10 req/s более 10 минут.
+            Архивный контур деградировал, есть риск нарушения retention-политик.
+          runbook: "https://wiki.smdg/runbooks/archive-failures-high"
+
+      - alert: SMDGArchiveRestoreSlow
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(restore_duration_seconds_bucket[5m])) by (le)
+          ) > 60
+        for: 15m
+        labels:
+          severity: warning
+          service: smdg
+          component: archive
+        annotations:
+          summary: "Restore из архива медленный (p95 > 60s)"
+          description: |
+            p95 restore_duration_seconds = {{ $value | printf "%.2f" }}s.
+            Проверить cold storage latency, размер объектов и очередь restore-задач.
+          runbook: "https://wiki.smdg/runbooks/archive-restore-slow"

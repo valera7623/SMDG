@@ -28,7 +28,7 @@ except ImportError:  # pragma: no cover - tracing is optional
 from app.crypto.crypto import crypto_manager
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.auth import get_current_user, TokenData
-from app.core.database import get_db
+from app.core.dependencies import get_db_for_write
 from app.core.database import execute_with_timeout as execute_db_with_timeout
 from app.models.file import File
 from app.models.file_link import FileLink
@@ -164,7 +164,7 @@ async def upload_file(
     patient_id: Optional[str] = Form(None),
     medical_metadata_json: Optional[str] = Form(None),
     current_user: TokenData = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db_for_write)
 ):
     temp_upload_path: Optional[Path] = None
     original_filename = file.filename or "unnamed_file"

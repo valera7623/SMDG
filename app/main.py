@@ -20,7 +20,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.openapi.utils import get_openapi
-from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test, bulkhead
+from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test, bulkhead, archive
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
 from app.core import encrypted_storage, cleanup_storage
 from app.core.webhook import webhook_dispatcher
@@ -53,6 +53,9 @@ from app.api.slo import router as slo_router
 from app.api.circuit_breaker import router as circuit_breaker_router
 from app.api.dead_letter import router as dead_letter_router
 from app.core.health_collector import collect_health_metrics
+from app.core.database_router import init_db_router, get_db_router
+from app.core.replication_monitor import monitor_replication
+from app.services.archive_service import archive_service
 from app.core.log_utils import ThrottledErrorLogger
 from app.core.metrics import smdg_version_info
 from app.core.timeout import TimeoutError
@@ -242,6 +245,18 @@ async def lifespan(app: FastAPI):
     await check_redis_connection()
     logger.info("✅ Rate limiter: Redis проверен")
 
+    if settings.READ_REPLICAS_ENABLED:
+        replica_urls = [
+            value.strip() for value in settings.DB_REPLICA_URLS.split(",") if value.strip()
+        ]
+        await init_db_router(
+            master_url=settings.database_url,
+            replica_urls=replica_urls,
+            max_replica_lag_bytes=settings.READ_REPLICA_MAX_LAG_BYTES,
+            health_ttl_seconds=settings.READ_REPLICA_HEALTH_TTL_SECONDS,
+        )
+        logger.info("✅ DB read replicas initialized: %d", len(replica_urls))
+
     # NB: ``setup_tracing`` намеренно НЕ вызывается здесь. FastAPIInstrumentor
     # дергает ``app.add_middleware`` под капотом, а Starlette замораживает
     # middleware-стек до первого вызова lifespan. Поэтому инициализация
@@ -328,6 +343,17 @@ async def lifespan(app: FastAPI):
     )
     app.state.background_tasks.append(slo_task)
     logger.info("✅ SLO metrics collector запущен")
+
+    if settings.READ_REPLICAS_ENABLED:
+        replication_task = asyncio.create_task(
+            monitor_replication(), name="replication_monitor"
+        )
+        app.state.background_tasks.append(replication_task)
+        logger.info("✅ Replication monitor запущен")
+
+    if settings.ARCHIVE_ENABLED:
+        archive_service.start()
+        logger.info("✅ Archive worker запущен")
 
     try:
         await redis_client.set("test_key_startup", "test_value", ex=60)
@@ -461,6 +487,23 @@ async def lifespan(app: FastAPI):
         logger.info("🔒 PostgreSQL connection pool закрыт")
     except Exception as e:
         logger.warning("⚠️ Ошибка закрытия PostgreSQL: %s", e)
+
+    # Шаг 8a: закрытие роутера реплик.
+    try:
+        router_obj = get_db_router()
+        if router_obj is not None:
+            await router_obj.dispose()
+            logger.info("🔒 Read-replica router закрыт")
+    except Exception as e:
+        logger.warning("⚠️ Ошибка закрытия replica router: %s", e)
+
+    # Шаг 8b: остановка архивного воркера.
+    try:
+        if settings.ARCHIVE_ENABLED:
+            await archive_service.stop()
+            logger.info("🔒 Archive worker остановлен")
+    except Exception as e:
+        logger.warning("⚠️ Ошибка остановки archive worker: %s", e)
 
     # Шаг 9: сброс буфера трассировки + остановка tracer provider.
     # Делаем в самом конце, чтобы захватить спаны всех предыдущих шагов.
@@ -739,6 +782,7 @@ app.include_router(slo_router)
 app.include_router(circuit_breaker_router)
 app.include_router(dead_letter_router)
 app.include_router(bulkhead.router)
+app.include_router(archive.router)
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
