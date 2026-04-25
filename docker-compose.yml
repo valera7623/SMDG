@@ -217,11 +217,14 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./nginx-https.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/upstream-target.conf:/etc/nginx/conf.d/upstream-target.conf
       - ./certs:/etc/nginx/certs:ro
       - ./static:/app/static:ro
     depends_on:

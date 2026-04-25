@@ -41,3 +41,9 @@ async def slow_query(
     )
     return {"status": "ok", "sleep_seconds": sleep_seconds}
 
+
+@router.post("/large-response")
+async def large_response(payload: dict):
+    """Return payload as-is for compression tests/benchmarks."""
+    return payload
+

@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Compression support for FastAPI middleware (Brotli)
+RUN pip install --no-cache-dir brotli
+
 COPY pyproject.toml poetry.lock ./
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
@@ -37,6 +40,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     redis-tools \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Keep runtime image self-sufficient for Brotli imports
+RUN pip install --no-cache-dir brotli
 
 RUN groupadd --gid 10001 smdg && \
     useradd --uid 10001 --gid smdg --shell /usr/sbin/nologin --create-home smdg

@@ -1,4 +1,4 @@
-.PHONY: load-test-smoke load-test-api load-test-upload load-test-dicom load-test-auth load-test-mixed load-test-stress load-test-soak load-test-all load-test-dashboard load-test-clean
+.PHONY: load-test-smoke load-test-api load-test-upload load-test-dicom load-test-auth load-test-mixed load-test-stress load-test-soak load-test-all load-test-dashboard load-test-clean test-compression
 
 load-test-smoke:
 	docker compose -f docker-compose.load-test.yml run --rm k6 run /scripts/smoke-tests/smoke.js --summary-export=/results/smoke-summary.json
@@ -32,3 +32,6 @@ load-test-dashboard:
 load-test-clean:
 	docker compose -f docker-compose.load-test.yml down -v
 	rm -rf load-test-results/*
+
+test-compression:
+	poetry run pytest -o addopts='' tests/test_compression.py -v

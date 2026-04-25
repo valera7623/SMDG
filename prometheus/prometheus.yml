@@ -45,18 +45,33 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # SMDG API (экспортирует /metrics через prometheus-fastapi-instrumentator).
-  # scrape_timeout увеличен до 15s потому что /metrics проходит через
-  # тяжёлый middleware-стек SMDG (auth, tenant resolution, audit). При
-  # деградации зависимостей (например, БД недоступна) те же middleware
-  # могут отдать ответ позже 8s — таргет уйдёт в DOWN не по вине /metrics,
-  # а по фоновой latency. 15s с запасом покрывает worst-case.
+  # SMDG API behind load balancer.
   - job_name: "smdg"
+    static_configs:
+      - targets: ["nginx-lb:80"]
+    metrics_path: "/metrics"
+    scrape_interval: 15s
+    scrape_timeout: 14s
+
+  # SMDG instances (direct scrape in scale deployment).
+  # For dynamic docker-compose --scale use service DNS name `smdg:8000`.
+  # If running named instances (smdg-1, smdg-2, smdg-3), switch to static list.
+  - job_name: "smdg-instances"
     static_configs:
       - targets: ["smdg:8000"]
     metrics_path: "/metrics"
     scrape_interval: 15s
     scrape_timeout: 14s
+  # - job_name: "smdg-instances"
+  #   static_configs:
+  #     - targets: ["smdg-1:8000", "smdg-2:8000", "smdg-3:8000"]
+  #   metrics_path: "/metrics"
+  #   scrape_interval: 15s
+  #   scrape_timeout: 14s
+
+  - job_name: "nginx-lb"
+    static_configs:
+      - targets: ["nginx-lb:80"]
 
   # -------------------------------------------------------------------------
   # Опциональные exporter'ы. Раскомментируй, когда поднимешь соответствующий

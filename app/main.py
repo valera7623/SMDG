@@ -35,6 +35,7 @@ from app.core.middleware import (
     AuditMiddleware,
     ActiveRequestsMiddleware,
     BulkheadMiddleware,
+    CompressionMiddleware,
     TracingMiddleware,
     SLOMiddleware,
     TimeoutMiddleware,
@@ -60,6 +61,9 @@ from app.core.log_utils import ThrottledErrorLogger
 from app.core.metrics import smdg_version_info
 from app.core.timeout import TimeoutError
 from app.core.bulkhead import BulkheadRejectedError, BulkheadTimeoutError, initialize_bulkheads
+from app.core.session import session_manager
+from app.core.cache import distributed_cache
+from app.core.job_queue import job_queue
 from app.services.dead_letter_service import dlq
 from app.services import email_service as _email_service  # noqa: F401
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -68,6 +72,7 @@ import asyncio
 import logging
 import os
 import signal
+import time
 
 from app.models.webhook import DeliveryStatus, WebhookDelivery
 
@@ -235,6 +240,7 @@ async def lifespan(app: FastAPI):
     app.state.active_requests = 0
     app.state.active_requests_lock = asyncio.Lock()
     app.state.background_tasks: list[asyncio.Task] = []
+    app.state.started_at = time.time()
 
     try:
         await init_keys()
@@ -244,6 +250,20 @@ async def lifespan(app: FastAPI):
 
     await check_redis_connection()
     logger.info("✅ Rate limiter: Redis проверен")
+
+    if settings.HORIZONTAL_SCALING_ENABLED:
+        try:
+            await session_manager.init()
+            await distributed_cache.init()
+            await job_queue.init()
+            job_queue.start()
+            logger.info(
+                "✅ Stateless services initialized (instance_id=%s, instance_name=%s)",
+                settings.INSTANCE_ID,
+                settings.INSTANCE_NAME,
+            )
+        except Exception as e:
+            logger.exception("⚠️ Stateless services init failed: %s", e)
 
     if settings.READ_REPLICAS_ENABLED:
         replica_urls = [
@@ -474,6 +494,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("⚠️ Ошибка закрытия Redis: %s", e)
 
+    # Шаг 6a: закрытие stateless shared services (sessions/cache/job queue).
+    try:
+        await job_queue.close()
+        await distributed_cache.close()
+        await session_manager.close()
+        logger.info("🔒 Stateless shared services закрыты")
+    except Exception as e:
+        logger.warning("⚠️ Ошибка закрытия stateless services: %s", e)
+
     # Шаг 7: закрытие S3 клиента (если используется).
     try:
         await cleanup_storage()
@@ -673,6 +702,21 @@ async def set_user_context(request: Request, call_next):
 
 app.add_middleware(SlowAPIMiddleware)
 app.add_middleware(AuditMiddleware)
+if settings.COMPRESSION_ENABLED:
+    app.add_middleware(
+        CompressionMiddleware,
+        minimum_size=settings.COMPRESSION_MIN_SIZE_BYTES,
+        compressible_types=settings.COMPRESSIBLE_CONTENT_TYPES,
+        gzip_enabled=settings.COMPRESSION_GZIP_ENABLED,
+        brotli_enabled=settings.COMPRESSION_BROTLI_ENABLED,
+        gzip_level=settings.COMPRESSION_GZIP_LEVEL,
+        brotli_quality=settings.COMPRESSION_BROTLI_QUALITY,
+    )
+    logger.info(
+        "Compression middleware enabled (gzip=%s, brotli=%s)",
+        settings.COMPRESSION_GZIP_ENABLED,
+        settings.COMPRESSION_BROTLI_ENABLED,
+    )
 
 # SLOMiddleware: считает SLI-метрики (success/total requests, latency)
 # для SLO-расчётов. Стоит ниже ActiveRequestsMiddleware — так запросы,
@@ -830,43 +874,44 @@ async def create_first_admin():
             await db.commit()
             await db.refresh(default_tenant)
 
-        async with db.begin():
-            result = await db.execute(
-                select(User).where(User.username == "admin")
-            )
-            existing_admin = result.scalar_one_or_none()
+        result = await db.execute(
+            select(User).where(User.username == "admin")
+        )
+        existing_admin = result.scalar_one_or_none()
 
-            if existing_admin:
-                print("ℹ️  Пользователь admin уже существует")
-                # Проверим, есть ли email
-                if not existing_admin.email:
-                    existing_admin.email = "admin@example.com"
-                if not existing_admin.tenant_id:
-                    existing_admin.tenant_id = default_tenant.id
-                    await db.commit()
-                    print("✅ Tenant/email добавлены существующему admin")
-                return
+        if existing_admin:
+            print("ℹ️  Пользователь admin уже существует")
+            changed = False
+            if not existing_admin.email:
+                existing_admin.email = "admin@example.com"
+                changed = True
+            if not existing_admin.tenant_id:
+                existing_admin.tenant_id = default_tenant.id
+                changed = True
+            if changed:
+                await db.commit()
+                print("✅ Tenant/email добавлены существующему admin")
+            return
 
-            # Создаём первого админа с email
-            admin = User(
-                username="admin",
-                email="admin@example.com",  # ← ОБЯЗАТЕЛЬНО
-                hashed_password=get_password_hash("admin123"),
-                role="admin",
-                is_active=True,
-                tenant_id=default_tenant.id,
-            )
-            
-            db.add(admin)
-            await db.commit()
-            
-            print("=" * 60)
-            print("🔐 СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
-            print("   Логин:    admin")
-            print("   Пароль:   admin")
-            print("   Email:    admin@example.com")
-            print("   Роль:     admin")
-            print("=" * 60)
+        # Создаём первого админа с email
+        admin = User(
+            username="admin",
+            email="admin@example.com",  # ← ОБЯЗАТЕЛЬНО
+            hashed_password=get_password_hash("admin123"),
+            role="admin",
+            is_active=True,
+            tenant_id=default_tenant.id,
+        )
+        db.add(admin)
+        await db.commit()
+
+        print("=" * 60)
+        print("🔐 СОЗДАН ПЕРВЫЙ АДМИНИСТРАТОР")
+        print("   Логин:    admin")
+        print("   Пароль:   admin")
+        print("   Email:    admin@example.com")
+        print("   Роль:     admin")
+        print("=" * 60)
 
 
 

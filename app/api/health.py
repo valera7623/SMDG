@@ -34,6 +34,9 @@ from app.core.auth_utils import TokenData
 from app.core.config import settings
 from app.core.feature_flags import get_deployment_info
 from app.core.database_router import get_db_router
+from app.core.cache import distributed_cache
+from app.core.job_queue import job_queue
+from app.core.session import session_manager
 
 logger = logging.getLogger(__name__)
 
@@ -363,12 +366,50 @@ async def readiness_check(request: Request) -> JSONResponse:
         status_code=200,
         content={
             "ready": True,
+            "instance_id": settings.INSTANCE_ID,
+            "instance_name": settings.INSTANCE_NAME,
             "active_requests": active_requests,
             "max_requests": max_requests,
             "checks": checks,
             "timestamp": _utcnow_iso(),
         },
     )
+
+
+@router.get("/health/metrics", summary="Per-instance runtime metrics (admin only)")
+async def instance_metrics(
+    request: Request,
+    _admin: TokenData = Depends(get_current_admin),
+) -> Dict[str, Any]:
+    """Expose instance-level metrics for horizontal scaling validation."""
+    started_at = float(getattr(request.app.state, "started_at", time.time()))
+    uptime_seconds = max(time.time() - started_at, 0.0)
+    try:
+        session_count = await session_manager.get_active_sessions_count()
+    except Exception:
+        session_count = -1
+    try:
+        cache_size = await distributed_cache.get_size()
+    except Exception:
+        cache_size = -1
+    try:
+        queue_length = await job_queue.get_queue_length()
+        dead_letter_length = await job_queue.get_dead_letter_length()
+    except Exception:
+        queue_length = -1
+        dead_letter_length = -1
+
+    return {
+        "instance_id": settings.INSTANCE_ID,
+        "instance_name": settings.INSTANCE_NAME,
+        "uptime_seconds": round(uptime_seconds, 2),
+        "active_requests": int(getattr(request.app.state, "active_requests", 0)),
+        "session_count": session_count,
+        "cache_size": cache_size,
+        "queue_length": queue_length,
+        "dead_letter_length": dead_letter_length,
+        "timestamp": _utcnow_iso(),
+    }
 
 
 # ──────────────────────────────────────────────────────────────────────

@@ -1,7 +1,9 @@
 # app/core/config.py
 import os
+import socket
+import uuid
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -137,6 +139,62 @@ class Settings(BaseSettings):
     HTTP_REQUEST_TIMEOUT_SECONDS: int = 30
     HTTP_CONNECT_TIMEOUT_SECONDS: int = 5
     HTTP_READ_TIMEOUT_SECONDS: int = 25
+
+    # === HTTP сжатие ответов ===
+    COMPRESSION_ENABLED: bool = True
+    COMPRESSION_MIN_SIZE_BYTES: int = 500
+    COMPRESSION_GZIP_LEVEL: int = 6
+    COMPRESSION_BROTLI_QUALITY: int = 6
+    COMPRESSION_BROTLI_ENABLED: bool = True
+    COMPRESSION_GZIP_ENABLED: bool = True
+    COMPRESSIBLE_CONTENT_TYPES: List[str] = [
+        "text/plain",
+        "text/html",
+        "text/css",
+        "text/xml",
+        "text/javascript",
+        "application/json",
+        "application/javascript",
+        "application/xml",
+        "application/xhtml+xml",
+        "application/rss+xml",
+        "application/atom+xml",
+        "application/ld+json",
+        "application/manifest+json",
+        "application/vnd.api+json",
+        "application/dicom+json",
+        "image/svg+xml",
+    ]
+
+    # === Horizontal scaling / stateless runtime ===
+    HORIZONTAL_SCALING_ENABLED: bool = True
+    INSTANCE_ID: str = Field(default_factory=lambda: os.getenv("INSTANCE_ID", str(uuid.uuid4())))
+    INSTANCE_NAME: str = Field(default_factory=lambda: os.getenv("INSTANCE_NAME", socket.gethostname()))
+
+    # Session storage
+    SESSION_TYPE: str = "redis"  # redis | memory | database
+    SESSION_REDIS_URL: str = "redis://redis:6379/0"
+    SESSION_TTL_SECONDS: int = 3600
+
+    # Distributed cache
+    CACHE_TYPE: str = "redis"
+    CACHE_REDIS_URL: str = "redis://redis:6379/1"
+    CACHE_TTL_SECONDS: int = 300
+
+    # Rate limiting storage (shared across replicas)
+    RATE_LIMIT_STORAGE: str = "redis://redis:6379/2"
+
+    # Distributed job queue
+    JOB_QUEUE_TYPE: str = "redis"  # redis | rabbitmq | celery
+    JOB_QUEUE_REDIS_URL: str = "redis://redis:6379/3"
+
+    # Shared file storage
+    FILE_STORAGE: str = "s3"  # s3 | shared_nfs | local
+    FILE_STORAGE_S3_BUCKET: str = "smdg-files"
+
+    # Health probes for orchestrators
+    HEALTH_CHECK_ENABLED: bool = True
+    READINESS_CHECK_ENABLED: bool = True
 
     # === База данных ===
     DB_QUERY_TIMEOUT_SECONDS: int = 10

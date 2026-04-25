@@ -6,6 +6,7 @@
 - [Еженедельное обслуживание](operations/weekly-maintenance.md)
 - [Ежемесячные задачи](operations/monthly-tasks.md)
 - [Бэкап и восстановление](operations/backup-recovery.md)
+- [Возврат к базовому состоянию](rollback-to-baseline.md)
 - [Компоненты системы](components/)
 - [Аварийные сценарии](incidents/)
 - [Устранение неисправностей](troubleshooting/)

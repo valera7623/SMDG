@@ -51,6 +51,87 @@ backwards compatibility and continues to use S3.
 docker compose -f docker-compose.yml -f docker-compose.saas.yml up -d
 ```
 
+## Horizontal scaling (stateless cluster)
+
+Use `docker-compose.scale.yml` when you need multiple app replicas behind
+an Nginx load balancer.
+
+### Architecture requirements
+
+- Keep app nodes stateless.
+- Store sessions, cache and job queue in Redis:
+  - `HORIZONTAL_SCALING_REDIS_SESSION_URL`
+  - `HORIZONTAL_SCALING_REDIS_CACHE_URL`
+  - `HORIZONTAL_SCALING_REDIS_JOB_QUEUE_URL`
+- Use shared object storage (`S3`/`MinIO`) for uploaded files.
+- Route traffic through `nginx-lb` (`nginx/nginx-load-balancer.conf`).
+
+### Start and scale
+
+```bash
+# Start baseline cluster (ports: 18080 HTTP, 18443 HTTPS)
+docker compose -p smdg-scale -f docker-compose.scale.yml up -d
+
+# Scale app replicas to 3
+docker compose -p smdg-scale -f docker-compose.scale.yml up -d --scale smdg=3
+
+# Or use helper script
+./scripts/scale.sh 3
+```
+
+### Verify readiness and balancing
+
+```bash
+# Cluster readiness through load balancer
+curl -k https://localhost:18443/health/ready
+
+# Confirm requests are distributed across replicas
+for i in {1..30}; do
+  curl -ks https://localhost:18443/health/ready | jq -r '.instance_id'
+done | sort | uniq -c
+```
+
+Use `/health/live` for liveness probes, `/health/ready` for orchestrator routing,
+and `/health/metrics` for per-instance operational metrics.
+
+### Blue/green cutover
+
+**Scaled cluster** (`smdg-scale`, `docker-compose.scale.yml`): use
+`./scripts/cutover.sh` to copy upstream snippets from `nginx/upstreams/`
+into `nginx/nginx-load-balancer.conf`, validate, and reload the `nginx-lb`
+container. Modes: `status`, `blue` (all replicas), `green <n>` (pin to
+replica *n*), `canary`, `rollback`.
+
+```bash
+./scripts/cutover.sh status
+./scripts/cutover.sh blue
+./scripts/cutover.sh green 2
+```
+
+`./scripts/deploy.sh` builds the app service and, when healthy, runs
+`./scripts/cutover.sh green <instance>` to shift traffic to that replica.
+
+**Include-based** cutover (Nginx with `include ... upstream-target.conf` and
+`proxy_pass $smdg_upstream;` layout):
+
+```bash
+./scripts/cutover_include.sh blue
+./scripts/cutover_include.sh green
+```
+
+**Edge** in-container upstream swap (single edge container, no scale compose file):
+
+```bash
+EDGE_NGINX_CONTAINER=smdg-nginx-1 ./scripts/cutover_edge.sh
+```
+
+The include and edge scripts validate Nginx, reload, run post-cutover health
+checks, and auto-roll back on failure (see their headers for environment
+variables).
+
+For a dedicated rollback procedure, see
+[`docs/runbooks/rollback-to-baseline.md`](../runbooks/rollback-to-baseline.md).
+
 ## Migrating from an older version
 
 1. Set `DEPLOYMENT_TYPE` (for the current docker stack with MinIO the

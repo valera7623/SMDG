@@ -36,3 +36,15 @@ secrets/*
 .cursor/
 poetry.toml
 .htpasswd-jaeger
+
+# Local edits, backups, editor scratch
+*.backup
+*.tmp
+*.edited
+*~
+*.pre-*
+# Backups from cutover_edge / cutover_include (path.pre-cutover.TIMESTAMP)
+*.pre-cutover.*
+
+# Optional: curl/CLI captures at repo root (narrow)
+/*.out

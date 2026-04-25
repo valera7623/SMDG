@@ -24,6 +24,8 @@ folgen in [`docs/locales/{ru,de,fr}/`](docs/locales/).
 - API-Leitfaden — [`docs/locales/de/API_GUIDE.md`](docs/locales/de/API_GUIDE.md)
 - Architektur — [`docs/locales/de/ARCHITECTURE.md`](docs/locales/de/ARCHITECTURE.md)
 - Deployment-Profile — [`docs/locales/de/DEPLOYMENT.md`](docs/locales/de/DEPLOYMENT.md)
+- Runbook fuer horizontale Skalierung — [`docs/locales/de/DEPLOYMENT.md`](docs/locales/de/DEPLOYMENT.md#horizontale-skalierung-stateless-cluster)
+- Runbook fuer Rueckkehr zum Ausgangszustand — [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
 - DICOM-Viewer — [`docs/locales/de/DICOM_VIEWER.md`](docs/locales/de/DICOM_VIEWER.md)
 - Sicherheit — [`docs/locales/de/SECURITY.md`](docs/locales/de/SECURITY.md)
 
@@ -51,6 +53,14 @@ Die Umgebungsvariable `DEPLOYMENT_TYPE` wählt die Feature-Matrix:
 | `saas`   | Multi-Mandant, Abrechnung / White-Label, Objektspeicher                      |
 
 Details: [`docs/locales/de/DEPLOYMENT.md`](docs/locales/de/DEPLOYMENT.md).
+
+Fuer stateless horizontale Skalierung (Redis fuer Sessions/Cache/Queue, Nginx
+als Load Balancer, `/health/live` und `/health/ready`, Blue/Green-Cutover-
+Skripte) verwenden Sie den Abschnitt **"Horizontale Skalierung (stateless
+Cluster)"** im Deployment-Leitfaden.
+Das Rollback zum Basiszustand ist in
+[`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
+beschrieben.
 
 ## Mehrsprachigkeit
 

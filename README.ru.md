@@ -24,6 +24,8 @@ DICOM Viewer рендерит исследования в браузере, не
 - API-руководство — [`docs/locales/ru/API_GUIDE.md`](docs/locales/ru/API_GUIDE.md)
 - Архитектура — [`docs/locales/ru/ARCHITECTURE.md`](docs/locales/ru/ARCHITECTURE.md)
 - Типы развёртывания — [`docs/locales/ru/DEPLOYMENT.md`](docs/locales/ru/DEPLOYMENT.md)
+- Runbook горизонтального масштабирования — [`docs/locales/ru/DEPLOYMENT.md`](docs/locales/ru/DEPLOYMENT.md#горизонтальное-масштабирование-stateless-кластер)
+- Runbook возврата к базовому состоянию — [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
 - DICOM Viewer — [`docs/locales/ru/DICOM_VIEWER.md`](docs/locales/ru/DICOM_VIEWER.md)
 - Безопасность — [`docs/locales/ru/SECURITY.md`](docs/locales/ru/SECURITY.md)
 
@@ -51,6 +53,13 @@ docker compose up --build
 | `saas`   | Multi-tenant, биллинг/white-label, объектное хранилище                  |
 
 Подробнее: [`docs/locales/ru/DEPLOYMENT.md`](docs/locales/ru/DEPLOYMENT.md).
+
+Для stateless-горизонтального масштабирования (Redis для сессий/кэша/очереди,
+Nginx как load balancer, проверки `/health/live` и `/health/ready`, скрипты
+blue/green cutover) используйте раздел **«Горизонтальное масштабирование
+(stateless-кластер)»** в deployment-гайде.
+Процедура возврата в базовое состояние описана в
+[`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md).
 
 ## Мультиязычность
 

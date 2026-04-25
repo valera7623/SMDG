@@ -23,6 +23,8 @@ Full user- and operator-facing documentation lives in
 - API guide — [`docs/src/API_GUIDE.md`](docs/src/API_GUIDE.md)
 - Architecture — [`docs/src/ARCHITECTURE.md`](docs/src/ARCHITECTURE.md)
 - Deployment profiles — [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md)
+- Horizontal scaling runbook — [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md#horizontal-scaling-stateless-cluster)
+- Rollback to baseline runbook — [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
 - DICOM Viewer — [`docs/src/DICOM_VIEWER.md`](docs/src/DICOM_VIEWER.md)
 - Security policy — [`docs/src/SECURITY.md`](docs/src/SECURITY.md)
 
@@ -50,6 +52,12 @@ The environment variable `DEPLOYMENT_TYPE` selects the feature matrix:
 | `saas`   | Multi-tenant, billing/white-label, object storage               |
 
 See [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) for details.
+
+For stateless horizontal scaling (Redis-backed sessions/cache/queue, Nginx load
+balancer, health/readiness checks, blue/green cutover scripts), use the section
+**"Horizontal scaling (stateless cluster)"** in the deployment guide.
+Rollback procedure is documented in
+[`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md).
 
 ## Multilingual support
 

@@ -12,8 +12,13 @@ from __future__ import annotations
 
 import logging
 import asyncio
+import gzip
 from typing import Awaitable, Callable
 
+try:
+    import brotli
+except ModuleNotFoundError:  # pragma: no cover - depends on runtime image
+    brotli = None
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
@@ -377,6 +382,239 @@ class SLOMiddleware:
             slo_latency_bucket.observe(duration)
 
 
+class CompressionMiddleware:
+    """ASGI-middleware for response compression with Brotli/Gzip fallback."""
+
+    _DEFAULT_CONTENT_TYPES: tuple[str, ...] = (
+        "text/plain",
+        "text/html",
+        "text/css",
+        "text/xml",
+        "text/javascript",
+        "application/json",
+        "application/javascript",
+        "application/xml",
+        "application/xhtml+xml",
+        "application/rss+xml",
+        "application/atom+xml",
+        "application/ld+json",
+        "application/manifest+json",
+        "application/vnd.api+json",
+        "application/dicom+json",
+        "image/svg+xml",
+    )
+
+    # prefix, minimum size, gzip level, brotli level, allow_brotli, allow_gzip
+    _POLICY: tuple[tuple[str, int, int, int, bool, bool], ...] = (
+        ("application/dicom+json", 1000, 6, 6, False, True),
+        ("text/html", 500, 9, 9, True, True),
+        ("text/css", 500, 9, 9, True, True),
+        ("application/javascript", 500, 9, 9, True, True),
+        ("application/json", 500, 6, 6, True, True),
+        ("image/svg+xml", 1000, 5, 5, False, True),
+    )
+
+    _SKIP_PREFIXES: tuple[str, ...] = (
+        "image/png",
+        "application/pdf",
+        "application/dicom",
+    )
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        minimum_size: int = 500,
+        compressible_types: list[str] | None = None,
+        brotli_enabled: bool = True,
+        gzip_enabled: bool = True,
+        gzip_level: int = 6,
+        brotli_quality: int = 6,
+    ) -> None:
+        self.app = app
+        self.minimum_size = minimum_size
+        self.compressible_types = tuple(compressible_types or self._DEFAULT_CONTENT_TYPES)
+        self.brotli_enabled = brotli_enabled
+        self.gzip_enabled = gzip_enabled
+        self.gzip_level = max(1, min(gzip_level, 9))
+        self.brotli_quality = max(1, min(brotli_quality, 11))
+        if brotli is None:
+            self.brotli_enabled = False
+
+    def _get_policy(self, content_type: str) -> tuple[int, int, int, bool, bool]:
+        ctype = content_type.lower()
+        for prefix in self._SKIP_PREFIXES:
+            if ctype.startswith(prefix):
+                return (0, 0, 0, False, False)
+        for (
+            prefix,
+            min_size,
+            gzip_level,
+            brotli_level,
+            allow_brotli,
+            allow_gzip,
+        ) in self._POLICY:
+            if ctype.startswith(prefix):
+                return (
+                    min_size,
+                    gzip_level,
+                    brotli_level,
+                    allow_brotli and self.brotli_enabled,
+                    allow_gzip and self.gzip_enabled,
+                )
+        if any(ctype.startswith(t.lower()) for t in self.compressible_types):
+            return (
+                self.minimum_size,
+                self.gzip_level,
+                self.brotli_quality,
+                self.brotli_enabled,
+                self.gzip_enabled,
+            )
+        return (0, 0, 0, False, False)
+
+    @staticmethod
+    def _parse_accept_encoding(raw_value: str) -> tuple[bool, bool]:
+        if not raw_value:
+            return False, False
+        value = raw_value.lower()
+        wildcard = "*" in value
+        supports_br = "br" in value
+        supports_gzip = "gzip" in value
+        if wildcard:
+            supports_br = True
+            supports_gzip = True
+        return supports_br, supports_gzip
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        request = Request(scope, receive)
+        req_br, req_gzip = self._parse_accept_encoding(
+            request.headers.get("accept-encoding", "")
+        )
+        if not req_br and not req_gzip:
+            await self.app(scope, receive, send)
+            return
+
+        response_started = False
+        status_code: int = 200
+        headers: list[tuple[bytes, bytes]] = []
+        chunks: list[bytes] = []
+        more_body_expected = False
+
+        async def send_wrapper(message: Message) -> None:
+            nonlocal response_started, status_code, headers, more_body_expected
+
+            if message["type"] == "http.response.start":
+                response_started = True
+                status_code = int(message["status"])
+                headers = list(message.get("headers", []))
+                return
+
+            if message["type"] != "http.response.body":
+                await send(message)
+                return
+
+            body = message.get("body", b"")
+            if body:
+                chunks.append(body)
+            more_body_expected = bool(message.get("more_body", False))
+            if more_body_expected:
+                return
+
+            if not response_started:
+                # Defensive fallback: malformed app message order.
+                await send({"type": "http.response.start", "status": status_code, "headers": headers})
+
+            body_bytes = b"".join(chunks)
+            final_headers = self._compress_headers_and_body(
+                headers=headers,
+                body=body_bytes,
+                content_accepts_br=req_br,
+                content_accepts_gzip=req_gzip,
+                status_code=status_code,
+            )
+
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": status_code,
+                    "headers": final_headers[0],
+                }
+            )
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": final_headers[1],
+                    "more_body": False,
+                }
+            )
+
+        await self.app(scope, receive, send_wrapper)
+
+    def _compress_headers_and_body(
+        self,
+        headers: list[tuple[bytes, bytes]],
+        body: bytes,
+        content_accepts_br: bool,
+        content_accepts_gzip: bool,
+        status_code: int,
+    ) -> tuple[list[tuple[bytes, bytes]], bytes]:
+        # 204/304 и ответы без тела не трогаем.
+        if status_code in (204, 304) or not body:
+            return headers, body
+
+        lowered: dict[bytes, bytes] = {k.lower(): v for k, v in headers}
+        if b"content-encoding" in lowered:
+            return headers, body
+
+        content_type = lowered.get(b"content-type", b"").decode("latin-1").split(";")[0].strip()
+        if not content_type:
+            return headers, body
+
+        min_size, gzip_level, brotli_level, allow_brotli, allow_gzip = self._get_policy(content_type)
+        if min_size <= 0 or len(body) < min_size:
+            return headers, body
+
+        selected_encoding: str | None = None
+        compressed_body = body
+
+        try:
+            if content_accepts_br and allow_brotli and brotli is not None:
+                candidate = brotli.compress(body, quality=brotli_level)
+                if len(candidate) < len(body):
+                    selected_encoding = "br"
+                    compressed_body = candidate
+            if selected_encoding is None and content_accepts_gzip and allow_gzip:
+                candidate = gzip.compress(body, compresslevel=gzip_level)
+                if len(candidate) < len(body):
+                    selected_encoding = "gzip"
+                    compressed_body = candidate
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Compression failed: %s", exc)
+            return headers, body
+
+        if not selected_encoding:
+            return headers, body
+
+        out_headers = [
+            (k, v)
+            for (k, v) in headers
+            if k.lower() not in (b"content-length", b"content-encoding")
+        ]
+        out_headers.append((b"content-encoding", selected_encoding.encode("ascii")))
+        out_headers.append((b"content-length", str(len(compressed_body)).encode("ascii")))
+
+        vary = lowered.get(b"vary")
+        if vary is None:
+            out_headers.append((b"vary", b"Accept-Encoding"))
+        elif b"accept-encoding" not in vary.lower():
+            out_headers.append((b"vary", vary + b", Accept-Encoding"))
+
+        return out_headers, compressed_body
+
+
 __all__ = [
     "AuditMiddleware",
     "ActiveRequestsMiddleware",
@@ -384,4 +622,5 @@ __all__ = [
     "BulkheadMiddleware",
     "TracingMiddleware",
     "SLOMiddleware",
+    "CompressionMiddleware",
 ]

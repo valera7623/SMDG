@@ -51,6 +51,87 @@ docker compose -f docker-compose.yml -f docker-compose.single.yml up -d
 docker compose -f docker-compose.yml -f docker-compose.saas.yml up -d
 ```
 
+## Горизонтальное масштабирование (stateless-кластер)
+
+Используйте `docker-compose.scale.yml`, когда нужны несколько реплик приложения
+за Nginx-балансировщиком.
+
+### Требования к архитектуре
+
+- Узлы приложения должны оставаться stateless.
+- Сессии, кэш и очередь задач храните в Redis:
+  - `HORIZONTAL_SCALING_REDIS_SESSION_URL`
+  - `HORIZONTAL_SCALING_REDIS_CACHE_URL`
+  - `HORIZONTAL_SCALING_REDIS_JOB_QUEUE_URL`
+- Для файлов используйте общее объектное хранилище (`S3`/`MinIO`).
+- Весь входящий трафик направляйте через `nginx-lb`
+  (`nginx/nginx-load-balancer.conf`).
+
+### Запуск и масштабирование
+
+```bash
+# Базовый запуск кластера (порты: 18080 HTTP, 18443 HTTPS)
+docker compose -p smdg-scale -f docker-compose.scale.yml up -d
+
+# Масштабирование до 3 реплик приложения
+docker compose -p smdg-scale -f docker-compose.scale.yml up -d --scale smdg=3
+
+# Или через helper-скрипт
+./scripts/scale.sh 3
+```
+
+### Проверка readiness и балансировки
+
+```bash
+# Ready-статус через балансировщик
+curl -k https://localhost:18443/health/ready
+
+# Проверка распределения запросов между репликами
+for i in {1..30}; do
+  curl -ks https://localhost:18443/health/ready | jq -r '.instance_id'
+done | sort | uniq -c
+```
+
+Используйте `/health/live` для liveness probe, `/health/ready` для маршрутизации
+оркестратором, `/health/metrics` для per-instance метрик.
+
+### Blue/green cutover
+
+**Масштабируемый кластер** (`smdg-scale`, `docker-compose.scale.yml`): скрипт
+`./scripts/cutover.sh` копирует фрагменты upstream из `nginx/upstreams/` в
+`nginx/nginx-load-balancer.conf`, проверяет конфиг и перезагружает
+`nginx-lb`. Режимы: `status`, `blue` (все реплики), `green <n>` (только
+реплика *n*), `canary`, `rollback`.
+
+```bash
+./scripts/cutover.sh status
+./scripts/cutover.sh blue
+./scripts/cutover.sh green 2
+```
+
+`./scripts/deploy.sh` пересобирает сервис приложения и при успешной
+проверке здоровья вызывает `./scripts/cutover.sh green <инстанс>`.
+
+**Схема с include** (с `include ... upstream-target.conf` и
+`proxy_pass $smdg_upstream;`):
+
+```bash
+./scripts/cutover_include.sh blue
+./scripts/cutover_include.sh green
+```
+
+**Edge-контейнер** (замена upstream в одном Nginx, без scale compose):
+
+```bash
+EDGE_NGINX_CONTAINER=smdg-nginx-1 ./scripts/cutover_edge.sh
+```
+
+Include- и edge-скрипты проверяют Nginx, делают post-cutover health-check и
+auto-rollback (переменные — в шапке скриптов).
+
+Отдельный runbook по откату:
+[`docs/runbooks/rollback-to-baseline.md`](../../runbooks/rollback-to-baseline.md).
+
 ## Миграция со старой версии
 
 1. Задайте `DEPLOYMENT_TYPE` (для текущего docker-стека с MinIO рекомендуется `intl`).

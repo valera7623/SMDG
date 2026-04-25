@@ -24,6 +24,8 @@ version anglaise sous [`docs/src/`](docs/src/), les traductions dans
 - Guide API — [`docs/locales/fr/API_GUIDE.md`](docs/locales/fr/API_GUIDE.md)
 - Architecture — [`docs/locales/fr/ARCHITECTURE.md`](docs/locales/fr/ARCHITECTURE.md)
 - Profils de déploiement — [`docs/locales/fr/DEPLOYMENT.md`](docs/locales/fr/DEPLOYMENT.md)
+- Runbook de mise a l'echelle horizontale — [`docs/locales/fr/DEPLOYMENT.md`](docs/locales/fr/DEPLOYMENT.md#mise-a-lechelle-horizontale-cluster-stateless)
+- Runbook de retour a l'etat initial — [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
 - Visualiseur DICOM — [`docs/locales/fr/DICOM_VIEWER.md`](docs/locales/fr/DICOM_VIEWER.md)
 - Sécurité — [`docs/locales/fr/SECURITY.md`](docs/locales/fr/SECURITY.md)
 
@@ -51,6 +53,13 @@ La variable d'environnement `DEPLOYMENT_TYPE` choisit la matrice :
 | `saas`   | Multi-locataire, facturation / white-label, stockage objet                  |
 
 Détails : [`docs/locales/fr/DEPLOYMENT.md`](docs/locales/fr/DEPLOYMENT.md).
+
+Pour la mise a l'echelle horizontale stateless (Redis pour sessions/cache/file
+de jobs, Nginx load balancer, probes `/health/live` et `/health/ready`, scripts
+de cutover blue/green), utilisez la section **"Mise a l'echelle horizontale
+(cluster stateless)"** du guide de deploiement.
+La procedure de retour au baseline est decrite dans
+[`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md).
 
 ## Support multilingue
 
