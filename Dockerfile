@@ -20,6 +20,8 @@ RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --only main --no-root && \
     pip install --no-cache-dir "setuptools<81"
+# Jinja2 — обязательна для app/templates (главная /). Явно, чтобы старые кэши слоёв не дали пустой образ без jinja2.
+RUN pip install --no-cache-dir "jinja2>=3.1.6" "MarkupSafe>=2.0"
 
 
 FROM python:3.10-slim AS runtime

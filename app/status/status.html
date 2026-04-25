@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMDG — Status</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .status.ok { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .status.warning { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .status.loading { background: #e2e3e5; color: #383d41; }
+        .status.unknown { background: #e2e3e5; border: 1px solid #b8bcc1; color: #383d41; }
+        .metric { margin: 10px 0; }
+        .metric-bar { background: #e0e0e0; height: 20px; border-radius: 10px; overflow: hidden; }
+        .metric-fill { background: #28a745; height: 100%; width: 0; transition: width 0.3s; }
+        .incident { padding: 10px; margin: 10px 0; border-left: 4px solid #ffc107; }
+        .incident.resolved { border-left-color: #28a745; }
+        .uptime { font-size: 48px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>SMDG service status</h1>
+
+    <div id="current-status" class="status loading">Loading&hellip;</div>
+
+    <div class="uptime">
+        <div>Uptime (30 days, SLI)</div>
+        <div id="uptime">--</div>
+    </div>
+
+    <h2>Metrics</h2>
+    <div class="metric">
+        <div>API availability (rolling)</div>
+        <div class="metric-bar" id="availability-wrap">
+            <div id="availability-bar" class="metric-fill" style="width: 0%"></div>
+        </div>
+        <div id="availability-value">0%</div>
+    </div>
+    <div class="metric">
+        <div>Error budget remaining</div>
+        <div class="metric-bar">
+            <div id="budget-bar" class="metric-fill" style="width: 0%"></div>
+        </div>
+        <div id="budget-value">100%</div>
+    </div>
+    <div class="metric">
+        <div>p95 latency (ms)</div>
+        <div id="latency-value">0</div>
+    </div>
+
+    <h2>Active incidents</h2>
+    <div id="incidents">None</div>
+
+    <h2>Recent incidents</h2>
+    <div id="history">None</div>
+
+    <p style="color:#666;font-size:0.9rem" id="last-updated"></p>
+
+    <script>
+        function setStatusBarColor(el, pct) {
+            if (pct >= 99.9) el.style.background = '#28a745';
+            else if (pct >= 99) el.style.background = '#ffc107';
+            else el.style.background = '#dc3545';
+        }
+        function updateUI(data) {
+            const statusDiv = document.getElementById('current-status');
+            if (data.current_status === 'ok') {
+                statusDiv.className = 'status ok';
+                statusDiv.textContent = 'All systems operational';
+            } else if (data.current_status === 'warning') {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = 'Partial degradation';
+            } else if (data.current_status === 'unknown') {
+                statusDiv.className = 'status unknown';
+                statusDiv.textContent = 'Insufficient data (no SLO sample yet, or off-process script)';
+            } else {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = 'Service disruption or SLA risk';
+            }
+            const up = data.uptime_30d;
+            document.getElementById('uptime').textContent = up == null ? 'n/a' : (up + '%');
+            const av = data.api_availability == null ? null : +data.api_availability;
+            const bar = document.getElementById('availability-bar');
+            if (av == null) {
+                bar.style.width = '0%';
+            } else {
+                bar.style.width = Math.min(100, av) + '%';
+                setStatusBarColor(bar, av);
+            }
+            document.getElementById('availability-value').textContent =
+                data.api_availability == null ? 'n/a' : (data.api_availability + '%');
+            const eb = +data.error_budget_remaining;
+            document.getElementById('budget-bar').style.width = Math.min(100, eb) + '%';
+            document.getElementById('budget-value').textContent = data.error_budget_remaining + '%';
+            document.getElementById('latency-value').textContent = data.latency_p95;
+
+            const inc = data.active_incidents || [];
+            const incidentsDiv = document.getElementById('incidents');
+            if (!inc.length) { incidentsDiv.textContent = 'None'; }
+            else {
+                incidentsDiv.innerHTML = inc.map(function (i) {
+                    return '<div class="incident">' +
+                        '<strong>' + (i.title || 'Incident') + '</strong><br>' +
+                        (i.description || '') + '<br>Status: ' + (i.status || '') + '</div>';
+                }).join('');
+            }
+            const hist = data.incident_history || [];
+            const historyDiv = document.getElementById('history');
+            if (!hist.length) { historyDiv.textContent = 'None'; }
+            else {
+                historyDiv.innerHTML = hist.map(function (i) {
+                    return '<div class="incident resolved"><strong>' + (i.title || '') + '</strong><br>' +
+                        (i.description || '') + '</div>';
+                }).join('');
+            }
+            document.getElementById('last-updated').textContent = 'Last updated: ' + (data.last_updated || '');
+        }
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/sli/status');
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                updateUI(await response.json());
+            } catch (e) {
+                const statusDiv = document.getElementById('current-status');
+                statusDiv.className = 'status error';
+                statusDiv.textContent = 'Could not load status: ' + e;
+            }
+        }
+        fetchStatus();
+        setInterval(fetchStatus, 30000);
+    </script>
+</body>
+</html>

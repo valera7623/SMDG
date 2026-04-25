@@ -453,5 +453,35 @@ class Settings(BaseSettings):
     def white_label_enabled(self) -> bool:
         return is_enabled(Feature.WHITE_LABEL)
 
+    # === CDN (статика через CloudFront / Cloudflare и т.д.) ===
+    CDN_ENABLED: bool = False
+    CDN_URL: str = ""  # e.g. "https://cdn.smdg.com" (без завершающего слэша)
+    CDN_PROVIDER: str = "cloudfront"  # cloudfront | cloudflare | akamai | custom
+    # Инвалидация кэша на edge (нужны учётные данные соответствующего провайдера)
+    CDN_INVALIDATION_ENABLED: bool = False
+
+    CLOUDFRONT_DISTRIBUTION_ID: str = ""
+    CLOUDFRONT_DOMAIN: str = ""
+    CLOUDFLARE_ZONE_ID: str = ""
+    CLOUDFLARE_API_TOKEN: str = ""
+    CLOUDFLARE_DOMAIN: str = ""
+
+    STATIC_URL: str = "/static/"
+    STATIC_DIR: Path = Field(default=Path("static"))
+    # Публичный base URL API для window.SMDG_CONFIG (пусто = тот же origin)
+    API_PUBLIC_URL: str = ""
+    STATIC_CACHE_VERSION: str = "v1"
+    STATIC_CACHE_TTL: int = 31_536_000  # 1 year (сек) — ориентир для заголовков на origin/CDN
+    ASSET_FINGERPRINTING: bool = True
+    # Если true и manifest.json нет — при старте сгенерировать копии с хэшем (dev/CI);
+    # в проде обычно false и манифест кладут артефактом сборки.
+    ASSET_MANIFEST_AUTO_GENERATE: bool = False
+
+    @property
+    def static_dir_resolved(self) -> Path:
+        """Абсолютный путь к каталогу статики (рабочий каталог процесса)."""
+        p = self.STATIC_DIR
+        return p.resolve() if p.is_absolute() else (Path.cwd() / p).resolve()
+
 
 settings = Settings()

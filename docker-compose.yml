@@ -345,6 +345,7 @@ services:
       # Без этого маунта контейнер стартует без правил, и
       # ``/api/v1/rules`` возвращает пустой список.
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ./prometheus/sla-rules.yml:/etc/prometheus/sla-rules.yml:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'

@@ -18,7 +18,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from fastapi.openapi.utils import get_openapi
 from app.api import upload, download, list, delete, cleanup, stats, webhooks, dicom, test, bulkhead, archive
 from app.core import init_keys, file_storage, cleanup_manager, audit_logger
@@ -40,6 +39,7 @@ from app.core.middleware import (
     SLOMiddleware,
     TimeoutMiddleware,
 )
+from app.templating import get_templates
 from app.core.slo_collector import slo_collector
 from app.core.tracing import setup_tracing, shutdown_tracing
 from app.api.auth import router as auth_router
@@ -51,6 +51,7 @@ from app.api.deploy_metrics import register_deploy_metrics
 from app.api.tracing import router as tracing_router
 from app.api.alert_webhook import router as alert_webhook_router
 from app.api.slo import router as slo_router
+from app.api.sli import router as sli_router, sli_root
 from app.api.circuit_breaker import router as circuit_breaker_router
 from app.api.dead_letter import router as dead_letter_router
 from app.core.health_collector import collect_health_metrics
@@ -73,8 +74,12 @@ import logging
 import os
 import signal
 import time
+from pathlib import Path
 
 from app.models.webhook import DeliveryStatus, WebhookDelivery
+
+# Публичная status page (SLA/SLI), см. app/status/status.html
+_STATUS_PAGE_PATH = Path(__file__).resolve().parent / "status" / "status.html"
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -250,6 +255,56 @@ async def lifespan(app: FastAPI):
 
     await check_redis_connection()
     logger.info("✅ Rate limiter: Redis проверен")
+
+    from app.core.asset_pipeline import init_asset_pipeline
+    from app.services.cdn_service import init_cdn_service
+    from app.templating import update_jinja_globals
+
+    init_asset_pipeline(
+        settings.static_dir_resolved,
+        settings.STATIC_URL,
+        cdn_url=settings.CDN_URL if settings.CDN_ENABLED else None,
+        auto_generate=settings.ASSET_MANIFEST_AUTO_GENERATE,
+        fingerprinting=settings.ASSET_FINGERPRINTING,
+    )
+    cdn_invalidation = (
+        settings.CDN_INVALIDATION_ENABLED
+        and (
+            (settings.CDN_PROVIDER == "cloudfront" and bool(settings.CLOUDFRONT_DISTRIBUTION_ID))
+            or (
+                settings.CDN_PROVIDER == "cloudflare"
+                and bool(settings.CLOUDFLARE_ZONE_ID)
+                and bool(settings.CLOUDFLARE_API_TOKEN)
+            )
+        )
+    )
+    init_cdn_service(
+        {
+            "provider": settings.CDN_PROVIDER,
+            "enabled": cdn_invalidation,
+            "distribution_id": settings.CLOUDFRONT_DISTRIBUTION_ID,
+            "domain": settings.CLOUDFLARE_DOMAIN or settings.CLOUDFRONT_DOMAIN,
+            "zone_id": settings.CLOUDFLARE_ZONE_ID,
+            "api_token": settings.CLOUDFLARE_API_TOKEN,
+        }
+    )
+    # Jinja2 (опционально в dev): без неё TemplateResponse падает — не роняем весь старт, см. / fallback.
+    app.state.jinja2_templates_ok = False
+    try:
+        update_jinja_globals()
+        app.state.jinja2_templates_ok = True
+    except (AssertionError, ImportError) as e:
+        logger.error(
+            "Jinja2 недоступен (%s) — «/» отдаёт static/html/index.html. "
+            "В Docker: пересоберите образ; в pyproject: dependency jinja2; Dockerfile ставит jinja2 явно.",
+            e,
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.exception("update_jinja_globals не выполнен: %s", e)
+    if app.state.jinja2_templates_ok:
+        logger.info("✅ Asset pipeline / CDN, Jinja2 готовы")
+    else:
+        logger.info("✅ Asset pipeline / CDN (шаблон главной: fallback static/html/index.html)")
 
     if settings.HORIZONTAL_SCALING_ENABLED:
         try:
@@ -802,10 +857,7 @@ async def bulkhead_timeout_exception_handler(request: Request, exc: BulkheadTime
     return JSONResponse(status_code=504, content={"detail": str(exc)})
 
 
-# Монтирование статических файлов
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-# Подключаем API
+# Подключаем API (сначала — чтобы не пересекаться с catch-all/ mount; static ниже)
 app.include_router(upload.router, prefix="/api")
 app.include_router(download.router, prefix="/api")
 app.include_router(list.router, prefix="/api")
@@ -823,10 +875,24 @@ app.include_router(tracing_router)
 app.include_router(health_router)
 app.include_router(alert_webhook_router)
 app.include_router(slo_router)
+app.include_router(sli_router)
 app.include_router(circuit_breaker_router)
 app.include_router(dead_letter_router)
 app.include_router(bulkhead.router)
 app.include_router(archive.router)
+
+# Явно регистрируем GET /api/sli (см. app/api/sli.sli_root) — так путь гарантирован вне кастома APIRouter
+app.add_api_route(
+    "/api/sli",
+    sli_root,
+    methods=["GET"],
+    tags=["SLA/SLI"],
+    summary="SLI: карта эндпоинтов (проверка, что маршруты смонтированы)",
+    include_in_schema=True,
+)
+
+# Статика — после API-маршрутов (рекомендация Starlette; избегает редких 404 на /api/*)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Можно вынести в отдельный модуль app/core/initial_data.py
 async def ensure_admin_exists(session: AsyncSession):
@@ -915,23 +981,41 @@ async def create_first_admin():
 
 
 
-# Главная страница
+# Главная страница (Jinja2 + asset pipeline / CDN URL; без Jinja2 — static/html/index.html)
 @app.get("/", response_class=HTMLResponse)
-async def index():
-    """Главная страница"""
+async def index(request: Request):
+    """Главная: ``app/templates/index.html``; если Jinja2 не в окружении — ``static/html/index.html``."""
+    if getattr(request.app.state, "jinja2_templates_ok", False):
+        try:
+            return get_templates().TemplateResponse(
+                request,
+                "index.html",
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.exception("index template render failed: %s", e)
     try:
         with open("static/html/index.html", "r", encoding="utf-8") as f:
-            return f.read()
+            return HTMLResponse(content=f.read())
     except FileNotFoundError:
-        return """
-        <html>
-            <body>
-                <h1>SMDG - Secure Medical Data Gateway</h1>
-                <p>Ошибка: не найден файл index.html</p>
-                <p>Проверьте структуру проекта: static/html/index.html</p>
-            </body>
-        </html>
-        """
+        return HTMLResponse(
+            content="<html><body><h1>SMDG</h1><p>Templates unavailable and static/html/index.html missing.</p></body></html>",
+            status_code=500,
+        )
+
+
+@app.get("/status", response_class=HTMLResponse, include_in_schema=False)
+async def service_status_page():
+    """Публичная страница статуса (читает JSON с ``/api/sli/status``)."""
+    if not _STATUS_PAGE_PATH.is_file():
+        return HTMLResponse(
+            "<html><body><h1>Status page not found</h1></body></html>",
+            status_code=404,
+        )
+    return HTMLResponse(
+        _STATUS_PAGE_PATH.read_text(encoding="utf-8"),
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+    )
+
 
 # Панель администратора
 @app.get("/admin", response_class=HTMLResponse)

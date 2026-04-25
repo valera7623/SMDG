@@ -1,0 +1,97 @@
+# =============================================================================
+# SMDG — recording rules + SLA-ориентирные алерты (дополняет alerts.yml)
+# =============================================================================
+# Метрики: стандартные http_* от prometheus-fastapi-instrumentator,
+#         кастомные smdg_* из app/core/slo_metrics.py
+#
+# После правок:
+#   curl -X POST http://localhost:9090/-/reload
+# =============================================================================
+groups:
+  - name: smdg_sla_recording
+    interval: 1m
+    rules:
+      # Доля 2xx (в процентах), скользящие окна
+      - record: smdg:api_availability:5m
+        expr: |
+          100 * sum(rate(http_requests_total{status=~"2.."}[5m]))
+            / clamp_min(sum(rate(http_requests_total[5m])), 1e-9)
+
+      - record: smdg:api_availability:1h
+        expr: |
+          100 * sum(rate(http_requests_total{status=~"2.."}[1h]))
+            / clamp_min(sum(rate(http_requests_total[1h])), 1e-9)
+
+      - record: smdg:api_availability:24h
+        expr: |
+          100 * sum(rate(http_requests_total{status=~"2.."}[24h]))
+            / clamp_min(sum(rate(http_requests_total[24h])), 1e-9)
+
+      - record: smdg:api_availability:30d
+        expr: |
+          100 * sum(rate(http_requests_total{status=~"2.."}[30d]))
+            / clamp_min(sum(rate(http_requests_total[30d])), 1e-9)
+
+      # p95 латентность, сек
+      - record: smdg:api_latency_p95:5m
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          )
+
+      # Доля «плохих» ответов (5xx + 4xx при желании) — ориентир
+      - record: smdg:bad_ratio:1h
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[1h]))
+            / clamp_min(sum(rate(http_requests_total[1h])), 1e-9)
+
+      # Прокси: burn относительно 0,1% допустимого плохого (99,9% SLO)
+      - record: smdg:error_budget_burn:1h
+        expr: |
+          smdg:bad_ratio:1h / 0.001
+
+      # DICOM: доля «успешных» (без сбоев) при ненулевом трафике
+      - record: smdg:dicom_render_sli:5m
+        expr: |
+          1 - (
+            sum(rate(dicom_render_failures_total[5m]))
+            / clamp_min(sum(rate(dicom_render_duration_seconds_count[5m])), 1e-9)
+          )
+
+  - name: smdg_sla_alerts
+    interval: 1m
+    rules:
+      # «Быстрое» горение: за час доля 5xx заметна относительно SLO 99,9%
+      - alert: SMDGSLAHighBurn1h
+        expr: smdg:error_budget_burn:1h > 3
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: sla
+        annotations:
+          summary: "SMDG: за час высокий burn (5xx) относительно SLO 99,9%"
+          description: "smdg:error_budget_burn:1h = {{ $value | humanize }}"
+
+      # Медленное: сутки ниже цели
+      - alert: SMDGSLALowAvailability24h
+        expr: smdg:api_availability:24h < 99.5
+        for: 1h
+        labels:
+          severity: critical
+          service: smdg
+          component: sla
+        annotations:
+          summary: "SMDG: 24h availability < 99,5%"
+          description: "smdg:api_availability:24h = {{ $value | humanize }}%"
+
+      - alert: SMDGSLAHighLatencyP95
+        expr: smdg:api_latency_p95:5m > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          service: smdg
+          component: sla
+        annotations:
+          summary: "SMDG: p95 API latency > 1s (5m)"
+          description: "smdg:api_latency_p95:5m = {{ $value | humanize }}s"

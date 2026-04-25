@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="app.title">SMDG — Secure Medical Data Gateway</title>
+    {% if cdn_url %}
+    <link rel="preconnect" href="{{ cdn_url }}">
+    <link rel="dns-prefetch" href="{{ cdn_url }}">
+    {% endif %}
+    <link rel="stylesheet" href="{{ asset_url('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset_url('css/language-selector.css') }}">
+    <link rel="icon" href="{{ asset_url('favicon.ico') }}" type="image/x-icon">
+    <!-- qrcode must be loaded before main.js -->
+    <script src="{{ asset_url('js/vendors/qrcode.min.js') }}"></script>
+    <!-- i18n runtime (auto-initialises on DOMContentLoaded) -->
+    <script src="{{ asset_url('js/i18n.js') }}" defer></script>
+    <script type="module" src="{{ asset_url('js/main.js') }}"></script>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Login / registration form -->
+        <div id="authForm" style="display: none;">
+            <header>
+                <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
+                <p class="subtitle" id="authSubtitle" data-i18n="auth.subtitle_login">Sign in to your account</p>
+            </header>
+
+            <!-- Tab switcher -->
+            <div class="auth-tabs">
+                <button class="tab-btn active" id="loginTabBtn" onclick="switchAuthTab('login')"
+                    data-i18n="auth.tab_login">Log in</button>
+                <button class="tab-btn" id="registerTabBtn" onclick="switchAuthTab('register')"
+                    data-i18n="auth.tab_register">Register</button>
+            </div>
+
+            <!-- Login form -->
+            <form id="loginForm" style="display: block;">
+                <div class="form-group">
+                    <label for="loginUsername" data-i18n="auth.username">Username</label>
+                    <input type="text" id="loginUsername"
+                        data-i18n-placeholder="auth.username" placeholder="Username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword" data-i18n="auth.password">Password</label>
+                    <input type="password" id="loginPassword"
+                        data-i18n-placeholder="auth.password" placeholder="Password" required>
+                </div>
+                <div class="form-group" id="loginOtpGroup" style="display: none;">
+                    <label for="loginOtpCode" data-i18n="auth.2fa_code">2FA code</label>
+                    <input type="text" id="loginOtpCode"
+                        data-i18n-placeholder="auth.2fa_code" placeholder="6-digit code"
+                        maxlength="6" pattern="[0-9]{6}">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" data-i18n="auth.login">Log in</button>
+                </div>
+                <div class="form-footer">
+                    <a href="#" onclick="showForgotPassword()"
+                        data-i18n="auth.forgot_password">Forgot password?</a>
+                </div>
+            </form>
+
+            <!-- Registration form -->
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label for="registerUsername" data-i18n="auth.username">Username</label>
+                    <input type="text" id="registerUsername"
+                        data-i18n-placeholder="auth.username" placeholder="Username"
+                        required minlength="3" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail" data-i18n="auth.email">Email</label>
+                    <input type="email" id="registerEmail"
+                        data-i18n-placeholder="auth.email" placeholder="Email" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword" data-i18n="auth.password">Password</label>
+                    <input type="password" id="registerPassword"
+                        data-i18n-placeholder="auth.password" placeholder="Password" required minlength="8">
+                    <div class="password-strength" id="passwordStrength">
+                        <div class="strength-bar"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="registerConfirmPassword" data-i18n="auth.password_confirm">Confirm password</label>
+                    <input type="password" id="registerConfirmPassword"
+                        data-i18n-placeholder="auth.password_confirm" placeholder="Confirm password" required>
+                </div>
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="registerAgreeTerms" required>
+                        <span data-i18n="auth.agree_terms">I agree to the terms of use</span>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-success" data-i18n="auth.register">Register</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Main UI -->
+        <div id="mainApp" style="display: block;">
+            <header style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
+                    <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
+                </div>
+                <div class="user-info">
+                    <span id="currentUsername"></span>
+                    <button id="setup2faDashboardBtn" class="btn btn-outline-primary"
+                        onclick="handleSetup2FA()" data-i18n="auth.2fa_setup">Set up 2FA</button>
+                    <button onclick="logout()" class="btn-danger" style="height: fit-content;">
+                        🚪 <span data-i18n="auth.logout">Log out</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="status ok">
+                ✅ <span data-i18n="system.running">System running. Keys initialised.</span><br>
+                🚮 <span data-i18n="system.autocleanup">Automatic cleanup: enabled (30-day TTL)</span>
+            </div>
+
+            <section class="section">
+                <h2>📤 <span data-i18n="files.upload">Upload file</span></h2>
+                <form id="uploadForm">
+                    <div class="file-picker">
+                        <input type="file" id="fileInput" class="file-picker__input" required>
+                        <label for="fileInput" class="file-picker__button btn-secondary"
+                               data-i18n="files.choose_file">Choose file</label>
+                        <span id="fileInputName" class="file-picker__name"
+                              data-i18n="files.no_file_chosen">No file chosen</span>
+                    </div>
+                    <br>
+                    <button type="submit" class="btn-primary"
+                        data-i18n="files.upload_button">Upload</button>
+                </form>
+                <div id="uploadResult"></div>
+            </section>
+
+            <section class="section">
+                <h2>📋 <span data-i18n="files.list">File list</span></h2>
+                <button id="refreshBtn" class="btn-secondary">🔄 <span data-i18n="common.refresh">Refresh</span></button>
+                <div id="fileList" class="file-list"></div>
+            </section>
+
+            <nav class="nav-links">
+                <a href="/admin" class="btn-admin">⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
+                <a href="/health" class="btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
+                <a href="/docs" class="btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
+            </nav>
+
+            <footer>
+                <p><strong data-i18n="system.info_heading">System info</strong></p>
+                <ul>
+                    <li data-i18n="system.info_encrypt">All files are encrypted on upload</li>
+                    <li data-i18n="system.info_retention">Encrypted files are kept for 30 days</li>
+                    <li data-i18n="system.info_audit">All operations are logged for audit</li>
+                    <li data-i18n="system.info_api">API: /health, /docs, /admin</li>
+                </ul>
+            </footer>
+        </div>
+    </div>
+    <script>
+        window.SMDG_CONFIG = {
+            cdn_url: {{ cdn_url| tojson }},
+            static_url: {{ static_url| tojson }},
+            api_url: {{ api_url| tojson }},
+            asset_version: {{ asset_version| tojson }}
+        };
+    </script>
+</body>
+
+</html>
