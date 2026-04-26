@@ -93,13 +93,13 @@ export async function loadMessages() {
     tbody().innerHTML = messages
         .map((m) => `
             <tr>
-                <td><code>${esc(m.message_id)}</code></td>
-                <td>${esc(m.queue_name)}</td>
-                <td><span class="status-badge ${esc(m.status)}">${esc(m.status)}</span></td>
-                <td>${esc(m.retry_count)}/${esc(m.max_retries)}</td>
-                <td>${esc((m.error_message || "").slice(0, 120))}</td>
-                <td>${esc(fmtDate(m.created_at))}</td>
-                <td>
+                <td data-label="Message ID"><code>${esc(m.message_id)}</code></td>
+                <td data-label="Queue">${esc(m.queue_name)}</td>
+                <td data-label="Status"><span class="status-badge ${esc(m.status)}">${esc(m.status)}</span></td>
+                <td data-label="Retries">${esc(m.retry_count)}/${esc(m.max_retries)}</td>
+                <td data-label="Error">${esc((m.error_message || "").slice(0, 120))}</td>
+                <td data-label="Created">${esc(fmtDate(m.created_at))}</td>
+                <td data-label="Actions">
                     <div class="actions">
                         <button class="action-btn view" onclick="viewMessage('${esc(m.message_id)}')">View</button>
                         <button class="action-btn replay" onclick="replayMessage('${esc(m.message_id)}')">Replay</button>

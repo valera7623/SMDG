@@ -123,12 +123,15 @@ function _createUserRow(user, isMe) {
     cb.disabled  = isMe;
     cb.addEventListener('change', _syncSelectedCount);
     const tdCb = document.createElement('td');
+    tdCb.setAttribute('data-label', t('admin_users.col_select', 'Select'));
     tdCb.appendChild(cb);
     tr.appendChild(tdCb);
 
-    tr.appendChild(_td(user.id));
+    tr.appendChild(_tdLabeled(String(user.id ?? ''), 'admin_users.col_id'));
 
-    const tdUser = _td(user.username);
+    const tdUser = document.createElement('td');
+    tdUser.setAttribute('data-label', t('admin_users.col_username', 'Username'));
+    tdUser.appendChild(document.createTextNode(String(user.username ?? '')));
     if (isMe) {
         tdUser.appendChild(createElement('span', {
             textContent: t('admin_users.me_suffix', ' (you)'),
@@ -137,11 +140,12 @@ function _createUserRow(user, isMe) {
     }
     tr.appendChild(tdUser);
 
-    tr.appendChild(_td(user.email || ''));
+    tr.appendChild(_tdLabeled(user.email || '', 'admin_users.col_email'));
 
     const roleSpan = createElement('span', { className: `role-badge ${user.role}`,
         textContent: roleName(user.role) });
     const tdRole = document.createElement('td');
+    tdRole.setAttribute('data-label', t('admin_users.col_role', 'Role'));
     tdRole.appendChild(roleSpan);
     tr.appendChild(tdRole);
 
@@ -152,6 +156,7 @@ function _createUserRow(user, isMe) {
             : t('admin_users.status_inactive', 'Inactive'),
     });
     const tdStatus = document.createElement('td');
+    tdStatus.setAttribute('data-label', t('admin_users.col_status', 'Status'));
     tdStatus.appendChild(statusSpan);
     tr.appendChild(tdStatus);
 
@@ -163,6 +168,7 @@ function _createUserRow(user, isMe) {
         textContent:  user.otp_secret ? '✅' : '❌',
     });
     const td2fa = document.createElement('td');
+    td2fa.setAttribute('data-label', t('admin_users.col_2fa', '2FA'));
     td2fa.appendChild(twofaSpan);
     tr.appendChild(td2fa);
 
@@ -181,14 +187,18 @@ function _createUserRow(user, isMe) {
     wrap.appendChild(mkBtn('delete',         '🗑️', () => deleteUser(user.id, user.username),   isMe));
 
     const tdActions = document.createElement('td');
+    tdActions.setAttribute('data-label', t('admin_users.col_actions', 'Actions'));
     tdActions.appendChild(wrap);
     tr.appendChild(tdActions);
 
     return tr;
 }
 
-function _td(text) {
-    return createElement('td', { textContent: String(text ?? '') });
+function _tdLabeled(text, labelKey) {
+    const td = document.createElement('td');
+    td.setAttribute('data-label', t(labelKey, labelKey));
+    td.textContent = String(text ?? '');
+    return td;
 }
 
 function _errorCell(text, colspan) {

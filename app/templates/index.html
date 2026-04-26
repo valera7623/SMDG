@@ -104,19 +104,32 @@
 
         <!-- Main UI -->
         <div id="mainApp" style="display: block;">
-            <header style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
-                    <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
-                </div>
-                <div class="user-info">
+            <header class="site-header" id="mainHeader" role="banner">
+                <div class="site-header__top">
+                    <div class="site-header__brand">
+                        <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
+                        <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
+                    </div>
+                    <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
+                        aria-controls="smdgMainNav" aria-expanded="false" title="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <div class="user-info user-info--header">
                     <span id="currentUsername"></span>
                     <button id="setup2faDashboardBtn" class="btn btn-outline-primary"
                         onclick="handleSetup2FA()" data-i18n="auth.2fa_setup">Set up 2FA</button>
-                    <button onclick="logout()" class="btn-danger" style="height: fit-content;">
+                    <button type="button" onclick="logout()" class="btn-danger">
                         🚪 <span data-i18n="auth.logout">Log out</span>
                     </button>
+                    <!-- language selector is injected here by i18n.js -->
+                    </div>
                 </div>
+                <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
+                <nav class="main-nav" id="smdgMainNav" aria-label="Main navigation">
+                    <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
+                    <a href="/health" class="main-nav__link btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
+                    <a href="/docs" class="main-nav__link btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
+                </nav>
             </header>
 
             <div class="status ok">
@@ -146,12 +159,6 @@
                 <button id="refreshBtn" class="btn-secondary">🔄 <span data-i18n="common.refresh">Refresh</span></button>
                 <div id="fileList" class="file-list"></div>
             </section>
-
-            <nav class="nav-links">
-                <a href="/admin" class="btn-admin">⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
-                <a href="/health" class="btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
-                <a href="/docs" class="btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
-            </nav>
 
             <footer>
                 <p><strong data-i18n="system.info_heading">System info</strong></p>

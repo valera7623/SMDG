@@ -15,16 +15,26 @@
 
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <h1>👥 <span data-i18n="admin_users.title">User management</span></h1>
-                <p><a href="/admin" class="back-link">← <span data-i18n="admin.back_admin">Back to admin panel</span></a></p>
-            </div>
-            <div class="user-info" id="userInfo">
+        <header class="site-header" role="banner">
+            <div class="site-header__top">
+                <div class="header-content site-header__brand">
+                    <h1>👥 <span data-i18n="admin_users.title">User management</span></h1>
+                    <p><a href="/admin" class="back-link">← <span data-i18n="admin.back_admin">Back to admin panel</span></a></p>
+                </div>
+                <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
+                    aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
+                <div class="user-info user-info--header" id="userInfo">
                 <span id="currentAdminUsername"></span>
-                <button onclick="logout()" class="btn-danger btn-small">🚪 <span data-i18n="auth.logout">Log out</span></button>
+                <button type="button" onclick="logout()" class="btn-danger btn-small">🚪 <span data-i18n="auth.logout">Log out</span></button>
                 <!-- language selector is auto-injected here by i18n.js -->
+                </div>
             </div>
+            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
+            <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
+                <a href="/" class="main-nav__link btn-info">🏠 Home</a>
+                <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="admin.title">SMDG Admin panel</span></a>
+                <a href="/admin/dlq" class="main-nav__link btn-secondary">📬 DLQ</a>
+            </nav>
         </header>
 
         <!-- Statistics -->
@@ -118,7 +128,7 @@
         <section class="section users-table-section">
             <h2>📋 <span data-i18n="admin_users.list_title">User list</span></h2>
             <div class="table-container">
-                <table class="users-table" id="usersTable">
+                <table class="users-table responsive-data-table" id="usersTable">
                     <thead>
                         <tr>
                             <th>

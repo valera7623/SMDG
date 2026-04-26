@@ -10,8 +10,10 @@ import {
     replayMessage,
     viewMessage,
 } from "./modules/admin-dlq.js";
+import { initResponsiveUI } from "./responsive.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    initResponsiveUI();
     const search = document.getElementById("messageIdSearch");
     const limit = document.getElementById("limitFilter");
     if (search) {

@@ -7,8 +7,10 @@ import {
     getCleanupStats,
     purgeAllFiles,
 } from './modules/admin-files.js';
+import { initResponsiveUI } from './responsive.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initResponsiveUI();
     loadFiles();
     loadSystemStats();
 });

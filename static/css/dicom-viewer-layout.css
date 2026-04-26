@@ -1,0 +1,135 @@
+/**
+ * SMDG — адаптивная вёрстка встроенного DICOM viewer (доп. к inline-стилям dicom-viewer.html).
+ */
+#viewer-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+#viewer-header .header-buttons {
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+#toolbar {
+    max-height: 45vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0.4rem;
+}
+
+#toolbar.dicom-toolbar--collapsed {
+    max-height: 0;
+    overflow: hidden;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    margin: 0;
+}
+
+.tool-btn,
+.preset-btn,
+.frame-btn {
+    min-height: 2.75rem;
+    min-width: 2.5rem;
+    font-size: 0.8rem;
+    touch-action: manipulation;
+}
+
+#toolbar-zoom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem 0.5rem;
+    background: #0d1117;
+    border-bottom: 1px solid #333;
+}
+
+#toolbar-fab {
+    position: static;
+    margin-left: auto;
+}
+
+#viewport-container {
+    touch-action: none;
+    min-height: 12rem;
+}
+
+#metadata-panel {
+    transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+#metadata-panel.show {
+    display: block;
+}
+
+#metadata-backdrop,
+.dicom-meta-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 90;
+}
+
+#metadata-backdrop.is-visible,
+.dicom-meta-backdrop.is-visible {
+    display: block;
+}
+
+@media (max-width: 767.98px) {
+    #viewer-header {
+        min-height: 3.5rem;
+    }
+
+    #metadata-panel {
+        top: auto;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 55vh;
+        height: auto;
+        border-left: none;
+        border-top: 1px solid #333;
+        border-radius: 0.5rem 0.5rem 0 0;
+        z-index: 200;
+    }
+
+    #metadata-backdrop.is-visible,
+    .dicom-meta-backdrop.is-visible {
+        display: block;
+    }
+
+    .preset-group {
+        width: 100%;
+        margin-left: 0 !important;
+        flex-wrap: wrap;
+    }
+
+    #frame-control .frame-slider-container {
+        flex-wrap: wrap;
+    }
+
+    #status-bar {
+        flex-wrap: wrap;
+        font-size: 0.7rem;
+        min-height: 2.5rem;
+    }
+}
+
+@media (min-width: 768px) {
+    #metadata-backdrop,
+    .dicom-meta-backdrop {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    #toolbar {
+        max-height: none;
+    }
+}

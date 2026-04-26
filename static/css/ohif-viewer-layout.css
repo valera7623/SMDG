@@ -1,0 +1,96 @@
+/* OHIF embed — адаптивная вёрстка (доп. к inline ohif-viewer.html) */
+#ohif-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#ohif-header .buttons {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+#ohif-zoom-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.5rem;
+    background: #0a0a0a;
+    border-bottom: 1px solid #333;
+}
+
+#ohif-zoom-bar .ohif-tool {
+    min-height: 2.75rem;
+    min-width: 2.5rem;
+}
+
+#toolbar-ohif {
+    max-height: 40vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+#viewport-area,
+#ohif-content {
+    touch-action: none;
+    min-height: 10rem;
+}
+
+#ohif-meta-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+}
+
+#ohif-meta-backdrop.is-visible {
+    display: block;
+}
+
+@media (max-width: 767.98px) {
+    #ohif-content {
+        flex-direction: column;
+    }
+
+    #series-panel {
+        width: 100% !important;
+        max-height: 22vh;
+        border-right: none;
+        border-bottom: 1px solid #333;
+        display: block;
+    }
+
+    #metadata-panel-ohif {
+        position: fixed !important;
+        top: auto !important;
+        right: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-height: 50vh;
+        z-index: 100 !important;
+        border-left: none;
+        border-top: 1px solid #00d4aa;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    #ohif-content #metadata-panel-ohif[style*="block"] {
+        display: block !important;
+    }
+}
+
+@media (min-width: 768px) {
+    #ohif-meta-backdrop {
+        display: none !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    #toolbar-ohif {
+        max-height: none;
+    }
+}

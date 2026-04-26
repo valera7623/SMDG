@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover">
     <title data-i18n="viewer.ohif_title">SMDG — OHIF Viewer</title>
     <link rel="stylesheet" href="/static/css/language-selector.css">
+    <link rel="stylesheet" href="/static/css/ohif-viewer-layout.css">
     <script src="/static/js/i18n.js" defer></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -120,6 +121,12 @@
             </div>
         </div>
 
+        <div id="ohif-zoom-bar" aria-label="Zoom">
+            <button type="button" class="ohif-tool" onclick="ohifZoomOut()" title="Zoom out" aria-label="Zoom out">−</button>
+            <button type="button" class="ohif-tool" onclick="ohifZoomIn()" title="Zoom in" aria-label="Zoom in">+</button>
+            <button type="button" class="ohif-tool" onclick="resetOHIFView()" data-i18n-title="viewer.tool_reset" title="Reset" aria-label="Reset">⟲</button>
+        </div>
+
         <!-- Content -->
         <div id="ohif-content">
             <!-- Left Panel - Series -->
@@ -137,6 +144,7 @@
             </div>
 
             <!-- Right Panel - Metadata -->
+            <div id="ohif-meta-backdrop" hidden role="presentation" aria-hidden="true" onclick="closeMetadataOHIF()"></div>
             <div id="metadata-panel-ohif" style="display:none;">
                 <h3>📋 <span data-i18n="viewer.metadata">Metadata</span></h3>
                 <div id="metadata-content"></div>
@@ -267,28 +275,28 @@
             updateCineInfo();
         }
 
-        // ==================== Mouse Setup ====================
+        // ==================== Pointer + touch (pinch) ====================
+        let _ohifPtrId = null;
         function setupOHIFMouse() {
-            img.addEventListener('mousedown', (e) => {
+            const onPtrDown = (e) => {
                 if (e.button !== 0) return;
+                e.preventDefault();
+                try { img.setPointerCapture(e.pointerId); } catch (err) { /* no-op */ }
+                _ohifPtrId = e.pointerId;
                 dragging = true;
                 dragStart = { x: e.clientX, y: e.clientY };
-
                 if (tool === 'window') {
                     wlStart = { wc: wlState.wc, ww: wlState.ww };
                     img.style.cursor = 'ew-resize';
                 } else if (tool === 'pan') {
                     img.style.cursor = 'grabbing';
                 }
+            };
+            const onPtrMove = (e) => {
+                if (!dragging || e.pointerId !== _ohifPtrId) return;
                 e.preventDefault();
-            });
-
-            img.addEventListener('mousemove', (e) => {
-                if (!dragging) return;
-
                 const dx = e.clientX - dragStart.x;
                 const dy = e.clientY - dragStart.y;
-
                 if (tool === 'window') {
                     wlState.ww = Math.max(1, wlStart.ww + dx);
                     wlState.wc = wlStart.wc + dy;
@@ -301,19 +309,22 @@
                     transform.ty += dy / transform.scale;
                     applyOHIFTransform();
                 }
-
                 dragStart = { x: e.clientX, y: e.clientY };
-            });
-
-            window.addEventListener('mouseup', () => {
+            };
+            const onPtrUp = (e) => {
+                if (e.pointerId !== _ohifPtrId) return;
                 dragging = false;
+                _ohifPtrId = null;
                 if (tool === 'window') img.style.cursor = 'ew-resize';
                 else if (tool === 'pan') img.style.cursor = 'grab';
-            });
-
+            };
+            img.addEventListener('pointerdown', onPtrDown, { passive: false });
+            img.addEventListener('pointermove', onPtrMove, { passive: false });
+            img.addEventListener('pointerup', onPtrUp);
+            img.addEventListener('pointercancel', onPtrUp);
+            img.addEventListener('lostpointercapture', onPtrUp);
             img.addEventListener('wheel', (e) => {
                 e.preventDefault();
-
                 if (isMultiFrame && (tool === 'window' || tool === 'zoom')) {
                     const delta = e.deltaY > 0 ? 1 : -1;
                     const newFrame = Math.max(0, Math.min(totalFrames - 1, currentFrame + delta));
@@ -323,7 +334,6 @@
                     }
                     return;
                 }
-
                 if (tool === 'window') {
                     const delta = e.deltaY > 0 ? -5 : 5;
                     wlState.ww = Math.max(1, wlState.ww + delta);
@@ -333,7 +343,39 @@
                     transform.scale = Math.max(0.1, Math.min(20, transform.scale * delta));
                     applyOHIFTransform();
                 }
-            });
+            }, { passive: false });
+            setupOhifPinch();
+        }
+        function setupOhifPinch() {
+            const el = document.getElementById('viewport-area');
+            if (!el || el.dataset.ohifPinch) return;
+            el.dataset.ohifPinch = '1';
+            let p0 = null;
+            const dist = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+            el.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    p0 = { d: dist(e.touches[0], e.touches[1]), s0: transform.scale };
+                    e.preventDefault();
+                } else p0 = null;
+            }, { passive: false });
+            el.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2 && p0) {
+                    e.preventDefault();
+                    const d = dist(e.touches[0], e.touches[1]);
+                    const ratio = d / p0.d;
+                    transform.scale = Math.max(0.1, Math.min(20, p0.s0 * ratio));
+                    applyOHIFTransform();
+                }
+            }, { passive: false });
+            el.addEventListener('touchend', () => { p0 = null; });
+        }
+        function ohifZoomIn() {
+            transform.scale = Math.max(0.1, Math.min(20, transform.scale * 1.2));
+            applyOHIFTransform();
+        }
+        function ohifZoomOut() {
+            transform.scale = Math.max(0.1, Math.min(20, transform.scale / 1.2));
+            applyOHIFTransform();
         }
 
         // ==================== Transform ====================
@@ -452,11 +494,25 @@
         // ==================== Metadata ====================
         function toggleMetadataOHIF() {
             const panel = document.getElementById('metadata-panel-ohif');
-            if (panel.style.display === 'none') {
+            const b = document.getElementById('ohif-meta-backdrop');
+            if (panel.style.display === 'none' || !panel.style.display) {
                 panel.style.display = 'block';
                 renderMetadataOHIF();
+                if (b && window.innerWidth < 768) {
+                    b.hidden = false;
+                    b.classList.add('is-visible');
+                }
             } else {
-                panel.style.display = 'none';
+                closeMetadataOHIF();
+            }
+        }
+        function closeMetadataOHIF() {
+            const panel = document.getElementById('metadata-panel-ohif');
+            const b = document.getElementById('ohif-meta-backdrop');
+            if (panel) panel.style.display = 'none';
+            if (b) {
+                b.hidden = true;
+                b.classList.remove('is-visible');
             }
         }
 

@@ -22,8 +22,10 @@ import {
 } from './modules/admin-users.js';
 
 import { confirmAction, closeConfirmModal } from './utils/modals.js';
+import { initResponsiveUI } from './responsive.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initResponsiveUI();
     await loadUserStats();
     await loadUsers();
 

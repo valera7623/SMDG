@@ -14,10 +14,24 @@
 
 <body>
     <div class="container">
-        <header>
-            <h1>🔐 <span data-i18n="admin.title">SMDG Admin panel</span></h1>
-            <p><a href="/" class="back-link">← <span data-i18n="admin.back_home">Back to home</span></a></p>
-            <!-- language selector is auto-injected into header by i18n.js -->
+        <header class="site-header" role="banner">
+            <div class="site-header__top">
+                <div class="site-header__brand">
+                    <h1>🔐 <span data-i18n="admin.title">SMDG Admin panel</span></h1>
+                    <p><a href="/" class="back-link">← <span data-i18n="admin.back_home">Back to home</span></a></p>
+                </div>
+                <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
+                    aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
+                <div class="user-info user-info--header" id="userInfo">
+                    <!-- language selector is auto-injected into header by i18n.js -->
+                </div>
+            </div>
+            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
+            <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
+                <a href="/" class="main-nav__link btn-info">🏠 <span data-i18n="admin.back_home">Back to home</span></a>
+                <a href="/admin/users" class="main-nav__link btn-primary">👥 <span data-i18n="admin.go_to_users">User management</span></a>
+                <a href="/admin/dlq" class="main-nav__link btn-secondary">📬 DLQ</a>
+            </nav>
         </header>
 
         <section class="section">
