@@ -62878,3 +62878,739 @@ DETAIL:  Key (id)=(9) is still referenced from table ""dicom_view_tokens"".
 2026-04-26T17:48:24.590239,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
 2026-04-26T17:48:30.189682,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
 2026-04-26T17:48:39.599045,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:48:49.548381,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:48:53.539479,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:48:59.248983,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:49:08.540541,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:49:23.544626,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:49:28.301637,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:49:37.461923,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:49:49.485394,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:49:52.463785,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:49:57.349877,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:50:06.402999,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:50:21.401587,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:50:26.404678,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:50:35.327750,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:50:49.401921,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:50:50.327948,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:50:56.526937,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:51:04.269141,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:51:19.265603,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:51:25.575616,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:51:33.174675,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:51:48.177826,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:51:49.327099,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:51:54.607752,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:52:02.094631,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:52:17.106506,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:52:23.636168,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:52:31.029955,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:52:46.030365,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:52:49.252673,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:52:52.671905,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:53:01.033060,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:53:14.953755,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:53:21.703078,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:53:29.948513,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:53:43.878597,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:53:49.172437,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:53:50.730706,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:53:58.875856,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:54:12.804853,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:54:19.759441,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:54:27.805461,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:54:41.736363,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:54:48.793827,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:54:49.092784,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:54:56.732657,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:55:10.658329,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:55:17.859653,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:55:25.656381,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:55:33.196221,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:55:39.579700,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:55:46.888712,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:55:50.640463,POST /api/auth/login,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:55:53.137074,POST /api/auth/login,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:55:54.576779,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:56:02.489528,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:56:03.241338,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-26T17:56:03.242825,POST /api/auth/login,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:56:03.267743,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:56:03.269181,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:56:09.571526,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:56:15.892709,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:56:23.481597,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:56:32.429809,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:56:32.431444,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:56:38.481557,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:56:44.931744,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:56:52.419255,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:56:54.195301,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:56:54.258344,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:56:54.366981,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:56:54.439345,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:56:54.449494,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:56:54.451800,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:02.790912,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:02.843728,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:57:02.955777,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:03.003667,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:06.948272,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:07.005742,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:57:07.164576,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:07.195214,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:07.196464,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:07.419629,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:57:12.975695,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:13.027407,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:57:13.108679,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:13.180258,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:57:13.187565,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:13.189528,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:15.036692,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:57:22.420801,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:57:28.087501,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:57:28.094825,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:28.096183,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:30.006330,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:57:30.013676,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:30.014893,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:32.371696,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T17:57:32.378023,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:32.379322,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T17:57:35.859103,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:57:43.565965,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:57:47.462986,cleanup_stats_viewed,,0,admin,127.0.0.1,,Просмотр статистики временных файлов,True
+2026-04-26T17:57:47.464738,GET /api/cleanup/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:57:50.851789,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:57:51.951610,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:57:51.953124,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:57:53.882050,cleanup_stats_viewed,,0,admin,127.0.0.1,,Просмотр статистики временных файлов,True
+2026-04-26T17:57:53.883701,GET /api/cleanup/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:03.253323,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:03.305892,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:58:03.441936,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:03.472856,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:58:03.474216,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:04.807113,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:58:12.633151,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:58:19.808492,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:58:26.738124,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:26.835423,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:26.857431,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:58:26.858993,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:33.746818,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:58:41.675931,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:58:42.972524,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:43.040438,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:43.105061,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:58:43.111184,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:58:43.112531,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:48.744490,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:58:50.222482,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:58:54.328806,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:58:54.330237,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:55.596475,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:55.689851,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:58:55.717376,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:02.684232,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:59:05.029218,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:05.036262,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:09.001686,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:09.102289,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:09.106765,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:59:09.114758,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:59:09.116286,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:10.635571,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:10.727245,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:10.750803,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:59:10.761678,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T17:59:10.762995,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:13.621500,POST /api/auth/logout,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T17:59:17.674053,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:59:31.598233,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T17:59:39.795209,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T17:59:40.736921,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T17:59:46.592739,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:00:01.591983,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:00:08.842686,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:00:10.689789,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:00:15.530461,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:00:30.553032,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:00:37.868883,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:00:40.905159,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:00:44.457451,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:00:59.452215,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:01:06.918712,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:01:10.846199,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:01:13.399182,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:01:28.402751,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:01:35.960341,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:01:40.814867,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:01:42.336587,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:01:50.504385,login_success,,0,admin,127.0.0.1,,Успешный вход,True
+2026-04-26T18:01:50.506337,POST /api/auth/login,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:01:50.532580,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:01:50.533903,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:01:57.339363,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:02:06.069342,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:02:10.535775,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:02:10.537025,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:10.916914,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:10.991468,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:11.062986,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:02:11.071182,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:02:11.072470,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:11.279731,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:02:21.053052,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:21.175737,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:21.199050,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:02:21.200369,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:26.280789,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:02:28.689817,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:02:28.691310,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:28.692408,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:32.617500,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:32.618880,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:02:32.622523,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:35.117945,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:02:36.798109,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:36.899475,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:36.924880,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:40.214240,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:02:40.848512,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:45.421121,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:45.542383,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:45.565508,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:02:45.566768,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:02:55.220413,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:03:04.167332,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:03:09.134937,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:03:24.137224,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:03:33.188192,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:03:39.134406,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:03:53.063986,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:04:02.200346,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:04:08.047490,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:04:21.997469,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:04:31.269552,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:04:37.000841,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:04:50.925597,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:05:00.327151,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:05:05.920647,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:05:15.848931,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:15.944011,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:16.003790,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:05:16.010156,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:05:16.012715,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:16.035147,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:05:16.046637,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:05:16.048068,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:19.845297,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:05:29.383101,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:05:33.656902,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:33.771031,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:33.796741,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:05:33.798257,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:34.849735,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:05:38.652125,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:38.718745,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:38.745035,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:05:38.754072,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:05:38.755412,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:41.285298,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:41.384834,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:41.412828,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:05:41.414240,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:48.778067,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:05:51.227648,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:51.322855,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:51.352660,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:55.834437,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:55.942193,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:55.965434,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:05:55.966774,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:05:58.430400,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:06:03.777742,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:06:17.724059,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:06:27.474968,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:06:32.729109,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:06:47.732721,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:06:56.506058,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:07:01.670416,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:07:16.668526,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:07:25.539526,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:07:30.597265,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:07:45.595218,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:07:54.596158,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:07:59.537225,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:08:14.542744,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:08:23.626995,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:08:28.447386,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:08:43.447557,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:08:52.670269,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:08:57.382482,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:09:12.387694,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:09:22.696024,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:22.849360,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:09:22.866035,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:22.887965,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:09:22.889179,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:26.319908,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:09:30.040091,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:30.106858,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:30.157056,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:09:30.163936,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:09:30.165622,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:36.763638,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:36.874819,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:36.899224,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:09:36.900665,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:41.327577,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:09:49.099615,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:49.183371,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:49.198253,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:09:49.205917,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:09:49.207636,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:09:51.896964,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:09:55.259635,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:10:07.725158,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:07.861102,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:07.886665,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:10:07.888073,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:10.257321,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:10:20.957742,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:10:23.373904,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:23.485486,GET /favicon.ico,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:23.493058,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:23.518869,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:25.258931,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:10:29.743943,POST /api/dlq/cleanup,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:29.785464,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:29.789285,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:32.834582,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:32.840611,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:33.009953,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:33.075608,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:33.136426,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:33.144084,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:10:33.146174,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:35.684961,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:35.691058,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:10:35.692218,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:38.180477,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:38.188370,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:10:38.189688,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:39.196930,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:10:41.179936,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:41.186886,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:10:41.188702,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:43.907564,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:43.915844,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:10:43.917348,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:10:49.998601,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:10:53.828108,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:10:54.190618,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:11:08.132700,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:11:19.006909,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:11:23.116225,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:11:37.059034,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:11:48.032128,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:11:52.048308,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:12:05.986180,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:12:17.097280,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:12:20.983474,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:12:34.903861,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:12:46.117656,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:12:49.901045,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:13:03.853563,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:13:14.798259,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:13:14.858045,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:13:14.938825,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:13:15.016943,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:13:15.023720,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:13:15.025042,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:13:15.184497,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:13:18.844245,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:13:32.781632,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:13:44.245236,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:13:47.778562,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:14:02.781751,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:14:13.321747,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:14:16.715317,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:14:31.716344,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:14:42.352725,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:14:45.625015,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:15:00.624918,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:15:11.489462,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:15:14.613473,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:15:29.621074,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:15:40.533628,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:15:43.557650,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:15:58.557644,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:16:09.572908,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:16:12.497968,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:16:27.495981,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:16:39.689460,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:16:41.437578,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:16:51.226540,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:16:51.289890,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:16:51.349379,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:16:51.437480,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:16:51.444404,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:16:51.445839,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:16:56.436283,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:17:08.730369,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:17:11.442095,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:17:25.375895,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:17:37.777556,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:17:40.378083,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:17:54.327847,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:18:06.824495,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:18:09.331396,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:18:23.266564,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:18:35.876977,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:18:38.269519,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:18:38.595380,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:18:38.652893,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:18:38.728599,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:18:38.795976,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:18:38.802588,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:18:38.803970,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:18:52.194165,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:19:04.900898,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:19:07.200440,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:19:21.146215,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:19:33.960124,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:19:36.140781,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:19:50.106481,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:20:03.045074,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:20:05.103759,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:20:19.047399,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:20:32.110494,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:20:34.044723,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:20:49.046678,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:21:01.167829,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:21:02.992686,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:21:17.992434,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:21:30.227257,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:21:31.932897,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:21:42.336103,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:42.409566,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:21:42.482271,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:42.559746,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:21:42.570080,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:21:42.572254,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:46.947822,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:21:52.725952,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:51.740434,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:21:51.902557,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:51.930077,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:21:51.931707,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:21:59.290453,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:22:00.880947,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:22:15.879966,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:22:22.957057,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:22:22.958291,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:28.329087,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:22:29.828215,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:22:34.685488,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:34.738282,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:22:34.817893,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:34.889372,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:22:34.898182,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:22:34.899793,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:41.890432,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:41.964433,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:22:42.137367,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:42.153558,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:22:42.156055,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:42.157553,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:42.186400,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:22:42.188919,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:22:44.822996,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:22:57.363054,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:22:58.757231,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:23:13.775199,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:23:26.431765,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:23:27.702175,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:23:42.708493,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:23:56.527164,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:23:56.693462,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:24:11.665679,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:24:25.591740,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:24:26.666331,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:24:40.616474,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:24:54.649375,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:24:55.617066,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:25:09.558027,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:25:23.689587,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:25:24.555594,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:25:38.508988,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:25:52.762125,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:25:53.509055,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:26:07.454690,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:26:21.814463,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:26:22.449976,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:26:36.395423,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:26:38.870919,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:26:38.929649,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:26:39.105433,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:26:39.172733,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:26:39.174037,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:26:39.177604,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:26:39.183961,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:26:39.189824,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:26:50.878276,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:26:51.394093,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:27:05.335585,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:27:19.915717,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:27:20.332558,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:27:35.343096,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:27:49.012957,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:27:49.300241,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:28:04.301592,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:28:18.078460,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:28:18.247315,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:28:33.250169,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:28:47.143340,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:28:47.200447,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:29:02.199680,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:29:16.151324,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:29:16.193359,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:29:31.151070,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:29:34.117673,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:29:34.177622,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:29:34.319640,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:29:34.345663,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:29:34.347695,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:29:45.098620,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:29:45.260379,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:30:00.102795,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:30:10.576426,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:10.633906,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:30:10.755655,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:10.776385,GET /favicon.ico,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:30:10.807606,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:14.049187,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:30:14.315209,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:30:20.100940,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:20.104446,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:29.049536,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:30:30.468697,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:30.472418,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:40.813495,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:40.816926,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:42.997063,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:30:43.369176,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:30:50.087434,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:50.091598,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:30:57.996851,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:31:00.428364,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:00.431887,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:10.758662,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:10.762487,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:12.996122,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:31:13.486422,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:31:20.067899,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:20.071752,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:26.960944,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:31:30.404817,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:30.411449,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:40.736905,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:40.740922,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:41.965277,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:31:42.555271,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:31:50.032599,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:50.036476,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:31:55.918285,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:32:00.360006,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:00.364042,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:10.686869,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:10.692362,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:10.912706,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:32:11.628911,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:32:19.985344,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:19.988853,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:24.869290,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:32:30.313950,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:30.317991,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:39.865875,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:32:40.656991,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:40.661910,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:40.697140,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:32:41.769613,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:41.832475,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:32:41.929846,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:41.973410,GET /favicon.ico,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",False
+2026-04-26T18:32:41.981716,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:51.323426,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:51.327445,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:32:53.833135,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:33:01.653958,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:01.658125,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:08.825962,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:33:09.733608,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:33:11.987758,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:11.992179,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:17.854527,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:17.928183,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:33:18.114984,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:18.124774,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:33:18.127422,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:18.130026,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:18.157651,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:33:18.160036,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:22.780756,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:33:29.757298,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:29.833673,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:33:29.987065,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:30.020908,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:33:30.022485,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:33:37.782366,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:33:38.802621,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:33:51.734351,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:33:59.965221,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:33:59.966564,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:34:06.726069,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:34:07.857314,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:34:20.671069,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:34:29.953157,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:34:29.954677,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:34:35.670536,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:34:36.902848,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:34:50.671649,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:34:59.907028,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:34:59.908407,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:35:04.622834,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:35:05.991051,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:35:19.621976,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:35:29.874051,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:35:29.875591,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:35:33.579820,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:35:35.066523,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:35:48.583978,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:35:59.831201,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:35:59.832612,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:36:02.538245,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:36:04.123140,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:36:17.531592,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:36:29.783431,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:36:29.784601,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:36:31.480085,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:36:33.193572,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:36:46.478853,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:36:59.745017,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:36:59.746615,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:00.433948,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:37:02.278413,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:37:15.434158,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:37:29.374830,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:37:29.712600,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:37:29.714303,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:31.325346,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:37:37.200596,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:37.258800,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:37:37.388245,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:37.419521,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:37:37.420766,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:43.055832,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:43.121260,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:37:43.237393,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:43.282322,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:37:43.285152,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:37:44.377000,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:37:59.374493,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:38:00.379834,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:38:13.240024,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:38:13.241503,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:38:13.311576,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:38:28.312933,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:38:30.484892,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:38:42.273763,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:38:43.207856,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:38:43.209167,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:38:57.272296,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:38:59.551752,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:39:11.230134,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:39:13.187587,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:39:13.189321,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:39:26.227457,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:39:28.617415,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:39:40.170012,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:39:43.128041,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:39:43.129451,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:39:55.170475,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:39:57.676295,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:40:09.123281,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:40:13.093111,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:40:13.094874,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:40:24.127370,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:40:26.750109,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:40:39.135937,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:40:44.091874,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:40:44.093356,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:40:52.598691,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:40:55.357454,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:41:07.597932,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:41:13.521301,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:41:13.522598,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:41:16.564367,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:41:16.630687,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:41:16.764754,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:41:16.801919,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:41:16.803407,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome",True
+2026-04-26T18:41:21.589935,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:41:24.469823,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:41:36.594163,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:41:46.808887,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:41:46.810197,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:51.277513,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:51.337232,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:41:51.408979,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:51.494685,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:41:51.503761,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:41:51.505425,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:51.603705,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:41:53.511263,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:41:57.429862,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:57.497462,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:41:57.646964,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:57.653212,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:41:57.657460,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:57.659849,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:41:57.687725,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:41:57.689057,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:04.590814,GET /admin/dlq,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:04.649170,GET /.well-known/appspecific/com.chrome.devtools.json,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:42:04.757536,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:04.786422,GET /favicon.ico,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:42:04.801432,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:05.535428,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:42:15.185553,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:15.190243,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:20.537254,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:42:23.619192,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:42:24.470611,GET /api/dlq/messages,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:24.474018,GET /api/dlq/stats,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:29.066130,GET /admin,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:29.163511,GET /health/deployment,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:29.203166,GET /api/health,,0,api,172.18.0.10,,"Status: 404, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:42:29.209862,list_files,,0,admin,127.0.0.1,,Просмотр списка файлов (0 шт.),True
+2026-04-26T18:42:29.211610,GET /api/list,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:31.263272,GET /admin/users,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:31.387810,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:31.411364,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:42:31.412645,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:34.499995,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:42:35.262684,admin_view_users,,0,admin,127.0.0.1,,Админ просмотрел список пользователей (найдено: 1),True
+2026-04-26T18:42:35.264070,GET /api/admin/users/stats/overview,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:35.265267,GET /api/admin/users/,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:38.464283,POST /api/auth/logout,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:38.508896,GET /,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:38.621878,GET /health,,0,api,172.18.0.10,,"Status: 200, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",True
+2026-04-26T18:42:38.645704,GET /api/list,,0,api,172.18.0.10,,"Status: 401, UA: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Sa",False
+2026-04-26T18:42:49.495240,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True
+2026-04-26T18:42:52.671279,GET /health/live,,0,api,127.0.0.1,,"Status: 200, UA: curl/8.14.1",True
+2026-04-26T18:43:03.459681,GET /metrics,,0,api,172.18.0.4,,"Status: 200, UA: Prometheus/2.54.1",True

@@ -229,7 +229,7 @@
             const container = containerSelector
                 ? document.querySelector(containerSelector)
                 : document.querySelector(
-                    "#ohif-header .buttons, #viewer-header, #ohif-header, .navbar, header .user-info, header"
+                    "#smdgLangAndMenu, #ohif-header .buttons, #viewer-header, #ohif-header, .navbar, header .user-info, header"
                 );
             if (container) {
                 container.appendChild(selector);

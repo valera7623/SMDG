@@ -19,7 +19,7 @@
     <script type="module" src="{{ asset_url('js/main.js') }}"></script>
 </head>
 
-<body>
+<body class="page-index">
     <div class="container">
 
         <!-- Login / registration form -->
@@ -105,15 +105,20 @@
         <!-- Main UI -->
         <div id="mainApp" style="display: block;">
             <header class="site-header" id="mainHeader" role="banner">
+                <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
                 <div class="site-header__top">
-                    <div class="site-header__brand">
-                        <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
-                        <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
+                    <div class="site-header__left site-header__left--dashboard">
+                        <div class="site-header__brand">
+                            <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
+                            <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
+                        </div>
+                        <nav class="main-nav" id="smdgMainNav" aria-label="Main navigation">
+                            <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
+                            <a href="/health" class="main-nav__link btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
+                            <a href="/docs" class="main-nav__link btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
+                        </nav>
                     </div>
-                    <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
-                        aria-controls="smdgMainNav" aria-expanded="false" title="Menu">
-                        <span></span><span></span><span></span>
-                    </button>
+                    <div class="site-header__trailing">
                     <div class="user-info user-info--header">
                     <span id="currentUsername"></span>
                     <button id="setup2faDashboardBtn" class="btn btn-outline-primary"
@@ -121,15 +126,16 @@
                     <button type="button" onclick="logout()" class="btn-danger">
                         🚪 <span data-i18n="auth.logout">Log out</span>
                     </button>
-                    <!-- language selector is injected here by i18n.js -->
+                    </div>
+                    <div id="smdgLangAndMenu" class="site-header__lang-menu" aria-label="Menu and language">
+                    <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
+                        aria-controls="smdgMainNav" aria-expanded="false" title="Menu">
+                        <span></span><span></span><span></span>
+                    </button>
+                    <!-- language selector: i18n.js appends to #smdgLangAndMenu (same row as hamburger) -->
+                    </div>
                     </div>
                 </div>
-                <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
-                <nav class="main-nav" id="smdgMainNav" aria-label="Main navigation">
-                    <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
-                    <a href="/health" class="main-nav__link btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
-                    <a href="/docs" class="main-nav__link btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
-                </nav>
             </header>
 
             <div class="status ok">

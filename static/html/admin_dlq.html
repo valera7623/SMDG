@@ -13,20 +13,24 @@
 <body>
     <div class="container">
         <header class="site-header" role="banner">
+            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
             <div class="site-header__top">
-                <div class="header-content site-header__brand">
-                    <h1>📬 Dead Letter Queue</h1>
-                    <p><a href="/admin" class="back-link">← Back to admin panel</a></p>
+                <div class="site-header__left site-header__left--admin">
+                    <h1 class="site-header__title">📬 Dead Letter Queue</h1>
+                    <a href="/admin" class="back-link site-header__back">← Back to admin panel</a>
+                    <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
+                        <a href="/" class="main-nav__link btn-info">🏠 Home</a>
+                        <a href="/admin" class="main-nav__link btn-admin">⚙️ Admin</a>
+                        <a href="/admin/users" class="main-nav__link btn-primary">👥 Users</a>
+                    </nav>
                 </div>
+                <div class="site-header__trailing">
+                <div id="smdgLangAndMenu" class="site-header__lang-menu" aria-label="Menu and language">
                 <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
                     aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
+                </div>
+                </div>
             </div>
-            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
-            <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
-                <a href="/" class="main-nav__link btn-info">🏠 Home</a>
-                <a href="/admin" class="main-nav__link btn-admin">⚙️ Admin</a>
-                <a href="/admin/users" class="main-nav__link btn-primary">👥 Users</a>
-            </nav>
         </header>
 
         <section class="section stats-section">
@@ -69,7 +73,7 @@
             <h2>🧹 Maintenance</h2>
             <div class="maintenance-row">
                 <input id="cleanupDays" type="number" min="1" max="3650" value="30">
-                <button class="btn-warning" onclick="cleanupOld()">Cleanup old messages</button>
+                <button class="btn-primary" onclick="cleanupOld()">Cleanup old messages</button>
             </div>
             <p id="maintenanceResult" class="hint"></p>
         </section>

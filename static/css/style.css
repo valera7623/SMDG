@@ -530,6 +530,21 @@ footer li:before {
     left: -20px;
 }
 
+/* Главная: футер на градиенте — текст светлее */
+body.page-index #mainApp > footer {
+    color: rgba(255, 255, 255, 0.88);
+    border-top-color: rgba(255, 255, 255, 0.28);
+}
+
+body.page-index #mainApp > footer strong {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
+}
+
+body.page-index #mainApp > footer li:before {
+    color: rgba(255, 255, 255, 0.65);
+}
+
 /* Warning and danger sections */
 .warning {
     background: #fff3cd;
@@ -933,9 +948,100 @@ footer li:before {
 .site-header__top {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: flex-start;
     gap: var(--smdg-space-interactive);
+}
+
+/* Слева: заголовок + ссылка «Назад» + main-nav; справа: гамбургер и действия */
+.site-header__left {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem 1rem;
+    min-width: 0;
+}
+
+.site-header__left--dashboard .site-header__brand {
+    flex: 0 1 auto;
+    min-width: min(100%, 14rem);
+}
+
+.site-header__title {
+    margin: 0;
+    font-size: clamp(1.1rem, 2.5vw, 1.75rem);
+    line-height: 1.2;
+    color: var(--secondary-color);
+}
+
+.site-header__back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem 0.25rem 0;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.site-header__trailing {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Гамбургер + селектор языка в одной строке (i18n вставляет #language-selector в конец) */
+.site-header__lang-menu {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem 0.5rem;
+    flex-shrink: 0;
+}
+
+.site-header__lang-menu .language-selector {
+    margin-left: 0;
+}
+
+@media (max-width: 1023.98px) {
+    .site-header__lang-menu {
+        gap: 0.25rem 0.4rem;
+    }
+
+    /* Главная: 2FA, «Выйти», бургер, язык — в одной полосе, выравнивание влево */
+    body.page-index .site-header__top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    body.page-index .site-header__left {
+        width: 100%;
+    }
+
+    body.page-index .site-header__trailing {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    body.page-index .user-info.user-info--header {
+        margin-top: 0;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    body.page-index .site-header__lang-menu {
+        justify-content: flex-start;
+    }
 }
 
 .site-header__brand h1 {
@@ -987,14 +1093,14 @@ footer li:before {
     transform: translateY(-0.5rem) rotate(-45deg);
 }
 
-/* Десктоп: гамбургер скрыт, навигация в потоке */
+/* main-nav: на мобилке в оверлее; на десктопе — в одной линии слева внутри .site-header__left */
 .main-nav {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+    gap: 0.5rem 0.75rem;
+    margin: 0;
+    padding: 0;
+    border: none;
 }
 
 .main-nav__link {
@@ -1071,8 +1177,9 @@ body.smdg-nav-open {
         display: none !important;
     }
 
-    .main-nav {
-        /* уже в потоке */
+    .site-header__left .main-nav {
+        display: inline-flex;
+        align-items: center;
     }
 
     .main-nav__link {
@@ -1265,6 +1372,26 @@ body.smdg-nav-open {
     .container {
         max-width: 90rem;
     }
+}
+
+/* Кнопки «Детальная статистика» / «Обновить» — одинаковая ширина (как у более длинной) */
+.admin-stats-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: fit-content;
+    max-width: 100%;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+    box-sizing: border-box;
+}
+
+.admin-stats-toolbar .btn-info,
+.admin-stats-toolbar .btn-secondary {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 /* Админ: контролы */

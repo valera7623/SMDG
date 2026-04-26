@@ -13,28 +13,31 @@
     <script type="module" src="/static/js/admin-users.js"></script>
 </head>
 
-<body>
+<body class="page-admin-users">
     <div class="container">
         <header class="site-header" role="banner">
+            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
             <div class="site-header__top">
-                <div class="header-content site-header__brand">
-                    <h1>👥 <span data-i18n="admin_users.title">User management</span></h1>
-                    <p><a href="/admin" class="back-link">← <span data-i18n="admin.back_admin">Back to admin panel</span></a></p>
+                <div class="site-header__left site-header__left--admin">
+                    <h1 class="site-header__title">👥 <span data-i18n="admin_users.title">User management</span></h1>
+                    <a href="/admin" class="back-link site-header__back">← <span data-i18n="admin.back_admin">Back to admin panel</span></a>
+                    <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
+                        <a href="/" class="main-nav__link btn-info">🏠 Home</a>
+                        <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="admin.title">SMDG Admin panel</span></a>
+                        <a href="/admin/dlq" class="main-nav__link btn-secondary">📬 DLQ</a>
+                    </nav>
                 </div>
-                <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
-                    aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
+                <div class="site-header__trailing">
                 <div class="user-info user-info--header" id="userInfo">
                 <span id="currentAdminUsername"></span>
                 <button type="button" onclick="logout()" class="btn-danger btn-small">🚪 <span data-i18n="auth.logout">Log out</span></button>
-                <!-- language selector is auto-injected here by i18n.js -->
+                </div>
+                <div id="smdgLangAndMenu" class="site-header__lang-menu" aria-label="Menu and language">
+                <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
+                    aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
+                </div>
                 </div>
             </div>
-            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
-            <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
-                <a href="/" class="main-nav__link btn-info">🏠 Home</a>
-                <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="admin.title">SMDG Admin panel</span></a>
-                <a href="/admin/dlq" class="main-nav__link btn-secondary">📬 DLQ</a>
-            </nav>
         </header>
 
         <!-- Statistics -->
@@ -113,7 +116,7 @@
                     <option value="doctor" data-i18n="admin.role_doctor">Doctor</option>
                     <option value="admin" data-i18n="admin.role_admin">Administrator</option>
                 </select>
-                <button onclick="executeBulkAction()" class="btn-warning" data-i18n="admin_users.execute">Execute</button>
+                <button onclick="executeBulkAction()" class="btn-primary" data-i18n="admin_users.execute">Execute</button>
             </div>
         </section>
 

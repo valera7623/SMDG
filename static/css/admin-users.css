@@ -1,13 +1,5 @@
 /* static/css/admin-users.css */
 
-/* Заголовок (совместимость с .site-header__brand) */
-.header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
 .user-info {
     display: flex;
     align-items: center;
@@ -318,5 +310,36 @@
     .users-table th,
     .users-table td {
         padding: 8px;
+    }
+}
+
+/* Управление пользователями: на мобилке — «Выйти», бургер и язык в одной полосе, выравнивание влево */
+@media (max-width: 1023.98px) {
+    body.page-admin-users .site-header__top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    body.page-admin-users .site-header__left {
+        width: 100%;
+    }
+
+    body.page-admin-users .site-header__trailing {
+        margin-left: 0;
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    body.page-admin-users .user-info.user-info--header {
+        margin-top: 0;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    body.page-admin-users .site-header__lang-menu {
+        justify-content: flex-start;
     }
 }

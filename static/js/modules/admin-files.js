@@ -130,8 +130,7 @@ export async function loadSystemStats() {
     const statsInfo = document.getElementById('statsInfo');
     if (!statsInfo) return;
 
-    const wrap = document.createElement('div');
-    wrap.style.marginTop = '20px';
+    const wrap = createElement('div', { className: 'admin-stats-toolbar' });
 
     const btnDetailed = createElement('button', {
         className: 'btn-info',
@@ -143,7 +142,6 @@ export async function loadSystemStats() {
     const btnRefresh = createElement('button', {
         className: 'btn-secondary',
         textContent: `🔄 ${t('admin_files.btn_refresh', 'Refresh')}`,
-        style: { marginLeft: '10px' },
     });
     btnRefresh.addEventListener('click', showSystemStats);
     wrap.appendChild(btnRefresh);
