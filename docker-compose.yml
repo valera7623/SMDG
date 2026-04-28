@@ -1,5 +1,3 @@
-
-
 services:
   db:
     image: postgres:15-alpine
@@ -8,11 +6,8 @@ services:
       POSTGRES_DB: smdg
       POSTGRES_USER: smdg_user
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
-      
     secrets:
       - postgres_password
-    
-      
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -41,25 +36,8 @@ services:
       - "8000:8000"
     expose:
       - "8000"
-    # ────────────────────────────────────────────────────────────
-    # Graceful shutdown
-    # ────────────────────────────────────────────────────────────
-    # Docker шлёт SIGTERM и ждёт stop_grace_period перед SIGKILL.
-    # Значение 60s даёт приложению:
-    #   • 30s на завершение in-flight запросов (SHUTDOWN_GRACE_PERIOD_SEC)
-    #   • 30s запаса на закрытие соединений (БД/Redis/S3) + APScheduler
     stop_grace_period: 60s
     stop_signal: SIGTERM
-    # Liveness probe — Docker сам перезапускает unhealthy контейнер.
-    #
-    # ВАЖНО: используем именно /health/live (а НЕ /health/ready), потому что
-    #   • Docker HEALTHCHECK умеет только перезапускать контейнеры, он не
-    #     управляет маршрутизацией трафика;
-    #   • при временной потере БД/Redis readiness probe вернёт 503 — если
-    #     повесить это на HEALTHCHECK, контейнер будет бесконечно
-    #     перезапускаться, что ухудшает situation, а не лечит её.
-    # /health/ready предназначен для оркестратора (Kubernetes, Swarm, LB),
-    # который при 503 просто перестаёт слать трафик на под до восстановления.
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health/live"]
       interval: 30s
@@ -71,54 +49,25 @@ services:
         limits:
           cpus: '2'
           memory: 2G
-      # ВАЖНО: не указываем здесь restart_policy. Docker Engine отказывает
-      # в restart policy "any" + max_attempts (ограничение счётчика допустимо
-      # только для "on-failure"). Политику "any/max_attempts/window" использует
-      # Docker Swarm (см. docker-compose.prod.yml), а для локального
-      # ``docker compose up`` достаточно ``restart: unless-stopped`` ниже.
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
-        condition: service_healthy
       minio:
         condition: service_healthy
     secrets:
-      - source: age_private_key
-        target: age_private_key
-        uid: "10001"
-        gid: "10001"
-        mode: 0440      - source: admin_password
-        target: admin_password
-        uid: "10001"
-        gid: "10001"
-        mode: 0440
-      - source: jwt_secret_key
-        target: jwt_secret_key
-        uid: "10001"
-        gid: "10001"
-        mode: 0440
-      - source: postgres_password
-        target: postgres_password
-        uid: "10001"
-        gid: "10001"
-        mode: 0440
+      - age_private_key
+      - admin_password
+      - jwt_secret_key
+      - postgres_password
     environment:
-
       DEV_MODE: "${DEV_MODE:-true}"
-
-      # Профиль развёртывания: intl = международный (S3 + MinIO), как прежний docker-стек
       DEPLOYMENT_TYPE: "${DEPLOYMENT_TYPE:-intl}"
-
       REDIS_URL: "redis://redis:6379/0"
-
-      # Readiness / Liveness probes
       MAX_CONCURRENT_REQUESTS: "${MAX_CONCURRENT_REQUESTS:-100}"
       READINESS_CHECK_TIMEOUT: "${READINESS_CHECK_TIMEOUT:-2}"
       READINESS_CACHE_TTL: "${READINESS_CACHE_TTL:-1.5}"
-
-      # S3 / MinIO Configuration
       S3_ENABLED: "${S3_ENABLED:-true}"
       S3_ENDPOINT_URL: "${S3_ENDPOINT_URL:-http://minio:9000}"
       S3_ACCESS_KEY: "${S3_ACCESS_KEY:-minioadmin}"
@@ -128,19 +77,6 @@ services:
       S3_BUCKET_DECRYPTED: "${S3_BUCKET_DECRYPTED:-smdg-decrypted}"
       S3_REGION: "${S3_REGION:-us-east-1}"
       S3_USE_SSL: "${S3_USE_SSL:-false}"
-
-      # ──────────────────────────────────────────────────────────
-      # Distributed tracing (OpenTelemetry → Jaeger via otel-collector)
-      # ──────────────────────────────────────────────────────────
-      # Compose не инжектит .env в контейнер автоматически (он используется
-      # только для подстановки ``${VAR}`` в YAML). Поэтому переменные OTEL_*
-      # обязаны быть здесь, иначе setup_tracing() увидит OTEL_ENABLED=unset
-      # и переключится в no-op режим → спаны в Jaeger не придут.
-      #
-      # Стек observability поднимается отдельно:
-      #   docker compose -f docker-compose.observability.yml up -d
-      #
-      # Чтобы включить трассировку, задайте в .env:  OTEL_ENABLED=true
       OTEL_ENABLED: "${OTEL_ENABLED:-false}"
       OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-smdg}"
       OTEL_EXPORTER_OTLP_ENDPOINT: "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}"
@@ -150,35 +86,13 @@ services:
       OTEL_TRACES_SAMPLER_ARG: "${OTEL_TRACES_SAMPLER_ARG:-1.0}"
       ENVIRONMENT: "${ENVIRONMENT:-development}"
       JAEGER_QUERY_URL: "${JAEGER_QUERY_URL:-http://jaeger:16686}"
-
-      # ──────────────────────────────────────────────────────────
-      # Alerting / Telegram integration
-      # ──────────────────────────────────────────────────────────
-      # Compose не инжектит .env в контейнер автоматически, поэтому все
-      # переменные, которые читает ``app.services.telegram_alerter`` и
-      # ``app.api.alert_webhook``, должны быть перечислены здесь явно.
-      #
-      # TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID — если пустые, alerter
-      # переходит в noop-режим (алерты пишутся только в audit log).
-      # Получить токен: https://t.me/BotFather → /newbot
-      # Получить chat_id: https://t.me/userinfobot или Telegram API.
-      # TELEGRAM_ARCHIVE_CHAT_ID — отдельный чат для archive-alerts
-      # (используется при webhook ?channel=archive).
       TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
       TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
       TELEGRAM_ARCHIVE_CHAT_ID: "${TELEGRAM_ARCHIVE_CHAT_ID:-}"
-
-      # Ссылки в inline-кнопках алертов. Если не заданы — используются
-      # дефолтные placeholder'ы (https://monitoring.smdg.local и т.п.).
       SMDG_DASHBOARD_URL: "${SMDG_DASHBOARD_URL:-http://localhost:3000}"
       SMDG_TRACING_URL: "${SMDG_TRACING_URL:-http://localhost:16686}"
       SMDG_LOGS_URL: "${SMDG_LOGS_URL:-}"
-
-      # Shared secret для защиты /api/alerts/webhook. Если задан —
-      # Alertmanager должен отправлять заголовок X-Alert-Secret с тем же
-      # значением, иначе webhook вернёт 401. Пустая строка = auth выключен.
       SMDG_ALERT_WEBHOOK_SECRET: "${SMDG_ALERT_WEBHOOK_SECRET:-}"
-
     volumes:
       - ./migrations:/app/migrations
       - ./uploads:/app/uploads
@@ -189,28 +103,12 @@ services:
       - ./app:/app/app:ro
       - smdg_keys:/app/keys
       - smdg_backups:/app/backups
-    # Кастомный DNS для исходящих запросов во внешнюю сеть (Telegram API,
-    # Slack webhook, SMTP, клиентские webhook subscription'ы).
-    #
-    # Зачем это нужно:
-    # Embedded Docker DNS (127.0.0.11) форвардит запросы на DNS-сервер
-    # хоста, взятый из /etc/resolv.conf. В WSL2 там прописан адрес
-    # Windows-хоста (172.24.32.1 / 10.255.255.254), который доступен
-    # ТОЛЬКО с самого WSL, но НЕ из docker-сетей — резолвинг внешних
-    # имён падает с "Temporary failure in name resolution".
-    #
-    # Указываем публичные DNS'ы явно — локальные имена сервисов
-    # (db/redis/minio/etc.) продолжат резолвиться через embedded DNS,
-    # потому что Docker вставляет его первым при использовании option
-    # ``dns:`` на сервисе.
     dns:
-      - 1.1.1.1        # Cloudflare
-      - 8.8.8.8        # Google (fallback)
+      - 1.1.1.1
+      - 8.8.8.8
     networks:
       - backend
     restart: unless-stopped
-
-
 
   nginx:
     image: nginx:alpine
@@ -236,15 +134,14 @@ services:
     networks:
       - backend
 
-  
-
+  minio:
     image: minio/minio:latest
     restart: unless-stopped
     container_name: smdg-minio
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # MinIO Console UI
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     environment:
@@ -258,10 +155,6 @@ services:
       start_period: 10s
     networks:
       - backend
-    #profiles:
-      #- s3  # Запускается только с: docker compose --profile s3 up
-
-
 
   backups:
     image: alpine:latest
@@ -270,7 +163,6 @@ services:
     volumes:
       - smdg_backups:/app/backups
       - ./encrypted:/app/encrypted:ro
-      # - ./backups:/app/backups/host
     command: >
       sh -c '
         echo "Установка пакетов..."
@@ -298,21 +190,16 @@ services:
     depends_on:
       - db
     secrets:
-      - postgres_password   
+      - postgres_password
     networks:
       - backend
 
-
   prometheus:
-    image: prom/prometheus:v2.54.1   
+    image: prom/prometheus:v2.54.1
     container_name: smdg-prometheus
     restart: always
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      # Правила алертов (smdg_service_alerts, smdg_slo_alerts и т.п.).
-      # Файл подхватывается через ``rule_files`` в prometheus.yml.
-      # Без этого маунта контейнер стартует без правил, и
-      # ``/api/v1/rules`` возвращает пустой список.
       - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - ./prometheus/sla-rules.yml:/etc/prometheus/sla-rules.yml:ro
       - prometheus_data:/prometheus
@@ -321,43 +208,30 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-      # Включаем lifecycle API: POST /-/reload перечитывает rules/config
-      # без рестарта контейнера — нужно при изменении alerts.yml.
       - '--web.enable-lifecycle'
     ports:
-      - "9090:9090"   # Prometheus UI
+      - "9090:9090"
     networks:
       - backend
 
   grafana:
-    image: grafana/grafana:11.4.0   # актуальная на 2026
+    image: grafana/grafana:11.4.0
     container_name: smdg-grafana
     restart: always
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
-      # JSON-дашборды (smdg_alerts.json, slo-dashboard.json и т.п.).
-      # Путь должен совпадать с ``options.path`` из
-      # grafana/provisioning/dashboards/smdg.yml — там указан
-      # ``/var/lib/grafana/dashboards``.
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123   # меняй в проде!
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ENABLED=true     # для теста, потом отключи
+      - GF_AUTH_ANONYMOUS_ENABLED=true
     ports:
-      - "3000:3000"   # Grafana UI
+      - "3000:3000"
     depends_on:
       - prometheus
     networks:
       - backend
-
-
-  
-  
-
- 
-   
 
 secrets:
   age_private_key:
@@ -380,6 +254,7 @@ volumes:
   smdg_keys:
   smdg_audit_logs:
   smdg_backups:
+
 networks:
   backend:
-
+    driver: bridge
