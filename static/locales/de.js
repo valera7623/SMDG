@@ -25,6 +25,10 @@
         "common.refresh": "Aktualisieren",
         "common.search": "Suche",
 
+        "theme.light": "Hell",
+        "theme.dark": "Dunkel",
+        "theme.toolbar_label": "Erscheinungsbild",
+
         "auth.login": "Anmelden",
         "auth.logout": "Abmelden",
         "auth.register": "Registrieren",

@@ -25,6 +25,10 @@
         "common.refresh": "Actualiser",
         "common.search": "Rechercher",
 
+        "theme.light": "Clair",
+        "theme.dark": "Sombre",
+        "theme.toolbar_label": "Thème",
+
         "auth.login": "Se connecter",
         "auth.logout": "Se déconnecter",
         "auth.register": "S'inscrire",

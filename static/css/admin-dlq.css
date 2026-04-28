@@ -6,8 +6,11 @@
 }
 
 .stats-section {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, var(--primary, #0d6efd) 0%, var(--primary-dark, #0a58ca) 100%);
     color: #fff;
+    border-radius: var(--radius-lg, 20px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
 }
 
 .stats-grid {
@@ -17,10 +20,11 @@
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md, 12px);
+    padding: 14px;
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .stat-card .value {
@@ -68,7 +72,13 @@
 }
 
 .dlq-table th {
-    background: #f3f4f6;
+    background: rgba(13, 110, 253, 0.08);
+    font-weight: 600;
+    color: var(--text-secondary, #6c757d);
+}
+
+.dlq-table tbody tr:hover {
+    background: rgba(13, 110, 253, 0.04);
 }
 
 .actions {

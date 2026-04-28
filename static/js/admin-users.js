@@ -23,8 +23,11 @@ import {
 
 import { confirmAction, closeConfirmModal } from './utils/modals.js';
 import { initResponsiveUI } from './responsive.js';
+import { bindThemeToggles, initTheme } from './theme-init.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
+    bindThemeToggles();
     initResponsiveUI();
     await loadUserStats();
     await loadUsers();

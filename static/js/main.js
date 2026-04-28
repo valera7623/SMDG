@@ -5,6 +5,7 @@ import { initAuth, switchAuthTab, handleSetup2FA, logout } from './modules/auth.
 import { initFiles, loadFileList, downloadFile, copyToClipboard, openOHIFViewer } from './modules/files.js';
 import { showNotification } from './utils/notifications.js';
 import { initResponsiveUI } from './responsive.js';
+import { bindThemeToggles, initTheme, setSmdgTheme } from './theme-init.js';
 
 // ── Feature Flags (проверяем при загрузке страницы) ──────────────────────────
 async function checkFeatureFlags() {
@@ -22,6 +23,8 @@ async function checkFeatureFlags() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
+    bindThemeToggles();
     await checkFeatureFlags();
     initResponsiveUI();
     initAuth();
@@ -43,3 +46,41 @@ window.showNotification = showNotification;
 // Забытый пароль (заглушка — реализуйте по необходимости)
 window.showForgotPassword = () => showNotification('Свяжитесь с администратором', 'info');
 window.showTerms = () => alert('Условия использования системы SMDG');
+
+/**
+ * Нижнее toast-уведомление (не заменяет showNotification / #notificationContainer).
+ * @param {string} message
+ * @param {'info'|'success'|'error'|'warning'} [type='info']
+ * @param {number} [ttlMs=3000]
+ */
+window.showToast = (message, type = 'info', ttlMs = 3000) => {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const span = document.createElement('span');
+    span.textContent = message;
+    toast.appendChild(span);
+    document.body.appendChild(toast);
+    window.setTimeout(() => {
+        toast.remove();
+    }, ttlMs);
+};
+
+/** Добавляет класс skeleton первому совпадению селектора. */
+window.showSkeleton = (selector) => {
+    const el = document.querySelector(selector);
+    if (el) el.classList.add('skeleton');
+};
+
+window.hideSkeleton = (selector) => {
+    const el = document.querySelector(selector);
+    if (el) el.classList.remove('skeleton');
+};
+
+/** Опционально: confetti с CDN canvas-confetti (без ошибки, если скрипт не подключён). */
+window.showConfetti = () => {
+    if (typeof globalThis.confetti === 'function') {
+        globalThis.confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+};
+
+window.setSmdgTheme = setSmdgTheme;

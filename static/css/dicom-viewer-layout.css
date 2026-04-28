@@ -1,10 +1,29 @@
 /**
  * SMDG — адаптивная вёрстка встроенного DICOM viewer (доп. к inline-стилям dicom-viewer.html).
+ * Палитра согласована с медицинской темой (--primary из style.css при общей загрузке).
  */
+:root {
+    --dicom-accent: var(--primary-light, #6ea8fe);
+    --dicom-accent-strong: var(--primary, #0d6efd);
+    --dicom-surface: #121a2e;
+    --dicom-surface-2: #1a2744;
+    --dicom-border: rgba(255, 255, 255, 0.08);
+}
+
 #viewer-header {
     flex-wrap: wrap;
     gap: 0.5rem;
     align-items: flex-start;
+    background: linear-gradient(180deg, var(--bg-sidebar, #1a1a2e) 0%, #151d35 100%);
+    border-bottom: 1px solid var(--dicom-border);
+}
+
+#viewer-header .file-name {
+    color: var(--dicom-accent);
+}
+
+#viewer-header .meta {
+    color: rgba(255, 255, 255, 0.55);
 }
 
 #viewer-header .header-buttons {
@@ -17,6 +36,8 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     gap: 0.4rem;
+    background: var(--dicom-surface);
+    border-bottom: 1px solid var(--dicom-border);
 }
 
 #toolbar.dicom-toolbar--collapsed {
@@ -35,6 +56,12 @@
     min-width: 2.5rem;
     font-size: 0.8rem;
     touch-action: manipulation;
+    border-radius: var(--radius-sm, 6px);
+}
+
+.tool-btn.active {
+    background: var(--dicom-accent-strong) !important;
+    border-color: var(--dicom-accent-strong) !important;
 }
 
 #toolbar-zoom-row {
@@ -43,9 +70,9 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    padding: 0.25rem 0.5rem 0.5rem;
-    background: #0d1117;
-    border-bottom: 1px solid #333;
+    padding: 0.35rem 0.65rem 0.55rem;
+    background: var(--dicom-surface);
+    border-bottom: 1px solid var(--dicom-border);
 }
 
 #toolbar-fab {
@@ -60,10 +87,18 @@
 
 #metadata-panel {
     transition: transform 0.25s ease, opacity 0.2s ease;
+    background: rgba(18, 26, 46, 0.97);
+    border-left: 1px solid var(--dicom-border);
 }
 
-#metadata-panel.show {
-    display: block;
+#metadata-panel h4 {
+    color: var(--dicom-accent);
+}
+
+#measure-toolbar,
+#measure-results {
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid var(--dicom-border);
 }
 
 #metadata-backdrop,
@@ -71,13 +106,27 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(3px);
     z-index: 90;
+}
+
+#metadata-panel.show {
+    display: block;
 }
 
 #metadata-backdrop.is-visible,
 .dicom-meta-backdrop.is-visible {
     display: block;
+}
+
+#status-bar {
+    background: var(--dicom-surface);
+    border-top: 1px solid var(--dicom-border);
+}
+
+#wl-info {
+    color: var(--dicom-accent);
 }
 
 @media (max-width: 767.98px) {
@@ -94,8 +143,8 @@
         max-height: 55vh;
         height: auto;
         border-left: none;
-        border-top: 1px solid #333;
-        border-radius: 0.5rem 0.5rem 0 0;
+        border-top: 1px solid var(--dicom-border);
+        border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
         z-index: 200;
     }
 
@@ -108,6 +157,11 @@
         width: 100%;
         margin-left: 0 !important;
         flex-wrap: wrap;
+    }
+
+    #frame-control {
+        background: var(--dicom-surface);
+        border-top: 1px solid var(--dicom-border);
     }
 
     #frame-control .frame-slider-container {

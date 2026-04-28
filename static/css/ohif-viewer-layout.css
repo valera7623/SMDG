@@ -16,8 +16,8 @@
     justify-content: center;
     gap: 0.4rem;
     padding: 0.35rem 0.5rem;
-    background: #0a0a0a;
-    border-bottom: 1px solid #333;
+    background: #0c1224;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #ohif-zoom-bar .ohif-tool {

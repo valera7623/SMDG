@@ -1,4 +1,4 @@
-/* static/css/admin-users.css */
+/* static/css/admin-users.css — user management; uses tokens from style.css */
 
 .user-info {
     display: flex;
@@ -9,8 +9,11 @@
 
 /* Статистика */
 .stats-section {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, var(--primary, #0d6efd) 0%, var(--primary-dark, #0a58ca) 100%);
+    color: #fff;
+    border-radius: var(--radius-lg, 20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.08));
 }
 
 .stats-grid {
@@ -21,16 +24,17 @@
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 16px;
+    border-radius: var(--radius-md, 12px);
     text-align: center;
     backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .stat-label {
     font-size: 0.9em;
-    opacity: 0.9;
+    opacity: 0.95;
     margin-bottom: 5px;
 }
 
@@ -48,10 +52,25 @@
 
 .search-box input {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #ddd;
-    border-radius: 6px;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-sm, 6px);
     font-size: 16px;
+    background: var(--bg-secondary, #fff);
+    color: var(--text-primary, #1a1a2e);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-theme="dark"] .search-box input {
+    background: rgba(22, 33, 62, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary, #0d6efd);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
 }
 
 .filter-controls {
@@ -72,150 +91,183 @@
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 6px;
+    background: rgba(13, 110, 253, 0.06);
+    padding: 16px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 #selectedCount {
-    font-weight: bold;
-    color: #007bff;
+    font-weight: 700;
+    color: var(--primary, #0d6efd);
     min-width: 100px;
 }
 
-/* Таблица пользователей */
+/* Таблица пользователей — aligns with .data-table */
 .table-container {
     overflow-x: auto;
     margin-top: 20px;
+    border-radius: var(--radius-md, 12px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
 }
 
 .users-table {
     width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: 8px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--bg-secondary, #fff);
+    border-radius: var(--radius-md, 12px);
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .users-table thead {
-    background: var(--primary-color);
-    color: white;
+    background: linear-gradient(135deg, var(--primary, #0d6efd), var(--primary-dark, #0a58ca));
+    color: #fff;
 }
 
 .users-table th,
 .users-table td {
-    padding: 12px;
+    padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.users-table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+}
+
+.users-table tbody tr {
+    transition: background 0.15s ease;
 }
 
 .users-table tbody tr:hover {
-    background: #f5f5f5;
+    background: rgba(13, 110, 253, 0.05);
 }
 
 .users-table td {
     vertical-align: middle;
+    color: var(--text-primary, #1a1a2e);
+}
+
+.users-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+[data-theme="dark"] .users-table {
+    background: rgba(22, 33, 62, 0.72);
+}
+
+[data-theme="dark"] .users-table td {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Статус пользователя */
 .status-badge {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: bold;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.82em;
+    font-weight: 700;
 }
 
 .status-badge.active {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(25, 135, 84, 0.15);
+    color: var(--success, #198754);
 }
 
 .status-badge.inactive {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(220, 53, 69, 0.12);
+    color: var(--danger, #c82333);
 }
 
 /* Роль */
 .role-badge {
     display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    font-weight: bold;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm, 6px);
+    font-size: 0.82em;
+    font-weight: 700;
 }
 
 .role-badge.admin {
-    background: #cce5ff;
-    color: #004085;
+    background: rgba(13, 110, 253, 0.15);
+    color: var(--primary-dark, #0a58ca);
 }
 
 .role-badge.doctor {
-    background: #d1ecf1;
-    color: #0c5460;
+    background: rgba(13, 202, 240, 0.15);
+    color: #0a7c8c;
 }
 
 .role-badge.user {
-    background: #e2e3e5;
-    color: #383d41;
+    background: rgba(108, 117, 125, 0.15);
+    color: var(--secondary, #495057);
 }
 
 /* 2FA значок */
 .twofa-badge {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
-    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
     border-radius: 50%;
     font-size: 14px;
 }
 
 .twofa-badge.enabled {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(25, 135, 84, 0.2);
+    color: var(--success, #198754);
 }
 
 .twofa-badge.disabled {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(220, 53, 69, 0.12);
+    color: var(--danger, #dc3545);
 }
 
 /* Действия */
 .action-buttons {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 
 .action-btn {
-    padding: 0.5rem 0.6rem;
+    padding: 0.5rem 0.65rem;
     min-height: 2.75rem;
     min-width: 2.5rem;
     font-size: 0.9em;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--radius-sm, 6px);
     cursor: pointer;
-    transition: all 0.3s;
+    font-weight: 600;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
 }
 
 .action-btn.edit {
-    background: #007bff;
+    background: var(--primary, #0d6efd);
     color: white;
 }
 
 .action-btn.edit:hover {
-    background: #0056b3;
+    filter: brightness(1.05);
 }
 
 .action-btn.reset-password {
-    background: #ffc107;
-    color: #333;
+    background: var(--warning, #ffc107);
+    color: #212529;
 }
 
 .action-btn.reset-password:hover {
-    background: #e0a800;
+    filter: brightness(0.97);
 }
 
 .action-btn.reset-2fa {
@@ -224,44 +276,48 @@
 }
 
 .action-btn.reset-2fa:hover {
-    background: #138496;
+    filter: brightness(1.05);
 }
 
 .action-btn.delete {
-    background: #dc3545;
+    background: var(--danger, #dc3545);
     color: white;
 }
 
 .action-btn.delete:hover {
-    background: #c82333;
+    filter: brightness(1.05);
 }
 
 /* Пагинация */
 .pagination {
     display: flex;
     justify-content: center;
-    gap: 5px;
+    gap: 6px;
     margin-top: 20px;
     flex-wrap: wrap;
 }
 
 .page-btn {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    background: white;
+    padding: 10px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--bg-secondary, #fff);
     cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s;
+    border-radius: var(--radius-sm, 6px);
+    font-weight: 600;
+    color: var(--text-primary, #1a1a2e);
+    transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .page-btn:hover {
-    background: #f0f0f0;
+    background: rgba(13, 110, 253, 0.08);
+    border-color: rgba(13, 110, 253, 0.35);
 }
 
 .page-btn.active {
-    background: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--primary, #0d6efd), var(--primary-dark, #0a58ca));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
 }
 
 .page-btn:disabled {
@@ -278,14 +334,15 @@
 #confirmMessage {
     margin: 20px 0;
     font-size: 1.1em;
+    color: var(--text-primary, #1a1a2e);
 }
 
 /* Загрузка */
 .loading {
     text-align: center;
     padding: 40px;
-    color: #666;
-    font-size: 1.2em;
+    color: var(--text-secondary, #6c757d);
+    font-size: 1.15em;
 }
 
 /* Адаптивность */
@@ -293,27 +350,26 @@
     .filter-controls {
         flex-direction: column;
     }
-    
+
     .bulk-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .action-buttons {
         flex-direction: column;
     }
-    
+
     .users-table {
         font-size: 0.9em;
     }
-    
+
     .users-table th,
     .users-table td {
-        padding: 8px;
+        padding: 10px 12px;
     }
 }
 
-/* Управление пользователями: на мобилке — «Выйти», бургер и язык в одной полосе, выравнивание влево */
 @media (max-width: 1023.98px) {
     body.page-admin-users .site-header__top {
         flex-direction: column;

@@ -25,6 +25,10 @@
         "common.refresh": "Обновить",
         "common.search": "Поиск",
 
+        "theme.light": "Светлая",
+        "theme.dark": "Тёмная",
+        "theme.toolbar_label": "Тема",
+
         "auth.login": "Войти",
         "auth.logout": "Выйти",
         "auth.register": "Зарегистрироваться",

@@ -28,6 +28,11 @@
         "common.refresh": "Refresh",
         "common.search": "Search",
 
+        // Theme toggle
+        "theme.light": "Light",
+        "theme.dark": "Dark",
+        "theme.toolbar_label": "Theme",
+
         // Auth
         "auth.login": "Log in",
         "auth.logout": "Log out",

@@ -20,10 +20,24 @@
 </head>
 
 <body class="page-index">
+
     <div class="container">
 
         <!-- Login / registration form -->
-        <div id="authForm" style="display: none;">
+        <div id="authForm" class="auth-panel" style="display: none;">
+            <div class="auth-theme-toolbar">
+                <span id="authThemeToolbarLabel" class="auth-toolbar__label" data-i18n="theme.toolbar_label">Theme</span>
+                <div class="theme-switch theme-switch--stretch-sm" role="group" aria-labelledby="authThemeToolbarLabel">
+                    <button type="button" class="theme-switch__btn" data-smdg-theme="light" aria-pressed="false">
+                        <span class="theme-switch__glyph" aria-hidden="true">☀️</span>
+                        <span class="theme-switch__text" data-i18n="theme.light">Light</span>
+                    </button>
+                    <button type="button" class="theme-switch__btn" data-smdg-theme="dark" aria-pressed="false">
+                        <span class="theme-switch__glyph" aria-hidden="true">🌙</span>
+                        <span class="theme-switch__text" data-i18n="theme.dark">Dark</span>
+                    </button>
+                </div>
+            </div>
             <header>
                 <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
                 <p class="subtitle" id="authSubtitle" data-i18n="auth.subtitle_login">Sign in to your account</p>
@@ -128,11 +142,24 @@
                     </button>
                     </div>
                     <div id="smdgLangAndMenu" class="site-header__lang-menu" aria-label="Menu and language">
+                    <div class="site-header__theme-wrap">
+                        <span id="mainThemeToolbarLabel" class="auth-toolbar__label site-header__theme-label" data-i18n="theme.toolbar_label">Theme</span>
+                        <div class="theme-switch theme-switch--compact-header" role="group" aria-labelledby="mainThemeToolbarLabel">
+                            <button type="button" class="theme-switch__btn" data-smdg-theme="light" aria-pressed="false">
+                                <span class="theme-switch__glyph" aria-hidden="true">☀️</span>
+                                <span class="theme-switch__text" data-i18n="theme.light">Light</span>
+                            </button>
+                            <button type="button" class="theme-switch__btn" data-smdg-theme="dark" aria-pressed="false">
+                                <span class="theme-switch__glyph" aria-hidden="true">🌙</span>
+                                <span class="theme-switch__text" data-i18n="theme.dark">Dark</span>
+                            </button>
+                        </div>
+                    </div>
                     <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
                         aria-controls="smdgMainNav" aria-expanded="false" title="Menu">
                         <span></span><span></span><span></span>
                     </button>
-                    <!-- language selector: i18n.js appends to #smdgLangAndMenu (same row as hamburger) -->
+                    <!-- language selector: i18n.js appends #language-selector here -->
                     </div>
                     </div>
                 </div>

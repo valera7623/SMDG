@@ -8,8 +8,11 @@ import {
     purgeAllFiles,
 } from './modules/admin-files.js';
 import { initResponsiveUI } from './responsive.js';
+import { bindThemeToggles, initTheme } from './theme-init.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    bindThemeToggles();
     initResponsiveUI();
     loadFiles();
     loadSystemStats();

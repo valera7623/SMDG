@@ -11,8 +11,11 @@ import {
     viewMessage,
 } from "./modules/admin-dlq.js";
 import { initResponsiveUI } from "./responsive.js";
+import { bindThemeToggles, initTheme } from "./theme-init.js";
 
 document.addEventListener("DOMContentLoaded", async () => {
+    initTheme();
+    bindThemeToggles();
     initResponsiveUI();
     const search = document.getElementById("messageIdSearch");
     const limit = document.getElementById("limitFilter");
