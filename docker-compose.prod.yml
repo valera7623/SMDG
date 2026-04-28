@@ -138,7 +138,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      clamav:
         condition: service_healthy
 
     ports: !reset []
@@ -285,7 +284,6 @@ services:
   # ---------------------------------------------------------------------------
   # ClamAV — убираем внешний порт, ограничиваем память
   # ---------------------------------------------------------------------------
-  clamav:
     ports: !reset []
     expose:
       - "3310"

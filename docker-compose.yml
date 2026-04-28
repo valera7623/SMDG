@@ -81,7 +81,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      clamav:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -90,8 +89,7 @@ services:
         target: age_private_key
         uid: "10001"
         gid: "10001"
-        mode: 0440
-      - source: admin_password
+        mode: 0440      - source: admin_password
         target: admin_password
         uid: "10001"
         gid: "10001"
@@ -240,35 +238,6 @@ services:
 
   
 
-  clamav:
-    image: clamav/clamav:latest
-    restart: unless-stopped
-    container_name: clamav
-    ports:
-      - "3310:3310"
-    volumes:
-      - clamav_data:/var/lib/clamav   # ← persistent базы сигнатур
-    command: >
-      sh -c "
-        echo 'Starting freshclam daemon...' &&
-        freshclam --daemon --checks=24 &&
-        echo 'Starting clamd...' &&
-        exec clamd --foreground
-      "
-    healthcheck:
-      test: ["CMD", "clamdscan", "--version"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 180s
-    networks:
-      - backend
-
-  # ---------------------------------------------------------------------------
-  # MinIO — S3-совместимое объектное хранилище (для dev/test)
-  # В prod можно заменить на Yandex Object Storage, Selectel, AWS S3
-  # ---------------------------------------------------------------------------
-  minio:
     image: minio/minio:latest
     restart: unless-stopped
     container_name: smdg-minio
@@ -404,7 +373,6 @@ volumes:
   grafana_data:
   prometheus_data:
   pgdata:
-  clamav_data:
   minio_data:
   smdg_encrypted:
   smdg_uploads:
