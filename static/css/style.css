@@ -322,10 +322,26 @@ input[type="text"] {
     border-color: rgba(255, 255, 255, 0.12);
 }
 
-/* Форма входа/регистрации: маска пароля (точки) и курсор — белые в тёмной теме */
+/*
+ * Авторизация: подпись «Пароль» и плейсхолдеры — как «Логин» (до правки −webkit-fill заливало всё белым).
+ * Введённые точки пароля — по-прежнему белые.
+ */
+[data-theme="dark"] #authForm .form-group label {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] #authForm .form-group input::placeholder {
+    color: var(--text-secondary);
+    opacity: 1;
+    -webkit-text-fill-color: var(--text-secondary);
+}
+
 [data-theme="dark"] #authForm .form-group input[type="password"] {
     color: #ffffff;
     caret-color: #ffffff;
+}
+
+[data-theme="dark"] #authForm .form-group input[type="password"]:not(:placeholder-shown) {
     -webkit-text-fill-color: #ffffff;
 }
 

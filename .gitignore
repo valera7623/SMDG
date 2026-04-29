@@ -47,4 +47,10 @@ poetry.toml
 *.pre-cutover.*
 
 # Optional: curl/CLI captures at repo root (narrow)
-/*.out
+/*.outuploads/
+encrypted/
+decrypted/
+audit_logs/*.csv
+.env.prod
+.coverage
+load-test-results/*.json
