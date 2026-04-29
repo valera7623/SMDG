@@ -39,7 +39,6 @@ from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
 from app.core.timeout import TimeoutError, timeout
 from app.core.bulkhead import bulkhead
-from app.services.clamav_service import scan_file as clamav_scan_file
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -235,84 +234,6 @@ async def upload_file(
         temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
         with open(temp_upload_path, "wb") as buffer:
             buffer.write(file_content)
-
-        # ClamAV (c Circuit Breaker)
-        virus_detected = False
-        virus_name = None
-        with tracer.start_as_current_span("upload.clamav_scan") as scan_span:
-            from app.core.circuit_breaker import (
-                CircuitBreakerOpenError,
-                get_circuit_breaker,
-            )
-            from app.core.circuit_breaker_metrics import record_rejected_call
-
-            clamav_cb = get_circuit_breaker("clamav")
-
-            try:
-                scan_result = await clamav_cb.call(clamav_scan_file, temp_upload_path)
-                if scan_result.get("status") == "infected":
-                    virus_detected = True
-                    virus_name = scan_result.get("virus_name", "unknown")
-                if scan_result.get("status") == "skipped":
-                    audit_logger.log_operation(
-                        action="clamav_skipped_timeout",
-                        filename=original_filename,
-                        user=current_user.sub,
-                        reason="ClamAV scan timeout",
-                        success=False,
-                    )
-                try:
-                    scan_span.set_attribute("clamav.virus_detected", bool(virus_detected))
-                except Exception:
-                    pass
-            except CircuitBreakerOpenError:
-                # Брейкер открыт — ClamAV считаем «всё ещё лежит». Чтобы не
-                # блокировать весь upload-канал, пропускаем проверку: это
-                # осознанный availability vs security trade-off (см. ТЗ).
-                record_rejected_call("clamav")
-                logger.warning(
-                    "ClamAV circuit breaker is OPEN — skipping virus scan "
-                    "for upload by user=%s",
-                    current_user.sub,
-                )
-                try:
-                    scan_span.set_attribute("clamav.skipped", True)
-                    scan_span.set_attribute("clamav.skip_reason", "circuit_breaker_open")
-                except Exception:
-                    pass
-                audit_logger.log_operation(
-                    action="clamav_skipped_cb_open",
-                    filename=original_filename,
-                    user=current_user.sub,
-                    reason="ClamAV circuit breaker is OPEN",
-                    success=False,
-                )
-            except Exception as e:
-                try:
-                    scan_span.set_attribute("clamav.error", type(e).__name__)
-                    scan_span.record_exception(e)
-                except Exception:
-                    pass
-                logger.error(f"ClamAV error: {e}")
-                audit_logger.log_operation(
-                    action="clamav_error",
-                    filename=original_filename,
-                    user=current_user.sub,
-                    reason=str(e),
-                    success=False
-                )
-                if not settings.dev_mode:
-                    raise HTTPException(503, "Антивирусный сервис недоступен")
-
-        if virus_detected:
-            audit_logger.log_operation(
-                action="upload_virus_detected",
-                filename=original_filename,
-                user=current_user.sub,
-                reason=f"Обнаружен вирус: {virus_name}",
-                success=False
-            )
-            raise HTTPException(400, f"Обнаружен вредоносный код: {virus_name}")
 
         # Шифрование
         final_encrypted_name = f"{uuid.uuid4()}_{safe_filename}.age"

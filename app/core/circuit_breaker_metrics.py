@@ -14,7 +14,7 @@
 Семантика меток
 ---------------
 * ``name`` — имя брейкера, совпадает с ``CircuitBreaker.name``. Низкая
-  кардинальность (десяток значений: ``postgresql``, ``redis``, ``clamav``,
+  кардинальность (десяток значений: ``postgresql``, ``redis``,
   ``s3_storage``, ``jaeger``, …).
 """
 from __future__ import annotations

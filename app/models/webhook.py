@@ -20,7 +20,6 @@ class WebhookEvent(str, Enum):
     FILE_DELETED = "file.deleted"
     LINK_CREATED = "link.created"
     LINK_EXPIRED = "link.expired"
-    VIRUS_DETECTED = "virus.detected"
     CLEANUP_COMPLETED = "cleanup.completed"
 
 

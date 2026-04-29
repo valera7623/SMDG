@@ -52,7 +52,7 @@ obligation, vital interest, public interest, legitimate interest).
 - Encryption in transit: TLS 1.2+ terminated by Nginx.
 - Password hashing: Argon2id.
 - 2FA: TOTP (RFC 6238).
-- Antivirus: ClamAV scanning on upload.
+- Content checks: MIME and extension validation on upload.
 - Access control: RBAC with least-privilege defaults.
 
 ## 7. Incident response

@@ -225,7 +225,7 @@ groups:
           description: |
             smdg_circuit_breaker_state=1 (OPEN) для name={{ $labels.name }}.
             Вызовы к зависимости fast-fail (или fallback). Проверить целевой
-            сервис (PostgreSQL, Redis, ClamAV, S3, Jaeger) и /api/circuit-breaker/status.
+            сервис (PostgreSQL, Redis, S3, Jaeger) и /api/circuit-breaker/status.
           runbook: "https://wiki.smdg/runbooks/circuit-breaker-open"
 
       - alert: SMDGCircuitBreakerStuckHalfOpen

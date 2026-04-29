@@ -1,7 +1,7 @@
 """Асинхронный Circuit Breaker для SMDG.
 
 Реализация паттерна Circuit Breaker для защиты критичных зависимостей
-(PostgreSQL, Redis, ClamAV, S3/MinIO, Jaeger) от каскадных отказов.
+(PostgreSQL, Redis, S3/MinIO, Jaeger) от каскадных отказов.
 
 Состояния
 ---------

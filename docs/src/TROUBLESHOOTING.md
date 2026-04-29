@@ -81,19 +81,7 @@ docker compose logs redis
 docker compose restart redis
 ```
 
-### 2.4 ClamAV not responding
-
-Symptom: uploading a file produces "Antivirus service is temporarily unavailable".
-Fix:
-
-```bash
-docker compose logs clamav
-docker compose restart clamav
-```
-
-ClamAV may take some time on first start (virus signature update).
-
-### 2.5 Problems with the `age` key
+### 2.4 Problems with the `age` key
 
 **Error:** `age.key not found` or "public key is not initialised".
 Fix:
@@ -113,7 +101,7 @@ docker compose restart smdg
 docker compose exec smdg python -m app.cli rotate-keys
 ```
 
-### 2.6 Authentication / login issues
+### 2.5 Authentication / login issues
 
 Login does not work:
 
@@ -126,13 +114,13 @@ Login does not work:
 - Scan the QR code inside an authenticator app
 - Changing the password automatically resets 2FA
 
-### 2.7 Files do not upload
+### 2.6 Files do not upload
 
 **Error 413 (Payload Too Large):** raise `MAX_UPLOAD_SIZE_MB` in `.env` and restart.
-**ClamAV blocks the file:** inspect ClamAV logs.
+**Wrong MIME/extension:** adjust allowed types or use a permitted format (see validation errors in logs).
 **File is not encrypted:** check the presence and permissions of `keys/age.key`.
 
-### 2.8 Production mode issues
+### 2.7 Production mode issues
 
 **Error:** `DEV_MODE=true` in production.
 Fix: make sure `DEV_MODE=false` is set in `.env.prod`.
@@ -169,7 +157,6 @@ docker compose exec smdg python -m app.cli cleanup-force
 - Audit: `audit_logs/` (files `audit_YYYY-MM-DD.log` and `audit.csv`)
 - PostgreSQL: `docker compose logs db`
 - Redis: `docker compose logs redis`
-- ClamAV: `docker compose logs clamav`
 
 If the issue is not resolved, open an Issue and attach:
 

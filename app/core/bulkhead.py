@@ -254,11 +254,6 @@ def _get_bulkhead_configs() -> dict[str, tuple[int, int, int]]:
             settings.DOWNLOAD_BULKHEAD_QUEUE_SIZE,
             settings.DOWNLOAD_BULKHEAD_TIMEOUT,
         ),
-        "clamav": (
-            settings.CLAMAV_BULKHEAD_MAX_CONCURRENT,
-            settings.CLAMAV_BULKHEAD_QUEUE_SIZE,
-            settings.CLAMAV_BULKHEAD_TIMEOUT,
-        ),
         "s3": (
             settings.S3_BULKHEAD_MAX_CONCURRENT,
             settings.S3_BULKHEAD_QUEUE_SIZE,

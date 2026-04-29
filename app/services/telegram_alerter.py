@@ -48,6 +48,8 @@ _TELEGRAM_MAX_LEN: int = 4000  # оставляем запас на формат
 
 # Таймаут одного HTTP-запроса в Telegram API.
 _TELEGRAM_HTTP_TIMEOUT_SEC: float = 5.0
+_TELEGRAM_SEND_RETRIES: int = 3
+_TELEGRAM_RETRY_BASE_DELAY_SEC: float = 0.4
 
 
 def _is_public_url(url: str) -> bool:
@@ -152,6 +154,43 @@ class TelegramAlerter:
         """Закрыть HTTP-клиент (вызывается в lifespan shutdown)."""
         if self._client is not None and not self._client.is_closed:
             await self._client.aclose()
+
+    async def _post_with_retries(self, payload: Dict[str, Any]) -> bool:
+        """POST в Telegram с коротким retry/backoff для временных сбоев сети."""
+        client = await self._get_client()
+        delay = _TELEGRAM_RETRY_BASE_DELAY_SEC
+
+        for attempt in range(1, _TELEGRAM_SEND_RETRIES + 1):
+            try:
+                resp = await client.post(self.api_url, json=payload)
+                if resp.status_code >= 400:
+                    logger.warning(
+                        "Telegram sendMessage failed: status=%d body=%s",
+                        resp.status_code,
+                        resp.text[:300],
+                    )
+                    return False
+                return True
+            except httpx.HTTPError as exc:
+                if attempt >= _TELEGRAM_SEND_RETRIES:
+                    logger.warning(
+                        "Telegram sendMessage HTTP error after %d attempts: %s: %s",
+                        attempt,
+                        type(exc).__name__,
+                        repr(exc),
+                    )
+                    return False
+                logger.warning(
+                    "Telegram sendMessage attempt %d/%d failed: %s: %s; retrying in %.1fs",
+                    attempt,
+                    _TELEGRAM_SEND_RETRIES,
+                    type(exc).__name__,
+                    repr(exc),
+                    delay,
+                )
+                await asyncio.sleep(delay)
+                delay *= 2
+        return False
 
     @staticmethod
     def _escape_html(text: str) -> str:
@@ -273,30 +312,7 @@ class TelegramAlerter:
         if reply_markup.get("inline_keyboard"):
             payload["reply_markup"] = reply_markup
 
-        client = await self._get_client()
-        try:
-            resp = await client.post(self.api_url, json=payload)
-            if resp.status_code >= 400:
-                # Тело ответа Telegram обычно содержит подробное описание
-                # (ok/description/error_code), например "Bad Request:
-                # URL host is empty" при невалидных inline-buttons.
-                logger.warning(
-                    "Telegram sendMessage failed: status=%d body=%s",
-                    resp.status_code,
-                    resp.text[:300],
-                )
-                return False
-            return True
-        except httpx.HTTPError as exc:
-            # У многих httpx-исключений (ConnectError, ReadTimeout) str(exc)
-            # может быть пустым — логируем тип и repr, чтобы всегда было
-            # видно причину сбоя.
-            logger.warning(
-                "Telegram sendMessage HTTP error: %s: %s",
-                type(exc).__name__,
-                repr(exc),
-            )
-            return False
+        return await self._post_with_retries(payload)
 
     async def send_batch_alerts(
         self,
@@ -343,24 +359,8 @@ class TelegramAlerter:
             "parse_mode": "HTML",
             "disable_web_page_preview": True,
         }
-        client = await self._get_client()
-        try:
-            resp = await client.post(self.api_url, json=payload)
-            if resp.status_code >= 400:
-                logger.warning(
-                    "Telegram batch sendMessage failed: status=%d body=%s",
-                    resp.status_code,
-                    resp.text[:200],
-                )
-                return 0
-            return 1
-        except httpx.HTTPError as exc:
-            logger.warning(
-                "Telegram batch sendMessage HTTP error: %s: %s",
-                type(exc).__name__,
-                repr(exc),
-            )
-            return 0
+        ok = await self._post_with_retries(payload)
+        return 1 if ok else 0
 
 
 # ---------------------------------------------------------------------------

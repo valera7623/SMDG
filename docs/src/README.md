@@ -16,7 +16,7 @@ Detailed guides live under **[docs/](./)** — see the table in the "Documentati
 ### Core (v1.0)
 
 - End-to-end file encryption with **age**
-- Antivirus scanning with **ClamAV** before persistence
+- File type validation (MIME and extension checks) before encryption
 - **JWT** + HttpOnly cookies
 - Two-factor authentication (**TOTP** / 2FA)
 - Role-based access control (**RBAC**): `admin` | `doctor` | `user` | `super_admin` (multi-tenant)
@@ -68,7 +68,7 @@ See [DICOM_VIEWER.md](DICOM_VIEWER.md) for details.
 | Disk                  | 10 GB free                   | 20 GB+ (SSD)            |
 | OS                    | Linux / macOS / Windows+WSL2 | Ubuntu 22.04 / 24.04    |
 
-**For production:** PostgreSQL 15+, Redis 7+, ClamAV, 8 GB+ RAM.
+**For production:** PostgreSQL 15+, Redis 7+, 8 GB+ RAM.
 
 ---
 

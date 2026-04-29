@@ -9,7 +9,7 @@ Version : **4.0.0** (cœur et visualiseur DICOM) · export d'audit : **3.1.0**.
 SMDG permet aux médecins, cliniques et patients d'échanger en toute
 sécurité des fichiers médicaux. Chaque fichier est chiffré côté serveur
 avec [age](https://age-encryption.org/), protégé par des liens uniques
-à durée limitée, analysé par ClamAV et entièrement journalisé dans
+à durée limitée et entièrement journalisé dans
 l'audit. Le visualiseur DICOM intégré affiche les études dans le
 navigateur sans transmettre de données déchiffrées au client.
 

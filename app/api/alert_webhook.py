@@ -36,12 +36,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/alerts", tags=["Alerts"])
 
 
-def _check_shared_secret(header_value: str | None) -> None:
-    """Если задан SMDG_ALERT_WEBHOOK_SECRET — сравнить с заголовком."""
+def _check_shared_secret(header_value: str | None, query_value: str | None) -> None:
+    """Если задан SMDG_ALERT_WEBHOOK_SECRET — сравнить с header/query."""
     expected = os.getenv("SMDG_ALERT_WEBHOOK_SECRET", "").strip()
     if not expected:
         return  # защита отключена
-    if not header_value or header_value.strip() != expected:
+    provided = (header_value or "").strip() or (query_value or "").strip()
+    if provided != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid alert webhook secret",
@@ -83,6 +84,7 @@ def _audit_alerts(alerts: List[Dict[str, Any]]) -> None:
 async def handle_alertmanager_webhook(
     request: Request,
     channel: str | None = Query(default=None, description="Delivery channel override, e.g. archive"),
+    x_alert_secret_query: str | None = Query(default=None, alias="x_alert_secret"),
     x_alert_secret: str | None = Header(default=None, alias="X-Alert-Secret"),
 ) -> Dict[str, Any]:
     """Принять webhook от Alertmanager и распределить его по каналам.
@@ -92,7 +94,7 @@ async def handle_alertmanager_webhook(
         N принятых алертов, M доставленных в Telegram. Даже при ошибках
         пересылки возвращаем 200, чтобы Alertmanager не ретраил в цикле.
     """
-    _check_shared_secret(x_alert_secret)
+    _check_shared_secret(x_alert_secret, x_alert_secret_query)
 
     try:
         data = await request.json()

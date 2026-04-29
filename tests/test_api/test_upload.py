@@ -6,6 +6,7 @@
 import pytest
 import json
 import uuid
+import asyncio
 from unittest.mock import ANY, MagicMock, AsyncMock, patch, call, mock_open
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
@@ -29,6 +30,7 @@ def make_token_data(sub="test_user", role="user"):
     td = MagicMock()
     td.sub = sub
     td.role = role
+    td.tenant_id = 1
     return td
 
 
@@ -309,18 +311,60 @@ class TestUploadEndpoint:
     @pytest.fixture(autouse=True)
     def setup_app(self):
         """Настраиваем app с auth override для каждого теста"""
+        from unittest.mock import AsyncMock, MagicMock, patch
+        from contextlib import asynccontextmanager
         from app.main import app
         from app.core.auth import get_current_user
+
+        mock_sess = AsyncMock()
+
+        @asynccontextmanager
+        async def _sess_ctx():
+            yield mock_sess
+
+        asl_patch = patch(
+            "app.main.AsyncSessionLocal",
+            side_effect=lambda: _sess_ctx(),
+        )
+        asl_patch.start()
+
+        tr_patch = patch("app.main.resolve_tenant_from_request", new_callable=AsyncMock)
+        _tr_mock = tr_patch.start()
+        _tenant = MagicMock()
+        _tenant.id = 1
+        _tr_mock.return_value = _tenant
+
+        app.state.shutting_down = False
+        app.state.active_requests = 0
+        if not hasattr(app.state, "active_requests_lock"):
+            app.state.active_requests_lock = asyncio.Lock()
+        if hasattr(app.state, "limiter"):
+            app.state.limiter.enabled = False
+
         from app.core.database import get_db
+        from app.core.dependencies import get_db_for_write
+
+        _fallback_db = AsyncMock()
+
+        async def _fallback_ov():
+            yield _fallback_db
+
+        app.dependency_overrides[get_db] = _fallback_ov
+        app.dependency_overrides[get_db_for_write] = _fallback_ov
 
         app.dependency_overrides[get_current_user] = lambda: make_token_data()
-        yield app
-        app.dependency_overrides.clear()
+        try:
+            yield app
+        finally:
+            tr_patch.stop()
+            asl_patch.stop()
+            app.dependency_overrides.clear()
 
     @pytest.fixture
     def mock_db(self, setup_app):
         """Мок базы данных"""
         from app.core.database import get_db
+        from app.core.dependencies import get_db_for_write
 
         db = AsyncMock()
         mock_result = MagicMock()
@@ -333,8 +377,9 @@ class TestUploadEndpoint:
         db.add = MagicMock()
 
         async def override():
-            return db
+            yield db
 
+        setup_app.dependency_overrides[get_db_for_write] = override
         setup_app.dependency_overrides[get_db] = override
         return db
 
@@ -342,6 +387,7 @@ class TestUploadEndpoint:
     def mock_db_no_user(self, setup_app):
         """Мок БД где пользователь НЕ найден"""
         from app.core.database import get_db
+        from app.core.dependencies import get_db_for_write
 
         db = AsyncMock()
         mock_result = MagicMock()
@@ -352,8 +398,9 @@ class TestUploadEndpoint:
         db.add = MagicMock()
 
         async def override():
-            return db
+            yield db
 
+        setup_app.dependency_overrides[get_db_for_write] = override
         setup_app.dependency_overrides[get_db] = override
         return db
 
@@ -385,7 +432,6 @@ class TestUploadEndpoint:
             "get_pub_key": "app.api.upload.get_public_key",
             "upload_dir": "app.api.upload.UPLOAD_DIR",
             "encrypted_dir": "app.api.upload.ENCRYPTED_DIR",
-            "clamd_mod": "app.api.upload.clamd",
         }
 
         for name, target in targets.items():
@@ -411,14 +457,21 @@ class TestUploadEndpoint:
         patches["encrypted_dir"] = patch("app.api.upload.ENCRYPTED_DIR", encrypted_dir)
         mocks["encrypted_dir"] = patches["encrypted_dir"].start()
 
+        st_u = patch(
+            "app.api.upload.encrypted_storage.upload",
+            new_callable=AsyncMock,
+        )
+        patches["encrypted_storage_upload"] = st_u
+        _um = MagicMock()
+        _um.size = 2048
+        mocks["enc_storage_upload"] = st_u.start()
+        mocks["enc_storage_upload"].return_value = _um
+
         # settings
         mocks["settings"].MAX_UPLOAD_SIZE_MB = 50
         mocks["settings"].ALLOWED_MIME_TYPES = [
             "application/pdf", "image/", "text/plain", "application/dicom"
         ]
-        mocks["settings"].CLAMAV_HOST = "localhost"
-        mocks["settings"].CLAMAV_PORT = 3310
-        mocks["settings"].CLAMAV_TIMEOUT = 30
         mocks["settings"].dev_mode = True
 
         # magic (второй вызов в endpoint)
@@ -448,13 +501,6 @@ class TestUploadEndpoint:
 
         # audit
         mocks["audit"].log_operation = MagicMock()
-
-        # ClamAV — clean by default
-        mock_cd = MagicMock()
-        mock_cd.ping.return_value = "PONG"
-        mock_cd.instream.return_value = {"stream": ("OK", None)}
-        mocks["clamd_mod"].ClamdNetworkSocket.return_value = mock_cd
-        mocks["clamd_obj"] = mock_cd
 
         mocks["_patches"] = patches
         mocks["upload_path"] = upload_dir
@@ -583,69 +629,6 @@ class TestUploadEndpoint:
         )
         assert response.status_code == 200
 
-    # ── VIRUS DETECTED ────────────────────────────────────
-
-    def test_upload_virus_detected(self, client, mock_db, upload_mocks):
-        """ClamAV обнаружил вирус"""
-        upload_mocks["clamd_obj"].instream.return_value = {
-            "stream": ("FOUND", "Eicar-Test-Signature")
-        }
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("virus.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 400
-        detail = response.json()["detail"]
-        assert "вредоносный" in detail.lower() or "Eicar" in detail
-
-        # Audit logged
-        upload_mocks["audit"].log_operation.assert_any_call(
-            action="upload_virus_detected",
-            filename="virus.pdf",
-            user="test_user",
-            reason="Обнаружен вирус: Eicar-Test-Signature",
-            success=False
-        )
-
-    # ── CLAMAV UNAVAILABLE — PROD ─────────────────────────
-
-    def test_upload_clamav_unavailable_prod(self, client, mock_db, upload_mocks):
-        """ClamAV недоступен в production → 503"""
-        upload_mocks["settings"].dev_mode = False
-        upload_mocks["clamd_mod"].ClamdNetworkSocket.side_effect = ConnectionRefusedError("down")
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 503
-
-        # Audit clamav_error logged
-        upload_mocks["audit"].log_operation.assert_any_call(
-            action="clamav_error",
-            filename="doc.pdf",
-            user="test_user",
-            reason=ANY,  # any string
-            success=False
-        )
-
-    # ── CLAMAV UNAVAILABLE — DEV ──────────────────────────
-
-    def test_upload_clamav_unavailable_dev(self, client, mock_db, upload_mocks):
-        """ClamAV недоступен в dev → продолжаем upload"""
-        upload_mocks["settings"].dev_mode = True
-        upload_mocks["clamd_mod"].ClamdNetworkSocket.side_effect = ConnectionRefusedError("down")
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 200
-
     # ── INVALID JSON METADATA ─────────────────────────────
 
     def test_upload_invalid_metadata_json(self, client, mock_db, upload_mocks):
@@ -720,22 +703,6 @@ class TestUploadEndpoint:
         remaining = list(upload_mocks["upload_path"].iterdir())
         assert len(remaining) == 0, f"Temp files not cleaned: {remaining}"
 
-    def test_temp_file_cleaned_on_virus(self, client, mock_db, upload_mocks):
-        """Temp файл удаляется при обнаружении вируса"""
-        upload_mocks["clamd_obj"].instream.return_value = {
-            "stream": ("FOUND", "TestVirus")
-        }
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("bad.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 400
-
-        remaining = list(upload_mocks["upload_path"].iterdir())
-        assert len(remaining) == 0
-
     # ── GENERIC EXCEPTION → 500 ──────────────────────────
 
     def test_upload_generic_exception(self, client, mock_db, upload_mocks):
@@ -761,48 +728,6 @@ class TestUploadEndpoint:
             success=False,
             metadata=ANY
         )
-
-    # ── CLAMAV OK RESULT ──────────────────────────────────
-
-    def test_upload_clamav_ok_result(self, client, mock_db, upload_mocks):
-        """ClamAV возвращает OK — файл чист"""
-        upload_mocks["clamd_obj"].instream.return_value = {
-            "stream": ("OK", None)
-        }
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("clean.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 200
-
-    # ── CLAMAV EMPTY RESULT ───────────────────────────────
-
-    def test_upload_clamav_empty_result(self, client, mock_db, upload_mocks):
-        """ClamAV возвращает пустой результат"""
-        upload_mocks["clamd_obj"].instream.return_value = {}
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        # Пустой результат → virus_detected = False → success
-        assert response.status_code == 200
-
-    # ── CLAMAV NONE RESULT ────────────────────────────────
-
-    def test_upload_clamav_none_result(self, client, mock_db, upload_mocks):
-        """ClamAV возвращает None"""
-        upload_mocks["clamd_obj"].instream.return_value = None
-
-        response = client.post(
-            "/api/upload",
-            data={"ttl_days": "7", "max_downloads": "1"},
-            files={"file": ("doc.pdf", BytesIO(make_pdf_content()), "application/pdf")}
-        )
-        assert response.status_code == 200
 
 
 # ═══════════════════════════════════════════════════════════

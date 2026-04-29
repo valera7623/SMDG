@@ -84,13 +84,13 @@ receivers:
 
   - name: "smdg-webhook"
     webhook_configs:
-      - url: "http://smdg:8000/api/alerts/webhook"
+      - url: "http://smdg:8000/api/alerts/webhook?x_alert_secret=JEFhPIy3wqBaupeYANFeoipooZDYRp_c6Wcq0RkCqdQ"
         send_resolved: true
         max_alerts: 50
 
   - name: "smdg-webhook-archive"
     webhook_configs:
-      - url: "http://smdg:8000/api/alerts/webhook?channel=archive"
+      - url: "http://smdg:8000/api/alerts/webhook?channel=archive&x_alert_secret=JEFhPIy3wqBaupeYANFeoipooZDYRp_c6Wcq0RkCqdQ"
         send_resolved: true
         max_alerts: 50
 

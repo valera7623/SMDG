@@ -193,7 +193,7 @@ max_downloads	          integer	        3	                      1–100, по у
 Максимальный размер	                  50 MB
 Разрешённые MIME-типы	                application/pdf, image/jpeg, image/png, application/dicom, text/plain
 Разрешённые расширения	              .pdf, .jpg, .jpeg, .png, .dcm, .txt
-Проверка	                            ClamAV (обязательно), libmagic (MIME)
+Проверка	                            libmagic (MIME), правила расширений
 
 ### 4.3. Формат audit_id
 
@@ -216,7 +216,7 @@ max_downloads	          integer	        3	                      1–100, по у
 
 Код	                Название	              Когда возникает
 200	                OK	                    Успешный запрос
-400	                Bad Request	            Неверный формат, вирус, недопустимый тип файла; также «Tenant could not be resolved from subdomain»
+400	                Bad Request	            Неверный формат, недопустимый тип файла; также «Tenant could not be resolved from subdomain»
 401	                Unauthorized	          Отсутствует или неверный токен
 403	                Forbidden	              Недостаточно прав (роль не подходит); также «Cross-tenant access» — JWT выдан для другого tenant, чем в заголовке Host
 404	                Not Found	              Пользователь/файл/токен не найден
@@ -225,7 +225,6 @@ max_downloads	          integer	        3	                      1–100, по у
 413	                Payload Too Large	      Файл превышает 50 MB
 429	                Too Many Requests	      Превышен rate limit
 500	                Internal Server Error	  Ошибка сервера (логируются автоматически)
-503	                Service Unavailable	    ClamAV недоступен (только production)
 
 ### 5.3. Специфические ошибки
 
@@ -240,19 +239,10 @@ max_downloads	          integer	        3	                      1–100, по у
     }
   ]
 }
-Вирус обнаружен (400)
-{
-  "detail": "Обнаружен вредоносный код: Eicar-Test-Signature"
-}
 
 Rate Limit (429)
 {
   "detail": "Слишком много попыток. Попробуйте позже (лимит: 10 запросов в минуту)"
-}
-
-ClamAV недоступен (503)
-{
-  "detail": "Антивирусный сервис недоступен"
 }
 
 Специальная ошибка для смены пароля (400)
@@ -378,16 +368,12 @@ Audit ID (UUID)
 
 ## 8. Потоки данных (Sequence Diagrams)
 
-### 8.1. Загрузка файла с проверкой ClamAV
+### 8.1. Загрузка файла
 
 Клиент → API: POST /upload (file, metadata)
-API → ClamAV: сканирование потока
-ClamAV → API: CLEAN / FOUND
-
-Если FOUND:
-  API → Клиент: 400 Virus detected + audit log
-
-Если CLEAN:
+API: проверка размера, MIME и расширения по правилам
+При ошибке проверки: 400 и запись в аудит (если применимо)
+При успехе:
   API → Crypto: encrypt_file()
   Crypto → Storage: сохранить .age
   API → DB: INSERT INTO files, file_links

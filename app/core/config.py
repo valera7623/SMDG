@@ -130,11 +130,6 @@ class Settings(BaseSettings):
     # Если true — для Host localhost / 127.0.0.1 / ::1 без поддомена подставляется tenant_default_subdomain (удобно для https://localhost)
     tenant_resolve_localhost_as_default: bool = True
 
-    # ClamAV
-    CLAMAV_HOST: str = "clamav"  
-    CLAMAV_PORT: int = 3310
-    CLAMAV_TIMEOUT: int = 60  
-
     # === HTTP таймауты ===
     HTTP_REQUEST_TIMEOUT_SECONDS: int = 30
     HTTP_CONNECT_TIMEOUT_SECONDS: int = 5
@@ -236,10 +231,6 @@ class Settings(BaseSettings):
     S3_DOWNLOAD_TIMEOUT_SECONDS: int = 60
     S3_CONNECTION_TIMEOUT_SECONDS: int = 10
 
-    # === ClamAV ===
-    CLAMAV_SCAN_TIMEOUT_SECONDS: int = 30
-    CLAMAV_CONNECTION_TIMEOUT_SECONDS: int = 5
-
     # === DICOM ===
     DICOM_RENDER_TIMEOUT_SECONDS: int = 60
     DICOM_DOWNLOAD_TIMEOUT_SECONDS: int = 120
@@ -272,11 +263,6 @@ class Settings(BaseSettings):
     DOWNLOAD_BULKHEAD_MAX_CONCURRENT: int = 20
     DOWNLOAD_BULKHEAD_QUEUE_SIZE: int = 100
     DOWNLOAD_BULKHEAD_TIMEOUT: int = 60
-
-    # ClamAV Bulkhead
-    CLAMAV_BULKHEAD_MAX_CONCURRENT: int = 3
-    CLAMAV_BULKHEAD_QUEUE_SIZE: int = 10
-    CLAMAV_BULKHEAD_TIMEOUT: int = 30
 
     # S3 Bulkhead
     S3_BULKHEAD_MAX_CONCURRENT: int = 10

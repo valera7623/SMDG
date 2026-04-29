@@ -13,12 +13,9 @@
 └───────────────┘     │                │     ┌───────────────┐
                       │                │────▶│     Redis     │
                       │                │     └───────────────┘
-                      │                │     ┌───────────────┐
                       │                │────▶│ Local FS / S3 │
                       │                │     └───────────────┘
-                      │                │     ┌───────────────┐
-                      │                │────▶│    ClamAV     │
-                      └────────────────┘     └───────────────┘
+                      └────────────────┘
 ```
 
 ## Runtime layout
@@ -37,8 +34,7 @@
 1. Client sends `POST /api/upload` with a `multipart/form-data` payload.
 2. `AuditMiddleware` captures the request.
 3. FastAPI route validates size, content type and permissions.
-4. File is streamed through ClamAV. A quarantine is applied on
-   infection.
+4. File is validated (size, MIME, extension).
 5. File is encrypted with `age` and persisted via `StorageBackend`
    (local FS or S3).
 6. Metadata is written to PostgreSQL; an audit event is written to

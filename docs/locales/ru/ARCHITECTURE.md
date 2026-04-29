@@ -45,7 +45,6 @@ graph TD
     subgraph "Core Services"
         F[PostgreSQL]
         G[Redis]
-        H[ClamAV]
     end
     subgraph "Storage & Crypto"
         I[Encrypted Files (/encrypted)]
@@ -56,7 +55,7 @@ graph TD
     A --> B --> C
     C --> D
     C --> E
-    C --> F & G & H
+    C --> F & G
     C --> I
     C <--> J
     C --> K
@@ -192,25 +191,18 @@ sequenceDiagram
     participant Client
     participant Nginx
     participant FastAPI
-    participant ClamAV
     participant Crypto
     participant DB
     participant Storage
 
     Client->>Nginx: POST /api/upload
     Nginx->>FastAPI: Request + file
-    FastAPI->>FastAPI: Rate Limit + Auth
-    FastAPI->>ClamAV: instream(file)
-    ClamAV-->>FastAPI: CLEAN / FOUND
-    alt Virus detected
-        FastAPI-->>Client: 400 Virus detected
-    else Clean
-        FastAPI->>Crypto: encrypt_file()
-        Crypto->>Storage: save .age
-        FastAPI->>DB: create File + FileLink
-        DB-->>FastAPI: OK
-        FastAPI-->>Client: 200 + download_url
-    end
+    FastAPI->>FastAPI: Rate Limit + Auth + MIME validation
+    FastAPI->>Crypto: encrypt_file()
+    Crypto->>Storage: save .age
+    FastAPI->>DB: create File + FileLink
+    DB-->>FastAPI: OK
+    FastAPI-->>Client: 200 + download_url
 
 ### 5.2. Download по токену
 
@@ -294,12 +286,10 @@ http_request_duration_seconds  Histogram               "Время обрабо�
 http_requests_in_progress      Gauge                   "Количество одновременно обрабатываемых запросов"
 upload_file_size_bytes         Histogram               "Размер загружаемых файлов (используется в /api/upload)"
 upload_success_total           Counter                 "Количество успешно загруженных и зашифрованных файлов"
-upload_virus_detected_total    Counter                 "Количество файлов, отклонённых ClamAV"
 download_success_total         Counter                 "Количество успешных скачиваний по токену"
 file_cleanup_deleted_total     Counter                 "Количество файлов, удалённых CleanupManager"
 age_key_rotation_total         Counter                 "Количество выполненных ротаций ключей шифрования"
 db_query_duration_seconds      Histogram               "Время выполнения SQL-запросов"
-clamav_scan_duration_seconds   Histogram               "Время сканирования файла ClamAV"
 rate_limit_exceeded_total      Counter                 "Количество превышений rate limit"
 
 Метрики доступны в формате Prometheus и могут быть подключены к Grafana / Prometheus / Alertmanager.
@@ -352,7 +342,7 @@ encrypted_storage = StorageFactory.create_backend(
 ### 9.5 Поток данных (Upload)
 
 ```
-Client → Upload API → ClamAV → age Encrypt → StorageBackend.upload() → Storage
+Client → Upload API → age Encrypt → StorageBackend.upload() → Storage
                                                           │
                                     ┌─────────────────────┴─────────────────────┐
                                     │                                           │

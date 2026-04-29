@@ -34,7 +34,6 @@ aiohttp = "3.13.3"
 
 python-multipart = "0.0.22"
 python-magic = "0.4.27"
-clamd = "1.0.2"
 age = "0.5.1"
 aiobotocore = "^2.15.0"
 pydicom = {version = "^3.0.1", extras = ["gdcm"]}

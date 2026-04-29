@@ -543,7 +543,6 @@ async def timeout_health_check() -> Dict[str, Any]:
             "http_request": settings.HTTP_REQUEST_TIMEOUT_SECONDS,
             "db_query": settings.DB_QUERY_TIMEOUT_SECONDS,
             "s3_upload": settings.S3_UPLOAD_TIMEOUT_SECONDS,
-            "clamav_scan": settings.CLAMAV_SCAN_TIMEOUT_SECONDS,
             "dicom_render": settings.DICOM_RENDER_TIMEOUT_SECONDS,
             "background_task": settings.BACKGROUND_TASK_TIMEOUT_SECONDS,
             "webhook_call": settings.WEBHOOK_CALL_TIMEOUT_SECONDS,

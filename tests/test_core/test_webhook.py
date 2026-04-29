@@ -118,7 +118,6 @@ class TestWebhookEvent:
         assert "file.deleted" in events
         assert "link.created" in events
         assert "link.expired" in events
-        assert "virus.detected" in events
         assert "cleanup.completed" in events
 
     def test_events_are_strings(self):

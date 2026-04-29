@@ -69,13 +69,7 @@ docker compose up -d db
 Решение:
 docker compose logs redis
 docker compose restart redis
-### 2.4. ClamAV не отвечает
-Симптом: При загрузке файла ошибка "Антивирусный сервис временно недоступен"
-Решение:
-docker compose logs clamav
-docker compose restart clamav
-ClamAV может долго запускаться при первом старте (обновление баз сигнатур).
-### 2.5. Проблемы с ключами age
+### 2.4. Проблемы с ключами age
 Ошибка: age.key not found или Публичный ключ не инициализирован
 Решение:
 
@@ -88,7 +82,7 @@ docker compose restart smdg
 Ошибка при ротации ключей:
 Выполните команду вручную:
 docker compose exec smdg python -m app.cli rotate-keys
-### 2.6. Проблемы с аутентификацией / Логином
+### 2.5. Проблемы с аутентификацией / Логином
 Не работает вход:
 
 Проверьте, что JWT_SECRET_KEY длинный и сложный
@@ -100,15 +94,14 @@ docker compose exec smdg python -m app.cli rotate-keys
 Убедитесь, что вы сканируете QR-код именно в приложении-аутентификаторе
 При смене пароля 2FA автоматически сбрасывается
 
-### 2.7. Не загружаются файлы
+### 2.6. Не загружаются файлы
 Ошибка 413 (Payload Too Large):
 Увеличьте MAX_UPLOAD_SIZE_MB в .env и перезапустите.
-ClamAV блокирует файл:
-Проверьте логи ClamAV.
+Неверный MIME или расширение — см. ограничения API и сообщения об ошибках в логах.
 Файл не шифруется:
 Проверьте наличие и права на keys/age.key.
 
-### 2.8. Проблемы в Production-режиме
+### 2.7. Проблемы в Production-режиме
 Ошибка: DEV_MODE=true в продакшене
 Решение: В файле .env.prod убедитесь, что стоит DEV_MODE=false
 Nginx возвращает 502 Bad Gateway:
@@ -137,7 +130,6 @@ docker compose exec smdg python -m app.cli cleanup-force
 Аудит: папка audit_logs/ (файлы audit_YYYY-MM-DD.log и audit.csv)
 PostgreSQL: docker compose logs db
 Redis: docker compose logs redis
-ClamAV: docker compose logs clamav
 
 
 Если проблема не решена — создайте Issue с обязательным приложением:

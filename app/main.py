@@ -450,7 +450,6 @@ async def lifespan(app: FastAPI):
 
         _get_cb("postgresql", exclude_exceptions=(_HTTPException,))
         _get_cb("redis")
-        _get_cb("clamav")
         _get_cb("s3_storage")
         _get_cb("jaeger")
         logger.info("✅ Circuit Breakers предварительно зарегистрированы")

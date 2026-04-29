@@ -1,0 +1,90 @@
+name: Smoke Alert Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Public SMDG base URL (e.g. https://smdg.example.com)"
+        required: true
+        default: "https://smdg.example.com"
+
+jobs:
+  smoke-alert:
+    runs-on: ubuntu-latest
+    env:
+      BASE_URL: ${{ inputs.base_url }}
+      ALERT_SECRET: ${{ secrets.SMDG_ALERT_WEBHOOK_SECRET }}
+
+    steps:
+      - name: Send test alert to default channel
+        run: |
+          set -euo pipefail
+          HEADER_ARGS=()
+          if [ -n "${ALERT_SECRET}" ]; then
+            HEADER_ARGS+=( -H "X-Alert-Secret: ${ALERT_SECRET}" )
+          fi
+
+          RESPONSE=$(curl -sS -X POST "${BASE_URL}/api/alerts/webhook" \
+            -H "Content-Type: application/json" \
+            "${HEADER_ARGS[@]}" \
+            -d '{
+              "receiver":"github-smoke-default",
+              "groupKey":"{}:{alertname=\"GitHubSmokeDefault\"}",
+              "alerts":[
+                {
+                  "status":"firing",
+                  "labels":{"alertname":"GitHubSmokeDefault","severity":"warning","service":"smdg","component":"api","instance":"github-actions"},
+                  "annotations":{"summary":"GitHub smoke test (default channel)","description":"workflow_dispatch smoke test","runbook":"https://wiki.smdg/runbooks/test"},
+                  "startsAt":"2026-01-01T00:00:00Z"
+                }
+              ]
+            }')
+
+          echo "Default response: $RESPONSE"
+          echo "$RESPONSE" | jq .
+
+          DELIVERED=$(echo "$RESPONSE" | jq -r '.delivered // 0')
+          CHANNEL=$(echo "$RESPONSE" | jq -r '.channel // ""')
+
+          if [ "$DELIVERED" != "1" ] || [ "$CHANNEL" != "default" ]; then
+            echo "Default channel delivery failed"
+            exit 1
+          fi
+
+      - name: Send test alert to archive channel
+        run: |
+          set -euo pipefail
+          HEADER_ARGS=()
+          if [ -n "${ALERT_SECRET}" ]; then
+            HEADER_ARGS+=( -H "X-Alert-Secret: ${ALERT_SECRET}" )
+          fi
+
+          RESPONSE=$(curl -sS -X POST "${BASE_URL}/api/alerts/webhook?channel=archive" \
+            -H "Content-Type: application/json" \
+            "${HEADER_ARGS[@]}" \
+            -d '{
+              "receiver":"github-smoke-archive",
+              "groupKey":"{}:{alertname=\"GitHubSmokeArchive\"}",
+              "alerts":[
+                {
+                  "status":"firing",
+                  "labels":{"alertname":"GitHubSmokeArchive","severity":"warning","service":"smdg","component":"archive","instance":"github-actions"},
+                  "annotations":{"summary":"GitHub smoke test (archive channel)","description":"workflow_dispatch smoke test","runbook":"https://wiki.smdg/runbooks/test"},
+                  "startsAt":"2026-01-01T00:00:00Z"
+                }
+              ]
+            }')
+
+          echo "Archive response: $RESPONSE"
+          echo "$RESPONSE" | jq .
+
+          DELIVERED=$(echo "$RESPONSE" | jq -r '.delivered // 0')
+          CHANNEL=$(echo "$RESPONSE" | jq -r '.channel // ""')
+
+          if [ "$DELIVERED" != "1" ] || [ "$CHANNEL" != "archive" ]; then
+            echo "Archive channel delivery failed"
+            exit 1
+          fi
+
+      - name: Smoke test summary
+        run: echo "Smoke alert test passed for default + archive channels"

@@ -33,6 +33,7 @@ missing or stale.
 
 | Page                      | English (source)                                         |
 |---------------------------|----------------------------------------------------------|
+| Archive E2E runbook       | [ARCHIVE_E2E.md](ARCHIVE_E2E.md)                         |
 | Overview                  | [src/README.md](src/README.md)                           |
 | API guide                 | [src/API_GUIDE.md](src/API_GUIDE.md)                     |
 | Architecture              | [src/ARCHITECTURE.md](src/ARCHITECTURE.md)               |

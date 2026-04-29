@@ -103,12 +103,16 @@ services:
       - ./app:/app/app:ro
       - smdg_keys:/app/keys
       - smdg_backups:/app/backups
+      - smdg_archive:/app/archive
     dns:
       - 1.1.1.1
       - 8.8.8.8
+      
     networks:
       - backend
     restart: unless-stopped
+
+
 
   nginx:
     image: nginx:alpine
@@ -254,6 +258,7 @@ volumes:
   smdg_keys:
   smdg_audit_logs:
   smdg_backups:
+  smdg_archive:
 
 networks:
   backend:

@@ -8,7 +8,7 @@ Version: **4.0.0** (core and DICOM Viewer) · audit export: **3.1.0**.
 
 SMDG lets doctors, clinics and patients exchange medical files safely.
 Every file is encrypted server-side with [age](https://age-encryption.org/),
-protected by time-limited one-shot links, scanned by ClamAV and logged in
+protected by time-limited one-shot links and logged in
 a full audit trail. A built-in DICOM viewer renders studies in the browser
 without shipping decrypted data to the client.
 
