@@ -83,9 +83,14 @@ def custom_key_func(request: Request) -> str:
 
 # Rate limiter работает в режиме in-memory (MemoryStorage)
 # Redis НЕ используется для лимитов — только для других задач проекта
+default_limit = settings.rate_limit_default
+if settings.load_test_mode and default_limit == "100/minute":
+    # Safe pre-prod default override for load tests (can be overridden via RATE_LIMIT_DEFAULT)
+    default_limit = "5000/minute"
+
 limiter = Limiter(
     key_func=custom_key_func,
-    default_limits=["100/minute"]  # глобальный дефолт
+    default_limits=[default_limit]
 )
 
 print("Rate limiter запущен в режиме: MemoryStorage (in-memory)")

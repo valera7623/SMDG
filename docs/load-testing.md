@@ -44,3 +44,35 @@
   - `load-test-results/stress-test-summary.json`
   - `load-test-results/soak-summary.json`
 - Check p95, p99, and error rates against SLO thresholds in `scripts/load-tests/config/config.js`.
+
+## Auth test modes
+
+- `AUTH_TEST_MODE=capacity`:
+  - Valid credentials are expected.
+  - `401`/`5xx` are treated as errors.
+  - Used to find login endpoint throughput limits.
+- `AUTH_TEST_MODE=policy`:
+  - Rate-limit policy behavior is expected.
+  - `429` is tracked separately and allowed by policy thresholds.
+  - Used to validate limiter protection, not max throughput.
+
+## Pre-prod profile toggle
+
+- `LOAD_TEST_MODE=true` enables pre-production load profile behavior (higher safe defaults for rate limits and load-oriented runtime knobs).
+- Recommended startup for pre-prod checks:
+  - `docker compose -f docker-compose.yml -f docker-compose.intl.yml up -d --build smdg`
+
+## Known baseline (single instance)
+
+Measured on one SMDG instance (`AUTH_TEST_MODE=capacity`, valid `ADMIN_USER`/`ADMIN_PASSWORD`):
+
+- `AUTH_RPS=2`: stable, `error_rate=0`, `503_count=0`
+- `AUTH_RPS=3`: stable, `error_rate=0`, `503_count=0`
+- `AUTH_RPS=4`: degradation starts, `503_count=344/1201`, `error_rate=0.2864`
+- `AUTH_RPS=5`: overload zone, `503_count=898/1501`, `error_rate=0.5983`
+
+Operational interpretation:
+
+- Safe ceiling (single instance): `3 login RPS`
+- Warning zone: `4 login RPS`
+- Overload zone: `>=5 login RPS`

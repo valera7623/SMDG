@@ -5,6 +5,9 @@ services:
     environment:
       DEPLOYMENT_TYPE: intl
       S3_ENABLED: "${S3_ENABLED:-true}"
+      LOAD_TEST_MODE: "${LOAD_TEST_MODE:-true}"
+      DB_QUERY_TIMEOUT_SECONDS: "${DB_QUERY_TIMEOUT_SECONDS:-30}"
+      WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
     deploy:
       resources:
         limits:

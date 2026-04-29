@@ -106,6 +106,15 @@ env:
 gh variable set SECURITY_SCAN_MODE --body strict
 ```
 
+## Changelog (Load Testing)
+
+- Добавлен baseline для auth capacity в [`docs/load-testing.md`](docs/load-testing.md),
+  раздел **"Known baseline (single instance)"**.
+- Текущий измеренный baseline для одного инстанса SMDG:
+  - safe: `AUTH_RPS=3` (`error_rate=0`, `503_count=0`)
+  - warning: `AUTH_RPS=4` (начинается деградация)
+  - overload: `AUTH_RPS>=5` (устойчивый рост `503`)
+
 ## Лицензия
 
 MIT. Автор: Валерий Попов.

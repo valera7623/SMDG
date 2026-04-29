@@ -197,8 +197,10 @@ fi
 # Запуск приложения
 # ────────────────────────────────────────────────────────────────
 echo "🖥️ Starting Uvicorn..."
+WEB_CONCURRENCY="${WEB_CONCURRENCY:-1}"
+echo "   WEB_CONCURRENCY=${WEB_CONCURRENCY}"
 if id smdg >/dev/null 2>&1; then
-    exec gosu smdg uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
+    exec gosu smdg uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --workers "${WEB_CONCURRENCY}"
 else
-    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info
+    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --workers "${WEB_CONCURRENCY}"
 fi

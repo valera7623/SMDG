@@ -16,21 +16,25 @@ export const options = {
   },
 };
 
-export default function () {
+export function setup() {
   const auth = login();
-  const headers = getCookieHeader(auth.cookies);
   if (!auth.accessToken) {
+    return { headers: {}, authReady: false };
+  }
+  return { headers: getCookieHeader(auth.cookies), authReady: true };
+}
+
+export default function (setupData) {
+  if (!setupData?.authReady) {
     errorRate.add(1);
     return;
   }
 
   const start = Date.now();
-  const response = http.get(`${config.baseUrl}/api/list`, { headers });
+  const response = http.get(`${config.baseUrl}/api/list`, { headers: setupData.headers });
   scenarioLatency.add(Date.now() - start);
 
-  const ok = check(response, {
-    "api/list status is 200": (r) => r.status === 200,
-  });
+  const ok = check(response, { "api/list status is 200": (r) => r.status === 200 });
   recordCheck(ok);
   if (!ok) {
     errorRate.add(1);

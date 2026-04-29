@@ -20,13 +20,21 @@ export const options = {
   },
 };
 
-export default function () {
-  const { cookies, accessToken } = login();
-  if (!accessToken) {
+export function setup() {
+  const auth = login();
+  if (!auth.accessToken) {
+    return { cookies: null, authReady: false };
+  }
+  return { cookies: auth.cookies, authReady: true };
+}
+
+export default function (setupData) {
+  if (!setupData?.authReady || !setupData.cookies) {
     mixedErrorRate.add(1);
     return;
   }
 
+  const cookies = setupData.cookies;
   const token = cookies.access_token[0].value;
   const isWrite = Math.random() < 0.2;
 

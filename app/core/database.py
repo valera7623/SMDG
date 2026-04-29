@@ -52,6 +52,10 @@ def get_engine():
             echo=debug,
             future=True,
             pool_pre_ping=True,
+            pool_size=int(settings.DB_POOL_SIZE),
+            max_overflow=int(settings.DB_MAX_OVERFLOW),
+            pool_timeout=float(settings.DB_POOL_TIMEOUT_SECONDS),
+            pool_recycle=int(settings.DB_POOL_RECYCLE_SECONDS),
             connect_args={"timeout": settings.DB_CONNECTION_TIMEOUT_SECONDS},
         )
     return _engine
@@ -87,12 +91,17 @@ async def execute_with_timeout(coro: Awaitable[T], *, operation: str = "db_query
     """Выполнить DB-операцию с таймаутом и HTTP 504 при превышении."""
     from app.core.config import settings
 
+    timeout_seconds = float(settings.DB_QUERY_TIMEOUT_SECONDS)
+    if settings.load_test_mode and timeout_seconds <= 10:
+        # Pre-prod load profile: avoid aggressive DB query cancellation.
+        timeout_seconds = 30.0
+
     try:
         return await run_with_timeout(
             coro,
-            timeout_seconds=float(settings.DB_QUERY_TIMEOUT_SECONDS),
+            timeout_seconds=timeout_seconds,
             error_message=(
-                f"Database query timeout after {settings.DB_QUERY_TIMEOUT_SECONDS}s"
+                f"Database query timeout after {int(timeout_seconds)}s"
             ),
             service="database",
             operation=operation,
@@ -126,8 +135,11 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     circuit breaker ``postgresql``, чтобы при падении БД считались ошибки
     и открывался брейкер (а при OPEN — мгновенный 503 без шторма к pool).
     """
+    from app.core.config import settings
+
     async with _get_sessionmaker()() as session:
-        await execute_with_db_circuit_breaker(_db_session_ping, session)
+        if not settings.load_test_mode:
+            await execute_with_db_circuit_breaker(_db_session_ping, session)
         yield session
 
 

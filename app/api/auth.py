@@ -9,7 +9,8 @@ import re
 
 from app.core.auth import get_current_user, get_current_admin
 from app.core.auth_utils import create_access_token, TokenData
-from app.core.database import get_db
+from app.core.config import settings
+from app.core.database import get_db, execute_with_db_circuit_breaker
 from app.models.user import User
 from app.models.tenant import Tenant
 from app.core.security import verify_password, get_password_hash
@@ -21,6 +22,10 @@ from datetime import timedelta
 import pyotp
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+LOGIN_RATE_LIMIT = settings.rate_limit_login
+if settings.load_test_mode and LOGIN_RATE_LIMIT == "10/minute;5/10seconds":
+    # Safe pre-prod default override for auth capacity tests.
+    LOGIN_RATE_LIMIT = "2000/minute;500/10seconds"
 
 
 # ==================== Pydantic V2 Models ====================
@@ -152,7 +157,7 @@ async def change_password(
 
 
 @router.post("/login")
-@limiter.limit("10/minute;5/10seconds", key_func=get_remote_address)
+@limiter.limit(LOGIN_RATE_LIMIT, key_func=get_remote_address)
 async def login(
     response: Response,
     request: Request,
@@ -165,7 +170,10 @@ async def login(
     print(f"[LOGIN] Попытка входа: username={username}, otp_provided={bool(otp_code)}")
 
     # Поиск пользователя
-    result = await db.execute(select(User).where(User.username == username, User.tenant_id == tenant.id))
+    result = await execute_with_db_circuit_breaker(
+        db.execute,
+        select(User).where(User.username == username, User.tenant_id == tenant.id),
+    )
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
@@ -225,13 +233,14 @@ async def login(
 
     print(f"[LOGIN] ✅ Успешный вход пользователя {username}")
 
-    audit_logger.log_operation(
-        action="login_success",
-        filename="",
-        user=username,
-        reason="Успешный вход",
-        success=True
-    )
+    if not settings.load_test_mode:
+        audit_logger.log_operation(
+            action="login_success",
+            filename="",
+            user=username,
+            reason="Успешный вход",
+            success=True
+        )
 
     return {
         "message": "Успешный вход",

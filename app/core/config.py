@@ -178,6 +178,12 @@ class Settings(BaseSettings):
 
     # Rate limiting storage (shared across replicas)
     RATE_LIMIT_STORAGE: str = "redis://redis:6379/2"
+    # Toggle for pre-prod load testing profile
+    load_test_mode: bool = False
+    # Default/global rate limit for SlowAPI limiter
+    rate_limit_default: str = "100/minute"
+    # Dedicated login endpoint rate limit
+    rate_limit_login: str = "10/minute;5/10seconds"
 
     # Distributed job queue
     JOB_QUEUE_TYPE: str = "redis"  # redis | rabbitmq | celery
@@ -195,6 +201,10 @@ class Settings(BaseSettings):
     DB_QUERY_TIMEOUT_SECONDS: int = 10
     DB_CONNECTION_TIMEOUT_SECONDS: int = 5
     DB_TRANSACTION_TIMEOUT_SECONDS: int = 30
+    DB_POOL_SIZE: int = 20
+    DB_MAX_OVERFLOW: int = 40
+    DB_POOL_TIMEOUT_SECONDS: int = 30
+    DB_POOL_RECYCLE_SECONDS: int = 1800
     READ_REPLICAS_ENABLED: bool = False
     DB_REPLICA_URLS: str = ""
     READ_REPLICA_LOAD_BALANCING: str = "round_robin"

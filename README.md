@@ -247,6 +247,15 @@ Use these snippets as ready-to-copy switches for
     output-file: grype-report.json
 ```
 
+## Changelog (Load Testing)
+
+- Added auth capacity baseline to [`docs/load-testing.md`](docs/load-testing.md) under
+  **"Known baseline (single instance)"**.
+- Current measured baseline for one SMDG instance:
+  - safe: `AUTH_RPS=3` (`error_rate=0`, `503_count=0`)
+  - warning: `AUTH_RPS=4` (degradation starts)
+  - overload: `AUTH_RPS>=5` (sustained `503` growth)
+
 ## License
 
 MIT. Author: Valeriy Popov.

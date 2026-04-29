@@ -186,12 +186,27 @@ class TimeoutMiddleware:
             await self.app(scope, receive, send)
             return
 
+        response_started = False
+
+        async def guarded_send(message: Message) -> None:
+            nonlocal response_started
+            if message.get("type") == "http.response.start":
+                response_started = True
+            await send(message)
+
         try:
             await asyncio.wait_for(
-                self.app(scope, receive, send),
+                self.app(scope, receive, guarded_send),
                 timeout=float(settings.HTTP_REQUEST_TIMEOUT_SECONDS),
             )
         except asyncio.TimeoutError:
+            # If app already started sending response, it is unsafe to emit another one.
+            if response_started:
+                logger.warning(
+                    "HTTP request timed out after %.2fs, but response already started",
+                    float(settings.HTTP_REQUEST_TIMEOUT_SECONDS),
+                )
+                return
             response = JSONResponse(
                 status_code=504,
                 content={

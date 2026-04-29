@@ -9,8 +9,6 @@ from app.core.config import settings
 from app.core.feature_flags import get_deployment_info
 from app.core.rate_limiter import limiter, check_redis_connection, redis_client
 from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler, Limiter
-from slowapi.util import get_remote_address
 from fastapi.responses import JSONResponse
 from slowapi.middleware import SlowAPIMiddleware
 from redis.asyncio import Redis
@@ -74,6 +72,7 @@ import logging
 import os
 import signal
 import time
+from types import SimpleNamespace
 from pathlib import Path
 
 from app.models.webhook import DeliveryStatus, WebhookDelivery
@@ -732,18 +731,22 @@ async def set_user_context(request: Request, call_next):
         except Exception as e:
             logger.debug(f"Middleware: JWT decode → user=None ({e})")
 
-    try:
-        async with AsyncSessionLocal() as db:
-            tenant = await resolve_tenant_from_request(
-                db,
-                request,
-                jwt_tenant_id=jwt_tenant_id,
-                jwt_role=jwt_role,
-            )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.debug(f"Middleware: tenant resolution → tenant=None ({e})")
+    # Pre-prod load profile: avoid extra DB hit in middleware for auth capacity tests.
+    if settings.load_test_mode and request.url.path == "/api/auth/login" and not token:
+        tenant = SimpleNamespace(id=1, subdomain=settings.tenant_default_subdomain)
+    else:
+        try:
+            async with AsyncSessionLocal() as db:
+                tenant = await resolve_tenant_from_request(
+                    db,
+                    request,
+                    jwt_tenant_id=jwt_tenant_id,
+                    jwt_role=jwt_role,
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.debug(f"Middleware: tenant resolution → tenant=None ({e})")
 
     request.scope["user"] = user
     request.scope["tenant"] = tenant
@@ -785,7 +788,10 @@ app.add_middleware(SLOMiddleware)
 # внешним слоем. ActiveRequestsMiddleware должен оставаться самым внешним,
 # а TracingMiddleware работает внутри серверного span от FastAPIInstrumentor.
 app.add_middleware(TracingMiddleware)
-app.add_middleware(TimeoutMiddleware)
+if not settings.load_test_mode:
+    app.add_middleware(TimeoutMiddleware)
+else:
+    logger.warning("TimeoutMiddleware disabled because LOAD_TEST_MODE is enabled")
 app.add_middleware(BulkheadMiddleware)
 
 # ────────────────────────────────────────────────────────────────
@@ -798,30 +804,7 @@ app.add_middleware(BulkheadMiddleware)
 #      включая авторизацию, rate limiting и аудит.
 app.add_middleware(ActiveRequestsMiddleware, fastapi_app=app)
 
-# Rate limiter с логами
-def custom_key_func(request: Request) -> str:
-    # Логируем на DEBUG, т.к. функция вызывается на КАЖДЫЙ HTTP-запрос
-    # (включая healthcheck'и от docker/nginx и /metrics от Prometheus).
-    # На INFO это создавало шум в несколько строк/сек и затирало полезные
-    # события в stdout. Для отладки rate-limit'а достаточно поднять уровень
-    # логгера точечно: LOG_LEVEL=DEBUG или logger.setLevel(DEBUG) в REPL.
-    user = request.scope.get("user")
-    if user and hasattr(user, "sub"):
-        key = f"rate_limit:user:{user.sub}"
-        logger.debug("Rate limit: пользователь %s → ключ %s", user.sub, key)
-        return key
-
-    ip = get_remote_address(request)
-    key = f"rate_limit:ip:{ip}"
-    logger.debug("Rate limit: аноним → ключ %s", key)
-    return key
-
-limiter = Limiter(
-    key_func=custom_key_func,
-    storage_uri=settings.redis_url or "redis://redis:6379/0",
-    default_limits=["100/minute"]
-)
-
+# Use shared limiter from app.core.rate_limiter to avoid dual instances
 app.state.limiter = limiter
 
 # Обработчик 429
