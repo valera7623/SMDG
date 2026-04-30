@@ -99,6 +99,17 @@ if ! nc -z db 5432 >/dev/null 2>&1; then
   echo "❌ PostgreSQL не доступен за 120 сек" && exit 1
 fi
 
+# Sanity-check: показываем, откуда Alembic возьмёт URL подключения.
+# Маскируем пароль, чтобы не светить секреты в логах.
+if [ -n "${DATABASE_URL:-}" ]; then
+  DB_URL_MASKED="$(echo "${DATABASE_URL}" | sed -E 's#(postgresql(\+asyncpg)?://[^:]+:)[^@]+@#\1***@#')"
+  echo "🔎 DB URL source: DATABASE_URL env (${DB_URL_MASKED})"
+else
+  ALEMBIC_URL="$(awk -F= '/^sqlalchemy\.url/{print $2}' /app/alembic.ini | tr -d '[:space:]' || true)"
+  ALEMBIC_URL_MASKED="$(echo "${ALEMBIC_URL}" | sed -E 's#(postgresql(\+psycopg2)?://[^:]+:)[^@]+@#\1***@#')"
+  echo "🔎 DB URL source: alembic.ini (${ALEMBIC_URL_MASKED})"
+fi
+
 # ────────────────────────────────────────────────────────────────
 # Миграции БД
 #
@@ -179,7 +190,10 @@ echo "✅ Директория бэкапов $BACKUP_DIR готова"
 # ────────────────────────────────────────────────────────────────
 mkdir -p /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted
 touch "/app/audit_logs/audit_$(date +%Y-%m-%d).log" /app/audit_logs/audit.csv 2>/dev/null || true
-chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted 2>/dev/null || true
+if ! chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted; then
+    echo "❌ Не удалось выставить владельца smdg:smdg на runtime-каталогах"
+    exit 1
+fi
 chmod -R u+rwX,g+rwX /app/audit_logs /app/backups 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────────

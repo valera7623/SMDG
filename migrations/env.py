@@ -32,13 +32,17 @@ except ImportError:
 
 target_metadata = Base.metadata
 
-if not config.get_main_option("sqlalchemy.url"):
-    database_url = os.getenv("DATABASE_URL", "")
-    if database_url.startswith("postgresql+asyncpg://"):
-        database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
-    if not database_url:
-        database_url = "postgresql://smdg_user:password@localhost:5432/smdg"
+database_url = os.getenv("DATABASE_URL", "")
+if database_url.startswith("postgresql+asyncpg://"):
+    database_url = database_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+
+# Always prioritize DATABASE_URL from runtime environment (entrypoint composes it
+# from Docker secret postgres_password). This prevents stale credentials from
+# sqlalchemy.url in alembic.ini after password rotations.
+if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
+elif not config.get_main_option("sqlalchemy.url"):
+    config.set_main_option("sqlalchemy.url", "postgresql://smdg_user@localhost:5432/smdg")
 
 def run_migrations_online():
     connectable = engine_from_config(
