@@ -54,3 +54,6 @@ audit_logs/*.csv
 .env.prod
 .coverage
 load-test-results/*.json
+audit_logs/
+encrypted/
+uploads/
