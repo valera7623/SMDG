@@ -27,6 +27,16 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd /home/smdg/SMDG
+            echo "🛑 Stopping containers before Git update..."
+            docker compose down
+
+            # smdg runs as root in the container (see docker-compose user: 0:0), so bind-mounted
+            # dirs can be root-owned on the host and Git cannot unlink/replace tracked paths.
+            echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
+            mkdir -p audit_logs encrypted decrypted uploads static
+            docker run --rm -v "$(pwd):/w" alpine:3.20 \
+              sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
+
             echo "📥 Pulling latest changes from Git..."
             # audit_logs/ is runtime data (bind-mounted). If it was ever tracked, reset would drop it.
             if [[ -f audit_logs/audit.csv ]]; then
@@ -40,7 +50,6 @@ jobs:
               rm -f /tmp/smdg-audit-csv.deploy.bak
             fi
             echo "🐳 Rebuilding and restarting Docker containers..."
-            docker compose down
             docker compose up -d --build
             echo "✅ Deployment complete!"
           EOF
