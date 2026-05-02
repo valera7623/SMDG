@@ -34,7 +34,8 @@ jobs:
             # dirs can be root-owned on the host and Git cannot unlink/replace tracked paths.
             echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
             mkdir -p audit_logs encrypted decrypted uploads static
-            docker run --rm -v "$(pwd):/w" alpine:3.20 \
+            # --pull=missing: use local alpine if present; avoid registry check when cached
+            docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
               sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
 
             echo "📥 Pulling latest changes from Git..."
