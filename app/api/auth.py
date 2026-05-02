@@ -251,7 +251,8 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(response: Response):
+@limiter.limit("60/minute", key_func=get_remote_address)
+async def logout(request: Request, response: Response):
     response.delete_cookie(key="access_token", path="/", httponly=True, samesite="lax")
     return {"message": "Вы успешно вышли из системы"}
 
@@ -343,6 +344,7 @@ async def disable_2fa(
 
 
 @router.post("/register")
+@limiter.limit("10/minute", key_func=get_remote_address)
 async def register(
     request: Request,
     user_data: RegisterRequest = Body(...),

@@ -1,4 +1,8 @@
-.PHONY: load-test-smoke load-test-api load-test-upload load-test-dicom load-test-auth load-test-mixed load-test-stress load-test-soak load-test-all load-test-dashboard load-test-clean test-compression
+.PHONY: load-test-smoke load-test-api load-test-upload load-test-dicom load-test-auth load-test-mixed load-test-stress load-test-soak load-test-all load-test-dashboard load-test-clean test-compression security-scan-local
+
+# Local security: writes reports/bandit-report.json, semgrep-report.json, gitleaks-report.json, trivy-report.json, api-security-report.xml, security-report.html
+security-scan-local:
+	./scripts/run_local_security_scans.sh
 
 load-test-smoke:
 	docker compose -f docker-compose.load-test.yml run --rm k6 run /scripts/smoke-tests/smoke.js --summary-export=/results/smoke-summary.json

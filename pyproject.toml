@@ -41,6 +41,10 @@ pydicom = {version = "^3.0.1", extras = ["gdcm"]}
 numpy = "^2.0"
 # >=12.2.0: CVE-2026-25990, CVE-2026-40192 (Trivy)
 pillow = ">=12.2.0"
+# >=0.46.2: CVE-2026-24049 (Trivy)
+wheel = ">=0.46.2"
+# >=6.1.0: CVE-2026-23949 (Trivy; transitive via build tooling)
+jaraco-context = ">=6.1.0"
 
 pydantic = "2.12.5"
 pydantic-settings = "2.12.0"

@@ -101,7 +101,7 @@ curl http://localhost:8000/health | jq .features.dicom_viewer
 ```json
 {
   "view_url": "/dicom-viewer?v=123&token=uuid&file_id=7&StudyInstanceUID=...&SeriesInstanceUID=...&SOPInstanceUID=...",
-  "token": "ab717c3c-077e-4740-b5fc-32001cde3833",
+  "token": "00000000-0000-4000-8000-000000000000",
   "expires_at": "2026-04-12T02:15:00+00:00",
   "file_name": "chest_ct.dcm",
   "file_id": 7,

@@ -20,8 +20,11 @@ env:
   #
   # - balanced (default for push / PR): BLOCKS on leaked secrets (Gitleaks, TruffleHog), container scanners per thresholds below (Trivy / Grype), API security tests, DAST jobs when enabled.
   #   Bandit, Semgrep, and Safety are NON-BLOCKING here — noisy SAST/SCA stays visible in SARIF/HTML summaries without failing merges.
+  #   Final consolidated gate (security-report job): fails if summary JSON shows CRITICAL-class rollup or Gitleaks findings. Optional repo/org variable
+  #   SECURITY_GATE_BALANCED_FAIL_TRIVY_HIGH=true also fails on Trivy HIGH in the summary (align with stricter image policy).
   #
   # - strict (repository variable SECURITY_SCAN_MODE=strict): blocks on Bandit, Semgrep, Safety failures as well — use before releases / sensitive merges.
+  #   Consolidated gate: fails if any rollup severity > 0, or Safety/Gitleaks counts > 0 (see scripts/security_gate.py).
   SECURITY_SCAN_MODE: ${{ github.event_name == 'schedule' && 'audit' || (vars.SECURITY_SCAN_MODE == 'strict' && 'strict' || 'balanced') }}
 
 jobs:
@@ -151,6 +154,7 @@ jobs:
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect \
             --source /repo \
             --config /repo/.gitleaks.toml \
+            --no-git \
             --report-format json \
             --report-path /repo/gitleaks-report.json
       - name: Upload Gitleaks report
@@ -341,6 +345,11 @@ jobs:
             --mode "${SECURITY_SCAN_MODE}" \
             --json-output security-summary.json \
             ${BASELINE_ARGS}
+      - name: Consolidated security gate
+        env:
+          SECURITY_SCAN_MODE: ${{ env.SECURITY_SCAN_MODE }}
+          SECURITY_GATE_BALANCED_FAIL_TRIVY_HIGH: ${{ vars.SECURITY_GATE_BALANCED_FAIL_TRIVY_HIGH }}
+        run: python scripts/security_gate.py security-summary.json --mode "${SECURITY_SCAN_MODE}"
       - name: Upload summary report
         uses: actions/upload-artifact@v4
         with:

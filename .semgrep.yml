@@ -52,6 +52,9 @@ rules:
       - metavariable-regex:
           metavariable: $STR
           regex: ^.{8,}$
+      # Values resolved from Docker secrets / env via project helper — not inline credential literals.
+      - pattern-not: |
+          $LHS = read_secret(...)
       - pattern-not-regex: >-
           (?i)^"(changeme|change-me|placeholder|your-secret|your_secret|example|password|secret|test|dummy|xxx|\*\*\*|todo)"$
     metadata:

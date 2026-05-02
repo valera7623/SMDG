@@ -29,15 +29,28 @@ tags = ["database", "password"]
 
 [[rules]]
 id = "admin-password"
-description = "Admin Password in env"
-regex = '''ADMIN_PASSWORD=.*'''
+description = "Admin Password in env (literal ADMIN_PASSWORD= only; avoids GRAFANA_ADMIN_PASSWORD etc.)"
+regex = '''(?m)^\s*(?:-\s+)?(?:export\s+)?ADMIN_PASSWORD=.*'''
 tags = ["password", "admin"]
 
 [allowlist]
-description = "Allowlisted paths for test fixtures"
+description = "Allowlisted paths for test fixtures, local tooling, and non-repo key dirs"
 paths = [
   '''^\.git/''',
+  '''^reports/''',
   '''^secrets/''',
+  '''^\.venv/''',
+  '''^node_modules/''',
+  '''^\.env\.test$''',
+  '''^keys/''',
+  '''^audit_logs/''',
+  '''__pycache__/''',
   '''.*\.test\.py$''',
   '''.*/test_.*''',
+]
+# CI uses ephemeral Postgres with a fixed dev-only password and DATABASE_URL; not production credentials.
+# Alembic / migration helpers use a string replace, not a real DSN with credentials.
+regexes = [
+  '''postgresql\+asyncpg://smdg_user:password@localhost:5432/smdg''',
+  '''POSTGRES_PASSWORD: password''',
 ]

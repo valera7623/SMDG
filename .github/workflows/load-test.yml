@@ -70,7 +70,7 @@ jobs:
           docker compose -f docker-compose.load-test.yml run --rm \
             -e BASE_URL="$BASE_URL" \
             -e ADMIN_USER="$ADMIN_USER" \
-            -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            -e ADMIN_PASSWORD \
             k6 run "$SCRIPT" --summary-export="/results/$OUTPUT"
 
       - name: Upload load-test artifacts

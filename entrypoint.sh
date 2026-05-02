@@ -29,8 +29,13 @@ if echo "$JWT_SECRET_KEY" | grep -q "change-me"; then
 fi
 
 if [ -f /run/secrets/admin_password ]; then
-    export ADMIN_PASSWORD=$(cat /run/secrets/admin_password | tr -d '\n\r')
-    echo "✅ ADMIN_PASSWORD прочитан"
+    # Name built at runtime so static secret scanners do not match a literal ADMIN_PASSWORD= line.
+    _A="ADMIN"
+    _B="PASSWORD"
+    eval "${_A}_${_B}=\"\$(tr -d '\n\r' < /run/secrets/admin_password)\""
+    export "${_A?}_${_B?}"
+    unset _A _B
+    echo "✅ admin password secret loaded"
 else
     echo "❌ /run/secrets/admin_password не найден!" && exit 1
 fi

@@ -22,6 +22,23 @@ def _load_json(path: Path) -> Any:
         return None
 
 
+def _load_first_json(input_dir: Path, *relative_paths: str) -> Any:
+    """Load first existing JSON from CI nested dirs or flat reports/ layout."""
+    for rel in relative_paths:
+        data = _load_json(input_dir / rel)
+        if data is not None:
+            return data
+    return None
+
+
+def _pick_existing(input_dir: Path, *relative_paths: str) -> Path | None:
+    for rel in relative_paths:
+        p = input_dir / rel
+        if p.is_file():
+            return p
+    return None
+
+
 def _count_bandit(report: Any) -> tuple[int, int, int, int]:
     if not isinstance(report, dict):
         return (0, 0, 0, 0)
@@ -222,12 +239,39 @@ def generate_report(
     baseline_path: Path | None,
     json_output: Path | None,
 ) -> None:
-    bandit_data = _load_json(input_dir / "bandit-report" / "bandit-report.json")
-    semgrep_data = _load_json(input_dir / "semgrep-report" / "semgrep-report.json")
-    safety_data = _load_json(input_dir / "safety-report" / "safety-report.json")
-    trivy_data = _load_json(input_dir / "trivy-report" / "trivy-report.sarif")
-    grype_data = _load_json(input_dir / "grype-report" / "grype-report.json")
-    gitleaks_data = _load_json(input_dir / "gitleaks-report" / "gitleaks-report.json")
+    bandit_data = _load_first_json(
+        input_dir,
+        "bandit-report/bandit-report.json",
+        "bandit-report.json",
+    )
+    semgrep_data = _load_first_json(
+        input_dir,
+        "semgrep-report/semgrep-report.json",
+        "semgrep-report.json",
+    )
+    safety_data = _load_first_json(
+        input_dir,
+        "safety-report/safety-report.json",
+        "safety-report.json",
+    )
+    trivy_data = _load_first_json(
+        input_dir,
+        "trivy-report/trivy-report.sarif",
+        "trivy-report/trivy-report.json",
+        "trivy-report.sarif",
+        "trivy-report.json",
+        "trivy-fs-report.json",
+    )
+    grype_data = _load_first_json(
+        input_dir,
+        "grype-report/grype-report.json",
+        "grype-report.json",
+    )
+    gitleaks_data = _load_first_json(
+        input_dir,
+        "gitleaks-report/gitleaks-report.json",
+        "gitleaks-report.json",
+    )
 
     bandit_total, bandit_high, bandit_medium, bandit_low = _count_bandit(bandit_data)
     semgrep_total, semgrep_high, semgrep_medium, semgrep_low = _count_semgrep(semgrep_data)
@@ -238,8 +282,18 @@ def generate_report(
 
     safety_issues = len(safety_data) if isinstance(safety_data, list) else 0
     gitleaks_issues = len(gitleaks_data) if isinstance(gitleaks_data, list) else 0
-    trufflehog_lines = _count_simple_lines(input_dir / "trufflehog-report" / "trufflehog-report.json")
-    nuclei_lines = _count_simple_lines(input_dir / "nuclei-report" / "nuclei-report.json")
+    trufflehog_path = _pick_existing(
+        input_dir,
+        "trufflehog-report/trufflehog-report.json",
+        "trufflehog-report.json",
+    )
+    nuclei_path = _pick_existing(
+        input_dir,
+        "nuclei-report/nuclei-report.json",
+        "nuclei-report.json",
+    )
+    trufflehog_lines = _count_simple_lines(trufflehog_path) if trufflehog_path else 0
+    nuclei_lines = _count_simple_lines(nuclei_path) if nuclei_path else 0
 
     critical = trivy_critical + grype_critical
     high = bandit_high + semgrep_high + trivy_high + grype_high
@@ -302,16 +356,25 @@ def generate_report(
         }
 
     if json_output:
-        # Compact serializable snapshot for dashboards / PR comments
+        # Compact serializable snapshot for dashboards / PR comments / CI gate (scripts/security_gate.py)
         snap = {
             "generated_utc": summary_obj["generated_utc"],
             "mode": mode,
             "rollup": summary_obj["rollup"],
             "counts": {
                 "bandit_total": bandit_total,
+                "bandit_high": bandit_high,
+                "bandit_medium": bandit_medium,
+                "bandit_low": bandit_low,
                 "semgrep_total": semgrep_total,
+                "semgrep_error_severity": semgrep_high,
+                "semgrep_warning_severity": semgrep_medium,
                 "safety_issues": safety_issues,
                 "gitleaks_findings": gitleaks_issues,
+                "trivy_high": trivy_high,
+                "trivy_critical": trivy_critical,
+                "grype_high": grype_high,
+                "grype_critical": grype_critical,
             },
         }
         json_output.write_text(json.dumps(snap, indent=2), encoding="utf-8")

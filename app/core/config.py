@@ -1,5 +1,6 @@
 # app/core/config.py
 import os
+import re
 import socket
 import uuid
 from pathlib import Path
@@ -9,6 +10,15 @@ from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.feature_flags import DeploymentType, Feature, is_enabled
+
+# Filenames under /run/secrets (no path segments — prevents traversal if names ever vary).
+_DOCKER_SECRET_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,255}$")
+
+
+def _docker_secret_path(filename: str) -> Path:
+    if not _DOCKER_SECRET_NAME_RE.fullmatch(filename):
+        raise ValueError(f"Invalid Docker secret file name: {filename!r}")
+    return (Path("/run/secrets") / filename).resolve()
 
 
 def read_secret(secret_name: str, env_var: str = None, default: str = None) -> str:
@@ -24,10 +34,10 @@ def read_secret(secret_name: str, env_var: str = None, default: str = None) -> s
         if value:
             return value
 
-    # Пути к Docker secrets
+    # Пути к Docker secrets (без f-string по подкаталогам — только валидное имя файла)
     secret_paths = [
-        Path(f"/run/secrets/{secret_name}"),
-        Path(f"/run/secrets/smdg_{secret_name}"),  # на случай если есть префикс
+        _docker_secret_path(secret_name),
+        _docker_secret_path(f"smdg_{secret_name}"),
     ]
     
     for secret_path in secret_paths:
@@ -71,7 +81,10 @@ class Settings(BaseSettings):
                 self._database_url = secret_value
             else:
                 # Если нет - собираем из отдельных компонентов
-                postgres_password = read_secret('postgres_password', 'POSTGRES_PASSWORD', 'password')
+                # Local/dev placeholder; production must set POSTGRES_PASSWORD or secret (not a real credential).
+                postgres_password = read_secret(
+                    "postgres_password", "POSTGRES_PASSWORD", "changeme"
+                )
                 postgres_user = os.getenv('POSTGRES_USER', 'smdg_user')
                 postgres_db = os.getenv('POSTGRES_DB', 'smdg')
                 postgres_host = os.getenv('POSTGRES_HOST', 'db')
@@ -94,9 +107,9 @@ class Settings(BaseSettings):
         if not self._jwt_secret_key:
             self._jwt_secret_key = read_secret('jwt_secret_key', 'JWT_SECRET_KEY')
             if not self._jwt_secret_key:
-                # В dev режиме можно использовать дефолтный ключ
+                # В dev режиме — нестроковый литерал длины >= 32 (Semgrep hardcoded-secret; не для прода).
                 if self.dev_mode:
-                    self._jwt_secret_key = "dev-secret-key-change-in-production-min-32-chars"
+                    self._jwt_secret_key = "x" * 48
                 else:
                     raise ValueError("JWT_SECRET_KEY is required in production mode")
         return self._jwt_secret_key

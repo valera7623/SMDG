@@ -2,8 +2,7 @@
 Secure Medical Data Gateway - Crypto module
 """
 import asyncio
-# nosec B404 - subprocess используется только для trusted binary "age" без shell=True
-import subprocess
+import subprocess  # nosec B404 — только sync-probe `age --version` и вызовы через asyncio в _run_age
 from pathlib import Path
 import hashlib
 from typing import Tuple, List
@@ -65,9 +64,17 @@ class CryptoManager:
     @staticmethod
     def check_age_installed() -> bool:
         """Проверка, установлен ли age в системе"""
+        age_bin = shutil.which("age")
+        if not age_bin:
+            return False
         try:
-            subprocess.run(["age", "--version"],
-                           capture_output=True, text=True, timeout=5, check=True) # nosec B404 B607 B603
+            subprocess.run(  # nosec B603 — argv: абсолютный путь из shutil.which + литерал --version, без пользовательского ввода
+                [age_bin, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=True,
+            )
             return True
         except (FileNotFoundError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
             return False

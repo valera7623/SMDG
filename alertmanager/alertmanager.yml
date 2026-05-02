@@ -84,13 +84,14 @@ receivers:
 
   - name: "smdg-webhook"
     webhook_configs:
-      - url: "http://smdg:8000/api/alerts/webhook?x_alert_secret=JEFhPIy3wqBaupeYANFeoipooZDYRp_c6Wcq0RkCqdQ"
+      # x_alert_secret must match SMDG_ALERT_WEBHOOK_SECRET; inject at deploy (e.g. envsubst), do not commit real values.
+      - url: "http://smdg:8000/api/alerts/webhook?x_alert_secret=__SMDG_ALERT_WEBHOOK_SECRET__"
         send_resolved: true
         max_alerts: 50
 
   - name: "smdg-webhook-archive"
     webhook_configs:
-      - url: "http://smdg:8000/api/alerts/webhook?channel=archive&x_alert_secret=JEFhPIy3wqBaupeYANFeoipooZDYRp_c6Wcq0RkCqdQ"
+      - url: "http://smdg:8000/api/alerts/webhook?channel=archive&x_alert_secret=__SMDG_ALERT_WEBHOOK_SECRET__"
         send_resolved: true
         max_alerts: 50
 

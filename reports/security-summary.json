@@ -1,0 +1,25 @@
+{
+  "generated_utc": "2026-05-02T16:14:01Z",
+  "mode": "balanced",
+  "rollup": {
+    "critical": 0,
+    "high": 91,
+    "medium": 2,
+    "low": 3
+  },
+  "counts": {
+    "bandit_total": 3,
+    "bandit_high": 0,
+    "bandit_medium": 0,
+    "bandit_low": 3,
+    "semgrep_total": 77,
+    "semgrep_error_severity": 75,
+    "semgrep_warning_severity": 2,
+    "safety_issues": 0,
+    "gitleaks_findings": 39,
+    "trivy_high": 16,
+    "trivy_critical": 0,
+    "grype_high": 0,
+    "grype_critical": 0
+  }
+}

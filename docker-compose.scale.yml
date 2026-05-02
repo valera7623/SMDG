@@ -160,7 +160,7 @@ services:
     image: grafana/grafana:latest
     profiles: ["observability"]
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_DASH_PASS:-local-scale-grafana-only}
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
