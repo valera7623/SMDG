@@ -6,6 +6,14 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+def test_load_test_mode_defaults_false(monkeypatch):
+    """LOAD_TEST_MODE must be opt-in: accidental enablement breaks tenant resolution and timeouts."""
+    monkeypatch.delenv("LOAD_TEST_MODE", raising=False)
+    from app.core.config import Settings
+
+    assert Settings().load_test_mode is False
+
+
 def test_config_import():
     """Тест импорта конфигурации"""
     from app.core.config import Settings, settings
