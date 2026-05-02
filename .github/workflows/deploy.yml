@@ -28,7 +28,17 @@ jobs:
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             cd /home/smdg/SMDG
             echo "📥 Pulling latest changes from Git..."
-            git pull origin main
+            # audit_logs/ is runtime data (bind-mounted). If it was ever tracked, reset would drop it.
+            if [[ -f audit_logs/audit.csv ]]; then
+              cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.deploy.bak
+            fi
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p audit_logs
+            if [[ -f /tmp/smdg-audit-csv.deploy.bak ]]; then
+              cp -a /tmp/smdg-audit-csv.deploy.bak audit_logs/audit.csv
+              rm -f /tmp/smdg-audit-csv.deploy.bak
+            fi
             echo "🐳 Rebuilding and restarting Docker containers..."
             docker compose down
             docker compose up -d --build
