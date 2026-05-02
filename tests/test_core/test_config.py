@@ -14,6 +14,18 @@ def test_load_test_mode_defaults_false(monkeypatch):
     assert Settings().load_test_mode is False
 
 
+def test_get_cors_allow_origins_merges_env(monkeypatch):
+    """CORS_ORIGINS из окружения добавляются к базовому списку, без дубликатов."""
+    import app.core.config as cfg
+
+    monkeypatch.setattr(cfg.settings, "cors_origins", "https://app.example.com, https://app.example.com ")
+    origins = cfg.get_cors_allow_origins()
+    assert "https://app.example.com" in origins
+    assert origins.count("https://app.example.com") == 1
+    assert "http://localhost:3000" in origins
+    assert "https://viewer.ohif.org" in origins
+
+
 def test_config_import():
     """Тест импорта конфигурации"""
     from app.core.config import Settings, settings

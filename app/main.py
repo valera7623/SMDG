@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from prometheus_fastapi_instrumentator import Instrumentator
 from limits.typing import RedisClient
 from app.core.auth import get_current_user, TokenData
-from app.core.config import settings
+from app.core.config import settings, get_cors_allow_origins
 from app.core.feature_flags import get_deployment_info
 from app.core.rate_limiter import limiter, check_redis_connection, redis_client
 from slowapi.errors import RateLimitExceeded
@@ -665,21 +665,10 @@ Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 # ────────────────────────────────────────────────────────────────
 from fastapi.middleware.cors import CORSMiddleware
 
-# Разрешённые origins (добавляй свои реальные домены в продакшене!)
-origins = [
-    "http://localhost",
-    "http://localhost:3000",     # React/Vue dev
-    "http://localhost:5173",     # Vite
-    "http://localhost:8080",     # другой dev фронт
-    "https://fileguardian.com.ru",  # твой домен из .env
-    "https://viewer.ohif.org",   # OHIF Viewer CDN
-    "https://*.ohif.org",        # OHIF subdomains
-    "*"                          # временно для теста (удали в прод!)
-]
-
+# Разрешённые origins: localhost / OHIF + переменная CORS_ORIGINS (см. get_cors_allow_origins)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=get_cors_allow_origins(),
     allow_credentials=True,          # если используешь куки/auth headers
     allow_methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"],
     allow_headers=[

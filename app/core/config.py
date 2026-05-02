@@ -135,6 +135,10 @@ class Settings(BaseSettings):
     HTTP_CONNECT_TIMEOUT_SECONDS: int = 5
     HTTP_READ_TIMEOUT_SECONDS: int = 25
 
+    # CORS: дополнительные разрешённые origin из env ``CORS_ORIGINS`` (через запятую).
+    # К ним добавляются базовые localhost и OHIF viewer (см. ``get_cors_allow_origins``).
+    cors_origins: str = ""
+
     # === HTTP сжатие ответов ===
     COMPRESSION_ENABLED: bool = True
     COMPRESSION_MIN_SIZE_BYTES: int = 500
@@ -481,3 +485,30 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def get_cors_allow_origins() -> list[str]:
+    """
+    Список origin для ``CORSMiddleware``.
+
+    Starlette сопоставляет origin буквально; шаблоны ``https://*.example.com`` не
+    поддерживаются. В список всегда входят типичные dev-URL и ``viewer.ohif.org``;
+    из окружения добавляется ``CORS_ORIGINS`` (через запятую), без дубликатов.
+    """
+    base = [
+        "http://localhost",
+        "http://127.0.0.1",
+        "http://[::1]",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "https://viewer.ohif.org",
+    ]
+    extra = [o.strip() for o in (settings.cors_origins or "").split(",") if o.strip()]
+    seen: set[str] = set()
+    out: list[str] = []
+    for origin in base + extra:
+        if origin not in seen:
+            seen.add(origin)
+            out.append(origin)
+    return out
