@@ -272,21 +272,21 @@ def _make_study_uid(file_id: int) -> str:
     """Генерирует синтетический StudyInstanceUID на основе file_id.
     
     DICOM UID: до 64 цифр, формат: root.suffix
-    Используем OID корень 2.25 (UUID OID arc) + хеш file_id
+    Используем OID корень 2.25 (UUID OID arc) + детерминированный хеш от file_id (SHA-256).
     """
-    h = hashlib.sha1(f"smdg-study-{file_id}".encode()).hexdigest()
+    h = hashlib.sha256(f"smdg-study-{file_id}".encode()).hexdigest()
     return f"2.25.{int(h[:28], 16)}"
 
 
 def _make_series_uid(file_id: int) -> str:
     """Генерирует синтетический SeriesInstanceUID."""
-    h = hashlib.sha1(f"smdg-series-{file_id}".encode()).hexdigest()
+    h = hashlib.sha256(f"smdg-series-{file_id}".encode()).hexdigest()
     return f"2.25.{int(h[:28], 16)}"
 
 
 def _make_instance_uid(file_id: int) -> str:
     """Генерирует синтетический SOPInstanceUID."""
-    h = hashlib.sha1(f"smdg-instance-{file_id}".encode()).hexdigest()
+    h = hashlib.sha256(f"smdg-instance-{file_id}".encode()).hexdigest()
     return f"2.25.{int(h[:28], 16)}"
 
 

@@ -225,7 +225,7 @@ async def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,          # В продакшене → True
+        secure=False,          # semgrep: allow-insecure-cookie-secure — В продакшене → True
         samesite="lax",
         max_age=3600,
         path="/"

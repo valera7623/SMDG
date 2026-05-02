@@ -17,6 +17,11 @@ class DistributedCache:
     def __init__(self) -> None:
         self.redis_client: Optional[redis.Redis] = None
 
+    def _require_redis(self) -> redis.Redis:
+        if self.redis_client is None:
+            raise RuntimeError("DistributedCache is not initialized")
+        return self.redis_client
+
     async def init(self) -> None:
         if self.redis_client is not None:
             return
@@ -32,30 +37,30 @@ class DistributedCache:
         self.redis_client = None
 
     async def get(self, key: str) -> Optional[Any]:
-        assert self.redis_client is not None, "DistributedCache is not initialized"
-        value = await self.redis_client.get(f"cache:{key}")
+        rc = self._require_redis()
+        value = await rc.get(f"cache:{key}")
         return json.loads(value) if value is not None else None
 
     async def set(self, key: str, value: Any, ttl: int = settings.CACHE_TTL_SECONDS) -> None:
-        assert self.redis_client is not None, "DistributedCache is not initialized"
-        await self.redis_client.setex(f"cache:{key}", ttl, json.dumps(value))
+        rc = self._require_redis()
+        await rc.setex(f"cache:{key}", ttl, json.dumps(value))
 
     async def delete(self, key: str) -> None:
-        assert self.redis_client is not None, "DistributedCache is not initialized"
-        await self.redis_client.delete(f"cache:{key}")
+        rc = self._require_redis()
+        await rc.delete(f"cache:{key}")
 
     async def delete_pattern(self, pattern: str) -> None:
-        assert self.redis_client is not None, "DistributedCache is not initialized"
-        keys = [key async for key in self.redis_client.scan_iter(match=f"cache:{pattern}", count=500)]
+        rc = self._require_redis()
+        keys = [key async for key in rc.scan_iter(match=f"cache:{pattern}", count=500)]
         if keys:
-            await self.redis_client.delete(*keys)
+            await rc.delete(*keys)
 
     async def clear(self) -> None:
         await self.delete_pattern("*")
 
     async def get_size(self) -> int:
-        assert self.redis_client is not None, "DistributedCache is not initialized"
-        return sum([1 async for _ in self.redis_client.scan_iter(match="cache:*", count=500)])
+        rc = self._require_redis()
+        return sum([1 async for _ in rc.scan_iter(match="cache:*", count=500)])
 
     def cached(self, ttl: int = settings.CACHE_TTL_SECONDS) -> Callable:
         """Decorator for caching async function results."""
@@ -64,7 +69,7 @@ class DistributedCache:
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 key_data = f"{func.__module__}.{func.__name__}:{args}:{kwargs}"
-                cache_key = hashlib.md5(key_data.encode("utf-8")).hexdigest()
+                cache_key = hashlib.sha256(key_data.encode("utf-8")).hexdigest()
                 cached_result = await self.get(cache_key)
                 if cached_result is not None:
                     return cached_result

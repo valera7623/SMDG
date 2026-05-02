@@ -1,4 +1,8 @@
 ---
+# B101: Runtime modules under app/ must not rely on assert (stripped with python -O).
+# B303: Prefer SHA-256 for digests in app code. MD5/SHA1 are not used in app/ after hardening;
+#   synthetic DICOM UIDs and cache keys use SHA-256. Revisit any new weak-hash use with a nosec
+#   only if the context is non-security (e.g. required wire-format compatibility) and document why.
 exclude_dirs:
   - tests
   - migrations

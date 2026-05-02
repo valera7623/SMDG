@@ -39,6 +39,11 @@ class DistributedJobQueue:
         self._running = False
         self._worker_task: Optional[asyncio.Task] = None
 
+    def _require_redis(self) -> redis.Redis:
+        if self.redis_client is None:
+            raise RuntimeError("DistributedJobQueue is not initialized")
+        return self.redis_client
+
     async def init(self) -> None:
         if self.redis_client is not None:
             return
@@ -58,14 +63,14 @@ class DistributedJobQueue:
         self.handlers[job_type] = handler
 
     async def enqueue(self, job_type: str, payload: Dict[str, Any]) -> str:
-        assert self.redis_client is not None, "DistributedJobQueue is not initialized"
+        rc = self._require_redis()
         job = Job(
             id=str(uuid.uuid4()),
             type=job_type,
             payload=payload,
             created_at=datetime.now(timezone.utc),
         )
-        await self.redis_client.lpush(
+        await rc.lpush(
             self.queue_name,
             json.dumps(
                 {
@@ -81,8 +86,8 @@ class DistributedJobQueue:
         return job.id
 
     async def dequeue(self) -> Optional[Job]:
-        assert self.redis_client is not None, "DistributedJobQueue is not initialized"
-        data = await self.redis_client.rpop(self.queue_name)
+        rc = self._require_redis()
+        data = await rc.rpop(self.queue_name)
         if data is None:
             return None
         job_data = json.loads(data)
@@ -96,12 +101,12 @@ class DistributedJobQueue:
         )
 
     async def requeue(self, job: Job, error: str) -> None:
-        assert self.redis_client is not None, "DistributedJobQueue is not initialized"
+        rc = self._require_redis()
         job.retries += 1
         if job.retries <= job.max_retries:
             delay = min(2 ** job.retries, 60)
             await asyncio.sleep(delay)
-            await self.redis_client.lpush(
+            await rc.lpush(
                 self.queue_name,
                 json.dumps(
                     {
@@ -116,7 +121,7 @@ class DistributedJobQueue:
                 ),
             )
         else:
-            await self.redis_client.lpush(
+            await rc.lpush(
                 self.dead_letter_queue,
                 json.dumps(
                     {
@@ -159,12 +164,12 @@ class DistributedJobQueue:
                 pass
 
     async def get_queue_length(self) -> int:
-        assert self.redis_client is not None, "DistributedJobQueue is not initialized"
-        return int(await self.redis_client.llen(self.queue_name))
+        rc = self._require_redis()
+        return int(await rc.llen(self.queue_name))
 
     async def get_dead_letter_length(self) -> int:
-        assert self.redis_client is not None, "DistributedJobQueue is not initialized"
-        return int(await self.redis_client.llen(self.dead_letter_queue))
+        rc = self._require_redis()
+        return int(await rc.llen(self.dead_letter_queue))
 
 
 job_queue = DistributedJobQueue()

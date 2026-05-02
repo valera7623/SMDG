@@ -52,7 +52,8 @@ class AssetPipeline:
 
     @staticmethod
     def _fingerprint_file(content: bytes) -> str:
-        return hashlib.md5(content, usedforsecurity=False).hexdigest()[:12]
+        # Content fingerprint for cache-busting filenames only (not cryptographic auth).
+        return hashlib.sha256(content).hexdigest()[:12]
 
     @classmethod
     def _is_fingerprinted_name(cls, path: Path) -> bool:

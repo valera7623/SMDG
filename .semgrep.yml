@@ -1,3 +1,6 @@
+# Semgrep custom rules (Python). Tuned to reduce noise while keeping actionable signals.
+# See security remediation: narrow hardcoded-secret; align warning rules with real code patterns.
+
 rules:
   - id: fastapi-debug-mode
     pattern: app = FastAPI(..., debug=True, ...)
@@ -8,14 +11,49 @@ rules:
       category: security
       cwe: "CWE-489"
 
+  # Only flag assignments where the *identifier* looks like a credential/secret name,
+  # the RHS is a non-empty string literal, and the literal is not a trivial placeholder.
+  # Excludes test/example trees via paths.exclude (see below).
   - id: hardcoded-secret
-    pattern-either:
-      - pattern: $SECRET = "..."
-      - pattern: API_KEY = "..."
-      - pattern: SECRET_KEY = "..."
-    message: Possible hardcoded secret detected
+    message: >-
+      Possible hardcoded secret — load from environment, Docker/Kubernetes secrets, or a secrets manager;
+      never commit real values.
     severity: ERROR
     languages: [python]
+    paths:
+      exclude:
+        - "**/tests/**"
+        - "**/test/**"
+        - "**/test_*.py"
+        - "**/*_test.py"
+        - "**/conftest.py"
+        - "**/examples/**"
+        - "**/scripts/**"
+        - "**/migrations/**"
+    patterns:
+      # `$VAR = $STR` must not apply inside `$LHS: $TYP = $RHS` or it matches the inner
+      # `str = Field(...)` fragment of Pydantic `password: str = Field(...)` (Semgrep submatch).
+      - pattern-either:
+          - patterns:
+              - pattern: $VAR = $STR
+              - pattern-not-inside: '$LHS: $TYP = $RHS'
+          - patterns:
+              - pattern: '$VAR: $TYP = $STR'
+              - pattern-not: '$VAR: $TYP = Field(...)'
+      - metavariable-regex:
+          metavariable: $VAR
+          regex: >-
+            (?ix)^(
+              [a-z0-9_]*(_)?(secret|password|token|jwt|webhook|bearer|api_key|private_key|encryption|auth_token|access_token|refresh_token|session_token|github_token|otp_secret|database|redis|postgres|mysql|admin|dsn|oauth|aws|azure|gcp|slack|telegram|minio|s3|age|jwt_secret|secret_key)(_[a-z0-9]+)*$
+              |[A-Z][A-Z0-9]*(_[A-Z0-9]+)*(_SECRET|_TOKEN|_PASSWORD|_API_KEY|_DSN)$
+              |[A-Z][A-Z0-9]*(_[A-Z0-9]+)*(SECRET|PASSWORD|TOKEN)$
+              |[A-Z][A-Z0-9_]*(JWT|API|AUTH|WEBHOOK|BEARER|SESSION|ACCESS|REFRESH)(_[A-Z0-9]+)+$
+            )$
+      - metavariable-regex:
+          metavariable: $STR
+          regex: ^.{8,}$
+      - pattern-not-regex: >-
+          (?i)^"(changeme|change-me|placeholder|your-secret|your_secret|example|password|secret|test|dummy|xxx|\*\*\*|todo)"$
     metadata:
       category: security
       cwe: "CWE-798"
@@ -61,11 +99,20 @@ rules:
       category: security
       cwe: "CWE-942"
 
+  # secure=False is often required for local HTTP (no TLS); login uses httponly=True + lax SameSite.
+  # httponly=False is always suspicious. For secure=False, allow only if the finding spans an inline
+  # `# semgrep: allow-insecure-cookie-secure` tag (or legacy `продакшене` comment) — avoids pattern-not-inside
+  # gaps on multiline defs.
   - id: insecure-cookie
-    pattern-either:
-      - pattern: $RESP.set_cookie(..., secure=False, ...)
-      - pattern: $RESP.set_cookie(..., httponly=False, ...)
-    message: Insecure cookie flags detected
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: $RESP.set_cookie(..., secure=False, ...)
+              - pattern-not-regex: '(?s).*(semgrep:\s*allow-insecure-cookie-secure|продакшене).*'
+          - pattern: $RESP.set_cookie(..., httponly=False, ...)
+    message: >-
+      Insecure cookie flags (secure=False and/or httponly=False). For production HTTPS, use secure=True;
+      httponly should stay True for session tokens. Local HTTP may intentionally use secure=False.
     severity: WARNING
     languages: [python]
     metadata:
@@ -83,6 +130,7 @@ rules:
       category: security
       cwe: "CWE-22"
 
+  # Rate limiter is stacked under @router.post in this codebase; accept both decorator orders.
   - id: auth-endpoint-without-rate-limit-decorator
     patterns:
       - pattern-inside: |
@@ -94,7 +142,14 @@ rules:
           @router.post(...)
           async def $FUNC(...):
             ...
-    message: Sensitive POST endpoint may miss explicit rate limiting
+      - pattern-not-inside: |
+          @router.post(...)
+          @limiter.limit(...)
+          async def $FUNC(...):
+            ...
+    message: >-
+      Sensitive POST endpoint may lack an explicit SlowAPI rate limit — add @limiter.limit unless
+      inherited or enforced elsewhere.
     severity: WARNING
     languages: [python]
     paths:

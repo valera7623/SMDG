@@ -66,7 +66,8 @@ class CDNService:
         return out
 
     def _sync_invalidate_cloudfront(self, items: List[str]) -> dict:
-        assert self._client is not None
+        if self._client is None:
+            raise RuntimeError("CloudFront client is not initialized")
         resp = self._client.create_invalidation(
             DistributionId=self.distribution_id,
             InvalidationBatch={
@@ -106,7 +107,8 @@ class CDNService:
         return {"status": "error", "message": r.text}
 
     def _sync_get_cloudfront_stats(self) -> dict:
-        assert self._client is not None
+        if self._client is None:
+            raise RuntimeError("CloudFront client is not initialized")
         resp = self._client.get_distribution(Id=self.distribution_id)
         dist = resp["Distribution"]
         return {

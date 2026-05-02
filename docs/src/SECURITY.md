@@ -25,6 +25,12 @@ Include in your report:
 | 3.x     | Security fixes only |
 | < 3.0   | No        |
 
+## Dependency vulnerability decisions
+
+Authoritative detail (Russian): [`docs/locales/ru/SECURITY.md`](../locales/ru/SECURITY.md)
+section **11.5.6** — minimum **Pillow** version (CVE-2026-25990, CVE-2026-40192)
+and **ecdsa** / CVE-2024-23342 risk acceptance while no fixed PyPI release exists.
+
 ## Cryptography
 
 - File encryption: `age` (X25519) envelope encryption.
