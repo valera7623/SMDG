@@ -200,9 +200,10 @@ echo "✅ Директория бэкапов $BACKUP_DIR готова"
 # ────────────────────────────────────────────────────────────────
 # Права на каталоги, в которые пишет runtime под пользователем smdg
 # ────────────────────────────────────────────────────────────────
-mkdir -p /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted
+mkdir -p /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted /app/keys
 touch "/app/audit_logs/audit_$(date +%Y-%m-%d).log" /app/audit_logs/audit.csv 2>/dev/null || true
-if ! chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted; then
+# /app/keys: age.key часто копируется из secret от root — без chown пользователь smdg не прочитает ключ (age-keygen -y в init_keys).
+if ! chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted /app/keys; then
     echo "❌ Не удалось выставить владельца smdg:smdg на runtime-каталогах"
     exit 1
 fi
