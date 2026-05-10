@@ -15,15 +15,10 @@
 <body>
     <div class="container">
         <header class="site-header" role="banner">
-            <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
             <div class="site-header__top">
                 <div class="site-header__left site-header__left--admin">
                     <h1 class="site-header__title">🔐 <span data-i18n="admin.title">SMDG Admin panel</span></h1>
                     <a href="/" class="back-link site-header__back">← <span data-i18n="admin.back_home">Back to home</span></a>
-                    <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
-                        <a href="/admin/users" class="main-nav__link btn-primary">👥 <span data-i18n="admin.go_to_users">User management</span></a>
-                        <a href="/admin/dlq" class="main-nav__link btn-secondary">📬 DLQ</a>
-                    </nav>
                 </div>
                 <div class="site-header__trailing">
                 <div class="user-info user-info--header" id="userInfo">
@@ -39,8 +34,6 @@
                         <span class="theme-switch__text" data-i18n="theme.dark">Dark</span>
                     </button>
                 </div>
-                <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
-                    aria-controls="smdgMainNav" aria-expanded="false"><span></span><span></span><span></span></button>
                 </div>
                 </div>
             </div>

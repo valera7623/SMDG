@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMDG - DLQ Management</title>
+    <title data-i18n="admin_dlq.title">SMDG — Dead Letter Queue</title>
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/admin-dlq.css">
     <link rel="stylesheet" href="/static/css/language-selector.css">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <script src="/static/js/i18n.js" defer></script>
     <script type="module" src="/static/js/admin-dlq.js"></script>
 </head>
-<body>
+
+<body class="page-admin-dlq">
     <div class="container">
         <header class="site-header" role="banner">
             <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
             <div class="site-header__top">
                 <div class="site-header__left site-header__left--admin">
-                    <h1 class="site-header__title">📬 Dead Letter Queue</h1>
-                    <a href="/admin" class="back-link site-header__back">← Back to admin panel</a>
+                    <h1 class="site-header__title">📬 <span data-i18n="admin_dlq.title">SMDG — Dead Letter Queue</span></h1>
+                    <a href="/admin" class="back-link site-header__back">← <span data-i18n="admin.back_admin">Back to admin panel</span></a>
                     <nav class="main-nav" id="smdgMainNav" aria-label="Admin navigation">
-                        <a href="/" class="main-nav__link btn-info">🏠 Home</a>
-                        <a href="/admin" class="main-nav__link btn-admin">⚙️ Admin</a>
-                        <a href="/admin/users" class="main-nav__link btn-primary">👥 Users</a>
+                        <a href="/" class="main-nav__link btn-info">🏠 <span data-i18n="admin_dlq.nav_home">Home</span></a>
+                        <a href="/admin" class="main-nav__link btn-admin">⚙️ <span data-i18n="admin_dlq.nav_admin_short">Admin</span></a>
+                        <a href="/admin/users" class="main-nav__link btn-primary">👥 <span data-i18n="admin.users">Users</span></a>
                     </nav>
                 </div>
                 <div class="site-header__trailing">
@@ -44,83 +47,85 @@
         </header>
 
         <section class="section stats-section">
-            <h2>📊 DLQ Stats</h2>
+            <h2>📊 <span data-i18n="admin_dlq.stats_title">DLQ statistics</span></h2>
             <div id="statsGrid" class="stats-grid"></div>
         </section>
 
         <section class="section">
-            <h2>🔎 Filters</h2>
+            <h2>🔎 <span data-i18n="admin_dlq.filters_title">Filters</span></h2>
             <div class="filter-controls">
-                <input id="messageIdSearch" type="text" placeholder="Search by message_id">
+                <input id="messageIdSearch" type="text" data-i18n-placeholder="admin_dlq.search_placeholder"
+                    placeholder="Search by message ID">
                 <select id="statusFilter">
-                    <option value="">All statuses</option>
-                    <option value="pending">pending</option>
-                    <option value="processing">processing</option>
-                    <option value="failed">failed</option>
-                    <option value="resolved">resolved</option>
+                    <option value="" data-i18n="admin_dlq.status_all">All statuses</option>
+                    <option value="pending" data-i18n="admin_dlq.status_pending">pending</option>
+                    <option value="processing" data-i18n="admin_dlq.status_processing">processing</option>
+                    <option value="failed" data-i18n="admin_dlq.status_failed">failed</option>
+                    <option value="resolved" data-i18n="admin_dlq.status_resolved">resolved</option>
                 </select>
                 <select id="queueFilter">
-                    <option value="">All queues</option>
-                    <option value="webhook">webhook</option>
-                    <option value="email">email</option>
-                    <option value="cleanup">cleanup</option>
-                    <option value="dicom">dicom</option>
-                    <option value="audit">audit</option>
+                    <option value="" data-i18n="admin_dlq.queue_all">All queues</option>
+                    <option value="webhook" data-i18n="admin_dlq.queue_webhook">webhook</option>
+                    <option value="email" data-i18n="admin_dlq.queue_email">email</option>
+                    <option value="cleanup" data-i18n="admin_dlq.queue_cleanup">cleanup</option>
+                    <option value="dicom" data-i18n="admin_dlq.queue_dicom">dicom</option>
+                    <option value="audit" data-i18n="admin_dlq.queue_audit">audit</option>
                 </select>
                 <select id="limitFilter">
-                    <option value="10">10 / page</option>
-                    <option value="25" selected>25 / page</option>
-                    <option value="50">50 / page</option>
-                    <option value="100">100 / page</option>
+                    <option value="10" data-i18n="admin_dlq.per_page_10">10 / page</option>
+                    <option value="25" selected data-i18n="admin_dlq.per_page_25">25 / page</option>
+                    <option value="50" data-i18n="admin_dlq.per_page_50">50 / page</option>
+                    <option value="100" data-i18n="admin_dlq.per_page_100">100 / page</option>
                 </select>
-                <button class="btn-primary" onclick="applyFilters()">Apply</button>
-                <button class="btn-secondary" onclick="clearFilters()">Reset</button>
+                <button type="button" class="btn-primary" onclick="applyFilters()"><span data-i18n="admin_dlq.apply">Apply</span></button>
+                <button type="button" class="btn-secondary" onclick="clearFilters()"><span data-i18n="admin_dlq.reset">Reset</span></button>
             </div>
-            <p class="hint" id="autoRefreshInfo">Auto-refresh: every 10 seconds</p>
+            <p class="hint" id="autoRefreshInfo" data-i18n="admin_dlq.auto_refresh">Auto-refresh: every 10 seconds</p>
         </section>
 
         <section class="section">
-            <h2>🧹 Maintenance</h2>
+            <h2>🧹 <span data-i18n="admin_dlq.maintenance_title">Maintenance</span></h2>
             <div class="maintenance-row">
                 <input id="cleanupDays" type="number" min="1" max="3650" value="30">
-                <button class="btn-primary" onclick="cleanupOld()">Cleanup old messages</button>
+                <button type="button" class="btn-primary" onclick="cleanupOld()"><span data-i18n="admin_dlq.cleanup_old">Clean up old messages</span></button>
             </div>
             <p id="maintenanceResult" class="hint"></p>
         </section>
 
         <section class="section">
-            <h2>📋 Messages</h2>
+            <h2>📋 <span data-i18n="admin_dlq.messages_title">Messages</span></h2>
             <div class="table-container">
                 <table class="dlq-table responsive-data-table">
                     <thead>
                         <tr>
-                            <th>Message ID</th>
-                            <th>Queue</th>
-                            <th>Status</th>
-                            <th>Retries</th>
-                            <th>Error</th>
-                            <th>Created</th>
-                            <th>Actions</th>
+                            <th data-i18n="admin_dlq.col_message_id">Message ID</th>
+                            <th data-i18n="admin_dlq.col_queue">Queue</th>
+                            <th data-i18n="admin_dlq.col_status">Status</th>
+                            <th data-i18n="admin_dlq.col_retries">Retries</th>
+                            <th data-i18n="admin_dlq.col_error">Error</th>
+                            <th data-i18n="admin_dlq.col_created">Created</th>
+                            <th data-i18n="admin_dlq.col_actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="messagesTbody">
                         <tr>
-                            <td colspan="7" class="loading">Loading...</td>
+                            <td colspan="7" class="loading" data-i18n="admin_dlq.loading">Loading…</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
             <div class="pagination-row">
-                <button class="btn-secondary pagination-btn" onclick="prevPage()">← Prev</button>
+                <button type="button" class="btn-secondary pagination-btn" onclick="prevPage()"><span data-i18n="admin_dlq.btn_prev">← Prev</span></button>
                 <span id="paginationInfo">Page 1</span>
-                <button class="btn-secondary pagination-btn" onclick="nextPage()">Next →</button>
+                <button type="button" class="btn-secondary pagination-btn" onclick="nextPage()"><span data-i18n="admin_dlq.btn_next">Next →</span></button>
             </div>
         </section>
 
         <section class="section">
-            <h2>📝 Message Details</h2>
+            <h2>📝 <span data-i18n="admin_dlq.details_title">Message details</span></h2>
             <pre id="detailsBox" class="json-viewer">{}</pre>
         </section>
     </div>
 </body>
+
 </html>

@@ -34,6 +34,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     await loadStats();
     await loadMessages();
 
+    window.addEventListener("i18n:updated", () => {
+        void loadStats();
+        void loadMessages();
+    });
+
     window.__dlqRefreshTimer = window.setInterval(async () => {
         try {
             await Promise.all([loadStats(), loadMessages()]);
