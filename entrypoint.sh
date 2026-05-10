@@ -49,6 +49,13 @@ else
     echo "❌ /run/secrets/postgres_password не найден!" && exit 1
 fi
 
+# Первый запуск: том smdg_keys пуст — заполняем из Docker secret (compose `age_private_key`).
+if [ ! -f /app/keys/age.key ] && [ -f /run/secrets/age_private_key ]; then
+    cp /run/secrets/age_private_key /app/keys/age.key
+    chmod 600 /app/keys/age.key
+    echo "✅ Инициализирован /app/keys/age.key из Docker secret"
+fi
+
 if [ ! -f /app/keys/age.key ]; then
     echo "❌ Приватный ключ /app/keys/age.key отсутствует!" && exit 1
 fi

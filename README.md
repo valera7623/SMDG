@@ -53,6 +53,8 @@ The environment variable `DEPLOYMENT_TYPE` selects the feature matrix:
 
 See [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) for details.
 
+**CI/CD (GitHub → VPS):** push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH + `docker compose`). Configure `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and optionally repository variable `VPS_DEPLOY_PATH`; see [`.github/DEPLOYMENT_SECRETS.md`](.github/DEPLOYMENT_SECRETS.md). Rolling updates with a registry image use [`.github/workflows/deploy-rolling.yml`](.github/workflows/deploy-rolling.yml).
+
 For stateless horizontal scaling (Redis-backed sessions/cache/queue, Nginx load
 balancer, health/readiness checks, blue/green cutover scripts), use the section
 **"Horizontal scaling (stateless cluster)"** in the deployment guide.

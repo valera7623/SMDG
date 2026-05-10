@@ -1,3 +1,12 @@
+# Cursor → GitHub → Actions → VPS (простой деплой)
+#
+# Secrets  (Settings → Secrets and variables → Actions):
+#   VPS_HOST, VPS_USER, VPS_SSH_KEY
+# Variables (optional):
+#   VPS_DEPLOY_PATH — каталог с git clone на сервере (default: /home/smdg/SMDG)
+#
+# Справка: ../DEPLOYMENT_SECRETS.md
+
 name: 🚀 Deploy SMDG to VPS
 
 on:
@@ -8,6 +17,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
@@ -25,32 +36,34 @@ jobs:
 
       - name: 🐳 Deploy to VPS
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            cd /home/smdg/SMDG
-            echo "🛑 Stopping containers before Git update..."
-            docker compose down
+          export DEPLOY_PATH="${DEPLOY_PATH:-/home/smdg/SMDG}"
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} env DEPLOY_PATH="$DEPLOY_PATH" bash -s << 'REMOTE'
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          echo "🛑 Stopping containers before Git update..."
+          docker compose down
 
-            # smdg runs as root in the container (see docker-compose user: 0:0), so bind-mounted
-            # dirs can be root-owned on the host and Git cannot unlink/replace tracked paths.
-            echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
-            mkdir -p audit_logs encrypted decrypted uploads static
-            # --pull=missing: use local alpine if present; avoid registry check when cached
-            docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
-              sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
+          # smdg runs as root in the container (see docker-compose user: 0:0), so bind-mounted
+          # dirs can be root-owned on the host and Git cannot unlink/replace tracked paths.
+          echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
+          mkdir -p audit_logs encrypted decrypted uploads static
+          # --pull=missing: use local alpine if present; avoid registry check when cached
+          docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
+            sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
 
-            echo "📥 Pulling latest changes from Git..."
-            # audit_logs/ is runtime data (bind-mounted). If it was ever tracked, reset would drop it.
-            if [[ -f audit_logs/audit.csv ]]; then
-              cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.deploy.bak
-            fi
-            git fetch origin main
-            git reset --hard origin/main
-            mkdir -p audit_logs
-            if [[ -f /tmp/smdg-audit-csv.deploy.bak ]]; then
-              cp -a /tmp/smdg-audit-csv.deploy.bak audit_logs/audit.csv
-              rm -f /tmp/smdg-audit-csv.deploy.bak
-            fi
-            echo "🐳 Rebuilding and restarting Docker containers..."
-            docker compose up -d --build
-            echo "✅ Deployment complete!"
-          EOF
+          echo "📥 Pulling latest changes from Git..."
+          # audit_logs/ is runtime data (bind-mounted). If it was ever tracked, reset would drop it.
+          if [[ -f audit_logs/audit.csv ]]; then
+            cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.deploy.bak
+          fi
+          git fetch origin main
+          git reset --hard origin/main
+          mkdir -p audit_logs
+          if [[ -f /tmp/smdg-audit-csv.deploy.bak ]]; then
+            cp -a /tmp/smdg-audit-csv.deploy.bak audit_logs/audit.csv
+            rm -f /tmp/smdg-audit-csv.deploy.bak
+          fi
+          echo "🐳 Rebuilding and restarting Docker containers..."
+          docker compose up -d --build
+          echo "✅ Deployment complete!"
+          REMOTE

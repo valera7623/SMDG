@@ -54,6 +54,8 @@ docker compose up --build
 
 Подробнее: [`docs/locales/ru/DEPLOYMENT.md`](docs/locales/ru/DEPLOYMENT.md).
 
+**CI/CD (GitHub → VPS):** push в `main` запускает [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH + `docker compose`). Задайте секреты `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` и при необходимости переменную репозитория `VPS_DEPLOY_PATH`; см. [`.github/DEPLOYMENT_SECRETS.md`](.github/DEPLOYMENT_SECRETS.md). Rolling-деплой с образом из registry — [`.github/workflows/deploy-rolling.yml`](.github/workflows/deploy-rolling.yml).
+
 Для stateless-горизонтального масштабирования (Redis для сессий/кэша/очереди,
 Nginx как load balancer, проверки `/health/live` и `/health/ready`, скрипты
 blue/green cutover) используйте раздел **«Горизонтальное масштабирование
