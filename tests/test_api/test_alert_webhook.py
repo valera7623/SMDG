@@ -73,7 +73,7 @@ class TestAlertWebhook:
     def test_webhook_invalid_json(self, client):
         resp = client.post(
             "/api/alerts/webhook",
-            data="not a json",
+            content="not a json",
             headers={"Content-Type": "application/json"},
         )
         assert resp.status_code == 400

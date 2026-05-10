@@ -27,6 +27,10 @@ with patch.dict('sys.modules', {'app.core.audit': None}):
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from app.warnings_filters import apply_known_warning_filters
+
+apply_known_warning_filters()
+
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -310,7 +314,8 @@ def mock_redis_global():
     mock_instance.set = AsyncMock(return_value=True)
     mock_instance.incr = AsyncMock(return_value=1)
     mock_instance.expire = AsyncMock(return_value=True)
-    mock_instance.close = AsyncMock()                    # awaitable close
+    mock_instance.close = AsyncMock()                    # awaitable close (legacy)
+    mock_instance.aclose = AsyncMock()                   # awaitable aclose (redis>=5)
 
     with patch("app.core.rate_limiter.redis_client", mock_instance), \
          patch("app.lifecycle.lifespan.redis_client", mock_instance):

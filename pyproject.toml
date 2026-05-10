@@ -108,6 +108,10 @@ python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
 
+[tool.coverage.run]
+# Иначе строки внутри async-роутов (FastAPI + httpx ASGI) часто не попадают в отчёт.
+concurrency = ["thread", "greenlet"]
+
 [tool.bandit]
 skips = ["B404"]
 

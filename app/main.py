@@ -14,6 +14,10 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
+from app.warnings_filters import apply_known_warning_filters
+
+apply_known_warning_filters()
+
 from app.bootstrap.api_routes import register_api_routers
 from app.bootstrap.initial_admin import create_first_admin, ensure_admin_exists  # noqa: F401
 from app.bootstrap.openapi_i18n import register_localized_openapi_routes

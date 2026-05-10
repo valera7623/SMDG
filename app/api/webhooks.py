@@ -29,8 +29,8 @@ class WebhookSubscriptionCreate(BaseModel):
     url: str = Field(..., min_length=10, max_length=512, description="URL для отправки уведомлений")
     events: List[str] = Field(
         ...,
-        min_items=1,
-        max_items=10,
+        min_length=1,
+        max_length=10,
         description="Список событий (file.uploaded, file.deleted, и т.д.)"
     )
     secret: Optional[str] = Field(None, max_length=255, description="Секрет для HMAC подписи")

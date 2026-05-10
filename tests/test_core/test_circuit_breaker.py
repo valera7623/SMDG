@@ -18,6 +18,9 @@ from app.core.circuit_breaker import (
     circuit_breaker,
     get_all_circuit_breakers,
     get_circuit_breaker,
+    schedule_batch_worker_success,
+    schedule_dependency_failure,
+    set_circuit_breaker_event_loop,
 )
 
 
@@ -351,3 +354,158 @@ async def test_record_batch_worker_success_closes_from_half_open() -> None:
 
     await cb.record_batch_worker_success()
     assert cb.state is CircuitState.CLOSED
+
+
+async def test_record_batch_worker_success_resets_failure_counter_in_closed() -> None:
+    """Строки 301–307: в CLOSED батч сбрасывает накопленные ошибки."""
+    cb = _make_cb(failure_threshold=5)
+    with pytest.raises(_Boom):
+        await cb.call(_fail)
+    assert cb.failure_count == 1
+
+    await cb.record_batch_worker_success()
+    assert cb.failure_count == 0
+    assert cb.state is CircuitState.CLOSED
+
+
+async def test_excluded_exception_in_half_open_decrements_in_flight() -> None:
+    """Строки 239–242: исключение из ``exclude_exceptions`` в HALF_OPEN уменьшает in_flight."""
+    cb = _make_cb(exclude_exceptions=(ValueError,))
+    async with cb._lock:
+        cb._state = CircuitState.HALF_OPEN
+        cb._half_open_in_flight = 2
+
+    await cb._after_call(error=ValueError("ignored"))
+
+    assert cb._half_open_in_flight == 1  # noqa: SLF001
+
+
+async def test_open_state_missing_opened_at_sets_timestamp() -> None:
+    """Строки 355–358: OPEN без ``_opened_at`` — выставляем время, вызов всё ещё режется как OPEN."""
+    cb = _make_cb(failure_threshold=1, recovery_timeout=100)
+    with pytest.raises(_Boom):
+        await cb.call(_fail)
+    assert cb.state is CircuitState.OPEN
+    cb._opened_at = None  # noqa: SLF001
+
+    with pytest.raises(CircuitBreakerOpenError):
+        await cb.call(_ok)
+
+    assert cb._opened_at is not None  # noqa: SLF001
+
+
+async def test_half_open_idle_timeout_returns_to_open() -> None:
+    """Строки 375–381: HALF_OPEN без активности дольше ``half_open_timeout`` → OPEN."""
+    cb = _make_cb(
+        failure_threshold=1,
+        recovery_timeout=0.05,
+        half_open_max_calls=3,
+        half_open_timeout=0.06,
+    )
+    with pytest.raises(_Boom):
+        await cb.call(_fail)
+    await asyncio.sleep(0.08)
+
+    await cb.call(_ok)
+    assert cb.state is CircuitState.HALF_OPEN
+
+    await asyncio.sleep(0.12)
+    with pytest.raises(CircuitBreakerOpenError):
+        await cb.call(_ok)
+    assert cb.state is CircuitState.OPEN
+
+
+async def test_set_circuit_breaker_event_loop_and_schedule_dependency_failure() -> None:
+    """Планирование сбоя из другого потока учитывается в том же брейкере."""
+    name = f"sched_fail_{time.time_ns()}"
+    cb = get_circuit_breaker(name, failure_threshold=2, recovery_timeout=60.0)
+
+    loop = asyncio.get_running_loop()
+    set_circuit_breaker_event_loop(loop)
+
+    def _fire():
+        schedule_dependency_failure(name, ValueError("remote"))
+
+    await asyncio.to_thread(_fire)
+    await asyncio.sleep(0.05)
+
+    assert cb.get_state()["total_failures"] >= 1
+
+    set_circuit_breaker_event_loop(None)
+
+
+async def test_schedule_dependency_failure_no_op_without_loop() -> None:
+    schedule_dependency_failure("no_loop_cb_never_registered_xyz", RuntimeError("x"))
+    assert "no_loop_cb_never_registered_xyz" not in get_all_circuit_breakers()
+
+
+async def test_set_circuit_breaker_event_loop_closed_loop_no_crash() -> None:
+    """Строка 533: ``loop.is_closed()`` — не планируем."""
+    name = f"closed_loop_{time.time_ns()}"
+    get_circuit_breaker(name, failure_threshold=5)
+    loop = asyncio.new_event_loop()
+    loop.close()
+    set_circuit_breaker_event_loop(loop)
+    schedule_dependency_failure(name, ValueError("x"))
+
+
+async def test_schedule_batch_worker_success_skips_when_loop_closed() -> None:
+    import app.core.circuit_breaker as cb_mod
+
+    loop = asyncio.new_event_loop()
+    loop.close()
+    cb_mod.set_circuit_breaker_event_loop(loop)
+    cb_mod.schedule_batch_worker_success("noop_when_closed")
+
+
+async def test_schedule_batch_worker_success_inner_failure_logged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Строки 569–570: исключение внутри запланированной корутины не пробрасывается."""
+    import app.core.circuit_breaker as cb_mod
+
+    name = f"batch_inner_fail_{time.time_ns()}"
+    cb = _make_cb()
+    cb_mod._circuit_breakers[name] = cb  # noqa: SLF001
+
+    async def _boom() -> None:
+        raise RuntimeError("batch boom")
+
+    monkeypatch.setattr(cb, "record_batch_worker_success", _boom)
+
+    loop = asyncio.get_running_loop()
+    cb_mod.set_circuit_breaker_event_loop(loop)
+
+    def _fire() -> None:
+        cb_mod.schedule_batch_worker_success(name)
+
+    await asyncio.to_thread(_fire)
+    await asyncio.sleep(0.05)
+
+    del cb_mod._circuit_breakers[name]  # noqa: SLF001
+    cb_mod.set_circuit_breaker_event_loop(None)
+
+
+async def test_schedule_batch_worker_success_from_thread() -> None:
+    import app.core.circuit_breaker as cb_mod
+
+    name = f"sched_batch_{time.time_ns()}"
+    cb = _make_cb(failure_threshold=1, recovery_timeout=0.05, half_open_max_calls=2)
+    cb_mod._circuit_breakers[name] = cb  # noqa: SLF001
+
+    loop = asyncio.get_running_loop()
+    set_circuit_breaker_event_loop(loop)
+
+    with pytest.raises(_Boom):
+        await cb.call(_fail)
+    await asyncio.sleep(0.08)
+
+    def _fire():
+        schedule_batch_worker_success(name)
+
+    await asyncio.to_thread(_fire)
+    await asyncio.sleep(0.05)
+    assert cb.state in (CircuitState.HALF_OPEN, CircuitState.CLOSED)
+
+    del cb_mod._circuit_breakers[name]  # noqa: SLF001
+    set_circuit_breaker_event_loop(None)

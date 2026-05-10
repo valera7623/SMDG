@@ -313,7 +313,7 @@ async def lifespan(app: FastAPI):
         logger.warning("⚠️ Ошибка flush аудит-логов: %s", e)
 
     try:
-        await redis_client.close()
+        await redis_client.aclose()
         logger.info("🔒 Redis connection закрыт")
     except Exception as e:
         logger.warning("⚠️ Ошибка закрытия Redis: %s", e)

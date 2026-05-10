@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 from unittest.mock import patch, MagicMock
 
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 
 from app.main import app
 from app.core.auth import get_current_user
@@ -131,6 +132,24 @@ def _fake_encrypted_dir(files_on_disk: set[str] | None = None, stat_error: bool 
 # Fixtures
 # ============================================================
 
+@pytest.fixture(autouse=True)
+async def _list_api_clean_file_tables(db_session):
+    """Перед каждым тестом чистим ``files`` и всё, что на них ссылается.
+
+    У роли doctor запрос списка без фильтра по пользователю — иначе в ответ
+    попадают десятки чужих файлов и ломаются ожидания по count / audit.
+
+    Используем ``TRUNCATE ... RESTART IDENTITY CASCADE`` — он сам обходит
+    зависимости (``file_links``, ``dicom_view_tokens`` и любые будущие FK)
+    и сбрасывает sequence, чтобы id были предсказуемыми.
+    """
+    await db_session.execute(
+        text("TRUNCATE TABLE files RESTART IDENTITY CASCADE")
+    )
+    await db_session.commit()
+    yield
+
+
 @pytest.fixture
 async def _override_db(override_app_db, stub_encrypted_storage):
     """Тестовая БД + заглушка хранилища (list проверяет exists/stat)."""
@@ -148,10 +167,28 @@ def _clear_user():
     app.dependency_overrides.pop(get_current_user, None)
 
 
+@pytest.fixture(autouse=True)
+def _disable_list_endpoint_rate_limit(monkeypatch):
+    """SlowAPI 10/min легко даёт 429 при полном suite / параллели."""
+    def _no_limit(*_a, **_kw):
+        def _decorator(route):
+            return route
+
+        return _decorator
+
+    monkeypatch.setattr("app.api.list.limiter.limit", _no_limit)
+
+
 @pytest.fixture
 def async_client():
     transport = ASGITransport(app=app)
-    return AsyncClient(transport=transport, base_url="http://test")
+    # Host=test не резолвит tenant при SaaS/multi-tenant; testserver — как Starlette TestClient.
+    # X-Tenant-ID гарантирует контекст tenant при включённом MULTI_TENANCY.
+    return AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+        headers={"X-Tenant-ID": "1"},
+    )
 
 
 # ============================================================

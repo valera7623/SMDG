@@ -77,7 +77,7 @@ async def _get_dicom_metadata_cache(file_id: int) -> dict | None:
         from redis.asyncio import Redis
         r = Redis.from_url(settings.redis_url, decode_responses=True)
         cached = await r.get(f"smdg:dicom_meta:{file_id}")
-        await r.close()
+        await r.aclose()
         if cached:
             return json.loads(cached)
     except Exception as e:
@@ -92,7 +92,7 @@ async def _set_dicom_metadata_cache(file_id: int, metadata: dict):
         r = Redis.from_url(settings.redis_url, decode_responses=True)
         ttl = settings.dicom_view_token_ttl_seconds + 3600
         await r.set(f"smdg:dicom_meta:{file_id}", json.dumps(metadata), ex=ttl)
-        await r.close()
+        await r.aclose()
     except Exception as e:
         logger.debug(f"[DICOM Cache] Redis write error: {e}")
 
@@ -888,7 +888,7 @@ async def render_dicom_png(
         from redis.asyncio import Redis
         r = Redis.from_url(settings.redis_url, decode_responses=False)
         cached_png = await r.get(wl_key)
-        await r.close()
+        await r.aclose()
         if cached_png:
             return StreamingResponse(
                 iter([cached_png]),
@@ -988,7 +988,7 @@ async def render_dicom_png(
             from redis.asyncio import Redis
             r = Redis.from_url(settings.redis_url, decode_responses=False)
             await r.set(wl_key, png_bytes, ex=3600)
-            await r.close()
+            await r.aclose()
         except Exception as e:
             logger.debug(f"[DICOM PNG Cache] Redis write error: {e}")
 

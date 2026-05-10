@@ -33,7 +33,7 @@ class DistributedCache:
 
     async def close(self) -> None:
         if self.redis_client is not None:
-            await self.redis_client.close()
+            await self.redis_client.aclose()
         self.redis_client = None
 
     async def get(self, key: str) -> Optional[Any]:

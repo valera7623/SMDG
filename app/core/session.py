@@ -35,7 +35,7 @@ class SessionManager:
 
     async def close(self) -> None:
         if self.redis_client is not None:
-            await self.redis_client.close()
+            await self.redis_client.aclose()
         self._initialized = False
 
     async def create_session(self, user_id: int, data: Dict[str, Any]) -> str:

@@ -56,7 +56,7 @@ class DistributedJobQueue:
     async def close(self) -> None:
         await self.stop()
         if self.redis_client is not None:
-            await self.redis_client.close()
+            await self.redis_client.aclose()
         self.redis_client = None
 
     def register_handler(self, job_type: str, handler: JobHandler) -> None:

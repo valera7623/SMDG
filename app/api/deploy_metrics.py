@@ -114,12 +114,11 @@ def register_deploy_metrics(app: FastAPI) -> None:
         version, git_sha[:12], replica,
     )
 
-    # Привязываем readiness-gauge к событиям жизненного цикла.
-    # При graceful shutdown выставляем 0 → Prometheus/Grafana сразу видит,
-    # что реплика выводится из ротации.
-    @app.on_event("shutdown")
-    async def _on_shutdown() -> None:  # pragma: no cover
-        READINESS_GAUGE.labels(replica=replica).set(0)
+    # Сброс readiness-gauge при graceful shutdown выполняется в основном
+    # lifespan-обработчике (см. app/lifecycle/lifespan.py) — там уже
+    # вызывается ``READINESS_GAUGE.labels(replica=...).set(0)``.
+    # Поэтому отдельный ``@app.on_event("shutdown")`` (deprecated в FastAPI)
+    # больше не нужен.
 
 
 def mark_deploy_success(duration_seconds: float) -> None:

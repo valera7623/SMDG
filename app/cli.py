@@ -1,6 +1,11 @@
 # app/cli.py
 import asyncio
 import typer
+
+from app.warnings_filters import apply_known_warning_filters
+
+apply_known_warning_filters()
+
 from app.core.database import AsyncSessionLocal
 from app.models.user import User
 from app.models.tenant import Tenant  # нужно будет создать
