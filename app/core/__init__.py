@@ -64,6 +64,7 @@ _PUBLIC_KEY = None
 async def init_keys():
     """Инициализация ключей шифрования"""
     from app.crypto import get_crypto_backend
+    from app.crypto.crypto import _run_age, _parse_age_public_key
 
     crypto_manager = get_crypto_backend()
 
@@ -78,6 +79,22 @@ async def init_keys():
                     _PUBLIC_KEY = lines[-1]  # берём последнюю валидную строку (age1...)
                 else:
                     raise ValueError("Файл age.pub пустой или содержит только комментарии")
+        elif PRIVATE_KEY_PATH.exists():
+            # Есть только приватный ключ (Docker secret / восстановление) — age.pub нельзя
+            # получить через age-keygen -o, файл уже существует. Извлекаем публичный ключ:
+            # `age-keygen -y <identity>`.
+            stdout_data, stderr_data = await _run_age(
+                ["age-keygen", "-y", str(PRIVATE_KEY_PATH.resolve())],
+                "Не удалось получить публичный ключ из приватного age.key (age-keygen -y)",
+                err_cls=ValueError,
+            )
+            output_text = (stdout_data + stderr_data).decode("utf-8", errors="replace")
+            pk = _parse_age_public_key(output_text)
+            if not pk:
+                raise ValueError("age-keygen -y не вернул публичный ключ (пустой вывод)")
+            _PUBLIC_KEY = pk
+            with open(pub_path, "w") as f:
+                f.write(pk + "\n")
         else:
             # Генерация новой пары (как было)
             print("Публичный ключ не найден, генерируем новую пару...")

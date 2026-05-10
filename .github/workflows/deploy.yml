@@ -4,6 +4,10 @@
 #   VPS_HOST, VPS_USER, VPS_SSH_KEY
 # Variables (optional):
 #   VPS_DEPLOY_PATH — каталог с git clone на сервере (default: /home/smdg/SMDG)
+#   VPS_AUTO_CLONE — если true и каталога нет: mkdir + git clone (публичный repo или см. VPS_GITHUB_TOKEN)
+#
+# Secrets (optional):
+#   VPS_GITHUB_TOKEN — PAT для git clone приватного репозитория на VPS (read-only достаточно)
 #
 # Справка: ../DEPLOYMENT_SECRETS.md
 
@@ -19,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
+      VPS_AUTO_CLONE: ${{ vars.VPS_AUTO_CLONE }}
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
@@ -35,10 +40,42 @@ jobs:
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
       - name: 🐳 Deploy to VPS
+        env:
+          REPO_SLUG: ${{ github.repository }}
         run: |
           export DEPLOY_PATH="${DEPLOY_PATH:-/home/smdg/SMDG}"
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} env DEPLOY_PATH="$DEPLOY_PATH" bash -s << 'REMOTE'
+          export REPO_URL="https://github.com/${REPO_SLUG}.git"
+          export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
+          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            env DEPLOY_PATH="$DEPLOY_PATH" \
+                REPO_URL="$REPO_URL" \
+                REPO_SLUG="$REPO_SLUG" \
+                VPS_AUTO_CLONE="$VPS_AUTO_CLONE" \
+                VPS_GIT_CLONE_TOKEN="${{ secrets.VPS_GITHUB_TOKEN }}" \
+            bash -s << 'REMOTE'
           set -euo pipefail
+
+          if [[ ! -d "$DEPLOY_PATH" ]]; then
+            if [[ "${VPS_AUTO_CLONE:-false}" == "true" ]]; then
+              echo "📂 DEPLOY_PATH отсутствует — клонируем репозиторий (VPS_AUTO_CLONE=true)..."
+              mkdir -p "$(dirname "$DEPLOY_PATH")"
+              if [[ -n "${VPS_GIT_CLONE_TOKEN:-}" ]]; then
+                git clone "https://x-access-token:${VPS_GIT_CLONE_TOKEN}@github.com/${REPO_SLUG}.git" "$DEPLOY_PATH"
+              else
+                git clone "$REPO_URL" "$DEPLOY_PATH"
+              fi
+            else
+              echo "::error::Каталог деплоя не существует на VPS: $DEPLOY_PATH"
+              echo ""
+              echo "Сделайте один из вариантов:"
+              echo "  1) На сервере: mkdir -p \"$(dirname "$DEPLOY_PATH")\" && git clone $REPO_URL \"$DEPLOY_PATH\""
+              echo "     (для приватного репозитория используйте deploy key или PAT при clone)"
+              echo "  2) Либо задайте в GitHub → Variables → VPS_DEPLOY_PATH путь к уже существующему clone."
+              echo "  3) Либо Variables → VPS_AUTO_CLONE=true для автоматического clone (публичный repo или Secrets → VPS_GITHUB_TOKEN)."
+              exit 1
+            fi
+          fi
+
           cd "$DEPLOY_PATH"
           echo "🛑 Stopping containers before Git update..."
           docker compose down

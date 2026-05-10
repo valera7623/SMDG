@@ -251,6 +251,7 @@ async def lifespan(app: FastAPI):
         logger.info("✅ Ключи шифрования инициализированы")
     except Exception as e:
         logger.exception("❌ Ошибка инициализации ключей: %s", e)
+        raise
 
     await check_redis_connection()
     logger.info("✅ Rate limiter: Redis проверен")
