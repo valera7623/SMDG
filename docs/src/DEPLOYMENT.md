@@ -3,6 +3,10 @@
 The environment variable **`DEPLOYMENT_TYPE`** accepts one of:
 `russia` | `intl` | `single` | `saas`.
 
+## Python runtime
+
+Production containers built from the repository [`Dockerfile`](../../Dockerfile) use **Python 3.10** (`python:3.10-slim`). CI runs tests on **Python 3.10, 3.11, and 3.12** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). When debugging production behaviour locally, align your interpreter with the image baseline unless you intentionally rebuild the image on a newer Python.
+
 ## Russia (`russia`)
 
 - Local storage (`S3_ENABLED=false`).

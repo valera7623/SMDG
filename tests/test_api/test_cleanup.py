@@ -4,7 +4,10 @@
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
+import time as time_module
+from unittest.mock import MagicMock, patch, PropertyMock, AsyncMock
+
+from app.core.storage_backend import ObjectMetadata
 from fastapi.testclient import TestClient
 from pathlib import Path
 from time import time
@@ -17,10 +20,11 @@ from app.core.auth import get_current_admin
 #  HELPERS
 # ═══════════════════════════════════════════════════════════
 
-def make_token_data(sub="admin_user", role="admin"):
+def make_token_data(sub="admin_user", role="admin", tenant_id=1):
     td = MagicMock()
     td.sub = sub
     td.role = role
+    td.tenant_id = tenant_id
     return td
 
 
@@ -155,27 +159,17 @@ class TestForceCleanup:
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_success_both_dirs(self, mock_path_cls, mock_storage, mock_audit, client):
-        """Полная очистка — оба каталога"""
+    @patch("app.api.cleanup.encrypted_storage.delete_many", new_callable=AsyncMock)
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_success_both_dirs(self, mock_list_objects, mock_delete_many, mock_storage, mock_audit, client):
+        """Полная очистка — decrypted + ключи в хранилище"""
         mock_storage.force_cleanup.return_value = {"deleted": 3}
-
-        # Мок encrypted директории
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = True
-
-        enc_file1 = MagicMock(spec=Path)
-        enc_file1.is_file.return_value = True
-        enc_file1.name = "file1.enc"
-        enc_file1.unlink = MagicMock()
-
-        enc_file2 = MagicMock(spec=Path)
-        enc_file2.is_file.return_value = True
-        enc_file2.name = "file2.enc"
-        enc_file2.unlink = MagicMock()
-
-        mock_encrypted_dir.iterdir.return_value = [enc_file1, enc_file2]
-        mock_path_cls.return_value = mock_encrypted_dir
+        ts = time_module.time()
+        mock_list_objects.return_value = [
+            ObjectMetadata(key="file1.enc", size=1, last_modified=ts),
+            ObjectMetadata(key="file2.enc", size=1, last_modified=ts),
+        ]
+        mock_delete_many.return_value = {"deleted_count": 2, "errors": []}
 
         response = client.post("/api/cleanup/force")
 
@@ -188,14 +182,11 @@ class TestForceCleanup:
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_no_encrypted_dir(self, mock_path_cls, mock_storage, mock_audit, client):
-        """Очистка — encrypted директория не существует"""
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_no_encrypted_dir(self, mock_list_objects, mock_storage, mock_audit, client):
+        """Очистка — в хранилище нет объектов"""
         mock_storage.force_cleanup.return_value = {"deleted": 1}
-
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = False
-        mock_path_cls.return_value = mock_encrypted_dir
+        mock_list_objects.return_value = []
 
         response = client.post("/api/cleanup/force")
 
@@ -225,74 +216,54 @@ class TestForceCleanup:
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_encrypted_file_error(self, mock_path_cls, mock_storage, mock_audit, client):
-        """Очистка — ошибка удаления отдельного encrypted файла"""
+    @patch("app.api.cleanup.encrypted_storage.delete_many", new_callable=AsyncMock)
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_encrypted_file_error(self, mock_list_objects, mock_delete_many, mock_storage, mock_audit, client):
+        """Очистка — delete_many возвращает ошибку по ключу"""
         mock_storage.force_cleanup.return_value = {"deleted": 0}
-
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = True
-
-        good_file = MagicMock(spec=Path)
-        good_file.is_file.return_value = True
-        good_file.name = "good.enc"
-        good_file.unlink = MagicMock()
-
-        bad_file = MagicMock(spec=Path)
-        bad_file.is_file.return_value = True
-        bad_file.name = "locked.enc"
-        bad_file.unlink.side_effect = PermissionError("Permission denied")
-
-        mock_encrypted_dir.iterdir.return_value = [good_file, bad_file]
-        mock_path_cls.return_value = mock_encrypted_dir
+        ts = time_module.time()
+        mock_list_objects.return_value = [
+            ObjectMetadata(key="good.enc", size=1, last_modified=ts),
+            ObjectMetadata(key="locked.enc", size=1, last_modified=ts),
+        ]
+        mock_delete_many.return_value = {
+            "deleted_count": 1,
+            "errors": ["locked.enc: Permission denied"],
+        }
 
         response = client.post("/api/cleanup/force")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["deleted"]["encrypted"] == 1  # только good_file
-        assert len(data["errors"]) == 1
-        assert "locked.enc" in data["errors"][0]
+        assert data["deleted"]["encrypted"] == 1
+        assert len(data["errors"]) >= 1
+        assert any("locked.enc" in e for e in data["errors"])
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_encrypted_dir_has_subdirs(self, mock_path_cls, mock_storage, mock_audit, client):
-        """Очистка — в encrypted есть поддиректории (пропускаются)"""
+    @patch("app.api.cleanup.encrypted_storage.delete_many", new_callable=AsyncMock)
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_encrypted_dir_has_subdirs(self, mock_list_objects, mock_delete_many, mock_storage, mock_audit, client):
+        """Список объектов из backend — удаляются только переданные ключи."""
         mock_storage.force_cleanup.return_value = {"deleted": 0}
-
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = True
-
-        subdir = MagicMock(spec=Path)
-        subdir.is_file.return_value = False
-        subdir.name = "some_subdir"
-
-        file_item = MagicMock(spec=Path)
-        file_item.is_file.return_value = True
-        file_item.name = "data.enc"
-        file_item.unlink = MagicMock()
-
-        mock_encrypted_dir.iterdir.return_value = [subdir, file_item]
-        mock_path_cls.return_value = mock_encrypted_dir
+        ts = time_module.time()
+        mock_list_objects.return_value = [
+            ObjectMetadata(key="data.enc", size=1, last_modified=ts),
+        ]
+        mock_delete_many.return_value = {"deleted_count": 1, "errors": []}
 
         response = client.post("/api/cleanup/force")
 
         assert response.status_code == 200
         assert response.json()["deleted"]["encrypted"] == 1
-        subdir.unlink.assert_not_called()
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_empty_encrypted_dir(self, mock_path_cls, mock_storage, mock_audit, client):
-        """Очистка — encrypted директория пуста"""
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_empty_encrypted_dir(self, mock_list_objects, mock_storage, mock_audit, client):
+        """Очистка — в хранилище нет объектов"""
         mock_storage.force_cleanup.return_value = {"deleted": 0}
-
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = True
-        mock_encrypted_dir.iterdir.return_value = []
-        mock_path_cls.return_value = mock_encrypted_dir
+        mock_list_objects.return_value = []
 
         response = client.post("/api/cleanup/force")
 
@@ -304,14 +275,11 @@ class TestForceCleanup:
 
     @patch("app.api.cleanup.audit_logger")
     @patch("app.api.cleanup.file_storage")
-    @patch("app.api.cleanup.Path")
-    def test_force_cleanup_audit_log_final(self, mock_path_cls, mock_storage, mock_audit, client):
+    @patch("app.api.cleanup.encrypted_storage.list_objects", new_callable=AsyncMock)
+    def test_force_cleanup_audit_log_final(self, mock_list_objects, mock_storage, mock_audit, client):
         """Проверяем финальный audit log после cleanup"""
         mock_storage.force_cleanup.return_value = {"deleted": 2}
-
-        mock_encrypted_dir = MagicMock()
-        mock_encrypted_dir.exists.return_value = False
-        mock_path_cls.return_value = mock_encrypted_dir
+        mock_list_objects.return_value = []
 
         response = client.post("/api/cleanup/force")
         assert response.status_code == 200

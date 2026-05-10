@@ -28,8 +28,15 @@ async def test_read_write_split(monkeypatch):
     def write_factory():
         return "write-session"
 
+    async def fake_snapshot(force_refresh: bool = False):
+        return {
+            "replica_0": {"id": 0, "healthy": True, "lag_bytes": 0, "lag_seconds": 0.0, "error": None},
+            "replica_1": {"id": 1, "healthy": True, "lag_bytes": 0, "lag_seconds": 0.0, "error": None},
+        }
+
     monkeypatch.setattr(router, "replica_session_factories", [make_read_factory(0), make_read_factory(1)])
     monkeypatch.setattr(router, "master_session_factory", write_factory)
+    monkeypatch.setattr(router, "_get_replica_snapshot", fake_snapshot)
 
     session1 = await router.get_read_session()
     session2 = await router.get_read_session()
@@ -39,6 +46,8 @@ async def test_read_write_split(monkeypatch):
     assert isinstance(session2, DummySession)
     assert read_calls == [0, 1]  # round-robin
     assert write_session == "write-session"
+
+    await router.dispose()
 
 
 @pytest.mark.asyncio
@@ -56,9 +65,14 @@ async def test_replica_lag_monitoring(monkeypatch):
             return self._value
 
     class DummyConn:
+        def __init__(self):
+            self._n = 0
+
         async def execute(self, _):
-            if not hasattr(self, "called"):
-                self.called = 1
+            self._n += 1
+            if self._n == 1:
+                return DummyResult(1)
+            if self._n == 2:
                 return DummyResult(1024)
             return DummyResult(0.25)
 
@@ -73,6 +87,9 @@ async def test_replica_lag_monitoring(monkeypatch):
         def connect(self):
             return DummyContext()
 
+        async def dispose(self) -> None:
+            pass
+
     monkeypatch.setattr(router, "replica_engines", [DummyEngine()])
 
     lag = await router.get_replica_lag()
@@ -80,6 +97,8 @@ async def test_replica_lag_monitoring(monkeypatch):
     assert "replica_0" in lag
     assert lag["replica_0"]["lag_bytes"] == 1024
     assert lag["replica_0"]["healthy"] is True
+
+    await router.dispose()
 
 
 @pytest.mark.asyncio

@@ -34,7 +34,7 @@ BASE = "/api/admin/users"
 
 @pytest.fixture
 def admin_token():
-    return TokenData(sub="admin", role="admin")
+    return TokenData(sub="admin", role="admin", tenant_id=1)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -49,6 +49,7 @@ def _make_user(
     is_active: bool = True,
     otp_secret: str | None = None,
     hashed_password: str = "hashed",
+    tenant_id: int = 1,
 ):
     u = MagicMock()
     u.id = id
@@ -58,6 +59,7 @@ def _make_user(
     u.is_active = is_active
     u.otp_secret = otp_secret
     u.hashed_password = hashed_password
+    u.tenant_id = tenant_id
     return u
 
 
@@ -932,10 +934,16 @@ class TestBulkUserActions:
     async def test_bulk_delete_success(self, admin_token):
         from app.main import app
         delete_res = self._update_result(3)
+        to_delete = [
+            _make_user(1, "u1", tenant_id=1),
+            _make_user(2, "u2", tenant_id=1),
+            _make_user(3, "u3", tenant_id=1),
+        ]
         session = AsyncMock()
         session.execute = AsyncMock(side_effect=[
             _scalar_result(None),
-            _scalar_result(None),  # нет админов среди выбранных
+            _scalar_result(None),
+            _scalars_result(to_delete),
             delete_res,
         ])
         _override(app, admin_token, session)

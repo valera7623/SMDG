@@ -137,6 +137,13 @@ class ActiveRequestsMiddleware:
         state = self._fastapi_app.state
         path: str = scope.get("path", "")
 
+        # ASGI-транспорты (например httpx ASGITransport) часто не вызывают lifespan;
+        # без этого обращение к app.state падает до инициализации в lifespan.
+        if not hasattr(state, "active_requests_lock"):
+            state.active_requests_lock = asyncio.Lock()
+        if not hasattr(state, "active_requests"):
+            state.active_requests = 0
+
         shutting_down: bool = getattr(state, "shutting_down", False)
         if shutting_down and path not in _SHUTDOWN_WHITELIST:
             logger.warning(

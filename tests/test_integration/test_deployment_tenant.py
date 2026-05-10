@@ -86,7 +86,7 @@ _ORIG_IS_ENABLED = ff.is_enabled
 @pytest.mark.asyncio
 async def test_single_tenant_super_admin_always_default_not_other_subdomain(db_session):
     """При отключённом multi-tenancy super_admin не переключается на другой tenant по Host."""
-    db_session.add(Tenant(name="Other Org", subdomain="other", settings={}))
+    db_session.add(Tenant(id=2, name="Other Org", subdomain="other", settings={}))
     await db_session.commit()
 
     other = await db_session.get(Tenant, 2)
@@ -112,7 +112,7 @@ async def test_single_tenant_super_admin_always_default_not_other_subdomain(db_s
 @pytest.mark.asyncio
 async def test_single_tenant_super_admin_ignores_x_tenant_id(db_session):
     """X-Tenant-ID на другую организацию не меняет контекст для super_admin."""
-    db_session.add(Tenant(name="Alt", subdomain="alt", settings={}))
+    db_session.add(Tenant(id=3, name="Alt", subdomain="alt", settings={}))
     await db_session.commit()
 
     result = await db_session.execute(select(Tenant).where(Tenant.subdomain == "alt"))
@@ -140,7 +140,7 @@ async def test_single_tenant_super_admin_ignores_x_tenant_id(db_session):
 @pytest.mark.asyncio
 async def test_single_tenant_user_forbidden_wrong_jwt_tenant(db_session):
     """Обычный пользователь с JWT от другого tenant получает 403."""
-    db_session.add(Tenant(name="Alt", subdomain="alt2", settings={}))
+    db_session.add(Tenant(id=4, name="Alt", subdomain="alt2", settings={}))
     await db_session.commit()
 
     result = await db_session.execute(select(Tenant).where(Tenant.subdomain == "alt2"))
@@ -163,7 +163,7 @@ async def test_single_tenant_user_forbidden_wrong_jwt_tenant(db_session):
 @pytest.mark.asyncio
 async def test_multi_tenant_super_admin_can_use_host_hint(db_session):
     """При включённом MULTI_TENANCY super_admin по-прежнему может выбрать tenant по Host."""
-    db_session.add(Tenant(name="Beta", subdomain="beta", settings={}))
+    db_session.add(Tenant(id=5, name="Beta", subdomain="beta", settings={}))
     await db_session.commit()
 
     result = await db_session.execute(select(Tenant).where(Tenant.subdomain == "beta"))

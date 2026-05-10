@@ -79,7 +79,18 @@ def make_request() -> MagicMock:
     req        = MagicMock(spec=Request)
     req.scope  = {"type": "http"}
     req.client = MagicMock(host="127.0.0.1")
+    tenant = MagicMock()
+    tenant.id = 1
+    req.state = MagicMock()
+    req.state.tenant = tenant
     return req
+
+
+async def _fake_encrypted_download(key, destination_path):
+    """Обход LocalStorageBackend: ключ в БД может быть абсолютным путём."""
+    p = Path(destination_path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(b"stub-cipher")
 
 
 # ============================================================================
@@ -98,7 +109,7 @@ def tmp_dirs(tmp_path):
 
 @pytest.fixture
 def doctor_token():
-    return TokenData(sub="doctor-uuid", role="doctor")
+    return TokenData(sub="doctor-uuid", role="doctor", tenant_id=1)
 
 
 @pytest.fixture
@@ -109,7 +120,7 @@ def download_client(doctor_token, tmp_dirs):
     - get_db            → AsyncMock-сессия (пустая; тест может заменить)
     - ENCRYPTED_DIR / DECRYPTED_DIR / PRIVATE_KEY_PATH
     """
-    empty_db = make_db([])
+    empty_db = make_db([None])
 
     async def _get_db():
         yield empty_db
@@ -117,7 +128,8 @@ def download_client(doctor_token, tmp_dirs):
     app.dependency_overrides[get_current_doctor] = lambda: doctor_token
     app.dependency_overrides[get_db]             = _get_db
 
-    with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+    with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+         patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
          patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
          patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"):
         with TestClient(app, raise_server_exceptions=False) as c:
@@ -276,7 +288,8 @@ class TestDownloadByToken:
         file = make_file(encrypted_path=str(tmp_dirs["encrypted"] / "enc.age"))
         db   = make_db([link, file])
 
-        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm:
 
@@ -302,7 +315,8 @@ class TestDownloadByToken:
         db   = make_db([link, file])
         bg   = MagicMock(spec=BackgroundTasks)
 
-        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm:
 
@@ -334,7 +348,8 @@ class TestDownloadByToken:
         file = make_file(encrypted_path=str(enc_path))
         db   = make_db([link, file])
 
-        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm:
 
@@ -361,7 +376,8 @@ class TestDownloadByToken:
         file = make_file(encrypted_path=str(enc_path))
         db   = make_db([link, file])
 
-        with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm:
 
@@ -394,8 +410,8 @@ class TestDownloadFilePost:
 
     @pytest.mark.asyncio
     async def test_file_not_on_disk_raises_404(self, tmp_dirs):
-        """Файл отсутствует на диске → 404."""
-        db = make_db([])  # execute не вызывается
+        """Нет записи в БД → 404."""
+        db = make_db([None])
 
         with patch("app.api.download.ENCRYPTED_DIR", tmp_dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR", tmp_dirs["decrypted"]):
@@ -405,12 +421,12 @@ class TestDownloadFilePost:
                     request=make_request(),
                     background_tasks=MagicMock(),
                     filename="missing.age",
-                    current_user=TokenData(sub="doc", role="doctor"),
+                    current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
                     db=db,
                 )
 
         assert exc.value.status_code == 404
-        assert "missing.age" in exc.value.detail
+        assert "базе" in exc.value.detail
 
     @pytest.mark.asyncio
     async def test_file_not_in_db_raises_404(self, tmp_dirs):
@@ -428,7 +444,7 @@ class TestDownloadFilePost:
                     request=make_request(),
                     background_tasks=MagicMock(),
                     filename="exists.age",
-                    current_user=TokenData(sub="doc", role="doctor"),
+                    current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
                     db=db,
                 )
 
@@ -447,7 +463,8 @@ class TestDownloadFilePost:
         )
         db = self._make_db_with_file(file_rec)
 
-        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm:
@@ -459,7 +476,7 @@ class TestDownloadFilePost:
                     request=make_request(),
                     background_tasks=MagicMock(),
                     filename="broken.age",
-                    current_user=TokenData(sub="doc", role="doctor"),
+                    current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
                     db=db,
                 )
 
@@ -482,7 +499,8 @@ class TestDownloadFilePost:
         async def fake_decrypt(encrypted_path, private_key_path, output_path):
             Path(output_path).write_bytes(b"plain")
 
-        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm, \
@@ -494,7 +512,7 @@ class TestDownloadFilePost:
                 request=make_request(),
                 background_tasks=bg,
                 filename="report.age",
-                current_user=TokenData(sub="doc-123", role="doctor"),
+                current_user=TokenData(sub="doc-123", role="doctor", tenant_id=1),
                 db=db,
             )
 
@@ -528,7 +546,8 @@ class TestDownloadFilePost:
         async def fake_decrypt(encrypted_path, private_key_path, output_path):
             Path(output_path).write_bytes(b"ok")
 
-        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm, \
@@ -541,7 +560,7 @@ class TestDownloadFilePost:
                 request=make_request(),
                 background_tasks=MagicMock(),
                 filename="nodoc",          # без .age
-                current_user=TokenData(sub="doc", role="doctor"),
+                current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
                 db=db,
             )
 
@@ -552,10 +571,15 @@ class TestDownloadFilePost:
         """При ошибке расшифровки audit_logger НЕ должен вызываться с success=True."""
         enc_file = tmp_dirs["encrypted"] / "err.age"
         enc_file.write_bytes(b"x")
-        file_rec = make_file(original_name="err.pdf", encrypted_name="err.age")
+        file_rec = make_file(
+            original_name="err.pdf",
+            encrypted_name="err.age",
+            encrypted_path=str(enc_file),
+        )
         db = self._make_db_with_file(file_rec)
 
-        with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm, \
@@ -568,7 +592,7 @@ class TestDownloadFilePost:
                     request=make_request(),
                     background_tasks=MagicMock(),
                     filename="err.age",
-                    current_user=TokenData(sub="doc", role="doctor"),
+                    current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
                     db=db,
                 )
 
@@ -601,16 +625,15 @@ class TestDownloadFilePost:
         async def fake_decrypt(encrypted_path, private_key_path, output_path):
             Path(output_path).write_bytes(b"plain")
 
-        # Переопределяем get_db с нужными данными
-        def make_fresh_db():
-            return make_db([file_rec])
+        db_sess = make_db([file_rec])
 
         async def _get_db():
-            yield make_fresh_db()
+            yield db_sess
 
         app.dependency_overrides[get_db] = _get_db
 
-        with patch("app.api.download.ENCRYPTED_DIR",    dirs["encrypted"]), \
+        with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+             patch("app.api.download.ENCRYPTED_DIR",    dirs["encrypted"]), \
              patch("app.api.download.DECRYPTED_DIR",    dirs["decrypted"]), \
              patch("app.api.download.PRIVATE_KEY_PATH", dirs["keys"] / "age.key"), \
              patch("app.api.download.crypto_manager") as mock_cm, \
@@ -667,7 +690,8 @@ async def test_link_deleted_only_when_limit_reached(
     file = make_file(encrypted_path=str(enc_path))
     db   = make_db([link, file])
 
-    with patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
+    with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+         patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
          patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
          patch("app.api.download.crypto_manager") as mock_cm:
 
@@ -702,13 +726,18 @@ async def test_filename_sanitization_and_age_append(tmp_dirs, filename, expected
 
     enc_file = tmp_dirs["encrypted"] / safe
     enc_file.write_bytes(b"enc")
-    file_rec = make_file(original_name="out.bin", encrypted_name=safe)
+    file_rec = make_file(
+        original_name="out.bin",
+        encrypted_name=safe,
+        encrypted_path=str(enc_file),
+    )
     db = make_db([file_rec])
 
     async def fake_decrypt(encrypted_path, private_key_path, output_path):
         Path(output_path).write_bytes(b"ok")
 
-    with patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
+    with patch("app.api.download.encrypted_storage.download", AsyncMock(side_effect=_fake_encrypted_download)), \
+         patch("app.api.download.ENCRYPTED_DIR",    tmp_dirs["encrypted"]), \
          patch("app.api.download.DECRYPTED_DIR",    tmp_dirs["decrypted"]), \
          patch("app.api.download.PRIVATE_KEY_PATH", tmp_dirs["keys"] / "age.key"), \
          patch("app.api.download.crypto_manager") as mock_cm, \
@@ -720,7 +749,7 @@ async def test_filename_sanitization_and_age_append(tmp_dirs, filename, expected
             request=make_request(),
             background_tasks=MagicMock(),
             filename=filename,
-            current_user=TokenData(sub="doc", role="doctor"),
+            current_user=TokenData(sub="doc", role="doctor", tenant_id=1),
             db=db,
         )
 

@@ -178,6 +178,7 @@ async def resolve_tenant_by_host(db: AsyncSession, host: str) -> Tenant | None:
             "127.0.0.1",
             "::1",
             "0.0.0.0",
+            "testserver",  # Host по умолчанию у FastAPI/Starlette TestClient
         ):
             subdomain = settings.tenant_default_subdomain
         elif settings.dev_mode and hn == "":

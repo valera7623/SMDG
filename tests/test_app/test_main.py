@@ -57,7 +57,8 @@ def test_health_check(client):
     assert response.json()["status"] == "healthy"
 
 
-def test_logs_page(client):
+def test_logs_page(client, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     Path("audit_logs").mkdir(exist_ok=True)
     (Path("audit_logs") / "test.log").write_text("test")
     response = client.get("/logs")
@@ -224,14 +225,24 @@ async def test_lifespan_redis_error_handling(
 
 # ====================== RATE LIMIT CUSTOM KEY ======================
 def test_custom_key_func_anonymous(client, monkeypatch):
-    """Покрывает else-ветку custom_key_func (аноним по IP)"""
-    with patch("app.main.logger.info") as mock_log:
-        response = client.get("/health")
-        assert response.status_code == 200
-        
-        # Проверяем, что вызывался лог с анонимным ключом (с любым суффиксом)
-        calls = [call[0][0] for call in mock_log.call_args_list]
-        assert any("аноним → ключ rate_limit:ip:" in msg for msg in calls)
+    """Анонимный запрос → ключ rate limit по IP (без зависимости от уровня логирования)."""
+    from unittest.mock import MagicMock
+
+    from starlette.requests import Request
+
+    from app.core.rate_limiter import custom_key_func
+
+    req = MagicMock(spec=Request)
+    req.scope = {"user": None}
+    req.headers = {}
+    req.client = MagicMock(host="203.0.113.42")
+
+    key = custom_key_func(req)
+    assert "rate_limit:ip:" in key
+    assert "203.0.113.42" in key
+
+    response = client.get("/health")
+    assert response.status_code == 200
 
 
 # ====================== ADD RATE LIMIT HEADERS ======================

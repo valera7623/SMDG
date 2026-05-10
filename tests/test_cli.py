@@ -1,7 +1,9 @@
 # tests/test_cli.py
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from typer.testing import CliRunner
-from unittest.mock import AsyncMock, patch, MagicMock
+
 from app.cli import cli
 
 runner = CliRunner()
@@ -71,6 +73,43 @@ async def test_create_admin_async_update_existing():
         assert existing_user.hashed_password == "new_hashed"
         assert existing_user.role == "admin"
         mock_session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_create_tenant_async_duplicate_subdomain():
+    """CLI: отказ при занятом subdomain."""
+    with patch("app.cli.AsyncSessionLocal") as mock_session_local:
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+        existing = MagicMock()
+        existing.id = 7
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = existing
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        from app.cli import _create_tenant_async
+
+        msg = await _create_tenant_async("Org", "taken", "a@b.com", "pw")
+        assert "уже существует" in msg
+        assert "taken" in msg
+
+
+@pytest.mark.asyncio
+async def test_create_user_async_duplicate_username():
+    """CLI: отказ при занятом username."""
+    with patch("app.cli.AsyncSessionLocal") as mock_session_local:
+        mock_session = AsyncMock()
+        mock_session_local.return_value.__aenter__.return_value = mock_session
+        existing = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = existing
+        mock_session.execute = AsyncMock(return_value=mock_result)
+
+        from app.cli import _create_user_async
+
+        msg = await _create_user_async("dup", "pw", "x@y.com")
+        assert "уже существует" in msg
+        assert "dup" in msg
 
 
 @pytest.mark.asyncio

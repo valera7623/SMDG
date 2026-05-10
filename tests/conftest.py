@@ -33,10 +33,18 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.pool import NullPool
 
 from app.main import app
-from app.core.database import Base, get_db
+import app.core as _pytest_app_core
+
+# Реальный ``init_keys`` до подмены mock_core_functions (для unit-тестов в test_core/test_init.py).
+_PYTEST_REAL_INIT_KEYS_REF = _pytest_app_core.init_keys
+
+from app.core.database import Base, dispose_async_engine, get_db
 from app.core.auth import get_current_user
 from app.core.config import settings
 from app.models.tenant import Tenant
+from app.core.dependencies import get_db_auto, get_db_for_read, get_db_for_write
+from fastapi import Request
+from app.core.storage_backend import ObjectMetadata
 
 # ========== ИМПОРТ ФАБРИК ==========
 from tests.factories import UserFactory, FileFactory, FileLinkFactory
@@ -64,6 +72,27 @@ TestingSessionLocal = async_sessionmaker(
 )
 
 
+@pytest.fixture(autouse=True)
+async def _dispose_async_engine_after_each_test():
+    """Сброс async-пула между тестами.
+
+    Смешение ``AsyncClient`` (pytest-asyncio loop) и sync ``TestClient`` (anyio
+    portal / другой loop) иначе оставляет asyncpg-соединения на «чужом» loop —
+    middleware tenant падает с pool/loop errors → 400.
+
+    Важно: middleware использует ``app.core.database.get_engine()``, а не
+    ``test_engine`` из этого conftest — сбрасываем оба пула.
+
+    ``TestClient`` с lifespan (см. ``tests/security/test_api_security``) при
+    выходе из контекста ставит ``app.state.shutting_down`` — без сброса
+    последующие запросы получают 503.
+    """
+    app.state.shutting_down = False
+    yield
+    await test_engine.dispose()
+    await dispose_async_engine()
+
+
 @pytest.fixture(scope="session")
 async def setup_test_db():
     """Создаём таблицы перед тестами"""
@@ -82,6 +111,17 @@ async def setup_test_db():
         print("🗑️ Таблицы удалены")
 
 
+@pytest.fixture(scope="session", autouse=True)
+async def _autouse_setup_test_db(setup_test_db):
+    """Всегда создаём схему и дефолтный tenant до API-тестов.
+
+    ``set_user_context`` в ``app/main.py`` резолвит tenant через реальный
+    ``AsyncSessionLocal``, не через ``get_db`` из dependency_overrides —
+    без строки tenant запросы получают 400.
+    """
+    yield
+
+
 @pytest.fixture
 async def db_session(setup_test_db) -> AsyncGenerator[AsyncSession, None]:
     """Фикстура для сессии БД"""
@@ -94,6 +134,53 @@ async def db_session(setup_test_db) -> AsyncGenerator[AsyncSession, None]:
         yield session
         # Откатываем после теста
         await session.rollback()
+
+
+@pytest.fixture
+async def override_app_db(db_session) -> AsyncGenerator[AsyncSession, None]:
+    """Подмена всех DI-сессий БД на тестовую (в т.ч. get_db_for_read/write)."""
+    from app.main import app
+
+    async def _get_db():
+        yield db_session
+
+    async def _get_db_req(_request: Request):
+        yield db_session
+
+    app.dependency_overrides[get_db] = _get_db
+    app.dependency_overrides[get_db_for_read] = _get_db_req
+    app.dependency_overrides[get_db_for_write] = _get_db_req
+    app.dependency_overrides[get_db_auto] = _get_db_req
+    yield db_session
+    for dep in (get_db, get_db_for_read, get_db_for_write, get_db_auto):
+        app.dependency_overrides.pop(dep, None)
+
+
+@pytest.fixture
+def stub_encrypted_storage(monkeypatch):
+    """Заглушка хранилища: «файл есть», фиктивные stat/download/delete."""
+    import time
+    from app.core import encrypted_storage
+
+    async def _exists(_key: str) -> bool:
+        return True
+
+    async def _stat(key: str) -> ObjectMetadata:
+        return ObjectMetadata(key=key, size=4096, last_modified=time.time())
+
+    async def _download(key: str, dest: Path) -> Path:
+        dest = Path(dest)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(b"stub")
+        return dest
+
+    async def _delete(_key: str) -> None:
+        return None
+
+    monkeypatch.setattr(encrypted_storage, "exists", _exists)
+    monkeypatch.setattr(encrypted_storage, "stat", _stat)
+    monkeypatch.setattr(encrypted_storage, "download", _download)
+    monkeypatch.setattr(encrypted_storage, "delete", _delete)
 
 
 # ========== ФИКСТУРЫ ДЛЯ ТЕСТОВЫХ ДАННЫХ ==========
@@ -134,7 +221,8 @@ def mock_current_user(test_doctor):
     from app.core.auth import TokenData
     
     def _get_current_user():
-        return TokenData(sub=str(test_doctor.id), role=test_doctor.role)
+        tid = getattr(test_doctor, "tenant_id", None) or 1
+        return TokenData(sub=str(test_doctor.id), role=test_doctor.role, tenant_id=tid)
     
     app.dependency_overrides[get_current_user] = _get_current_user
     yield
@@ -224,10 +312,8 @@ def mock_redis_global():
     mock_instance.expire = AsyncMock(return_value=True)
     mock_instance.close = AsyncMock()                    # awaitable close
 
-    # Патчим как класс (для RedisClient(...) ) и как инстанс
-    with patch("app.main.RedisClient", return_value=mock_instance), \
-         patch("app.core.rate_limiter.redis_client", mock_instance), \
-         patch("app.main.RedisClient.close", new_callable=AsyncMock) as mock_close:  
+    with patch("app.core.rate_limiter.redis_client", mock_instance), \
+         patch("app.lifecycle.lifespan.redis_client", mock_instance):
         yield mock_instance
         
 
@@ -259,9 +345,9 @@ def _build_crypto_manager_mock() -> MagicMock:
 
 @pytest.fixture(autouse=True)
 def mock_cleanup_manager():
-    """Глобальный мок cleanup_manager (патчится в app.main)."""
+    """Глобальный мок cleanup_manager (lifespan импортирует из ``app.core``)."""
     mock_instance = _build_cleanup_manager_mock()
-    with patch("app.main.cleanup_manager", mock_instance):
+    with patch("app.lifecycle.lifespan.cleanup_manager", mock_instance):
         yield mock_instance
 
 
@@ -269,10 +355,10 @@ def mock_cleanup_manager():
 @pytest.fixture(autouse=True)
 def mock_core_functions():
     """Мок для ключевых функций"""
-    with patch("app.main.init_keys", new_callable=AsyncMock) as mock_init, \
-         patch("app.main.check_redis_connection", new_callable=AsyncMock) as mock_check_redis, \
-         patch("app.main.create_first_admin", new_callable=AsyncMock) as mock_create_admin, \
-         patch("app.main.ensure_admin_exists", new_callable=AsyncMock) as mock_ensure_admin:
+    with patch("app.core.init_keys", new_callable=AsyncMock) as mock_init, \
+         patch("app.lifecycle.lifespan.check_redis_connection", new_callable=AsyncMock) as mock_check_redis, \
+         patch("app.lifecycle.lifespan.create_first_admin", new_callable=AsyncMock) as mock_create_admin, \
+         patch("app.bootstrap.initial_admin.ensure_admin_exists", new_callable=AsyncMock) as mock_ensure_admin:
 
         yield {
             "init_keys": mock_init,

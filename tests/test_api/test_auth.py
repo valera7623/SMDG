@@ -29,6 +29,7 @@ def make_user(
     is_active=True,
     otp_secret=None,
     id=1,
+    tenant_id=1,
 ):
     """Создаёт мок-объект User"""
     user = MagicMock()
@@ -39,14 +40,16 @@ def make_user(
     user.role = role
     user.is_active = is_active
     user.otp_secret = otp_secret
+    user.tenant_id = tenant_id
     return user
 
 
-def make_token_data(sub="testuser", role="doctor"):
-    """Создаёт мок TokenData"""
+def make_token_data(sub="testuser", role="doctor", tenant_id=1):
+    """Создаёт мок TokenData (tenant_id нужен для assert_tenant_access в API)."""
     td = MagicMock()
     td.sub = sub
     td.role = role
+    td.tenant_id = tenant_id
     return td
 
 

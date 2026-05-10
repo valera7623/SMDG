@@ -156,16 +156,19 @@ async def delete_file(
 
 @router.get("/delete")
 async def delete_file_get(
+    request: Request,
     filename: str = Query(...),
     confirm: str = Query("false"),
     reason: str = Query(""),
     api_key: str = Query(..., alias="x-api-key"),
+    db: AsyncSession = Depends(get_db),
 ):
     """Удаление файла администратором (GET — для совместимости, авторизация через x-api-key)"""
     confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
-    # Передаём api_key как суррогатный current_user
-    current_user = TokenData(sub=api_key, role="admin")
-    return await _delete_file(filename, confirm_bool, reason, current_user)
+    tenant = require_tenant(request)
+    current_user = TokenData(sub=api_key, role="admin", tenant_id=tenant.id)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
+    return await _delete_file(filename, confirm_bool, reason, current_user, tenant.id, db)
 
 
 

@@ -7,7 +7,9 @@
 import pytest
 import time
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock, call
+from unittest.mock import Mock, patch, MagicMock, call, AsyncMock
+
+from app.core.storage_backend import ObjectMetadata
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -22,13 +24,13 @@ from app.core.auth_utils import TokenData
 @pytest.fixture
 def admin_token_data():
     """TokenData для администратора."""
-    return TokenData(sub="admin-uuid-123", role="admin")
+    return TokenData(sub="admin-uuid-123", role="admin", tenant_id=1)
 
 
 @pytest.fixture
 def doctor_token_data():
     """TokenData для врача (не-админ)."""
-    return TokenData(sub="doctor-uuid-456", role="doctor")
+    return TokenData(sub="doctor-uuid-456", role="doctor", tenant_id=1)
 
 
 @pytest.fixture
@@ -289,7 +291,10 @@ class TestGetStorageStats:
         (enc_dir / "a.age").write_bytes(b"x" * 1024)
         (dec_dir / "b.txt").write_bytes(b"y" * 2048)
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch(
+            "app.api.stats.encrypted_storage.get_storage_stats",
+            AsyncMock(return_value={"total_size_bytes": 1024}),
+        ), \
              patch("app.api.stats.DECRYPTED_DIR", dec_dir), \
              patch("app.api.stats.UPLOAD_DIR",    upl_dir), \
              patch("app.api.stats.Path", side_effect=lambda p: {
@@ -299,7 +304,7 @@ class TestGetStorageStats:
 
             result = _get_storage_stats()
 
-        assert result["total_size_bytes"] >= 3072  # 1024 + 2048
+        assert result["total_size_bytes"] >= 3072  # 1024 + 2048 + encrypted backend
         assert result["total_size_mb"] >= 0
 
     def test_nonexistent_dirs_count_as_zero(self, tmp_path):
@@ -307,7 +312,10 @@ class TestGetStorageStats:
 
         missing = tmp_path / "no_such_dir"
 
-        with patch("app.api.stats.ENCRYPTED_DIR", missing), \
+        with patch(
+            "app.api.stats.encrypted_storage.get_storage_stats",
+            AsyncMock(return_value={"total_size_bytes": 0}),
+        ), \
              patch("app.api.stats.DECRYPTED_DIR", missing), \
              patch("app.api.stats.UPLOAD_DIR",    missing), \
              patch("app.api.stats.Path", return_value=missing):
@@ -330,24 +338,12 @@ class TestGetStorageStats:
 # ============================================================================
 
 class TestGetFilesStats:
-    """Тесты для _get_files_stats."""
-
-    def _make_mock_file(self, name: str, size: int = 1024, mtime_offset: int = 86400):
-        f = Mock()
-        f.is_file.return_value  = True
-        f.name                  = name
-        s = Mock()
-        s.st_size               = size
-        s.st_mtime              = time.time() - mtime_offset
-        f.stat.return_value     = s
-        return f
+    """Тесты для _get_files_stats (данные из encrypted_storage.list_objects)."""
 
     def test_encrypted_dir_not_exists(self, tmp_path):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        missing = tmp_path / "missing"
-
-        with patch("app.api.stats.ENCRYPTED_DIR", missing), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=[])), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {}
             result = _get_files_stats()
@@ -358,11 +354,13 @@ class TestGetFilesStats:
     def test_counts_encrypted_files(self, tmp_path):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc_dir = tmp_path / "enc"; enc_dir.mkdir()
-        (enc_dir / "a.age").write_bytes(b"A" * 100)
-        (enc_dir / "b.age").write_bytes(b"B" * 200)
+        ts = time.time()
+        objs = [
+            ObjectMetadata(key="a.age", size=100, last_modified=ts),
+            ObjectMetadata(key="b.age", size=200, last_modified=ts + 1),
+        ]
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=objs)), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {}
             result = _get_files_stats()
@@ -373,67 +371,52 @@ class TestGetFilesStats:
     def test_skips_non_files(self, tmp_path):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc_dir = tmp_path / "enc"; enc_dir.mkdir()
-        subdir = enc_dir / "subdir"; subdir.mkdir()
-        (enc_dir / "real.age").write_bytes(b"x" * 50)
+        ts = time.time()
+        objs = [ObjectMetadata(key="real.age", size=50, last_modified=ts)]
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=objs)), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {}
             result = _get_files_stats()
 
-        # Директории не считаются
         assert result["encrypted"]["count"] == 1
 
     def test_files_in_recent_list(self, tmp_path):
         """Последние 10 файлов в списке."""
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc_dir = tmp_path / "enc"; enc_dir.mkdir()
-        for i in range(15):
-            (enc_dir / f"file{i:02d}.age").write_bytes(b"x")
+        base = time.time()
+        objs = [
+            ObjectMetadata(key=f"file{i:02d}.age", size=1, last_modified=base + i)
+            for i in range(15)
+        ]
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=objs)), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {}
             result = _get_files_stats()
 
         assert result["encrypted"]["count"] == 15
-        # Список файлов ограничен 10-ю последними
         assert len(result["encrypted"]["files"]) <= 10
 
-    def test_stat_exception_skips_file(self):
+    def test_list_objects_error_yields_empty_encrypted(self):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        mock_enc_dir = Mock(spec=Path)
-        mock_enc_dir.exists.return_value = True
-
-        bad_file = Mock()
-        bad_file.is_file.return_value = True
-        bad_file.stat.side_effect     = OSError("no access")
-
-        good_file = Mock()
-        good_file.is_file.return_value = True
-        s = Mock(); s.st_size = 512; s.st_mtime = time.time()
-        good_file.stat.return_value  = s
-        good_file.name               = "good.age"
-
-        mock_enc_dir.iterdir.return_value = [bad_file, good_file]
-
-        with patch("app.api.stats.ENCRYPTED_DIR", mock_enc_dir), \
+        with patch(
+            "app.api.stats.encrypted_storage.list_objects",
+            AsyncMock(side_effect=OSError("no access")),
+        ), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {}
             result = _get_files_stats()
 
-        assert result["encrypted"]["count"] == 1
-        assert result["encrypted"]["total_size_bytes"] == 512
+        assert result["encrypted"]["count"] == 0
+        assert result["encrypted"]["total_size_bytes"] == 0
 
     def test_temporary_stats_included(self, tmp_path):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc_dir = tmp_path / "enc"; enc_dir.mkdir()
-
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=[])), \
              patch("app.api.stats.file_storage") as mock_storage:
             mock_storage.get_stats.return_value = {"temp_count": 7}
             result = _get_files_stats()
@@ -444,9 +427,7 @@ class TestGetFilesStats:
         """Если у file_storage нет get_stats — возвращаем {}."""
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc_dir = tmp_path / "enc"; enc_dir.mkdir()
-
-        with patch("app.api.stats.ENCRYPTED_DIR", enc_dir), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=[])), \
              patch("app.api.stats.file_storage", Mock(spec=[])):  # нет методов
             result = _get_files_stats()
 
@@ -638,15 +619,21 @@ class TestIntegration:
 
     @pytest.mark.integration
     def test_full_stats_with_real_temp_dirs(self, tmp_path, stats_client):
-        enc  = tmp_path / "enc";  enc.mkdir()
         dec  = tmp_path / "dec";  dec.mkdir()
         upl  = tmp_path / "upl";  upl.mkdir()
         keys = tmp_path / "keys"; keys.mkdir()
 
-        (enc / "a.age").write_bytes(b"x" * 500)
-        (enc / "b.age").write_bytes(b"y" * 300)
+        ts = time.time()
+        enc_objs = [
+            ObjectMetadata(key="a.age", size=500, last_modified=ts),
+            ObjectMetadata(key="b.age", size=300, last_modified=ts + 1),
+        ]
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=enc_objs)), \
+             patch(
+                 "app.api.stats.encrypted_storage.get_storage_stats",
+                 AsyncMock(return_value={"total_size_bytes": 800}),
+             ), \
              patch("app.api.stats.DECRYPTED_DIR", dec), \
              patch("app.api.stats.UPLOAD_DIR",    upl), \
              patch("app.api.stats.Path", side_effect=lambda p: {
@@ -681,7 +668,6 @@ class TestIntegration:
     def test_get_files_stats_with_mixed_extensions(self, tmp_path):
         from app.api.stats import _get_files_stats_sync as _get_files_stats
 
-        enc = tmp_path / "enc"; enc.mkdir()
         files = [
             ("doc.txt",  100),
             ("img.jpg",  200),
@@ -689,10 +675,13 @@ class TestIntegration:
             ("data.age", 400),
             ("noext",    500),
         ]
-        for name, size in files:
-            (enc / name).write_bytes(b"x" * size)
+        ts = time.time()
+        objs = [
+            ObjectMetadata(key=name, size=size, last_modified=ts + i)
+            for i, (name, size) in enumerate(files)
+        ]
 
-        with patch("app.api.stats.ENCRYPTED_DIR", enc), \
+        with patch("app.api.stats.encrypted_storage.list_objects", AsyncMock(return_value=objs)), \
              patch("app.api.stats.file_storage") as mock_fs:
             mock_fs.get_stats.return_value = {}
             result = _get_files_stats()

@@ -13,20 +13,20 @@ from unittest.mock import patch, MagicMock
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
-from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.core.auth_utils import TokenData
 from app.models.user import User
 from app.models.file import File
 from app.models.file_link import FileLink
+from app.core.storage_backend import ObjectMetadata
 
 
 # ============================================================
 # Helpers
 # ============================================================
 
-def _token_data(sub: str, role: str = "doctor") -> TokenData:
-    return TokenData(sub=sub, role=role)
+def _token_data(sub: str, role: str = "doctor", tenant_id: int = 1) -> TokenData:
+    return TokenData(sub=sub, role=role, tenant_id=tenant_id)
 
 
 def _make_user(session, username="testdoc", role="doctor") -> User:
@@ -132,13 +132,9 @@ def _fake_encrypted_dir(files_on_disk: set[str] | None = None, stat_error: bool 
 # ============================================================
 
 @pytest.fixture
-def _override_db(db_session):
-    """Подставляет тестовую сессию в FastAPI DI."""
-    async def _get_db():
-        yield db_session
-    app.dependency_overrides[get_db] = _get_db
-    yield db_session
-    app.dependency_overrides.pop(get_db, None)
+async def _override_db(override_app_db, stub_encrypted_storage):
+    """Тестовая БД + заглушка хранилища (list проверяет exists/stat)."""
+    yield override_app_db
 
 
 
@@ -304,7 +300,7 @@ async def test_list_user_not_found_in_db(async_client, _override_db, db_session)
 # ============================================================
 
 @pytest.mark.asyncio
-async def test_list_file_missing_on_disk(async_client, _override_db, db_session):
+async def test_list_file_missing_on_disk(async_client, _override_db, db_session, monkeypatch):
     db = db_session
 
     doc = _make_user(db, username="doc_miss1", role="doctor")
@@ -313,11 +309,14 @@ async def test_list_file_missing_on_disk(async_client, _override_db, db_session)
     f = _make_file(db, user_id=doc.id, original_name="missing.pdf", encrypted_name="missing_abc.enc")
     await db.flush()
 
-    # Указываем пустой набор файлов на диске
+    async def _no_file(_key):
+        return False
+
+    monkeypatch.setattr("app.api.list.encrypted_storage.exists", _no_file)
+
     _set_user("doc_miss1", "doctor")
     try:
-        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir(files_on_disk=set())):
-            resp = await async_client.get("/api/list")
+        resp = await async_client.get("/api/list")
     finally:
         _clear_user()
 
@@ -451,9 +450,9 @@ async def test_list_file_with_exhausted_link(async_client, _override_db, db_sess
 # 11. Ошибка при stat файла — пропускается, логируется
 # ============================================================
 @pytest.mark.asyncio
-async def test_list_file_stat_error(async_client, _override_db, db_session):
+async def test_list_file_stat_error(async_client, _override_db, db_session, monkeypatch):
     """
-    stat() бросает PermissionError.
+    encrypted_storage.stat бросает PermissionError.
     Реальный код:
       1. Вызывает audit_logger с success=False (list_error)
       2. Затем вызывает audit_logger с success=True (list_files, финальный)
@@ -464,10 +463,15 @@ async def test_list_file_stat_error(async_client, _override_db, db_session):
     await db.flush()
     _make_file(db, user_id=doc.id, original_name="broken.pdf")
     await db.flush()
+
+    async def _bad_stat(_key):
+        raise PermissionError("no access")
+
+    monkeypatch.setattr("app.api.list.encrypted_storage.stat", _bad_stat)
+
     _set_user("doc_err1", "doctor")
     try:
-        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir(stat_error=True)), \
-             patch("app.api.list.audit_logger") as mock_audit:
+        with patch("app.api.list.audit_logger") as mock_audit:
             resp = await async_client.get("/api/list")
     finally:
         _clear_user()
@@ -568,7 +572,7 @@ async def test_list_uses_encrypted_size_from_db(async_client, _override_db, db_s
 # ============================================================
 
 @pytest.mark.asyncio
-async def test_list_uses_stat_size_when_encrypted_size_falsy(async_client, _override_db, db_session):
+async def test_list_uses_stat_size_when_encrypted_size_falsy(async_client, _override_db, db_session, monkeypatch):
     db = db_session
 
     doc = _make_user(db, username="doc_size2", role="doctor")
@@ -577,16 +581,21 @@ async def test_list_uses_stat_size_when_encrypted_size_falsy(async_client, _over
     _make_file(db, user_id=doc.id, original_name="nosize.pdf", encrypted_size=0)
     await db.flush()
 
+    import time
+
+    async def _stat(key):
+        return ObjectMetadata(key=key, size=9999, last_modified=time.time())
+
+    monkeypatch.setattr("app.api.list.encrypted_storage.stat", _stat)
+
     _set_user("doc_size2", "doctor")
     try:
-        with patch("app.api.list.ENCRYPTED_DIR", _fake_encrypted_dir()):
-            resp = await async_client.get("/api/list")
+        resp = await async_client.get("/api/list")
     finally:
         _clear_user()
 
     assert resp.status_code == 200
     file_data = resp.json()["files"][0]
-    # FakePath.stat().st_size = 9999
     assert file_data["size"] == 9999
 
 

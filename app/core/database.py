@@ -34,6 +34,14 @@ def _get_database_url() -> str:
     return settings.database_url
 
 
+async def dispose_async_engine() -> None:
+    """Закрыть пул и сбросить ленивый engine (pytest: смешение AsyncClient/TestClient на разных loops)."""
+    global _engine
+    if _engine is not None:
+        await _engine.dispose()
+    _engine = None
+
+
 def get_engine():
     """Get or create the async engine (lazy initialization)."""
     global _engine

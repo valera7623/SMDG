@@ -76,6 +76,9 @@ jobs:
           age --version
           age-keygen --version
 
+      - name: Ruff lint
+        run: poetry run ruff check app/lifecycle app/bootstrap app/core/version.py app/main.py
+
       - name: Run tests with coverage
         env:
           DATABASE_URL: postgresql+asyncpg://smdg_user:password@localhost:5432/smdg

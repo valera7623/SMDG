@@ -1,6 +1,14 @@
 # tests/test_core/test_init.py
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def _use_real_init_keys(monkeypatch):
+    """Глобальный mock_core_functions подменяет ``init_keys`` — здесь нужна реальная функция."""
+    import tests.conftest as ct
+
+    monkeypatch.setattr("app.core.init_keys", ct._PYTEST_REAL_INIT_KEYS_REF)
 import tempfile
 import importlib
 import sys
@@ -11,27 +19,22 @@ from unittest.mock import patch, MagicMock, AsyncMock, mock_open, call
 # Тест 1: Простой тест функции init_keys
 @pytest.mark.asyncio
 async def test_init_keys_simple_working():
-    """Простой рабочий тест функции init_keys"""
-    mock_crypto_manager = MagicMock()
-    mock_crypto_manager.generate_keypair = AsyncMock(return_value=("age1simplekey", "private"))
+    """Простой рабочий тест функции init_keys — оба файла на диске (ветка чтения age.pub)."""
+    import app.core as core
 
-    with patch('builtins.open', mock_open(read_data="age1simplekey\n")), \
-         patch('app.crypto.crypto.crypto_manager', mock_crypto_manager), \
-         patch('pathlib.Path.exists', return_value=True), \
-         patch('builtins.print'):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        keys_dir = Path(tmpdir) / "keys"
+        keys_dir.mkdir(parents=True)
+        priv = keys_dir / "age.key"
+        pub = keys_dir / "age.pub"
+        priv.write_text("AGE-SECRET-KEY-1...\n")
+        pub.write_text("age1simplekey\n")
 
-        from app.core import init_keys
+        core._PUBLIC_KEY = None
+        with patch.object(core, "PRIVATE_KEY_PATH", priv):
+            await core.init_keys()
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = Path(tmpdir)
-
-            with patch('app.core.PRIVATE_KEY_PATH', tmp_path / "keys" / "age.key"), \
-                 patch('app.core._PUBLIC_KEY', None):
-
-                await init_keys()
-
-                from app.core import _PUBLIC_KEY
-                assert _PUBLIC_KEY == "age1simplekey"
+        assert core._PUBLIC_KEY == "age1simplekey"
 
 
 # Тест 2: Функция get_public_key
@@ -107,16 +110,20 @@ def test_module_exports_working():
     assert hasattr(core_module, '__all__')
 
     expected_exports = [
-        'UPLOAD_DIR',
-        'ENCRYPTED_DIR',
-        'DECRYPTED_DIR',
-        'PRIVATE_KEY_PATH',
-        'get_public_key',
-        'file_storage',
-        'cleanup_manager',
-        'audit_logger',
-        'init_keys',
-        'settings'
+        "UPLOAD_DIR",
+        "ENCRYPTED_DIR",
+        "DECRYPTED_DIR",
+        "PRIVATE_KEY_PATH",
+        "get_public_key",
+        "file_storage",
+        "cleanup_manager",
+        "encrypted_storage",
+        "cleanup_storage",
+        "audit_logger",
+        "init_keys",
+        "settings",
+        "metrics",
+        "health_collector",
     ]
 
     for export in expected_exports:
@@ -153,52 +160,46 @@ def test_debug_mode_if_enabled_working():
 # Тест 9: Тест init_keys с ошибкой (файлов нет — генерация)
 @pytest.mark.asyncio
 async def test_init_keys_with_error():
-    """Тест init_keys с ошибкой при чтении файла"""
+    """Тест init_keys — файлов нет, вызывается generate_keypair."""
     mock_crypto_manager = MagicMock()
     mock_crypto_manager.generate_keypair = AsyncMock(return_value=("age1key", "private"))
 
-    with patch('pathlib.Path.exists', return_value=False), \
-         patch('builtins.open', mock_open(read_data="age1key\n")), \
-         patch('app.crypto.crypto.crypto_manager', mock_crypto_manager), \
-         patch('builtins.print'):
+    import app.core as core
 
-        from app.core import init_keys
-
+    with patch("app.crypto.get_crypto_backend", return_value=mock_crypto_manager), patch("builtins.print"):
         with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = Path(tmpdir)
+            keys_dir = Path(tmpdir) / "keys"
+            keys_dir.mkdir(parents=True)
+            private_key_path = keys_dir / "age.key"
 
-            with patch('app.core.PRIVATE_KEY_PATH', tmp_path / "keys" / "age.key"), \
-                 patch('app.core._PUBLIC_KEY', None):
+            core._PUBLIC_KEY = None
+            with patch.object(core, "PRIVATE_KEY_PATH", private_key_path):
+                await core.init_keys()
 
-                await init_keys()
+            mock_crypto_manager.generate_keypair.assert_called_once()
 
-                mock_crypto_manager.generate_keypair.assert_called_once()
-
-                from app.core import _PUBLIC_KEY
-                assert _PUBLIC_KEY == "age1key"
+            assert core._PUBLIC_KEY == "age1key"
 
 
 # Тест 10: Тест init_keys с существующими ключами
 @pytest.mark.asyncio
 async def test_init_keys_existing_keys():
-    """Тест init_keys когда ключи уже существуют"""
-    with patch('pathlib.Path.exists', return_value=True), \
-         patch('builtins.open', mock_open(read_data="age1existingkey\n")), \
-         patch('app.crypto.crypto.crypto_manager', MagicMock()), \
-         patch('builtins.print'):
+    """Тест init_keys когда age.key и age.pub уже существуют."""
+    import app.core as core
 
-        from app.core import init_keys
+    with tempfile.TemporaryDirectory() as tmpdir:
+        keys_dir = Path(tmpdir) / "keys"
+        keys_dir.mkdir(parents=True)
+        priv = keys_dir / "age.key"
+        pub = keys_dir / "age.pub"
+        priv.write_text("dummy")
+        pub.write_text("age1existingkey\n")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = Path(tmpdir)
+        core._PUBLIC_KEY = None
+        with patch.object(core, "PRIVATE_KEY_PATH", priv):
+            await core.init_keys()
 
-            with patch('app.core.PRIVATE_KEY_PATH', tmp_path / "keys" / "age.key"), \
-                 patch('app.core._PUBLIC_KEY', None):
-
-                await init_keys()
-
-                from app.core import _PUBLIC_KEY
-                assert _PUBLIC_KEY == "age1existingkey"
+        assert core._PUBLIC_KEY == "age1existingkey"
 
 
 # Тест: коррекция BASE_DIR — тестируем ЛОГИКУ, не перезагрузку модуля
@@ -264,13 +265,14 @@ async def test_init_keys_generation_and_write():
         private_key_path = key_dir / "age.key"
         # pub_path НЕ создаём — чтобы сработала ветка генерации
 
-        with patch('app.crypto.crypto.crypto_manager', mock_crypto_manager), \
-             patch('builtins.print'), \
-             patch('app.core.PRIVATE_KEY_PATH', private_key_path), \
-             patch('app.core._PUBLIC_KEY', None):
+        import app.core as core
 
-            from app.core import init_keys
-            await init_keys()
+    with patch("app.crypto.get_crypto_backend", return_value=mock_crypto_manager), \
+             patch('builtins.print'), \
+             patch.object(core, 'PRIVATE_KEY_PATH', private_key_path):
+
+            core._PUBLIC_KEY = None
+            await core.init_keys()
 
             # Проверяем что ключи сгенерированы
             mock_crypto_manager.generate_keypair.assert_called_once_with(private_key_path)
@@ -281,42 +283,36 @@ async def test_init_keys_generation_and_write():
             content = pub_path.read_text().strip()
             assert content == "age1generatedkey"
 
-            # Проверяем глобальную переменную
-            from app.core import _PUBLIC_KEY
-            assert _PUBLIC_KEY == "age1generatedkey"
+            assert core._PUBLIC_KEY == "age1generatedkey"
 
 
 # Тест: сгенерированный файл оказывается пустым
 @pytest.mark.asyncio
 async def test_init_keys_generated_file_empty():
-    """Тест когда сгенерированный файл оказывается пустым"""
+    """Чтение age.pub после записи возвращает пустой файл → ValueError."""
+    import app.core as core
+
     mock_crypto_manager = MagicMock()
     mock_crypto_manager.generate_keypair = AsyncMock(return_value=("age1key", "private"))
 
-    open_call_count = 0
+    real_open = open
 
-    def open_side_effect(*args, **kwargs):
-        nonlocal open_call_count
-        open_call_count += 1
-        mode = args[1] if len(args) > 1 else kwargs.get('mode', 'r')
-        if mode == 'w':
-            return mock_open()(*args, **kwargs)   # запись — успех
-        else:
-            return mock_open(read_data="")()       # чтение — пустой файл
+    def wrapped_open(*args, **kwargs):
+        path = str(args[0])
+        mode = args[1] if len(args) > 1 else kwargs.get("mode", "r")
+        if path.endswith("age.pub") and "r" in mode:
+            return mock_open(read_data="")()
+        return real_open(*args, **kwargs)
 
-    with patch('pathlib.Path.exists', return_value=False), \
-         patch('app.crypto.crypto.crypto_manager', mock_crypto_manager), \
-         patch('pathlib.Path.mkdir'), \
-         patch('builtins.open', side_effect=open_side_effect), \
-         patch('builtins.print'):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        keys_dir = Path(tmpdir) / "keys"
+        keys_dir.mkdir(parents=True)
+        private_key_path = keys_dir / "age.key"
 
-        from app.core import init_keys
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_path = Path(tmpdir)
-
-            with patch('app.core.PRIVATE_KEY_PATH', tmp_path / "keys" / "age.key"), \
-                 patch('app.core._PUBLIC_KEY', None):
-
-                with pytest.raises(ValueError, match="age.pub пустой или только комментарии"):
-                    await init_keys()
+        core._PUBLIC_KEY = None
+        with patch("app.crypto.get_crypto_backend", return_value=mock_crypto_manager), \
+             patch("builtins.open", side_effect=wrapped_open), \
+             patch("builtins.print"), \
+             patch.object(core, "PRIVATE_KEY_PATH", private_key_path):
+            with pytest.raises(ValueError, match="age.pub пустой или только комментарии"):
+                await core.init_keys()
