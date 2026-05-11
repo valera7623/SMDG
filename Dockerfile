@@ -17,7 +17,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 RUN pip install --no-cache-dir brotli
 
 COPY pyproject.toml poetry.lock ./
-RUN pip install --no-cache-dir poetry && \
+RUN pip install --no-cache-dir "poetry==1.8.2" && \
     poetry config virtualenvs.create false && \
     poetry install --no-interaction --no-ansi --only main --no-root && \
     pip install --no-cache-dir "setuptools>=82,<83"
