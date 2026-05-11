@@ -71,7 +71,9 @@ services:
   # scripts/run_migrations_zero_downtime.py
   # ---------------------------------------------------------------------------
   migrations:
-    image: "${DOCKER_USERNAME}/smdg:${IMAGE_TAG:-latest}"
+    # Single-VPS production uses the locally built compose image by default.
+    # Set SMDG_IMAGE=registry/org/smdg:tag only when deploying from a registry.
+    image: "${SMDG_IMAGE:-smdg-smdg:latest}"
     restart: "no"
     entrypoint: ["python", "/app/scripts/run_migrations_zero_downtime.py"]
     command: []
@@ -117,8 +119,9 @@ services:
   #                               контейнера (если упал — считаем неудачей)
   # ---------------------------------------------------------------------------
   smdg:
-    # В prod используем собранный образ из Docker Hub (не build: .)
-    image: "${DOCKER_USERNAME}/smdg:${IMAGE_TAG:-latest}"
+    # Single-VPS production uses the locally built compose image by default.
+    # Set SMDG_IMAGE=registry/org/smdg:tag only when deploying from a registry.
+    image: "${SMDG_IMAGE:-smdg-smdg:latest}"
     build: !reset null
     # Inherited from docker-compose.yml: entrypoint starts as root for one-time
     # secret/volume initialization, then runs Uvicorn as the `smdg` user.

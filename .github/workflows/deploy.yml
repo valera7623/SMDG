@@ -137,6 +137,7 @@ jobs:
           cat > "$COMPOSE_BUILD_OVERRIDE" <<EOF
           services:
             smdg:
+              image: smdg-smdg:latest
               build:
                 context: "$BUILD_CONTEXT"
                 dockerfile: Dockerfile
