@@ -169,6 +169,19 @@ def preflight_unsafe_sql(alembic_cfg: Config, current_rev: str | None) -> list[s
     return warnings
 
 
+def _revision_exists_in_scripts(alembic_cfg: Config, revision: str | None) -> bool:
+    """Return whether the current image knows the DB revision."""
+
+    if not revision:
+        return True
+    script = ScriptDirectory.from_config(alembic_cfg)
+    try:
+        script.get_revision(revision)
+        return True
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _exec(engine: Engine, sql: str, **params) -> None:
     with engine.connect() as conn:
         conn.execute(text(sql), params)
@@ -255,6 +268,29 @@ def run(args: argparse.Namespace) -> int:
 
     current = _current_revision(engine)
     logger.info("Текущая ревизия БД: %s", current or "(чистая БД)")
+
+    if current and not _revision_exists_in_scripts(alembic_cfg, current):
+        script = ScriptDirectory.from_config(alembic_cfg)
+        allow_db_ahead = os.getenv("MIGRATION_ALLOW_DB_AHEAD_OF_IMAGE", "true").lower() == "true"
+        logger.warning(
+            "Текущая ревизия БД %s отсутствует в миграциях текущего образа. "
+            "Heads образа: %s",
+            current,
+            ", ".join(script.get_heads()) or "(нет)",
+        )
+        if allow_db_ahead:
+            logger.warning(
+                "Считаем БД новее образа и пропускаем миграции "
+                "(MIGRATION_ALLOW_DB_AHEAD_OF_IMAGE=true)."
+            )
+            engine.dispose()
+            return 0
+        logger.error(
+            "MIGRATION_ALLOW_DB_AHEAD_OF_IMAGE=false → отказываемся продолжать "
+            "с неизвестной для образа ревизией БД."
+        )
+        engine.dispose()
+        return 1
 
     warnings = preflight_unsafe_sql(alembic_cfg, current)
     if warnings:
