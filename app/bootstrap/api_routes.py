@@ -31,6 +31,7 @@ from app.api.sli import router as sli_router
 from app.api.sli import sli_root
 from app.api.slo import router as slo_router
 from app.api.tracing import router as tracing_router
+from app.core.config import settings
 
 
 def register_api_routers(app: FastAPI) -> None:
@@ -47,7 +48,8 @@ def register_api_routers(app: FastAPI) -> None:
     app.include_router(admin_audit_export_router, prefix="/api")
     app.include_router(delete_user_router, prefix="/api")
     app.include_router(dicom.router, prefix="/api")
-    app.include_router(test.router, prefix="/api")
+    if settings.dev_mode or settings.load_test_mode:
+        app.include_router(test.router, prefix="/api")
     app.include_router(tracing_router)
     app.include_router(health_router)
     app.include_router(alert_webhook_router)

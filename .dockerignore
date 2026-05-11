@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 .env
 .env.*
+!.env*.example
 
 # Host-only runtime state and secrets. These are mounted by compose in
 # production and must never be sent to Docker build context.

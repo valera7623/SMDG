@@ -49,6 +49,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
     postgresql-client \
     redis-tools \
     curl \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Keep runtime image self-sufficient for Brotli imports

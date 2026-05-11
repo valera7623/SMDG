@@ -518,7 +518,7 @@ async def replication_distribution(
 
 
 @router.get("/health/features", summary="Feature flags")
-async def health_features() -> Dict[str, Any]:
+async def health_features(_admin: TokenData = Depends(get_current_admin)) -> Dict[str, Any]:
     """Список фич и их состояние для текущего ``DEPLOYMENT_TYPE``."""
     info = get_deployment_info()
     return {
@@ -529,13 +529,13 @@ async def health_features() -> Dict[str, Any]:
 
 
 @router.get("/health/deployment", summary="Deployment profile")
-async def health_deployment() -> Dict[str, Any]:
+async def health_deployment(_admin: TokenData = Depends(get_current_admin)) -> Dict[str, Any]:
     """Информация о типе развёртывания и связанных параметрах."""
     return get_deployment_info()
 
 
 @router.get("/health/timeouts", summary="Timeout configuration")
-async def timeout_health_check() -> Dict[str, Any]:
+async def timeout_health_check(_admin: TokenData = Depends(get_current_admin)) -> Dict[str, Any]:
     """Проверка актуальной timeout-конфигурации."""
     return {
         "status": "ok",

@@ -84,7 +84,13 @@ class WebhookDispatcher:
         if self._session and not self._session.closed:
             await self._session.close()
 
-    async def dispatch(self, event: str, data: Dict[str, Any], db: Optional[AsyncSession] = None):
+    async def dispatch(
+        self,
+        event: str,
+        data: Dict[str, Any],
+        db: Optional[AsyncSession] = None,
+        tenant_id: int | None = None,
+    ):
         """
         Отправить webhook-уведомление всем подписанным подпискам.
 
@@ -92,6 +98,8 @@ class WebhookDispatcher:
             event: Тип события (например, "file.uploaded")
             data: Данные события
             db: Опциональная DB сессия (если не передана — создаётся новая)
+            tenant_id: Tenant, которому принадлежит событие. Если передан,
+                доставляем событие только подпискам этого tenant.
         """
         payload = WebhookPayload(event=event, data=data)
         payload_json = payload.to_json()
@@ -105,6 +113,8 @@ class WebhookDispatcher:
                 WebhookSubscription.is_active == True,
                 WebhookSubscription.events.contains([event])
             )
+            if tenant_id is not None:
+                stmt = stmt.where(WebhookSubscription.tenant_id == tenant_id)
             result = await db.execute(stmt)
             subscriptions = result.scalars().all()
 

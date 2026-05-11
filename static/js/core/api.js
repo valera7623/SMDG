@@ -113,9 +113,12 @@ export const files = {
     },
 
     async download(filename) {
-        const response = await request(
-            `/download?filename=${encodeURIComponent(filename)}`,
-        );
+        const body = new URLSearchParams({ filename });
+        const response = await request('/download', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body,
+        });
 
         if (!response.ok) {
             const error = new Error(`HTTP ${response.status}`);

@@ -24,19 +24,29 @@ jobs:
   load-test:
     runs-on: ubuntu-latest
     env:
-      BASE_URL: http://localhost:8000
+      COMPOSE_PROJECT_NAME: smdg
+      BASE_URL: http://smdg:8000
       ADMIN_USER: admin
       ADMIN_PASSWORD: admin
     steps:
       - uses: actions/checkout@v4
 
+      - name: Bootstrap CI secrets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+          ADMIN_PASSWORD="$ADMIN_PASSWORD" POSTGRES_PASSWORD=ci-postgres JWT_SECRET_KEY="$(openssl rand -base64 48)" \
+            ./scripts/vps-bootstrap-secrets.sh
+
       - name: Start SMDG stack
         run: docker compose up -d
 
       - name: Wait for health endpoint
+        env:
+          HOST_BASE_URL: http://localhost:8000
         run: |
           for i in {1..60}; do
-            if curl -fsS "$BASE_URL/health" > /dev/null; then
+            if curl -fsS "$HOST_BASE_URL/health" > /dev/null; then
               echo "SMDG is healthy"
               exit 0
             fi

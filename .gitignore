@@ -55,6 +55,7 @@ audit_logs/*.csv
 .env.prod
 .coverage
 htmlcov/
+reports/
 load-test-results/*.json
 audit_logs/
 encrypted/

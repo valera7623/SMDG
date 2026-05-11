@@ -1,5 +1,5 @@
 # app/api/delete.py
-from fastapi import APIRouter, HTTPException, Form, Query, Request, Depends, status
+from fastapi import APIRouter, HTTPException, Form, Request, Depends
 from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -111,7 +111,8 @@ async def _delete_file(
                     "size": file_info["size"],
                     "deleted_by": current_user.sub,
                     "reason": reason or "Ручное удаление администратором",
-                }
+                },
+                tenant_id=tenant_id,
             )
         )
 
@@ -152,23 +153,4 @@ async def delete_file(
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     return await _delete_file(filename, confirm_bool, reason, current_user, tenant.id, db)
-
-
-@router.get("/delete")
-async def delete_file_get(
-    request: Request,
-    filename: str = Query(...),
-    confirm: str = Query("false"),
-    reason: str = Query(""),
-    api_key: str = Query(..., alias="x-api-key"),
-    db: AsyncSession = Depends(get_db),
-):
-    """Удаление файла администратором (GET — для совместимости, авторизация через x-api-key)"""
-    confirm_bool = confirm.lower() in ["true", "yes", "1", "on", "confirmed"]
-    tenant = require_tenant(request)
-    current_user = TokenData(sub=api_key, role="admin", tenant_id=tenant.id)
-    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
-    return await _delete_file(filename, confirm_bool, reason, current_user, tenant.id, db)
-
-
 

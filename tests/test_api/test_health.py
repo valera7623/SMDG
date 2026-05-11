@@ -408,14 +408,28 @@ class TestDetailedChecksAdminOnly:
 
 
 class TestLegacyHealthEndpoints:
+    def _with_admin(self):
+        async def _admin():
+            return TokenData(sub="admin", role="admin", tenant_id=1)
+
+        app.dependency_overrides[get_current_admin] = _admin
+
     def test_features_endpoint(self, health_client):
-        resp = health_client.get("/health/features")
-        assert resp.status_code == 200
-        data = resp.json()
-        assert "deployment_type" in data
-        assert "features" in data
+        self._with_admin()
+        try:
+            resp = health_client.get("/health/features")
+            assert resp.status_code == 200
+            data = resp.json()
+            assert "deployment_type" in data
+            assert "features" in data
+        finally:
+            app.dependency_overrides.pop(get_current_admin, None)
 
     def test_deployment_endpoint(self, health_client):
-        resp = health_client.get("/health/deployment")
-        assert resp.status_code == 200
-        assert "deployment_type" in resp.json()
+        self._with_admin()
+        try:
+            resp = health_client.get("/health/deployment")
+            assert resp.status_code == 200
+            assert "deployment_type" in resp.json()
+        finally:
+            app.dependency_overrides.pop(get_current_admin, None)

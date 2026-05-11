@@ -19,7 +19,7 @@ services:
       - ./load-test-results:/results
     command: run /scripts/scenarios/api-load.js --summary-export=/results/api-load-summary.json
     networks:
-      - smdg_network
+      - backend
 
   k6-dashboard:
     image: ghcr.io/grafana/k6-dashboard:latest
@@ -57,8 +57,9 @@ services:
       - influxdb
 
 networks:
-  smdg_network:
+  backend:
     external: true
+    name: ${SMDG_DOCKER_NETWORK:-smdg_backend}
 
 volumes:
   influxdb_data:

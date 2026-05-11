@@ -357,7 +357,8 @@ async def upload_file(
                     "patient_id": params.patient_id,
                     "download_url": download_url,
                     "uploaded_by": current_user.sub,
-                }
+                },
+                tenant_id=tenant.id,
             )
         )
 

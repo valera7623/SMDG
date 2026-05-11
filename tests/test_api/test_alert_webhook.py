@@ -12,6 +12,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.core.config import settings
+
 
 @pytest.fixture
 def fake_alert_payload() -> dict:
@@ -40,7 +42,8 @@ def fake_alert_payload() -> dict:
 
 
 class TestAlertWebhook:
-    def test_webhook_accepts_payload(self, client, fake_alert_payload):
+    def test_webhook_accepts_payload(self, client, fake_alert_payload, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", True)
         with patch(
             "app.api.alert_webhook.get_telegram_alerter"
         ) as mock_get:
@@ -57,7 +60,8 @@ class TestAlertWebhook:
         assert body["delivered"] == 1
         mock_alerter.send_batch_alerts.assert_awaited_once()
 
-    def test_webhook_empty_alerts(self, client):
+    def test_webhook_empty_alerts(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", True)
         with patch("app.api.alert_webhook.get_telegram_alerter") as mock_get:
             mock_alerter = AsyncMock()
             mock_get.return_value = mock_alerter
@@ -70,7 +74,8 @@ class TestAlertWebhook:
         # send_batch_alerts не должен дергаться для пустого списка
         mock_alerter.send_batch_alerts.assert_not_awaited()
 
-    def test_webhook_invalid_json(self, client):
+    def test_webhook_invalid_json(self, client, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", True)
         resp = client.post(
             "/api/alerts/webhook",
             content="not a json",
@@ -79,12 +84,20 @@ class TestAlertWebhook:
         assert resp.status_code == 400
 
     def test_webhook_secret_required(self, client, fake_alert_payload, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", False)
         monkeypatch.setenv("SMDG_ALERT_WEBHOOK_SECRET", "topsecret")
         # Без заголовка — 401
         resp = client.post("/api/alerts/webhook", json=fake_alert_payload)
         assert resp.status_code == 401
 
+    def test_webhook_secret_must_be_configured_in_production(self, client, fake_alert_payload, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", False)
+        monkeypatch.delenv("SMDG_ALERT_WEBHOOK_SECRET", raising=False)
+        resp = client.post("/api/alerts/webhook", json=fake_alert_payload)
+        assert resp.status_code == 503
+
     def test_webhook_secret_match(self, client, fake_alert_payload, monkeypatch):
+        monkeypatch.setattr(settings, "dev_mode", False)
         monkeypatch.setenv("SMDG_ALERT_WEBHOOK_SECRET", "topsecret")
         with patch("app.api.alert_webhook.get_telegram_alerter") as mock_get:
             mock_alerter = AsyncMock()

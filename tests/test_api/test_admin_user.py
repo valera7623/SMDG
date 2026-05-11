@@ -78,6 +78,7 @@ def _scalars_result(objs: list):
     scalars = MagicMock()
     scalars.all.return_value = objs
     r.scalars.return_value = scalars
+    r.scalar_one.return_value = len(objs)
     return r
 
 
@@ -122,7 +123,7 @@ class TestGetAllUsers:
     @pytest.mark.asyncio
     async def test_returns_user_list(self, admin_token):
         from app.main import app
-        users = [_make_user(1, "alice"), _make_user(2, "bob")]
+        users = [_make_user(1, "alice", otp_secret="SECRETKEY"), _make_user(2, "bob")]
         session = _make_session(_scalars_result(users))
         _override(app, admin_token, session)
         try:
@@ -130,7 +131,11 @@ class TestGetAllUsers:
                 async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
                     resp = await ac.get(f"{BASE}/")
             assert resp.status_code == status.HTTP_200_OK
-            assert len(resp.json()) == 2
+            body = resp.json()
+            assert len(body) == 2
+            assert "otp_secret" not in body[0]
+            assert body[0]["has_2fa"] is True
+            assert body[1]["has_2fa"] is False
         finally:
             _clear(app)
 
@@ -225,7 +230,7 @@ class TestGetUser:
     @pytest.mark.asyncio
     async def test_returns_user(self, admin_token):
         from app.main import app
-        user = _make_user(42, "alice", "alice@example.com", "doctor")
+        user = _make_user(42, "alice", "alice@example.com", "doctor", otp_secret="SECRETKEY")
         session = _make_session(_scalar_result(user))
         _override(app, admin_token, session)
         try:
@@ -236,6 +241,8 @@ class TestGetUser:
             body = resp.json()
             assert body["id"] == 42
             assert body["username"] == "alice"
+            assert "otp_secret" not in body
+            assert body["has_2fa"] is True
         finally:
             _clear(app)
 

@@ -5,12 +5,10 @@
 
 Маршруты:
   POST /api/delete  — удалить зашифрованный файл (admin-only)
-  GET  /api/delete  — то же, GET-версия (вызывает POST-функцию напрямую)
+  GET  /api/delete  — отключён, чтобы не обходить admin-auth через query string
 
 Особенности кода:
   - ENCRYPTED_DIR патчится как MagicMock с __truediv__
-  - GET-эндпоинт передаёт api_key как current_user (строку вместо TokenData)
-    — это баг в коде, тест документирует поведение as-is
   - stat() запускается через loop.run_in_executor, патчим Path.stat
   - calculate_hash_async патчится глобально в модуле
 """
@@ -61,18 +59,6 @@ async def delete_post_ctx(admin_token, override_app_db, stub_encrypted_storage, 
     app.dependency_overrides[get_current_admin] = _adm
     yield app, override_app_db
     app.dependency_overrides.pop(get_current_admin, None)
-
-
-@pytest.fixture
-async def delete_get_ctx(override_app_db, stub_encrypted_storage, tmp_path, monkeypatch):
-    """GET /delete: только БД + storage (авторизация через x-api-key)."""
-    from app.main import app
-
-    enc = tmp_path / "enc"
-    enc.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr("app.api.delete.ENCRYPTED_DIR", enc)
-
-    yield app, override_app_db
 
 
 async def _insert_file(db, encrypted_name: str, tenant_id: int = 1, **kw):
@@ -567,117 +553,20 @@ class TestDeleteFilePost:
 # ═══════════════════════════════════════════════════════════════
 
 class TestDeleteFileGet:
-    """
-    GET /api/delete не имеет Depends(get_current_admin).
-    Вместо этого принимает api_key как query-параметр и передаёт его
-    позиционно в delete_file() как current_user.
-    Это баг в коде — тесты документируют реальное поведение.
-    """
-
-    # ── GET без api_key → 422 (поле обязательно) ─────────────
+    """GET /api/delete отключён: удаление разрешено только через admin-only POST."""
 
     @pytest.mark.asyncio
-    async def test_get_missing_api_key_422(self):
+    async def test_get_delete_is_not_allowed(self):
         from app.main import app
+
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            resp = await ac.get(URL, params={"filename": "file.pdf.age"})
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+            resp = await ac.get(
+                URL,
+                params={
+                    "filename": "file.pdf.age",
+                    "x-api-key": "any-key",
+                    "confirm": "true",
+                },
+            )
 
-    # ── GET без filename → 422 ────────────────────────────────
-
-    @pytest.mark.asyncio
-    async def test_get_missing_filename_422(self):
-        from app.main import app
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            resp = await ac.get(URL, params={"x-api-key": "somekey"})
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
-
-    # ── GET: вызывает delete_file (файл не найден → 404) ──────
-
-    @pytest.mark.asyncio
-    async def test_get_delegates_to_post_logic_404(self, delete_get_ctx):
-        """Файл не найден в БД → 404."""
-        app, _db = delete_get_ctx
-        try:
-            with patch("app.api.delete.sanitize_filename", return_value="gone.pdf.age"):
-                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-                    resp = await ac.get(URL, params={
-                        "filename": "gone.pdf.age",
-                        "x-api-key": "any-key",
-                        "confirm": "false",
-                    })
-
-            assert resp.status_code == status.HTTP_404_NOT_FOUND
-        finally:
-            pass
-
-    # ── GET: confirm=false → confirmation_required ────────────
-
-    @pytest.mark.asyncio
-    async def test_get_requires_confirmation(self, delete_get_ctx):
-        """GET с записью в БД, confirm=false → confirmation_required."""
-        app, db = delete_get_ctx
-        await _insert_file(db, "file.pdf.age", encrypted_size=512)
-        try:
-            with patch("app.api.delete.sanitize_filename", return_value="file.pdf.age"), \
-                 patch("app.api.delete.calculate_hash_async", new_callable=AsyncMock, return_value=FAKE_HASH), \
-                 patch("app.api.delete.audit_logger"):
-                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-                    resp = await ac.get(URL, params={
-                        "filename": "file.pdf.age",
-                        "x-api-key": "any-key",
-                        "confirm": "false",
-                    })
-
-            assert resp.status_code == status.HTTP_200_OK
-            assert resp.json()["confirmation_required"] is True
-        finally:
-            pass
-
-    # ── GET: confirm=true → файл удаляется ───────────────────
-
-    @pytest.mark.asyncio
-    async def test_get_delete_confirmed(self, delete_get_ctx):
-        """GET с confirm=true → файл удаляется успешно."""
-        app, db = delete_get_ctx
-        await _insert_file(db, "file.pdf.age", encrypted_size=1024)
-        try:
-            with patch("app.api.delete.sanitize_filename", return_value="file.pdf.age"), \
-                 patch("app.api.delete.calculate_hash_async", new_callable=AsyncMock, return_value=FAKE_HASH), \
-                 patch("app.api.delete.audit_logger"):
-                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-                    resp = await ac.get(URL, params={
-                        "filename": "file.pdf.age",
-                        "x-api-key": "any-key",
-                        "confirm": "true",
-                    })
-
-            assert resp.status_code == status.HTTP_200_OK
-            assert resp.json()["message"] == "✅ Файл успешно удален"
-        finally:
-            pass
-
-    # ── GET: reason передаётся в audit_logger ─────────────────
-
-    @pytest.mark.asyncio
-    async def test_get_reason_forwarded(self, delete_get_ctx):
-        """reason из query params попадает в audit_logger."""
-        app, db = delete_get_ctx
-        await _insert_file(db, "file.pdf.age", encrypted_size=100)
-        try:
-            with patch("app.api.delete.sanitize_filename", return_value="file.pdf.age"), \
-                 patch("app.api.delete.calculate_hash_async", new_callable=AsyncMock, return_value=FAKE_HASH), \
-                 patch("app.api.delete.audit_logger") as mock_audit:
-                async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-                    resp = await ac.get(URL, params={
-                        "filename": "file.pdf.age",
-                        "x-api-key": "any-key",
-                        "confirm": "true",
-                        "reason": "плановая очистка",
-                    })
-
-            assert resp.status_code == status.HTTP_200_OK
-            kw = mock_audit.log_operation.call_args.kwargs
-            assert kw["reason"] == "плановая очистка"
-        finally:
-            pass
+        assert resp.status_code == status.HTTP_405_METHOD_NOT_ALLOWED

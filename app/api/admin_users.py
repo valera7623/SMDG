@@ -1,8 +1,8 @@
 # app/api/admin_users.py
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from sqlalchemy import func, select, update, delete
+from pydantic import BaseModel, Field, field_validator, ConfigDict, computed_field
 from typing import List, Optional, Annotated
 import re
 
@@ -25,7 +25,12 @@ class UserResponse(BaseModel):
     email: str
     role: str
     is_active: bool
-    otp_secret: Optional[str] = None
+    otp_secret: Optional[str] = Field(default=None, exclude=True, repr=False)
+
+    @computed_field
+    @property
+    def has_2fa(self) -> bool:
+        return bool(self.otp_secret)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -112,6 +117,7 @@ async def _load_tenant_user(
 @router.get("/", response_model=List[UserResponse])
 async def get_all_users(
     request: Request,
+    response: Response,
     current_admin: Annotated[TokenData, Depends(get_current_admin)],
     db: AsyncSession = Depends(get_db),
     skip: int = Query(0, ge=0),
@@ -123,25 +129,33 @@ async def get_all_users(
     tenant = require_tenant(request)
     assert_tenant_access(current_admin.tenant_id, tenant.id, current_admin.role)
     query = select(User)
+    count_query = select(func.count()).select_from(User)
     if current_admin.role != "super_admin":
         query = query.where(User.tenant_id == tenant.id)
+        count_query = count_query.where(User.tenant_id == tenant.id)
 
     if search:
-        query = query.where(
+        search_filter = (
             (User.username.ilike(f"%{search}%")) |
             (User.email.ilike(f"%{search}%"))
         )
+        query = query.where(search_filter)
+        count_query = count_query.where(search_filter)
 
     if role:
         query = query.where(User.role == role)
+        count_query = count_query.where(User.role == role)
 
     if active_only:
         query = query.where(User.is_active == True)
+        count_query = count_query.where(User.is_active == True)
 
     query = query.offset(skip).limit(limit).order_by(User.id)
 
+    total = (await db.execute(count_query)).scalar_one()
     result = await db.execute(query)
     users = result.scalars().all()
+    response.headers["X-Total-Count"] = str(total)
 
     audit_logger.log_operation(
         action="admin_view_users",

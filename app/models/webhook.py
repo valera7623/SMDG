@@ -37,6 +37,7 @@ class WebhookSubscription(Base):
     __table_args__ = {'extend_existing': True}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tenant_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('tenants.id'), nullable=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey('users.id'), nullable=True)
 
     url: Mapped[str] = mapped_column(String(512), nullable=False)
@@ -66,6 +67,7 @@ class WebhookSubscription(Base):
         cascade='all, delete-orphan',
         lazy='select'
     )
+    tenant = relationship('Tenant', lazy='select')
     user = relationship('User', lazy='select')
 
     def __repr__(self):

@@ -51,6 +51,11 @@ jobs:
     continue-on-error: ${{ env.SECURITY_SCAN_MODE != 'strict' }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Semgrep CLI
+        run: pip install semgrep
       - name: Run Semgrep
         uses: returntocorp/semgrep-action@v1
         with:
@@ -92,7 +97,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: |
-          pip install poetry safety
+          pip install poetry poetry-plugin-export safety
           poetry export -f requirements.txt --output requirements.txt --without-hashes
       - name: Run Safety
         run: safety check -r requirements.txt --json > safety-report.json
@@ -237,6 +242,12 @@ jobs:
     needs: [sast-bandit, sast-semgrep]
     steps:
       - uses: actions/checkout@v4
+      - name: Bootstrap CI secrets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+          ADMIN_PASSWORD=admin POSTGRES_PASSWORD=ci-postgres JWT_SECRET_KEY="$(openssl rand -base64 48)" \
+            ./scripts/vps-bootstrap-secrets.sh
       - name: Start SMDG
         run: docker compose up -d
       - name: Wait for services
@@ -258,7 +269,7 @@ jobs:
         if: always()
         with:
           name: zap-report
-          path: report_html.html
+          path: zap-report.html
       - name: Stop SMDG
         if: always()
         run: docker compose down -v
@@ -268,6 +279,12 @@ jobs:
     needs: [sast-bandit, sast-semgrep]
     steps:
       - uses: actions/checkout@v4
+      - name: Bootstrap CI secrets
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y age
+          ADMIN_PASSWORD=admin POSTGRES_PASSWORD=ci-postgres JWT_SECRET_KEY="$(openssl rand -base64 48)" \
+            ./scripts/vps-bootstrap-secrets.sh
       - name: Start SMDG
         run: docker compose up -d
       - name: Run Nuclei

@@ -166,8 +166,10 @@ class TestWebhookDispatcherUnit:
         dispatcher = WebhookDispatcher()
 
         with patch.object(dispatcher, '_send_with_retry', new_callable=AsyncMock) as mock_send:
-            await dispatcher.dispatch("file.uploaded", {}, db=mock_db)
+            await dispatcher.dispatch("file.uploaded", {}, db=mock_db, tenant_id=7)
             mock_send.assert_not_called()
+            stmt = mock_db.execute.call_args.args[0]
+            assert "tenant_id" in str(stmt)
 
     def test_close_without_session(self):
         """close без активной сессии — не падает."""
@@ -189,12 +191,12 @@ class TestWebhookApiSchemas:
         from app.api.webhooks import WebhookSubscriptionCreate
 
         data = WebhookSubscriptionCreate(
-            url="http://example.com/webhook",
+            url="https://93.184.216.34/webhook",
             events=["file.uploaded"],
             secret="my_secret"
         )
 
-        assert data.url == "http://example.com/webhook"
+        assert data.url == "https://93.184.216.34/webhook"
         assert data.events == ["file.uploaded"]
         assert data.secret == "my_secret"
 
@@ -216,8 +218,19 @@ class TestWebhookApiSchemas:
 
         with pytest.raises(ValidationError):
             WebhookSubscriptionCreate(
-                url="http://example.com/webhook",
+                url="https://93.184.216.34/webhook",
                 events=["invalid.event"]
+            )
+
+    def test_subscription_create_rejects_private_url(self):
+        """Production validation rejects private/internal webhook targets."""
+        from app.api.webhooks import WebhookSubscriptionCreate
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            WebhookSubscriptionCreate(
+                url="http://127.0.0.1:8080/webhook",
+                events=["file.uploaded"],
             )
 
     def test_subscription_update_partial(self):
@@ -234,7 +247,7 @@ class TestWebhookApiSchemas:
 
         sub = WebhookSubscriptionResponse(
             id=1,
-            url="http://example.com/webhook",
+            url="https://93.184.216.34/webhook",
             events=["file.uploaded"],
             is_active=True,
             max_retries=3,

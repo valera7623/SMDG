@@ -73,6 +73,7 @@ def test_health_check(client):
 
 
 def test_logs_page(client, tmp_path, monkeypatch):
+    _allow_admin_pages()
     monkeypatch.chdir(tmp_path)
     Path("audit_logs").mkdir(exist_ok=True)
     (Path("audit_logs") / "test.log").write_text("test")
@@ -106,6 +107,11 @@ def test_admin_dlq_page_forbidden_for_doctor(client):
 def test_whoami(client, mock_current_user):
     response = client.get("/api/whoami")
     assert response.status_code == 200
+
+
+def test_test_routes_not_mounted_by_default(client):
+    response = client.post("/api/test/large-response", json={"ping": "pong"})
+    assert response.status_code == 404
 
 
 # ====================== MIDDLEWARE set_user_context ======================

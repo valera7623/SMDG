@@ -24,11 +24,25 @@ import {
 import { confirmAction, closeConfirmModal } from './utils/modals.js';
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme } from './theme-init.js';
+import { auth as authAPI } from './core/api.js';
+import { setCurrentUser } from './core/state.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     initTheme();
     bindThemeToggles();
     initResponsiveUI();
+    try {
+        const currentAdmin = await authAPI.whoami();
+        setCurrentUser(currentAdmin.sub);
+        const usernameEl = document.getElementById('currentAdminUsername');
+        if (usernameEl) usernameEl.textContent = currentAdmin.sub;
+    } catch (error) {
+        if (error?.status === 401 || error?.status === 403) {
+            window.location.href = '/';
+            return;
+        }
+        throw error;
+    }
     await loadUserStats();
     await loadUsers();
 

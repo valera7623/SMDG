@@ -4,16 +4,21 @@ Webhook Management API endpoints.
 
 CRUD для управления webhook-подписками и просмотр истории доставки.
 """
+import ipaddress
+import socket
 from typing import List, Optional, Any, Dict
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from pydantic import BaseModel, Field, HttpUrl, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from datetime import datetime, timezone
 
 from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
 from app.core import audit_logger
+from app.core.config import settings
 from app.core.tenant import require_tenant, assert_tenant_access
 from app.models.user import User
 from app.models.webhook import WebhookSubscription, WebhookDelivery, WebhookEvent, DeliveryStatus
@@ -21,6 +26,75 @@ from app.core.webhook import webhook_dispatcher, WebhookPayload, sign_payload
 from app.core.rate_limiter import limiter
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+
+_BLOCKED_WEBHOOK_HEADERS = {
+    "connection",
+    "content-length",
+    "host",
+    "transfer-encoding",
+}
+
+
+def _validate_webhook_url(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"}:
+        raise ValueError("URL должен начинаться с http:// или https://")
+    if not parsed.hostname:
+        raise ValueError("URL должен содержать hostname")
+    if not settings.dev_mode and parsed.scheme != "https":
+        raise ValueError("В production webhook URL должен использовать HTTPS")
+
+    host = parsed.hostname.strip().lower()
+    if not settings.dev_mode and (host == "localhost" or host.endswith(".local")):
+        raise ValueError("Webhook URL не должен указывать на локальный hostname")
+
+    try:
+        literal_ip = ipaddress.ip_address(host)
+    except ValueError:
+        literal_ip = None
+
+    addresses = set()
+    if literal_ip is not None:
+        addresses.add(literal_ip)
+    elif not settings.dev_mode:
+        try:
+            for family, _, _, _, sockaddr in socket.getaddrinfo(
+                host,
+                parsed.port or (443 if parsed.scheme == "https" else 80),
+                type=socket.SOCK_STREAM,
+            ):
+                if family in {socket.AF_INET, socket.AF_INET6}:
+                    addresses.add(ipaddress.ip_address(sockaddr[0]))
+        except socket.gaierror as exc:
+            raise ValueError("Webhook hostname не резолвится") from exc
+
+    if not settings.dev_mode:
+        for addr in addresses:
+            if (
+                addr.is_private
+                or addr.is_loopback
+                or addr.is_link_local
+                or addr.is_multicast
+                or addr.is_reserved
+                or addr.is_unspecified
+            ):
+                raise ValueError("Webhook URL не должен указывать на private/internal IP")
+
+    return value
+
+
+def _validate_webhook_headers(value: Optional[Dict[str, str]]) -> Optional[Dict[str, str]]:
+    if value is None:
+        return value
+    if len(value) > 20:
+        raise ValueError("Слишком много дополнительных заголовков")
+    for key, header_value in value.items():
+        normalized = key.strip().lower()
+        if normalized in _BLOCKED_WEBHOOK_HEADERS:
+            raise ValueError(f"Заголовок {key!r} запрещён")
+        if len(key) > 80 or len(str(header_value)) > 500:
+            raise ValueError("Дополнительный заголовок слишком длинный")
+    return value
 
 
 # ==================== Pydantic Models ====================
@@ -54,9 +128,12 @@ class WebhookSubscriptionCreate(BaseModel):
     @field_validator('url')
     @classmethod
     def validate_url(cls, v: str) -> str:
-        if not v.startswith(('http://', 'https://')):
-            raise ValueError("URL должен начинаться с http:// или https://")
-        return v
+        return _validate_webhook_url(v)
+
+    @field_validator('headers')
+    @classmethod
+    def validate_headers(cls, v: Optional[Dict[str, str]]) -> Optional[Dict[str, str]]:
+        return _validate_webhook_headers(v)
 
 
 class WebhookSubscriptionUpdate(BaseModel):
@@ -82,6 +159,18 @@ class WebhookSubscriptionUpdate(BaseModel):
                     f"Допустимые: {', '.join(sorted(valid_events))}"
                 )
         return v
+
+    @field_validator('url')
+    @classmethod
+    def validate_url(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        return _validate_webhook_url(v)
+
+    @field_validator('headers')
+    @classmethod
+    def validate_headers(cls, v: Optional[Dict[str, str]]) -> Optional[Dict[str, str]]:
+        return _validate_webhook_headers(v)
 
 
 class WebhookSubscriptionResponse(BaseModel):
@@ -196,10 +285,16 @@ def _apply_scope_filter(stmt, current_user: TokenData, tenant_id: int, scoped_us
     if current_user.role == "super_admin":
         return stmt
     if current_user.role in ("admin", "doctor"):
-        return stmt.join(User, User.id == WebhookSubscription.user_id).where(
-            User.tenant_id == tenant_id
+        return stmt.outerjoin(User, User.id == WebhookSubscription.user_id).where(
+            or_(
+                WebhookSubscription.tenant_id == tenant_id,
+                User.tenant_id == tenant_id,
+            )
         )
-    return stmt.where(WebhookSubscription.user_id == scoped_user_id)
+    return stmt.where(
+        WebhookSubscription.tenant_id == tenant_id,
+        WebhookSubscription.user_id == scoped_user_id,
+    )
 
 
 async def _get_scoped_subscription(
@@ -238,6 +333,7 @@ async def create_webhook_subscription(
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     user_id = await _resolve_scoped_user_id(db, current_user, tenant.id)
     subscription = WebhookSubscription(
+        tenant_id=tenant.id,
         user_id=user_id,
         url=data.url,
         events=data.events,

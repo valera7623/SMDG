@@ -14,12 +14,13 @@ from app.core.webhook import webhook_dispatcher
 from app.core.rate_limiter import limiter
 from app.crypto.crypto import crypto_manager
 from app.core.utils import sanitize_filename
-from app.core.auth import get_current_user, get_current_doctor, TokenData
+from app.core.auth import get_current_user, TokenData
 from app.core.database import get_db
 from app.models.file import File
 from app.models.file_link import FileLink
+from app.models.user import User
 from datetime import datetime, timezone
-from app.core.tenant import require_tenant
+from app.core.tenant import assert_tenant_access, require_tenant
 from app.core.bulkhead import bulkhead
 from app.core.config import settings
 
@@ -138,7 +139,8 @@ async def download_by_token(
                     "downloaded_via": "token",
                     "token": token,
                     "downloads_remaining": max(0, link.max_downloads - link.downloads_count) if link.max_downloads > link.downloads_count else 0,
-                }
+                },
+                tenant_id=tenant.id,
             )
         )
 
@@ -170,7 +172,7 @@ async def download_file_post(
     request: Request,
     background_tasks: BackgroundTasks,
     filename: str = Form(...),
-    current_user: TokenData = Depends(get_current_doctor),
+    current_user: TokenData = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Скачивание для авторизованных пользователей"""
@@ -181,6 +183,7 @@ async def download_file_post(
         safe_filename += '.age'
 
     tenant = require_tenant(request)
+    assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     result = await db.execute(
         select(File).where(File.encrypted_name == safe_filename, File.tenant_id == tenant.id)
     )
@@ -188,6 +191,14 @@ async def download_file_post(
 
     if not file_record:
         raise HTTPException(status_code=404, detail="Файл не найден в базе")
+
+    if current_user.role not in {"doctor", "admin", "super_admin"}:
+        user_result = await db.execute(
+            select(User.id).where(User.username == current_user.sub, User.tenant_id == tenant.id)
+        )
+        current_user_id = user_result.scalar_one_or_none()
+        if current_user_id is None or file_record.user_id != current_user_id:
+            raise HTTPException(status_code=403, detail="Нет доступа к этому файлу")
 
     decrypted_path = DECRYPTED_DIR / f"{uuid.uuid4()}_{file_record.original_name}"
 

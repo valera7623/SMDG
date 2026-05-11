@@ -160,12 +160,13 @@ function _createUserRow(user, isMe) {
     tdStatus.appendChild(statusSpan);
     tr.appendChild(tdStatus);
 
+    const has2FA = Boolean(user.has_2fa);
     const twofaSpan = createElement('span', {
-        className:   `twofa-badge ${user.otp_secret ? 'enabled' : 'disabled'}`,
-        title:        user.otp_secret
+        className:   `twofa-badge ${has2FA ? 'enabled' : 'disabled'}`,
+        title:        has2FA
             ? t('admin_users.twofa_on_title', '2FA enabled')
             : t('admin_users.twofa_off_title', '2FA disabled'),
-        textContent:  user.otp_secret ? '✅' : '❌',
+        textContent:  has2FA ? '✅' : '❌',
     });
     const td2fa = document.createElement('td');
     td2fa.setAttribute('data-label', t('admin_users.col_2fa', '2FA'));
@@ -183,7 +184,7 @@ function _createUserRow(user, isMe) {
 
     wrap.appendChild(mkBtn('edit',           '✏️',  () => editUser(user.id),                  isMe));
     wrap.appendChild(mkBtn('reset-password', '🔑',  () => resetPassword(user.id, user.username), isMe));
-    wrap.appendChild(mkBtn('reset-2fa',      '🔐',  () => reset2FA(user.id, user.username),    isMe || !user.otp_secret));
+    wrap.appendChild(mkBtn('reset-2fa',      '🔐',  () => reset2FA(user.id, user.username),    isMe || !has2FA));
     wrap.appendChild(mkBtn('delete',         '🗑️', () => deleteUser(user.id, user.username),   isMe));
 
     const tdActions = document.createElement('td');
@@ -411,7 +412,7 @@ export async function editUser(userId) {
         document.getElementById('modalPassword').required    = false;
         document.getElementById('modalRole').value           = user.role;
         document.getElementById('modalIsActive').checked     = user.is_active;
-        document.getElementById('reset2faGroup').style.display = user.otp_secret ? 'block' : 'none';
+        document.getElementById('reset2faGroup').style.display = user.has_2fa ? 'block' : 'none';
         document.getElementById('modalReset2fa').checked     = false;
         document.getElementById('modalSubmitBtn').textContent = t('admin_users.btn_save', 'Save');
         document.getElementById('userModal').style.display   = 'block';

@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindThemeToggles();
     await checkFeatureFlags();
     initResponsiveUI();
-    initAuth();
+    await initAuth();
     initFiles();
 });
 

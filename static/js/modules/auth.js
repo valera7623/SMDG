@@ -30,10 +30,17 @@ async function _refreshCurrentUser() {
         const usernameEl = document.getElementById('currentUsername');
         if (usernameEl) usernameEl.textContent = data.sub;
         _setAdminNavigationVisible(data.role);
+        setVisible(document.getElementById('authForm'), false);
+        setVisible(document.getElementById('mainApp'), true);
+        return data;
     } catch (error) {
+        setCurrentUser(null);
         _setAdminNavigationVisible(null);
+        setVisible(document.getElementById('authForm'), true);
+        setVisible(document.getElementById('mainApp'), false);
         if (error.status === 401 || error.status === 403) return;
         console.warn('Не удалось получить текущего пользователя:', error);
+        return null;
     }
 }
 
@@ -317,7 +324,7 @@ export async function verify2FACode() {
  * Вызывается из main.js после DOMContentLoaded.
  * Привязывает обработчики форм и проверяет сессию.
  */
-export function initAuth() {
+export async function initAuth() {
     document.getElementById('loginForm')
         ?.addEventListener('submit', handleLogin);
 
@@ -332,9 +339,10 @@ export function initAuth() {
     const passInput = document.getElementById('registerPassword');
     if (passInput) passInput.addEventListener('input', () => updatePasswordStrength(passInput));
 
-    // Проверяем текущую роль отдельно: список файлов не содержит role.
-    _refreshCurrentUser();
+    const current = await _refreshCurrentUser();
 
-    // Проверяем, авторизован ли пользователь (загрузка списка файлов сделает это через 401)
-    loadFileList();
+    if (current) {
+        loadFileList();
+        _attach2FAButton();
+    }
 }

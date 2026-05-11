@@ -402,7 +402,7 @@ async def ohif_viewer_page():
 
 # Страница для просмотра логов (опционально)
 @app.get("/logs")
-async def view_logs():
+async def view_logs(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
     """Просмотр логов аудита"""
     try:
         log_files = []

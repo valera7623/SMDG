@@ -5,9 +5,13 @@ from typing import Annotated
 import jwt
 from jwt.exceptions import PyJWTError as JWTError
 from jwt import decode as jwt_decode
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
 from .auth_utils import TokenData, create_access_token
+from app.core.database import get_db
+from app.models.user import User
 
 
 async def get_current_user(
@@ -54,11 +58,27 @@ async def get_current_doctor(
 
 
 async def get_current_admin(
-    current_user: Annotated[TokenData, Depends(get_current_user)]
+    current_user: Annotated[TokenData, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> TokenData:
     if current_user.role not in {"admin", "super_admin"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Доступ разрешён только администраторам"
         )
-    return current_user
+
+    stmt = select(User).where(User.username == current_user.sub)
+    if current_user.role != "super_admin" and current_user.tenant_id is not None:
+        stmt = stmt.where(User.tenant_id == current_user.tenant_id)
+    db_user = (await db.execute(stmt)).scalar_one_or_none()
+    if not db_user or not db_user.is_active or db_user.role not in {"admin", "super_admin"}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Администраторская сессия больше не действительна"
+        )
+    if db_user.role != current_user.role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Роль пользователя изменилась; выполните вход повторно"
+        )
+    return TokenData(sub=db_user.username, role=db_user.role, tenant_id=db_user.tenant_id)

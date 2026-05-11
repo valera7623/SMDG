@@ -50,15 +50,30 @@ function _createFileItem(file) {
     const infoDiv = document.createElement('div');
     infoDiv.className = 'file-info';
     const fileIcon = isDicom ? '🔬' : '📄';
-    const patientLine = file.patient_id
-        ? `<div class="patient-id">🆔 ${t('files.patient_label', 'Patient: {{id}}', { id: file.patient_id })}</div>`
-        : '';
-    infoDiv.innerHTML = `
-        <div class="file-name">${fileIcon} ${originalName}</div>
-        <div class="file-size">📏 ${formatBytes(file.size)}</div>
-        ${patientLine}
-        <div class="file-id">🔐 <small>${encryptedName}</small></div>
-    `;
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'file-name';
+    nameDiv.textContent = `${fileIcon} ${originalName}`;
+    infoDiv.appendChild(nameDiv);
+
+    const sizeDiv = document.createElement('div');
+    sizeDiv.className = 'file-size';
+    sizeDiv.textContent = `📏 ${formatBytes(file.size)}`;
+    infoDiv.appendChild(sizeDiv);
+
+    if (file.patient_id) {
+        const patientDiv = document.createElement('div');
+        patientDiv.className = 'patient-id';
+        patientDiv.textContent = `🆔 ${t('files.patient_label', 'Patient: {{id}}', { id: file.patient_id })}`;
+        infoDiv.appendChild(patientDiv);
+    }
+
+    const idDiv = document.createElement('div');
+    idDiv.className = 'file-id';
+    idDiv.appendChild(document.createTextNode('🔐 '));
+    const small = document.createElement('small');
+    small.textContent = encryptedName;
+    idDiv.appendChild(small);
+    infoDiv.appendChild(idDiv);
 
     const actionsDiv = document.createElement('div');
     actionsDiv.className = 'file-actions';

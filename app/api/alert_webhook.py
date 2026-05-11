@@ -22,6 +22,7 @@ Alertmanager при срабатывании правила делает HTTP PO
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 import os
 from typing import Any, Dict, List
@@ -29,6 +30,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 
 from app.core import audit_logger
+from app.core.config import settings
 from app.services.telegram_alerter import get_telegram_alerter
 
 logger = logging.getLogger(__name__)
@@ -40,9 +42,14 @@ def _check_shared_secret(header_value: str | None, query_value: str | None) -> N
     """Если задан SMDG_ALERT_WEBHOOK_SECRET — сравнить с header/query."""
     expected = os.getenv("SMDG_ALERT_WEBHOOK_SECRET", "").strip()
     if not expected:
-        return  # защита отключена
+        if settings.dev_mode:
+            return  # защита отключена только локально
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Alert webhook secret is not configured",
+        )
     provided = (header_value or "").strip() or (query_value or "").strip()
-    if provided != expected:
+    if not hmac.compare_digest(provided, expected):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid alert webhook secret",

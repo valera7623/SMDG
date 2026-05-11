@@ -124,25 +124,76 @@ export async function loadMessages() {
     const txtReplay = t("admin_dlq.btn_replay", "Replay");
     const txtDelete = t("admin_dlq.btn_delete", "Delete");
 
-    body.innerHTML = messages
-        .map((m) => `
-            <tr>
-                <td data-label="${esc(labId)}"><code>${esc(m.message_id)}</code></td>
-                <td data-label="${esc(labQueue)}">${esc(m.queue_name)}</td>
-                <td data-label="${esc(labStatus)}"><span class="status-badge ${esc(m.status)}">${esc(m.status)}</span></td>
-                <td data-label="${esc(labRetries)}">${esc(m.retry_count)}/${esc(m.max_retries)}</td>
-                <td data-label="${esc(labError)}">${esc((m.error_message || "").slice(0, 120))}</td>
-                <td data-label="${esc(labCreated)}">${esc(fmtDate(m.created_at))}</td>
-                <td data-label="${esc(labActions)}">
-                    <div class="actions">
-                        <button class="action-btn view" onclick="viewMessage('${esc(m.message_id)}')">${esc(txtView)}</button>
-                        <button class="action-btn replay" onclick="replayMessage('${esc(m.message_id)}')">${esc(txtReplay)}</button>
-                        <button class="action-btn delete" onclick="deleteMessage('${esc(m.message_id)}')">${esc(txtDelete)}</button>
-                    </div>
-                </td>
-            </tr>
-        `)
-        .join("");
+    body.innerHTML = "";
+    messages.forEach((message) => {
+        body.appendChild(_createMessageRow(message, {
+            labId,
+            labQueue,
+            labStatus,
+            labRetries,
+            labError,
+            labCreated,
+            labActions,
+            txtView,
+            txtReplay,
+            txtDelete,
+        }));
+    });
+}
+
+function _td(label, text) {
+    const cell = document.createElement("td");
+    cell.setAttribute("data-label", label);
+    cell.textContent = String(text ?? "");
+    return cell;
+}
+
+function _createMessageRow(message, labels) {
+    const tr = document.createElement("tr");
+    const messageId = String(message.message_id ?? "");
+
+    const idCell = document.createElement("td");
+    idCell.setAttribute("data-label", labels.labId);
+    const code = document.createElement("code");
+    code.textContent = messageId;
+    idCell.appendChild(code);
+    tr.appendChild(idCell);
+
+    tr.appendChild(_td(labels.labQueue, message.queue_name));
+
+    const statusCell = document.createElement("td");
+    statusCell.setAttribute("data-label", labels.labStatus);
+    const status = document.createElement("span");
+    status.className = `status-badge ${String(message.status ?? "").replace(/[^a-z0-9_-]/gi, "")}`;
+    status.textContent = String(message.status ?? "");
+    statusCell.appendChild(status);
+    tr.appendChild(statusCell);
+
+    tr.appendChild(_td(labels.labRetries, `${message.retry_count ?? 0}/${message.max_retries ?? 0}`));
+    tr.appendChild(_td(labels.labError, String(message.error_message || "").slice(0, 120)));
+    tr.appendChild(_td(labels.labCreated, fmtDate(message.created_at)));
+
+    const actionsCell = document.createElement("td");
+    actionsCell.setAttribute("data-label", labels.labActions);
+    const actions = document.createElement("div");
+    actions.className = "actions";
+
+    const addAction = (className, text, handler) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `action-btn ${className}`;
+        button.textContent = text;
+        button.addEventListener("click", () => handler(messageId));
+        actions.appendChild(button);
+    };
+
+    addAction("view", labels.txtView, viewMessage);
+    addAction("replay", labels.txtReplay, replayMessage);
+    addAction("delete", labels.txtDelete, deleteMessage);
+    actionsCell.appendChild(actions);
+    tr.appendChild(actionsCell);
+
+    return tr;
 }
 
 export async function viewMessage(messageId) {

@@ -6,7 +6,7 @@ from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from redis.asyncio import Redis, RedisError
-from app.core.config import settings
+from app.core.config import build_redis_url, settings
 
 logger = logging.getLogger(__name__)
 
@@ -81,20 +81,30 @@ def custom_key_func(request: Request) -> str:
     return key
 
 
-# Rate limiter работает в режиме in-memory (MemoryStorage)
-# Redis НЕ используется для лимитов — только для других задач проекта
 default_limit = settings.rate_limit_default
 if settings.load_test_mode and default_limit == "100/minute":
     # Safe pre-prod default override for load tests (can be overridden via RATE_LIMIT_DEFAULT)
     default_limit = "5000/minute"
 
+limiter_kwargs: dict[str, Any] = {
+    "key_func": custom_key_func,
+    "default_limits": [default_limit],
+}
+rate_limit_storage = settings.RATE_LIMIT_STORAGE
+if rate_limit_storage == "redis://redis:6379/2":
+    rate_limit_storage = build_redis_url(2)
+
+if not settings.dev_mode and not settings.load_test_mode:
+    limiter_kwargs["storage_uri"] = rate_limit_storage
+
 limiter = Limiter(
-    key_func=custom_key_func,
-    default_limits=[default_limit]
+    **limiter_kwargs
 )
 
-print("Rate limiter запущен в режиме: MemoryStorage (in-memory)")
-logger.info("Rate limiter: используется in-memory хранилище (Redis не задействован)")
+if "storage_uri" in limiter_kwargs:
+    logger.info("Rate limiter: используется Redis storage (%s)", rate_limit_storage)
+else:
+    logger.warning("Rate limiter: используется in-memory хранилище (dev/load-test mode)")
 
 
 async def check_redis_connection():
