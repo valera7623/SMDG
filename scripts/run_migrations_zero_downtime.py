@@ -150,7 +150,7 @@ def preflight_unsafe_sql(alembic_cfg: Config, current_rev: str | None) -> list[s
     script = ScriptDirectory.from_config(alembic_cfg)
     warnings: list[str] = []
 
-    for rev in script.walk_revisions("head", current_rev or "base"):
+    for rev in script.walk_revisions(current_rev or "base", "heads"):
         path = Path(rev.path) if hasattr(rev, "path") else None
         if path is None or not path.exists():
             continue
