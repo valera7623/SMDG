@@ -331,7 +331,7 @@ services:
         > /etc/crontabs/root
 
         {
-          echo "0 3 * * * (pg_dump -h db -U smdg_user -d smdg | gzip > /app/backups/smdg_\$(date +%Y%m%d_%H%M).sql.gz 2>> /app/backups/backup_errors.log) && echo \"[\$(date +\"+%Y-%m-%d %H:%M:%S\")] pg_dump OK\" >> /app/backups/backup.log || echo \"[\$(date +\"+%Y-%m-%d %H:%M:%S\")] pg_dump FAILED\" >> /app/backups/backup.log"
+          echo "0 3 * * * PGPASSWORD=\$(cat /run/secrets/postgres_password) pg_dump -h db -U smdg_user -d smdg | gzip > /app/backups/smdg_\$(date +\%Y\%m\%d_\%H\%M).sql.gz 2>> /app/backups/backup_errors.log && echo [\$(date +\%Y-\%m-\%dT\%H:\%M:\%S)] pg_dump OK >> /app/backups/backup.log || echo [\$(date +\%Y-\%m-\%dT\%H:\%M:\%S)] pg_dump FAILED >> /app/backups/backup.log"
           echo "15 3 * * * rsync -a --delete /app/encrypted/ /app/backups/encrypted/"
           echo "30 3 * * * find /app/backups -name \"*.sql.gz\" -mtime +30 -print -delete"
           echo "35 3 * * * find /app/backups/encrypted -mtime +30 -print -delete"
