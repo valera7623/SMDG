@@ -171,6 +171,23 @@ export const adminFiles = {
     },
 };
 
+// ── Admin — журнал операций с файлами ────────────────────────────────────────
+
+export const adminFileAudit = {
+    async list({ skip = 0, limit = 20, action = '', search = '', success = '', start = '', end = '' } = {}) {
+        const params = new URLSearchParams({
+            skip: String(skip),
+            limit: String(limit),
+        });
+        if (action) params.set('action', action);
+        if (search) params.set('search', search);
+        if (success !== '') params.set('success', success);
+        if (start) params.set('start', start);
+        if (end) params.set('end', end);
+        return requestJSON(`/admin/file-audit/?${params.toString()}`);
+    },
+};
+
 // ── System ────────────────────────────────────────────────────────────────────
 
 export const system = {

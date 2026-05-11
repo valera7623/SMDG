@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from app.core.tenant import assert_tenant_access, require_tenant
 from app.core.bulkhead import bulkhead
 from app.core.config import settings
+from app.services.file_audit_service import get_client_ip, hash_token, safe_record_file_access_event
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -127,6 +128,23 @@ async def download_by_token(
         link.downloads_count += 1
         if link.downloads_count >= link.max_downloads:
             await db.delete(link)
+        await safe_record_file_access_event(
+            db,
+            request=request,
+            tenant_id=tenant.id,
+            action="download_token",
+            channel="public_link",
+            source=f"storage:{file_record.encrypted_name}",
+            destination=f"client:{get_client_ip(request)}/browser",
+            file_record=file_record,
+            actor_username="public_link",
+            actor_role="anonymous",
+            metadata={
+                "download_token_hash": hash_token(token),
+                "file_owner_user_id": file_record.user_id,
+                "downloads_remaining": max(0, link.max_downloads - link.downloads_count),
+            },
+        )
         await db.commit()
 
         # Отправляем webhook-уведомление
@@ -192,6 +210,7 @@ async def download_file_post(
     if not file_record:
         raise HTTPException(status_code=404, detail="Файл не найден в базе")
 
+    current_user_id = None
     if current_user.role not in {"doctor", "admin", "super_admin"}:
         user_result = await db.execute(
             select(User.id).where(User.username == current_user.sub, User.tenant_id == tenant.id)
@@ -233,6 +252,21 @@ async def download_file_post(
             user=current_user.sub,
             reason="Скачивание авторизованным пользователем",
             success=True
+        )
+        await safe_record_file_access_event(
+            db,
+            request=request,
+            tenant_id=tenant.id,
+            action="download_authenticated",
+            channel="authenticated",
+            source=f"storage:{file_record.encrypted_name}",
+            destination=f"client:{get_client_ip(request)}/browser",
+            file_record=file_record,
+            actor_user_id=current_user_id,
+            actor_username=current_user.sub,
+            actor_role=current_user.role,
+            metadata={"requested_filename": filename},
+            commit=True,
         )
 
         return FileResponse(

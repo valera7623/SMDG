@@ -9,6 +9,7 @@ from app.models.dicom_view_token import DicomViewToken
 from app.models.dead_letter import DeadLetterMessage, DeadLetterLog
 from app.models.archive import ArchiveRecord, ArchiveRestoreRequest
 from app.models.deleted_user import DeletedUser
+from app.models.file_access_event import FileAccessEvent
 
 __all__ = [
     'User',
@@ -23,4 +24,5 @@ __all__ = [
     'ArchiveRecord',
     'ArchiveRestoreRequest',
     'DeletedUser',
+    'FileAccessEvent',
 ]

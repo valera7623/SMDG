@@ -21,6 +21,7 @@ from app.core.auth import get_current_doctor
 from app.core.database import get_db
 from app.api.download import delete_file_after_response, download_by_token, download_file_post
 from app.core.auth import TokenData
+from app.models.file_access_event import FileAccessEvent
 
 
 # ============================================================================
@@ -72,6 +73,7 @@ def make_db(results: list) -> AsyncMock:
     ]
     session.delete = AsyncMock()
     session.commit = AsyncMock()
+    session.add = MagicMock()
     return session
 
 
@@ -333,6 +335,11 @@ class TestDownloadByToken:
         assert link.downloads_count == 3
         # Коммит выполнен
         db.commit.assert_called_once()
+        assert any(
+            isinstance(call_args.args[0], FileAccessEvent)
+            and call_args.args[0].action == "download_token"
+            for call_args in db.add.call_args_list
+        )
         # Фоновая задача на удаление зарегистрирована
         bg.add_task.assert_called_once()
         # Имя файла в ответе
@@ -525,6 +532,11 @@ class TestDownloadFilePost:
             user="doc-123",
             reason="Скачивание авторизованным пользователем",
             success=True,
+        )
+        assert any(
+            isinstance(call_args.args[0], FileAccessEvent)
+            and call_args.args[0].action == "download_authenticated"
+            for call_args in db.add.call_args_list
         )
 
     @pytest.mark.asyncio

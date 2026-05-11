@@ -7,6 +7,7 @@ import {
     getCleanupStats,
     purgeAllFiles,
 } from './modules/admin-files.js';
+import { initFileAudit, loadFileAuditEvents } from './modules/admin-file-audit.js';
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme } from './theme-init.js';
 
@@ -16,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initResponsiveUI();
     loadFiles();
     loadSystemStats();
+    initFileAudit();
 });
 
 // Re-render when the active language changes so dynamically generated
@@ -23,9 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('i18n:updated', () => {
     loadFiles();
     loadSystemStats();
+    loadFileAuditEvents();
 });
 
 // ── Экспорт в window (для onclick-атрибутов в admin.html) ────────────────────
 window.loadFiles        = loadFiles;
 window.getCleanupStats  = getCleanupStats;
 window.purgeAllFiles    = purgeAllFiles;
+window.loadFileAuditEvents = loadFileAuditEvents;

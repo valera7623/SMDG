@@ -39,6 +39,7 @@ from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
 from app.core.timeout import TimeoutError, timeout
 from app.core.bulkhead import bulkhead
+from app.services.file_audit_service import get_client_ip, safe_record_file_access_event
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -326,6 +327,25 @@ async def upload_file(
         )
         with tracer.start_as_current_span("upload.db_save_link"):
             db.add(link)
+            await safe_record_file_access_event(
+                db,
+                request=request,
+                tenant_id=tenant.id,
+                action="upload",
+                channel="authenticated",
+                source=f"client:{get_client_ip(request)}/browser",
+                destination=f"storage:{final_encrypted_name}",
+                file_record=new_file,
+                actor_user_id=user_id,
+                actor_username=current_user.sub,
+                actor_role=current_user.role,
+                metadata={
+                    "mime_type": mime_type,
+                    "patient_id": params.patient_id,
+                    "ttl_days": params.ttl_days,
+                    "max_downloads": params.max_downloads,
+                },
+            )
             await execute_db_with_timeout(db.commit(), operation="upload_commit_link")
 
         download_url = str(request.url_for('download_by_token')) + f"?token={token}"

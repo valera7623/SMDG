@@ -20,6 +20,7 @@ from app.api import (
     list as list_api,
 )
 from app.api.admin_audit_export import router as admin_audit_export_router
+from app.api.admin_file_audit import router as admin_file_audit_router
 from app.api.admin_users import router as admin_users_router
 from app.api.alert_webhook import router as alert_webhook_router
 from app.api.auth import router as auth_router
@@ -46,6 +47,7 @@ def register_api_routers(app: FastAPI) -> None:
     app.include_router(auth_router, prefix="/api")
     app.include_router(admin_users_router, prefix="/api")
     app.include_router(admin_audit_export_router, prefix="/api")
+    app.include_router(admin_file_audit_router, prefix="/api")
     app.include_router(delete_user_router, prefix="/api")
     app.include_router(dicom.router, prefix="/api")
     if settings.dev_mode or settings.load_test_mode:

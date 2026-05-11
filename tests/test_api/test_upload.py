@@ -20,6 +20,7 @@ from app.api.upload import (
     DANGEROUS_EXTENSIONS,
     ALLOWED_MIME_PREFIXES,
 )
+from app.models.file_access_event import FileAccessEvent
 
 
 # ═══════════════════════════════════════════════════════════
@@ -544,6 +545,10 @@ class TestUploadEndpoint:
                 "encrypted_name": data["encrypted_file"],
                 "ttl_days": 7
             }, abs=10)
+        )
+        assert any(
+            isinstance(call_args.args[0], FileAccessEvent)
+            for call_args in mock_db.add.call_args_list
         )
 
     def test_upload_success_with_metadata(self, client, mock_db, upload_mocks):
