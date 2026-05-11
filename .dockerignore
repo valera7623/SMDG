@@ -7,12 +7,23 @@ __pycache__/
 !.env*.example
 
 # Host-only runtime state and secrets. These are mounted by compose in
-# production and must never be sent to Docker build context.
-certbot/
-certs/
-secrets/
-uploads/
-encrypted/
-decrypted/
-audit_logs/
-backups/
+# production and must never be sent to Docker build context. Keep both root
+# anchored and recursive patterns: Docker must not traverse unreadable bind
+# mounts such as certbot/letsencrypt/accounts while preparing the context.
+/certbot
+/certbot/**
+**/letsencrypt/**
+/certs
+/certs/**
+/secrets
+/secrets/**
+/uploads
+/uploads/**
+/encrypted
+/encrypted/**
+/decrypted
+/decrypted/**
+/audit_logs
+/audit_logs/**
+/backups
+/backups/**
