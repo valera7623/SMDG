@@ -5,6 +5,11 @@
 #   # Обычный старт:
 #   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 #
+#   # Важно: обычный Docker Compose не применяет Swarm-only настройки
+#   # deploy.replicas/update_config/rollback_config. Они оставлены как
+#   # документация будущего Swarm-перехода; для single-host zero-downtime
+#   # используйте ./scripts/zero_downtime_deploy.sh.
+#
 #   # Zero-downtime deploy:
 #   ./scripts/zero_downtime_deploy.sh
 #
@@ -115,6 +120,8 @@ services:
     # В prod используем собранный образ из Docker Hub (не build: .)
     image: "${DOCKER_USERNAME}/smdg:${IMAGE_TAG:-latest}"
     build: !reset null
+    # Inherited from docker-compose.yml: entrypoint starts as root for one-time
+    # secret/volume initialization, then runs Uvicorn as the `smdg` user.
     restart: always
 
     # Graceful shutdown: уже есть в базе (60s). Подтверждаем здесь.
@@ -137,7 +144,6 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
         condition: service_healthy
 
     ports: !reset []
@@ -251,6 +257,7 @@ services:
     volumes:
       - ./nginx/nginx-zero-downtime.conf:/etc/nginx/conf.d/default.conf:ro
       - ./certs:/etc/nginx/certs:ro
+      - ./certbot/www:/var/www/certbot:ro
       - ./static:/app/static:ro
       # Basic Auth для /jaeger/ и /prometheus/ — read-only.
       # Создание учёток (скрипт сам выберет bcrypt через локальный htpasswd

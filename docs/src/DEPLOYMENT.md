@@ -7,6 +7,138 @@ The environment variable **`DEPLOYMENT_TYPE`** accepts one of:
 
 Production containers built from the repository [`Dockerfile`](../../Dockerfile) use **Python 3.10** (`python:3.10-slim`). CI runs tests on **Python 3.10, 3.11, and 3.12** (see [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)). When debugging production behaviour locally, align your interpreter with the image baseline unless you intentionally rebuild the image on a newer Python.
 
+## Production Docker Compose (single host)
+
+The supported single-host production entrypoint is the base compose file plus
+the production override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Do not rely on `deploy.replicas`, `deploy.update_config` or
+`deploy.rollback_config` when running plain Docker Compose: those keys are
+Swarm-only. They remain in `docker-compose.prod.yml` as documentation for a
+future Swarm migration. For single-host zero-downtime deployments, use:
+
+```bash
+./scripts/zero_downtime_deploy.sh
+```
+
+The `smdg` container intentionally starts its entrypoint as root because it has
+to read Docker secrets, initialize `/app/keys/age.key`, create writable runtime
+directories and fix volume ownership. The application process itself is then
+started as the unprivileged `smdg` user via `gosu smdg` in
+[`entrypoint.sh`](../../entrypoint.sh).
+
+### Required production environment
+
+Set these values in `.env` before starting the production compose stack:
+
+```bash
+DOMAIN=example.com
+REDIS_PASSWORD=<long-random-password>
+DOCKER_USERNAME=<registry-user-or-org>
+IMAGE_TAG=<immutable-image-tag>
+GIT_SHA=<git-sha-for-metrics>
+```
+
+`DATABASE_URL` is normally not set manually for the Docker production stack.
+[`entrypoint.sh`](../../entrypoint.sh) builds it from the Docker secret
+`postgres_password`, so the PostgreSQL password has one source of truth.
+
+### Required local secret files
+
+Create the secret files on the production host before `docker compose up`.
+They must not be committed to git.
+
+```bash
+mkdir -p secrets
+printf '%s' '<48+ chars jwt secret>' > secrets/jwt_secret.txt
+printf '%s' '<initial admin password>' > secrets/admin_password.txt
+printf '%s' '<postgres password>' > secrets/postgres_password.txt
+printf '%s' '<age private key>' > secrets/age.key
+printf '%s' '<grafana admin password>' > secrets/grafana_password.txt
+bash scripts/generate-htpasswd.sh jaeger <username>
+bash scripts/generate-htpasswd.sh prometheus <username>
+```
+
+The compose files reference these secrets by name:
+`jwt_secret_key`, `admin_password`, `postgres_password`, `age_private_key`,
+`grafana_password`, `secrets/.htpasswd-jaeger` and
+`secrets/.htpasswd-prometheus`.
+
+### Health and readiness contract
+
+Use different endpoints for different layers:
+
+- Docker container healthcheck: `/health/live`
+- External load balancer / orchestrator readiness: `/health/ready`
+- Nginx self-check only: `/healthz`
+- Human/API compatibility health summary: `/health`
+
+`/health/live` only proves that the process answers HTTP. It must not check
+PostgreSQL, Redis or storage, otherwise a dependency outage would cause
+unnecessary container restarts. `/health/ready` checks shutdown state,
+overload, database, Redis, storage and optional DICOM viewer readiness; route
+production traffic based on this endpoint.
+
+Post-deploy smoke checks:
+
+```bash
+curl -fsS http://localhost/healthz
+curl -kfsS https://${DOMAIN}/health/live
+curl -kfsS https://${DOMAIN}/health/ready
+curl -kfsS https://${DOMAIN}/health
+curl -fsSI http://${DOMAIN} | grep -i '^location: https://'
+```
+
+### TLS certificates
+
+The repository contains localhost certificates only for development. In
+production, mount certificates for the real domain into `./certs` and point
+Nginx at them. The current Nginx configs expect certificate files under
+`/etc/nginx/certs`; use one of these approaches:
+
+- copy/symlink the domain certificate and key to the filenames used by the
+  active Nginx config;
+- or update `ssl_certificate` / `ssl_certificate_key` to your mounted
+  `fullchain.pem` / `privkey.pem` paths.
+
+If using the built-in ACME webroot flow, mount challenges at
+`./certbot/www:/var/www/certbot` and keep `/.well-known/acme-challenge/`
+reachable on HTTP. If TLS is terminated by a cloud load balancer or external
+reverse proxy, keep this compose Nginx internal and configure certificates
+there instead.
+
+Enable HSTS preload only after the real domain and all subdomains are verified
+to be HTTPS-only. The default Nginx configs intentionally avoid `preload` to
+reduce the risk of locking a new domain into an irreversible browser policy too
+early.
+
+### Future Kubernetes probe mapping
+
+Kubernetes manifests are not part of the current Docker Compose deployment.
+When migrating later, use the same probe contract:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health/live
+    port: 8000
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8000
+startupProbe:
+  httpGet:
+    path: /health/live
+    port: 8000
+  failureThreshold: 30
+  periodSeconds: 2
+```
+
 ## Russia (`russia`)
 
 - Local storage (`S3_ENABLED=false`).

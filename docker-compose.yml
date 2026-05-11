@@ -32,6 +32,9 @@ services:
 
   smdg:
     build: .
+    # entrypoint runs as root only to read Docker secrets, initialize writable
+    # volumes and fix ownership; the app process itself is dropped to `smdg`
+    # via gosu in entrypoint.sh.
     user: "0:0"
     ports:
       - "8000:8000"
@@ -127,6 +130,7 @@ services:
       - ./nginx-https.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/upstream-target.conf:/etc/nginx/conf.d/upstream-target.conf
       - ./certs:/etc/nginx/certs:ro
+      - ./certbot/www:/var/www/certbot:ro
       - ./static:/app/static:ro
     depends_on:
       - smdg
