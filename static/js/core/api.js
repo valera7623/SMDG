@@ -65,7 +65,7 @@ export const auth = {
     },
 
     async whoami() {
-        return request('/whoami');
+        return requestJSON('/whoami');
     },
 
     async setup2FA() {

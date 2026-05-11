@@ -6,6 +6,7 @@ from pathlib import Path
 from slowapi.errors import RateLimitExceeded
 from fastapi import Request
 from app.core.config import settings
+from app.core.auth import get_current_admin, TokenData
 
 from app.main import (
     app,
@@ -15,6 +16,14 @@ from app.main import (
     rate_limit_handler,
     set_user_context,   # добавляем для теста middleware
 )
+
+
+def _allow_admin_pages():
+    app.dependency_overrides[get_current_admin] = lambda: TokenData(
+        sub="admin",
+        role="admin",
+        tenant_id=1,
+    )
 
 
 # ====================== LIFESPAN ======================
@@ -47,8 +56,14 @@ def test_index_page(client):
 
 
 def test_admin_page(client):
+    _allow_admin_pages()
     response = client.get("/admin")
     assert response.status_code == 200
+
+
+def test_admin_page_forbidden_for_doctor(client):
+    response = client.get("/admin")
+    assert response.status_code == 403
 
 
 def test_health_check(client):
@@ -67,8 +82,25 @@ def test_logs_page(client, tmp_path, monkeypatch):
 
 
 def test_admin_users_page(client):
+    _allow_admin_pages()
     response = client.get("/admin/users")
     assert response.status_code == 200
+
+
+def test_admin_users_page_forbidden_for_doctor(client):
+    response = client.get("/admin/users")
+    assert response.status_code == 403
+
+
+def test_admin_dlq_page(client):
+    _allow_admin_pages()
+    response = client.get("/admin/dlq")
+    assert response.status_code == 200
+
+
+def test_admin_dlq_page_forbidden_for_doctor(client):
+    response = client.get("/admin/dlq")
+    assert response.status_code == 403
 
 
 def test_whoami(client, mock_current_user):
@@ -162,6 +194,7 @@ def test_admin_fallback_when_file_missing(client, monkeypatch):
     """Покрывает except FileNotFoundError в admin()"""
     mock_audit = MagicMock()
     mock_audit.log_operation = MagicMock()
+    _allow_admin_pages()
     
     with patch("app.core.middleware.audit_logger", mock_audit), \
          patch("builtins.open", side_effect=FileNotFoundError):

@@ -21,7 +21,7 @@ apply_known_warning_filters()
 from app.bootstrap.api_routes import register_api_routers
 from app.bootstrap.initial_admin import create_first_admin, ensure_admin_exists  # noqa: F401
 from app.bootstrap.openapi_i18n import register_localized_openapi_routes
-from app.core.auth import get_current_user
+from app.core.auth import get_current_admin, get_current_user
 from app.core.auth_utils import TokenData
 from app.core.bulkhead import BulkheadRejectedError, BulkheadTimeoutError
 from app.core.config import get_cors_allow_origins, settings
@@ -314,7 +314,7 @@ async def service_status_page():
 
 # Панель администратора
 @app.get("/admin", response_class=HTMLResponse)
-async def admin():
+async def admin(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
     """Панель администратора"""
     try:
         with open("static/html/admin.html", "r", encoding="utf-8") as f:
@@ -438,7 +438,7 @@ async def view_logs():
 
 
 @app.get("/admin/users", response_class=HTMLResponse)
-async def admin_users():
+async def admin_users(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
     """Страница управления пользователями"""
     try:
         with open("static/html/admin_users.html", "r", encoding="utf-8") as f:
@@ -455,7 +455,7 @@ async def admin_users():
 
 
 @app.get("/admin/dlq", response_class=HTMLResponse)
-async def admin_dlq():
+async def admin_dlq(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
     """Страница управления DLQ."""
     try:
         with open("static/html/admin_dlq.html", "r", encoding="utf-8") as f:

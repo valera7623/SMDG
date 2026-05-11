@@ -7,12 +7,35 @@ import { validateUsername, validatePassword, isValidEmail, passwordStrength } fr
 import { setVisible }        from '../utils/dom.js';
 import { loadFileList }      from './files.js';
 
+const ADMIN_ROLES = new Set(['admin', 'super_admin']);
+
 // ── Переменные для 2FA модалки (создаются один раз) ──────────────────────────
 let _twoFaModal = null;
 let _twoFaMsg   = null;
 let _twoFaInst  = null;
 let _twoFaCode  = null;
 let _twoFaQr    = null;
+
+function _setAdminNavigationVisible(role) {
+    const isAdmin = ADMIN_ROLES.has(role);
+    document.querySelectorAll('[data-admin-only="true"]').forEach((el) => {
+        el.hidden = !isAdmin;
+    });
+}
+
+async function _refreshCurrentUser() {
+    try {
+        const data = await authAPI.whoami();
+        setCurrentUser(data.sub);
+        const usernameEl = document.getElementById('currentUsername');
+        if (usernameEl) usernameEl.textContent = data.sub;
+        _setAdminNavigationVisible(data.role);
+    } catch (error) {
+        _setAdminNavigationVisible(null);
+        if (error.status === 401 || error.status === 403) return;
+        console.warn('Не удалось получить текущего пользователя:', error);
+    }
+}
 
 // ── Переключение вкладок Login / Register ─────────────────────────────────────
 export function switchAuthTab(tab) {
@@ -72,6 +95,7 @@ export async function handleLogin(event) {
 
         setCurrentUser(data.username);
         document.getElementById('currentUsername').textContent = data.username;
+        _setAdminNavigationVisible(data.role);
 
         setVisible(document.getElementById('authForm'), false);
         setVisible(document.getElementById('mainApp'),  true);
@@ -155,6 +179,7 @@ export async function logout() {
         const response = await authAPI.logout();
         if (response.ok) {
             setCurrentUser(null);
+            _setAdminNavigationVisible(null);
 
             setVisible(document.getElementById('authForm'), true);
             setVisible(document.getElementById('mainApp'),  false);
@@ -306,6 +331,9 @@ export function initAuth() {
     // Сила пароля при вводе
     const passInput = document.getElementById('registerPassword');
     if (passInput) passInput.addEventListener('input', () => updatePasswordStrength(passInput));
+
+    // Проверяем текущую роль отдельно: список файлов не содержит role.
+    _refreshCurrentUser();
 
     // Проверяем, авторизован ли пользователь (загрузка списка файлов сделает это через 401)
     loadFileList();
