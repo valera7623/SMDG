@@ -3,3 +3,15 @@ venv/
 __pycache__/
 *.pyc
 .env
+.env.*
+
+# Host-only runtime state and secrets. These are mounted by compose in
+# production and must never be sent to Docker build context.
+certbot/
+certs/
+secrets/
+uploads/
+encrypted/
+decrypted/
+audit_logs/
+backups/
