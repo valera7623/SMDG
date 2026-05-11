@@ -26,10 +26,12 @@ LETSENCRYPT_STAGING="${LETSENCRYPT_STAGING:-false}"
 COMPOSE_ARGS="${COMPOSE_ARGS:--f docker-compose.yml -f docker-compose.prod.yml}"
 NGINX_RESTART_AFTER_CERT_UPDATE="${NGINX_RESTART_AFTER_CERT_UPDATE:-true}"
 NGINX_CERT_UPDATE_ACTION="${NGINX_CERT_UPDATE_ACTION:-reload}" # reload | restart
+HOST_UID="${HOST_UID:-$(id -u)}"
+HOST_GID="${HOST_GID:-$(id -g)}"
 
 cert_checksum() {
   if [ -f certs/fullchain.pem ] && [ -f certs/privkey.pem ]; then
-    sha256sum certs/fullchain.pem certs/privkey.pem | sha256sum | awk '{print $1}'
+    sha256sum certs/fullchain.pem certs/privkey.pem 2>/dev/null | sha256sum | awk '{print $1}'
   fi
 }
 
@@ -94,10 +96,12 @@ docker run --rm \
 
 docker run --rm --entrypoint sh \
   -e DOMAIN="${DOMAIN}" \
+  -e HOST_UID="${HOST_UID}" \
+  -e HOST_GID="${HOST_GID}" \
   -v "${PWD}/certbot/letsencrypt:/etc/letsencrypt:ro" \
   -v "${PWD}/certs:/export-certs" \
   "${CERTBOT_IMAGE}" \
-  -c 'set -eu; cp -L "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" /export-certs/fullchain.pem; cp -L "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" /export-certs/privkey.pem; chmod 0644 /export-certs/fullchain.pem; chmod 0600 /export-certs/privkey.pem'
+  -c 'set -eu; cp -L "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" /export-certs/fullchain.pem; cp -L "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" /export-certs/privkey.pem; chown "${HOST_UID}:${HOST_GID}" /export-certs/fullchain.pem /export-certs/privkey.pem; chmod 0644 /export-certs/fullchain.pem; chmod 0600 /export-certs/privkey.pem'
 
 after_checksum="$(cert_checksum || true)"
 if [ "${before_checksum}" != "${after_checksum}" ]; then
