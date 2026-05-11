@@ -225,7 +225,7 @@ async def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=False,          # semgrep: allow-insecure-cookie-secure — В продакшене → True
+        secure=settings.cookie_secure,
         samesite="lax",
         max_age=3600,
         path="/"
@@ -253,7 +253,13 @@ async def login(
 @router.post("/logout")
 @limiter.limit("60/minute", key_func=get_remote_address)
 async def logout(request: Request, response: Response):
-    response.delete_cookie(key="access_token", path="/", httponly=True, samesite="lax")
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite="lax",
+    )
     return {"message": "Вы успешно вышли из системы"}
 
 

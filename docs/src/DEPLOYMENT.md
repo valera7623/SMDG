@@ -38,10 +38,15 @@ Set these values in `.env` before starting the production compose stack:
 
 ```bash
 DOMAIN=example.com
+LETSENCRYPT_EMAIL=ops@example.com
 REDIS_PASSWORD=<long-random-password>
 DOCKER_USERNAME=<registry-user-or-org>
 IMAGE_TAG=<immutable-image-tag>
 GIT_SHA=<git-sha-for-metrics>
+COOKIE_SECURE=true
+REQUIRE_SECURE_COOKIES=true
+CORS_INCLUDE_DEV_ORIGINS=false
+CORS_ORIGINS=https://example.com
 ```
 
 `DATABASE_URL` is normally not set manually for the Docker production stack.
@@ -88,34 +93,92 @@ Post-deploy smoke checks:
 
 ```bash
 curl -fsS http://localhost/healthz
-curl -kfsS https://${DOMAIN}/health/live
-curl -kfsS https://${DOMAIN}/health/ready
-curl -kfsS https://${DOMAIN}/health
+curl -fsS https://${DOMAIN}/health/live
+curl -fsS https://${DOMAIN}/health/ready
+curl -fsS https://${DOMAIN}/health
 curl -fsSI http://${DOMAIN} | grep -i '^location: https://'
+BASE_URL=https://${DOMAIN} ./scripts/post-deploy-verify.sh
 ```
 
 ### TLS certificates
 
-The repository contains localhost certificates only for development. In
-production, mount certificates for the real domain into `./certs` and point
-Nginx at them. The current Nginx configs expect certificate files under
-`/etc/nginx/certs`; use one of these approaches:
+SMDG supports two production TLS layouts.
 
-- copy/symlink the domain certificate and key to the filenames used by the
-  active Nginx config;
-- or update `ssl_certificate` / `ssl_certificate_key` to your mounted
-  `fullchain.pem` / `privkey.pem` paths.
+**Built-in Docker/nginx TLS termination** is the default single-host layout.
+Nginx expects these files from the host `./certs` directory:
 
-If using the built-in ACME webroot flow, mount challenges at
-`./certbot/www:/var/www/certbot` and keep `/.well-known/acme-challenge/`
-reachable on HTTP. If TLS is terminated by a cloud load balancer or external
-reverse proxy, keep this compose Nginx internal and configure certificates
-there instead.
+```text
+certs/fullchain.pem
+certs/privkey.pem
+```
 
-Enable HSTS preload only after the real domain and all subdomains are verified
-to be HTTPS-only. The default Nginx configs intentionally avoid `preload` to
-reduce the risk of locking a new domain into an irreversible browser policy too
-early.
+For first boot on a new host, create a temporary self-signed certificate so
+nginx can start and serve the ACME webroot:
+
+```bash
+./generate_cert.sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d nginx
+```
+
+Then issue or renew the Let's Encrypt certificate and reload nginx:
+
+```bash
+DOMAIN=example.com LETSENCRYPT_EMAIL=ops@example.com ./scripts/renew_tls_certificates.sh
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+`scripts/renew_tls_certificates.sh` uses the webroot mounted at
+`./certbot/www:/var/www/certbot`, stores certbot state in
+`./certbot/letsencrypt`, and exports nginx-ready files to `./certs`. If the
+certificate files changed, it automatically runs `nginx -s reload`; if reload
+fails it restarts the nginx container. Set `NGINX_CERT_UPDATE_ACTION=restart`
+to always restart instead of reloading.
+
+Put the same command on a host timer/cron for automatic renewals:
+
+```cron
+17 3 * * * cd /opt/smdg && DOMAIN=example.com LETSENCRYPT_EMAIL=ops@example.com ./scripts/renew_tls_certificates.sh >> /var/log/smdg-cert-renew.log 2>&1
+```
+
+**External TLS termination** is also supported. Terminate HTTPS at the cloud
+load balancer/CDN/Cloudflare edge, keep the Docker host private, and pass at
+least these headers to nginx: `X-Forwarded-Proto`, `X-Forwarded-Host`,
+`X-Forwarded-Port`, `X-Forwarded-For`. The nginx configs preserve incoming
+forwarded proto/host/port values before proxying to FastAPI, and Uvicorn is
+started with proxy-header support in the production compose override.
+
+For either layout, keep `COOKIE_SECURE=true`, keep
+`REQUIRE_SECURE_COOKIES=true`, set `CORS_INCLUDE_DEV_ORIGINS=false`, and list
+exact browser origins in `CORS_ORIGINS` (for example `https://example.com`).
+Starlette does literal origin matching; wildcard origins such as
+`https://*.example.com` are not accepted by `CORSMiddleware`.
+
+The nginx configs send `Strict-Transport-Security:
+max-age=31536000; includeSubDomains; preload`. This is intentional for the
+production HTTPS posture: after browsers accept/preload the domain, they should
+not attempt HTTP for the domain or subdomains.
+
+### Public ports
+
+The production compose override closes direct host ports for `smdg`,
+Prometheus, Grafana, and MinIO. If observability is enabled, include
+`docker-compose.observability.prod.yml` so Jaeger and the OpenTelemetry
+Collector are also internal-only:
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  -f docker-compose.observability.yml \
+  -f docker-compose.observability.prod.yml \
+  up -d
+```
+
+On the VPS firewall, expose only `80/tcp` and `443/tcp` for the built-in nginx
+TLS layout. With an external TLS edge, restrict origin access to the edge
+provider's IP ranges or a private network. `scripts/post-deploy-verify.sh`
+checks that `8000`, `9000`, `9001`, `9090`, `3000`, `16686`, `4317`, and
+`4318` are not publicly reachable.
 
 ### Future Kubernetes probe mapping
 

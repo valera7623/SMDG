@@ -176,7 +176,11 @@ else
     date --iso-8601=seconds > "$LAST_ROTATION_FILE"
 fi
 
-./generate_cert.sh
+if [ "${GENERATE_DEV_CERTS:-${DEV_MODE:-false}}" = "true" ]; then
+    ./generate_cert.sh
+else
+    echo "⏭️  GENERATE_DEV_CERTS is disabled — production TLS certificates are managed by nginx/certbot"
+fi
 
 # Проверка директории бэкапов
 BACKUP_DIR="/app/backups"
@@ -226,8 +230,20 @@ fi
 echo "🖥️ Starting Uvicorn..."
 WEB_CONCURRENCY="${WEB_CONCURRENCY:-1}"
 echo "   WEB_CONCURRENCY=${WEB_CONCURRENCY}"
+UVICORN_PROXY_HEADERS="${UVICORN_PROXY_HEADERS:-true}"
+FORWARDED_ALLOW_IPS="${FORWARDED_ALLOW_IPS:-127.0.0.1}"
+UVICORN_ARGS=(
+    app.main:app
+    --host 0.0.0.0
+    --port 8000
+    --log-level info
+    --workers "${WEB_CONCURRENCY}"
+)
+if [ "${UVICORN_PROXY_HEADERS}" = "true" ]; then
+    UVICORN_ARGS+=(--proxy-headers --forwarded-allow-ips "${FORWARDED_ALLOW_IPS}")
+fi
 if id smdg >/dev/null 2>&1; then
-    exec gosu smdg uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --workers "${WEB_CONCURRENCY}"
+    exec gosu smdg uvicorn "${UVICORN_ARGS[@]}"
 else
-    exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level info --workers "${WEB_CONCURRENCY}"
+    exec uvicorn "${UVICORN_ARGS[@]}"
 fi

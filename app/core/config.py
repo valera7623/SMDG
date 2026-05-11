@@ -149,8 +149,13 @@ class Settings(BaseSettings):
     HTTP_READ_TIMEOUT_SECONDS: int = 25
 
     # CORS: дополнительные разрешённые origin из env ``CORS_ORIGINS`` (через запятую).
-    # К ним добавляются базовые localhost и OHIF viewer (см. ``get_cors_allow_origins``).
+    # Dev localhost origins можно отключить в production через CORS_INCLUDE_DEV_ORIGINS=false.
     cors_origins: str = ""
+    cors_include_dev_origins: bool = True
+
+    # Cookie auth: production compose forces REQUIRE_SECURE_COOKIES=true.
+    cookie_secure: bool = False
+    require_secure_cookies: bool = False
 
     # === HTTP сжатие ответов ===
     COMPRESSION_ENABLED: bool = True
@@ -431,6 +436,8 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "Для deployment_type=SAAS включите S3 (S3_ENABLED=true и учётные данные endpoint/key)."
                 )
+        if self.require_secure_cookies and not self.cookie_secure:
+            raise ValueError("COOKIE_SECURE=true is required when REQUIRE_SECURE_COOKIES=true")
         return self
 
     @property
@@ -505,18 +512,22 @@ def get_cors_allow_origins() -> list[str]:
     Список origin для ``CORSMiddleware``.
 
     Starlette сопоставляет origin буквально; шаблоны ``https://*.example.com`` не
-    поддерживаются. В список всегда входят типичные dev-URL и ``viewer.ohif.org``;
+    поддерживаются. Dev-URL добавляются только при ``CORS_INCLUDE_DEV_ORIGINS``;
     из окружения добавляется ``CORS_ORIGINS`` (через запятую), без дубликатов.
     """
-    base = [
+    dev_origins = [
         "http://localhost",
         "http://127.0.0.1",
         "http://[::1]",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8080",
+    ]
+    base = [
         "https://viewer.ohif.org",
     ]
+    if settings.cors_include_dev_origins:
+        base = dev_origins + base
     extra = [o.strip() for o in (settings.cors_origins or "").split(",") if o.strip()]
     seen: set[str] = set()
     out: list[str] = []
