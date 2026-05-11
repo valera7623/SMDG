@@ -36,6 +36,11 @@ certs/**
 /secrets/**
 secrets/
 secrets/**
+/keys
+/keys/
+/keys/**
+keys/
+keys/**
 /uploads
 /uploads/
 /uploads/**

@@ -100,7 +100,49 @@ jobs:
             cp -a /tmp/smdg-audit-csv.deploy.bak audit_logs/audit.csv
             rm -f /tmp/smdg-audit-csv.deploy.bak
           fi
+          echo "🐳 Preparing clean Docker build context..."
+          BUILD_CONTEXT="$(mktemp -d /tmp/smdg-build-context.XXXXXX)"
+          COMPOSE_BUILD_OVERRIDE="$(mktemp /tmp/smdg-compose-build.XXXXXX.yml)"
+          cleanup_build_context() {
+            rm -rf "$BUILD_CONTEXT" "$COMPOSE_BUILD_OVERRIDE"
+          }
+          trap cleanup_build_context EXIT
+
+          # Docker/BuildKit can fail before applying .dockerignore when runtime
+          # bind mounts contain unreadable subtrees (for example certbot
+          # letsencrypt account files). Build from a clean staging context where
+          # those directories are physically absent.
+          tar \
+            --exclude='./.git' \
+            --exclude='./certbot' \
+            --exclude='./certbot/**' \
+            --exclude='./certs' \
+            --exclude='./certs/**' \
+            --exclude='./secrets' \
+            --exclude='./secrets/**' \
+            --exclude='./keys' \
+            --exclude='./keys/**' \
+            --exclude='./uploads' \
+            --exclude='./uploads/**' \
+            --exclude='./encrypted' \
+            --exclude='./encrypted/**' \
+            --exclude='./decrypted' \
+            --exclude='./decrypted/**' \
+            --exclude='./audit_logs' \
+            --exclude='./audit_logs/**' \
+            --exclude='./backups' \
+            --exclude='./backups/**' \
+            -cf - . | tar -xf - -C "$BUILD_CONTEXT"
+
+          cat > "$COMPOSE_BUILD_OVERRIDE" <<EOF
+          services:
+            smdg:
+              build:
+                context: "$BUILD_CONTEXT"
+                dockerfile: Dockerfile
+          EOF
+
           echo "🐳 Rebuilding and restarting Docker containers..."
-          docker compose up -d --build
+          docker compose -f docker-compose.yml -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
           echo "✅ Deployment complete!"
           REMOTE
