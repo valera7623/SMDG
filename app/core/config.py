@@ -5,6 +5,7 @@ import socket
 import uuid
 from pathlib import Path
 from typing import List, Optional
+from urllib.parse import quote
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -57,6 +58,26 @@ def read_secret(secret_name: str, env_var: str = None, default: str = None) -> s
     return ""
 
 
+def build_redis_url(db: int = 0) -> str:
+    """Build a Redis URL, URL-encoding the password for safe redis-py parsing."""
+    password = read_secret("redis_password", "REDIS_PASSWORD")
+    host = os.getenv("REDIS_HOST", "redis")
+    port = os.getenv("REDIS_PORT", "6379")
+    if password:
+        return f"redis://:{quote(password, safe='')}@{host}:{port}/{db}"
+    return f"redis://{host}:{port}/{db}"
+
+
+def _redis_url_needs_password(url: str | None, password: str, db: int) -> bool:
+    if not url:
+        return True
+    if url == f"redis://redis:6379/{db}":
+        return True
+    if password and f":{password}@" in url:
+        return True
+    return False
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -98,7 +119,10 @@ class Settings(BaseSettings):
     def redis_url(self) -> str:
         """Читает REDIS_URL из secrets или переменной окружения"""
         if not self._redis_url:
-            self._redis_url = read_secret('redis_url', 'REDIS_URL', 'redis://redis:6379/0')
+            self._redis_url = read_secret('redis_url', 'REDIS_URL')
+            password = read_secret("redis_password", "REDIS_PASSWORD")
+            if _redis_url_needs_password(self._redis_url, password, 0):
+                self._redis_url = build_redis_url(0)
         return self._redis_url
     
     @property
@@ -438,6 +462,16 @@ class Settings(BaseSettings):
                 )
         if self.require_secure_cookies and not self.cookie_secure:
             raise ValueError("COOKIE_SECURE=true is required when REQUIRE_SECURE_COOKIES=true")
+        redis_password = read_secret("redis_password", "REDIS_PASSWORD")
+        if redis_password:
+            if _redis_url_needs_password(self.SESSION_REDIS_URL, redis_password, 0):
+                self.SESSION_REDIS_URL = build_redis_url(0)
+            if _redis_url_needs_password(self.CACHE_REDIS_URL, redis_password, 1):
+                self.CACHE_REDIS_URL = build_redis_url(1)
+            if _redis_url_needs_password(self.RATE_LIMIT_STORAGE, redis_password, 2):
+                self.RATE_LIMIT_STORAGE = build_redis_url(2)
+            if _redis_url_needs_password(self.JOB_QUEUE_REDIS_URL, redis_password, 3):
+                self.JOB_QUEUE_REDIS_URL = build_redis_url(3)
         return self
 
     @property
