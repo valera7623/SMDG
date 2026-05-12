@@ -19,6 +19,47 @@
 (function () {
     "use strict";
 
+    /**
+     * База URL для `locales/<lang>.js` (не хардкодить `/static/` при другом STATIC_URL или префиксе прокси).
+     */
+    function localesBaseUrl() {
+        try {
+            const cfg = window.SMDG_CONFIG && window.SMDG_CONFIG.static_url;
+            if (cfg) {
+                return String(cfg).replace(/\/?$/, "/") + "locales/";
+            }
+        } catch (_e) {
+            /* ignore */
+        }
+        const marker = document.querySelector('script[src*="i18n.js"]');
+        if (marker && marker.src) {
+            try {
+                const u = new URL(marker.src, document.baseURI);
+                const path = u.pathname.replace(/\/js\/i18n[^/]*$/i, "/locales/");
+                if (path !== u.pathname) {
+                    return u.origin + (path.endsWith("/") ? path : `${path}/`);
+                }
+            } catch (_e) {
+                /* ignore */
+            }
+        }
+        return "/static/locales/";
+    }
+
+    function localeQueryString() {
+        try {
+            const v = window.SMDG_CONFIG && window.SMDG_CONFIG.asset_version;
+            if (v) return `?v=${encodeURIComponent(String(v))}`;
+        } catch (_e) {
+            /* ignore */
+        }
+        const marker = document.querySelector('script[src*="i18n.js"]');
+        if (marker && marker.src && marker.src.includes("?")) {
+            return `?${marker.src.split("?")[1]}`;
+        }
+        return "";
+    }
+
     const STORAGE_KEY = "smdg_language";
     const RTL_LANGS = new Set(["ar", "he", "fa", "ur"]);
 
@@ -80,12 +121,32 @@
                     `script[data-i18n-lang="${lang}"]`
                 );
                 if (existing) {
-                    existing.addEventListener("load", () => resolve(true), { once: true });
-                    existing.addEventListener("error", () => resolve(false), { once: true });
+                    if (this.translations[lang]) {
+                        resolve(true);
+                        return;
+                    }
+                    let settled = false;
+                    const done = (ok) => {
+                        if (settled) return;
+                        settled = true;
+                        resolve(ok);
+                    };
+                    const onLoad = () => done(Boolean(this.translations[lang]));
+                    existing.addEventListener("load", onLoad, { once: true });
+                    existing.addEventListener("error", () => done(false), { once: true });
+                    queueMicrotask(() => {
+                        if (this.translations[lang]) done(true);
+                    });
+                    window.setTimeout(() => {
+                        if (!settled) {
+                            console.warn(`[i18n] Locale script wait timeout: ${lang}`);
+                            done(Boolean(this.translations[lang]));
+                        }
+                    }, 12000);
                     return;
                 }
                 const script = document.createElement("script");
-                script.src = `/static/locales/${lang}.js`;
+                script.src = `${localesBaseUrl()}${lang}.js${localeQueryString()}`;
                 script.async = true;
                 script.defer = true;
                 script.dataset.i18nLang = lang;
@@ -97,7 +158,7 @@
                 script.addEventListener(
                     "error",
                     () => {
-                        console.error(`[i18n] Failed to load locale: ${lang}`);
+                        console.error(`[i18n] Failed to load locale: ${lang} (${script.src})`);
                         resolve(false);
                     },
                     { once: true }
@@ -106,6 +167,9 @@
             });
 
             this._pendingLoads.set(lang, promise);
+            promise.finally(() => {
+                this._pendingLoads.delete(lang);
+            });
             return promise;
         },
 
@@ -117,7 +181,12 @@
                 lang = this.fallbackLang;
             }
 
-            await this.loadTranslations(lang);
+            const okPrimary = await this.loadTranslations(lang);
+            if (!okPrimary && lang !== this.fallbackLang) {
+                console.warn(`[i18n] Locale «${lang}» failed to load; falling back to ${this.fallbackLang}`);
+                lang = this.fallbackLang;
+                await this.loadTranslations(lang);
+            }
             if (lang !== this.fallbackLang) {
                 await this.loadTranslations(this.fallbackLang);
             }
