@@ -50,24 +50,31 @@
         </section>
 
         <section class="section">
-            <h2>📋 File audit log</h2>
+            <h2>📋 <span data-i18n="admin_file_audit.title">File audit log</span></h2>
             <div class="controls">
-                <input id="fileAuditSearch" type="search" placeholder="User, file or IP">
+                <input id="fileAuditSearch" type="search"
+                    data-i18n-placeholder="admin_file_audit.search_placeholder" placeholder="User, file or IP">
                 <select id="fileAuditAction">
-                    <option value="">All actions</option>
-                    <option value="upload">Upload</option>
-                    <option value="download_authenticated">Download by user</option>
-                    <option value="download_token">Download by link</option>
+                    <option value="" data-i18n="admin_file_audit.action_all">All actions</option>
+                    <option value="upload" data-i18n="admin_file_audit.action_upload">Upload</option>
+                    <option value="download_authenticated" data-i18n="admin_file_audit.action_download_user">Download by user</option>
+                    <option value="download_token" data-i18n="admin_file_audit.action_download_link">Download by link</option>
                 </select>
                 <select id="fileAuditSuccess">
-                    <option value="">All statuses</option>
-                    <option value="true">Success</option>
-                    <option value="false">Failed</option>
+                    <option value="" data-i18n="admin_file_audit.status_all">All statuses</option>
+                    <option value="true" data-i18n="admin_file_audit.status_success">Success</option>
+                    <option value="false" data-i18n="admin_file_audit.status_failed">Failed</option>
                 </select>
-                <input id="fileAuditStart" type="datetime-local" aria-label="Start date">
-                <input id="fileAuditEnd" type="datetime-local" aria-label="End date">
-                <button id="fileAuditRefresh" type="button" class="btn-secondary">Refresh audit</button>
-                <button id="fileAuditReset" type="button" class="btn-secondary">Reset filters</button>
+                <input id="fileAuditStart" type="datetime-local" aria-label="Start date"
+                    data-i18n-title="admin_file_audit.start_date">
+                <input id="fileAuditEnd" type="datetime-local" aria-label="End date"
+                    data-i18n-title="admin_file_audit.end_date">
+                <button id="fileAuditRefresh" type="button" class="btn-secondary">
+                    <span data-i18n="admin_file_audit.refresh">Refresh audit</span>
+                </button>
+                <button id="fileAuditReset" type="button" class="btn-secondary">
+                    <span data-i18n="admin_file_audit.reset_filters">Reset filters</span>
+                </button>
             </div>
             <div id="fileAuditList"></div>
         </section>

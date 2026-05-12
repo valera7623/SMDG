@@ -3,6 +3,7 @@
 import { adminFileAudit } from '../core/api.js';
 import { createElement } from '../utils/dom.js';
 import { formatBytes } from '../utils/formats.js';
+import { currentLocale, t } from '../utils/i18n.js';
 
 const PAGE_SIZE = 20;
 let currentSkip = 0;
@@ -31,7 +32,7 @@ export async function loadFileAuditEvents() {
     const container = document.getElementById('fileAuditList');
     if (!container) return;
 
-    container.innerHTML = '<div class="loading">Loading file audit…</div>';
+    container.innerHTML = `<div class="loading">${t('admin_file_audit.loading', 'Loading file audit…')}</div>`;
 
     try {
         const data = await adminFileAudit.list({
@@ -48,22 +49,38 @@ export async function loadFileAuditEvents() {
     } catch (error) {
         if (error.status === 401 || error.status === 403) { REDIRECT_HOME(); return; }
         container.innerHTML = '';
-        container.appendChild(createElement('div', { className: 'error', textContent: `Error: ${error.message}` }));
+        container.appendChild(createElement('div', {
+            className: 'error',
+            textContent: t('admin_file_audit.error', 'Error: {{message}}', { message: error.message }),
+        }));
     }
 }
 
 function _renderAuditTable(container, events) {
     container.innerHTML = '';
     if (events.length === 0) {
-        container.appendChild(createElement('div', { className: 'empty', textContent: 'No file audit events found' }));
+        container.appendChild(createElement('div', {
+            className: 'empty',
+            textContent: t('admin_file_audit.empty', 'No file audit events found'),
+        }));
         _renderPagination(container);
         return;
     }
 
     const table = createElement('table', { className: 'data-table responsive-data-table' });
+    const labels = {
+        time: t('admin_file_audit.col_time', 'Time'),
+        action: t('admin_file_audit.col_action', 'Action'),
+        user: t('admin_file_audit.col_user', 'User'),
+        file: t('admin_file_audit.col_file', 'File'),
+        size: t('admin_file_audit.col_size', 'Size'),
+        ip: t('admin_file_audit.col_ip', 'IP'),
+        direction: t('admin_file_audit.col_direction', 'Direction'),
+        status: t('admin_file_audit.col_status', 'Status'),
+    };
     const thead = createElement('thead', {},
         createElement('tr', {},
-            ...['Time', 'Action', 'User', 'File', 'Size', 'IP', 'Direction', 'Status'].map(
+            ...Object.values(labels).map(
                 title => createElement('th', { textContent: title }),
             ),
         ),
@@ -71,19 +88,23 @@ function _renderAuditTable(container, events) {
     const tbody = createElement('tbody');
 
     events.forEach(event => {
-        const userLabel = [event.actor_username || 'unknown', event.actor_role || '']
+        const userLabel = [event.actor_username || t('admin_file_audit.unknown', 'unknown'), event.actor_role || '']
             .filter(Boolean)
             .join(' / ');
         const direction = `${event.source || '—'} -> ${event.destination || '—'}`;
         tbody.appendChild(createElement('tr', {},
-            _td('Time', _formatDate(event.created_at)),
-            _td('Action', event.action),
-            _td('User', userLabel),
-            _td('File', event.original_name || event.encrypted_name || '—'),
-            _td('Size', event.size_bytes ? formatBytes(event.size_bytes) : '—'),
-            _td('IP', event.client_ip || '—'),
-            _td('Direction', direction),
-            _td('Status', event.success ? 'OK' : `Failed: ${event.failure_reason || 'unknown'}`),
+            _td(labels.time, _formatDate(event.created_at)),
+            _td(labels.action, _actionLabel(event.action)),
+            _td(labels.user, userLabel),
+            _td(labels.file, event.original_name || event.encrypted_name || '—'),
+            _td(labels.size, event.size_bytes ? formatBytes(event.size_bytes) : '—'),
+            _td(labels.ip, event.client_ip || '—'),
+            _td(labels.direction, direction),
+            _td(labels.status, event.success
+                ? t('admin_file_audit.status_ok', 'OK')
+                : t('admin_file_audit.status_failed_with_reason', 'Failed: {{reason}}', {
+                    reason: event.failure_reason || t('admin_file_audit.unknown', 'unknown'),
+                })),
         ));
     });
 
@@ -101,7 +122,7 @@ function _renderPagination(container) {
 
     const prev = createElement('button', {
         className: 'btn-secondary',
-        textContent: 'Previous',
+        textContent: t('admin_file_audit.previous', 'Previous'),
     });
     prev.addEventListener('click', () => {
         currentSkip = Math.max(0, currentSkip - PAGE_SIZE);
@@ -110,7 +131,7 @@ function _renderPagination(container) {
 
     const next = createElement('button', {
         className: 'btn-secondary',
-        textContent: 'Next',
+        textContent: t('admin_file_audit.next', 'Next'),
     });
     next.addEventListener('click', () => {
         currentSkip += PAGE_SIZE;
@@ -131,6 +152,16 @@ function _td(label, text) {
     return createElement('td', { 'data-label': label, textContent: text ?? '—' });
 }
 
+function _actionLabel(action) {
+    const keyByAction = {
+        upload: 'admin_file_audit.action_upload',
+        download_authenticated: 'admin_file_audit.action_download_user',
+        download_token: 'admin_file_audit.action_download_link',
+    };
+    const key = keyByAction[action];
+    return key ? t(key, action) : action;
+}
+
 function _value(id) {
     return document.getElementById(id)?.value?.trim() || '';
 }
@@ -143,7 +174,7 @@ function _dateValue(id) {
 function _formatDate(value) {
     if (!value) return '—';
     try {
-        return new Intl.DateTimeFormat(undefined, {
+        return new Intl.DateTimeFormat(currentLocale(), {
             dateStyle: 'short',
             timeStyle: 'medium',
         }).format(new Date(value));
