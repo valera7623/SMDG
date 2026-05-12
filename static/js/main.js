@@ -23,6 +23,9 @@ async function checkFeatureFlags() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (window.I18N && typeof window.I18N.init === 'function') {
+        await window.I18N.init();
+    }
     initTheme();
     bindThemeToggles();
     await checkFeatureFlags();

@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="admin.title">SMDG — Admin panel</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/language-selector.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=file-audit-i18n2">
+    <link rel="stylesheet" href="/static/css/language-selector.css?v=file-audit-i18n2">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <script src="/static/js/i18n.js" defer></script>
-    <script type="module" src="/static/js/admin.js"></script>
+    <script src="/static/js/i18n.js?v=file-audit-i18n2" defer></script>
+    <script type="module" src="/static/js/admin.js?v=file-audit-i18n2"></script>
 </head>
 
 <body>
@@ -65,10 +65,10 @@
                     <option value="true" data-i18n="admin_file_audit.status_success">Success</option>
                     <option value="false" data-i18n="admin_file_audit.status_failed">Failed</option>
                 </select>
-                <input id="fileAuditStart" type="datetime-local" aria-label="Start date"
-                    data-i18n-title="admin_file_audit.start_date">
-                <input id="fileAuditEnd" type="datetime-local" aria-label="End date"
-                    data-i18n-title="admin_file_audit.end_date">
+                <input id="fileAuditStart" type="datetime-local"
+                    data-i18n-aria-label="admin_file_audit.start_date">
+                <input id="fileAuditEnd" type="datetime-local"
+                    data-i18n-aria-label="admin_file_audit.end_date">
                 <button id="fileAuditRefresh" type="button" class="btn-secondary">
                     <span data-i18n="admin_file_audit.refresh">Refresh audit</span>
                 </button>

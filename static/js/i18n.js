@@ -6,8 +6,9 @@
  *   2. For form fields use `data-i18n-placeholder="key"` to translate the
  *      placeholder or `data-i18n-value="key"` for submit button values.
  *   3. Mark the document title with `data-i18n-title="key"` on any node.
- *   4. Import this file last; it auto-initialises on DOMContentLoaded.
- *   5. To translate dynamically injected content call
+ *   4. Use `data-i18n-aria-label="key"` for accessible names on inputs/buttons.
+ *   5. Import this file last; it auto-initialises on DOMContentLoaded.
+ *   6. To translate dynamically injected content call
  *      `window.I18N.updatePageTranslations()` after injection, or
  *      listen for the `i18n:updated` event.
  *
@@ -32,6 +33,8 @@
         },
         fallbackLang: "en",
         _initialised: false,
+        /** @type {Promise<void> | null} */
+        _initPromise: null,
         _pendingLoads: new Map(),
 
         get translations() {
@@ -154,8 +157,8 @@
 
         /**
          * Translate every element in the DOM annotated with
-         * `data-i18n`, `data-i18n-placeholder`, `data-i18n-value` or
-         * `data-i18n-title`. Safe to call multiple times.
+         * `data-i18n`, `data-i18n-placeholder`, `data-i18n-value`,
+         * `data-i18n-title` or `data-i18n-aria-label`. Safe to call multiple times.
          */
         updatePageTranslations(root) {
             const scope = root || document;
@@ -173,6 +176,11 @@
             scope.querySelectorAll("[data-i18n-value]").forEach((el) => {
                 const key = el.getAttribute("data-i18n-value");
                 if (key) el.value = this.t(key);
+            });
+
+            scope.querySelectorAll("[data-i18n-aria-label]").forEach((el) => {
+                const key = el.getAttribute("data-i18n-aria-label");
+                if (key) el.setAttribute("aria-label", this.t(key));
             });
 
             scope.querySelectorAll("[data-i18n-title]").forEach((el) => {
@@ -286,15 +294,19 @@
          * render translations and insert the language selector.
          */
         async init(options) {
-            if (this._initialised) return;
-            this._initialised = true;
+            if (this._initPromise) return this._initPromise;
 
-            const opts = options || {};
-            const lang = opts.lang || this.detectInitialLang();
-            await this.setLanguage(lang);
-            if (opts.renderSelector !== false) {
-                this.addLanguageSelector(opts.selectorContainer);
-            }
+            this._initPromise = (async () => {
+                const opts = options || {};
+                const lang = opts.lang || this.detectInitialLang();
+                await this.setLanguage(lang);
+                if (opts.renderSelector !== false) {
+                    this.addLanguageSelector(opts.selectorContainer);
+                }
+                this._initialised = true;
+            })();
+
+            return this._initPromise;
         },
 
         // --- helpers -------------------------------------------------
@@ -333,8 +345,10 @@
     window.I18N = I18N;
 
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => I18N.init());
+        document.addEventListener("DOMContentLoaded", () => {
+            void I18N.init();
+        });
     } else {
-        I18N.init();
+        void I18N.init();
     }
 })();

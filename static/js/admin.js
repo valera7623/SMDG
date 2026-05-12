@@ -11,7 +11,10 @@ import { initFileAudit, loadFileAuditEvents } from './modules/admin-file-audit.j
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme } from './theme-init.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.I18N && typeof window.I18N.init === 'function') {
+        await window.I18N.init();
+    }
     initTheme();
     bindThemeToggles();
     initResponsiveUI();

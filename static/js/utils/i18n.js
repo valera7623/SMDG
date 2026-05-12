@@ -19,18 +19,32 @@
  * @returns {string}
  */
 export function t(key, fallback, params) {
-    const runtime = typeof window !== 'undefined' ? window.I18N : null;
-    if (runtime && typeof runtime.t === 'function') {
-        const value = runtime.t(key, params);
+    let resolvedFallback = fallback;
+    let resolvedParams = params;
+
+    if (
+        resolvedParams === undefined &&
+        resolvedFallback !== undefined &&
+        resolvedFallback !== null &&
+        typeof resolvedFallback === "object" &&
+        !Array.isArray(resolvedFallback)
+    ) {
+        resolvedParams = resolvedFallback;
+        resolvedFallback = undefined;
+    }
+
+    const runtime = typeof window !== "undefined" ? window.I18N : null;
+    if (runtime && typeof runtime.t === "function") {
+        const value = runtime.t(key, resolvedParams);
         if (value && value !== key) return value;
     }
-    if (typeof fallback !== 'string') return key;
-    if (!params) return fallback;
-    let out = fallback;
-    for (const name of Object.keys(params)) {
-        const safe = String(params[name]);
+    if (typeof resolvedFallback !== "string") return key;
+    if (!resolvedParams) return resolvedFallback;
+    let out = resolvedFallback;
+    for (const name of Object.keys(resolvedParams)) {
+        const safe = String(resolvedParams[name]);
         out = out.replace(
-            new RegExp(`{{\\s*${name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}\\s*}}`, 'g'),
+            new RegExp(`{{\\s*${name.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&")}\\s*}}`, "g"),
             safe,
         );
     }

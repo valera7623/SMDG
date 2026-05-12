@@ -28,6 +28,9 @@ import { auth as authAPI } from './core/api.js';
 import { setCurrentUser } from './core/state.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (window.I18N && typeof window.I18N.init === 'function') {
+        await window.I18N.init();
+    }
     initTheme();
     bindThemeToggles();
     initResponsiveUI();
