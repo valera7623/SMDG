@@ -3,7 +3,7 @@
 # Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY (общий ключ на оба VPS)
 #          VPS2_HOST, VPS2_USER
 #          VPS_GITHUB_TOKEN (опционально, автоклон)
-# Variables: VPS_DEPLOY_PATH, VPS_AUTO_CLONE, VPS2_* , VPS2_SSH_PROXY_JUMP (true = SSH на fileguardian через primary)
+# Variables: VPS_COMPOSE_FILE (default docker-compose.demo.yml), VPS_DEPLOY_PATH, VPS_AUTO_CLONE, VPS2_*
 #
 # Справка: ../DEPLOYMENT_SECRETS.md
 
@@ -38,6 +38,7 @@ jobs:
     env:
       DEPLOY_PATH: ${{ vars[matrix.deploy_path_var] }}
       VPS_AUTO_CLONE: ${{ vars[matrix.auto_clone_var] }}
+      COMPOSE_FILE: ${{ vars.VPS_COMPOSE_FILE }}
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
@@ -169,11 +170,13 @@ jobs:
           PATH_DEFAULT: ${{ matrix.path_default }}
         run: |
           export DEPLOY_PATH="${DEPLOY_PATH:-$PATH_DEFAULT}"
+          export COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.demo.yml}"
           export REPO_URL="https://github.com/${REPO_SLUG}.git"
           export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
-          echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
+          echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH} (compose: ${COMPOSE_FILE})"
           ssh vps-deploy \
             env DEPLOY_PATH="$DEPLOY_PATH" \
+                COMPOSE_FILE="$COMPOSE_FILE" \
                 REPO_URL="$REPO_URL" \
                 REPO_SLUG="$REPO_SLUG" \
                 VPS_AUTO_CLONE="$VPS_AUTO_CLONE" \
@@ -203,25 +206,29 @@ jobs:
           fi
 
           cd "$DEPLOY_PATH"
-          echo "🛑 Stopping containers before Git update..."
-          docker compose down
+          COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.demo.yml}"
+          if [[ ! -f "$COMPOSE_FILE" ]]; then
+            echo "::error::Compose file not found: $DEPLOY_PATH/$COMPOSE_FILE"
+            exit 1
+          fi
+          if [[ "$COMPOSE_FILE" == *demo* ]] && [[ ! -f .env ]]; then
+            echo "::error::Для demo нужен .env на сервере: cp .env.demo.example .env && задайте DOMAIN, JWT_SECRET_KEY, POSTGRES_PASSWORD"
+            exit 1
+          fi
 
-          echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
-          mkdir -p audit_logs encrypted decrypted uploads static
+          echo "🛑 Stopping containers (compose: $COMPOSE_FILE)..."
+          docker compose -f docker-compose.yml down 2>/dev/null || true
+          docker compose -f docker-compose.demo.yml down 2>/dev/null || true
+          docker compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+
+          echo "🔧 Preparing host dirs (static, certbot)..."
+          mkdir -p static certbot/www certs
           docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
-            sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
+            sh -c "chown -R $(id -u):$(id -g) /w/static /w/certbot 2>/dev/null || true"
 
           echo "📥 Pulling latest changes from Git..."
-          if [[ -f audit_logs/audit.csv ]]; then
-            cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.deploy.bak
-          fi
           git fetch origin main
           git reset --hard origin/main
-          mkdir -p audit_logs
-          if [[ -f /tmp/smdg-audit-csv.deploy.bak ]]; then
-            cp -a /tmp/smdg-audit-csv.deploy.bak audit_logs/audit.csv
-            rm -f /tmp/smdg-audit-csv.deploy.bak
-          fi
           echo "🐳 Preparing clean Docker build context..."
           BUILD_CONTEXT="$(mktemp -d /tmp/smdg-build-context.XXXXXX)"
           COMPOSE_BUILD_OVERRIDE="$(mktemp /tmp/smdg-compose-build.XXXXXX.yml)"
@@ -261,9 +268,9 @@ jobs:
                 dockerfile: Dockerfile
           EOF
 
-          echo "🐳 Rebuilding and restarting Docker containers..."
-          docker compose -f docker-compose.yml -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
-          echo "✅ Deployment complete!"
+          echo "🐳 Rebuilding and restarting: docker compose -f $COMPOSE_FILE ..."
+          docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
+          echo "✅ Deployment complete ($COMPOSE_FILE)"
           REMOTE
 
       - name: 🩺 Smoke test (${{ matrix.target }})
@@ -272,6 +279,7 @@ jobs:
         env:
           HEALTH_DOMAIN: ${{ vars.VPS2_DOMAIN != '' && vars.VPS2_DOMAIN || matrix.health_domain }}
           PATH_DEFAULT: ${{ matrix.path_default }}
+          COMPOSE_FILE: ${{ vars.VPS_COMPOSE_FILE }}
         run: |
           set -euo pipefail
           URL="https://${HEALTH_DOMAIN}/health/ready"
@@ -289,7 +297,8 @@ jobs:
           done
 
           echo "::group::Диагностика на сервере (docker + локальный health)"
-          ssh vps-deploy "set -e; cd \"${DEPLOY_PATH:-$PATH_DEFAULT}\"; docker compose ps; echo '---'; docker compose logs smdg --tail 40; echo '---'; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/live || true; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/ready || true" \
+          COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.demo.yml}"
+          ssh vps-deploy "set -e; cd \"${DEPLOY_PATH:-$PATH_DEFAULT}\"; docker compose -f \"${COMPOSE_FILE}\" ps; echo '---'; docker compose -f \"${COMPOSE_FILE}\" logs smdg --tail 40; echo '---'; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/live || true; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/ready || true" \
             || echo "SSH diagnostics skipped"
           echo "::endgroup::"
           echo "::error::Health check failed: ${URL} (последний HTTP ${code}). 502 = nginx не видит smdg:8000 — смотрите logs выше."

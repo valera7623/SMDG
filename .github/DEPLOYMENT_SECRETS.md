@@ -69,7 +69,27 @@ ssh smdg@<VPS_HOST> 'ssh -o BatchMode=yes smdg@74.208.252.225 hostname'
 
 После деплоя для **fileguardian** проверяется `https://<domain>/health/ready` (до 40×6 с). **502** обычно значит: контейнер `smdg` ещё стартует (миграции, ключи, MinIO) или упал — смотрите `docker compose logs smdg` на VPS. Отключить проверку: Variable `VPS2_SKIP_SMOKE_TEST=true`.
 
-Перед первым запуском на каждом VPS: Docker, `git clone` в `DEPLOY_PATH`, `secrets/`, `.env`, либо `VPS*_AUTO_CLONE=true`.
+Перед первым запуском на каждом VPS: Docker, `git clone` в `DEPLOY_PATH`, либо `VPS*_AUTO_CLONE=true`.
+
+### Compose-файл (demo на VPS)
+
+По умолчанию деплой использует **`docker-compose.demo.yml`** (без MinIO/Prometheus, секреты через `.env`).
+
+| Variable | По умолчанию |
+|----------|----------------|
+| `VPS_COMPOSE_FILE` | `docker-compose.demo.yml` (полный стек: `docker-compose.yml`) |
+
+На сервере **обязателен** `.env` (не в git):
+
+```bash
+cp .env.demo.example .env
+# DOMAIN=fileguardian.info
+# JWT_SECRET_KEY=... (≥48 символов)
+# POSTGRES_PASSWORD=... (тот же, что при первом запуске db / fix-postgres-password-mismatch.sh)
+# LETSENCRYPT_EMAIL=...
+```
+
+Каталог `secrets/` для demo **не обязателен** (`DEMO_MODE=true` в compose).
 
 ### `password authentication failed for user "smdg_user"` (alembic / 502)
 
