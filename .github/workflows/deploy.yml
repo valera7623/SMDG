@@ -67,47 +67,53 @@ jobs:
           if [[ "$missing" -ne 0 ]]; then exit 1; fi
           echo "Secrets OK for ${{ matrix.target }} (user length=${#DEPLOY_USER})"
 
-      - name: 🔑 SSH agent (${{ matrix.target }})
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
-
-      - name: 🔑 Known hosts (${{ matrix.target }})
+      - name: 🔑 Setup SSH (${{ matrix.target }})
+        shell: bash
         env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          chmod 644 ~/.ssh/known_hosts
-          echo "Публичный ключ из VPS_SSH_KEY (должна быть эта строка в authorized_keys на сервере):"
-          ssh-add -L
+          # Ключ из Secret через env (многострочный PEM/OpenSSH); убираем CR при вставке из Windows
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          unset SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub 2>/dev/null; then
+            echo "::error::VPS_SSH_KEY повреждён или неполный (ssh-keygen -y failed). Пересоздайте Secret: весь файл от BEGIN до END включительно."
+            exit 1
+          fi
+          echo "Строка для authorized_keys на сервере (${{ matrix.target }}):"
+          cat ~/.ssh/deploy_key.pub
+          ssh-keygen -lf ~/.ssh/deploy_key
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: 🔌 Test SSH (${{ matrix.target }})
+        shell: bash
         env:
           DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
           DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
-          SSH_OPTS: >-
+        run: |
+          set -euo pipefail
+          SSH_BASE=(
+            ssh
+            -i ~/.ssh/deploy_key
             -o BatchMode=yes
             -o IdentitiesOnly=yes
             -o PreferredAuthentications=publickey
             -o PasswordAuthentication=no
             -o ConnectTimeout=20
-        run: |
-          if ssh $SSH_OPTS "${DEPLOY_USER}@${DEPLOY_HOST}" 'echo "SSH OK on $(hostname) as $(whoami)"'; then
+          )
+          if "${SSH_BASE[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              'echo "SSH OK on $(hostname) as $(whoami)"'; then
             exit 0
           fi
-          echo "::error::SSH failed for ${{ matrix.target }} — secret ${{ matrix.user_secret }} + ${{ matrix.host_secret }}"
+          echo "::error::SSH failed for ${{ matrix.target }} (${{ matrix.user_secret }} + ${{ matrix.host_secret }})"
           echo ""
-          echo "1) GitHub Secret VPS2_USER = linux-пользователь с каталогом деплоя (для /home/ubuntu/SMDG это ubuntu)."
-          echo "2) На fileguardian выполните от имени ЭТОГО пользователя:"
-          echo "     mkdir -p ~/.ssh && chmod 700 ~/.ssh"
-          echo "     Добавьте в ~/.ssh/authorized_keys строку из шага «SSH agent» (ssh-add -L) выше."
-          echo "     chmod 600 ~/.ssh/authorized_keys"
-          echo "3) С рабочего ПК (тот же приватный ключ, что в VPS_SSH_KEY):"
-          echo "     ssh -i deploy_key -o BatchMode=yes \"\${VPS2_USER}@74.208.252.225\" hostname"
-          echo "4) Если primary уже работает — скопируйте ключ с первого VPS:"
-          echo "     ssh \$VPS_USER@\$VPS_HOST 'grep -v \"^#\" ~/.ssh/authorized_keys | head -1'"
+          echo "Проверьте Secret VPS_SSH_KEY (шаг выше: «Строка для authorized_keys»)."
+          echo "На КАЖДОМ VPS эта строка должна быть в /home/<USER>/.ssh/authorized_keys для USER из VPS_USER / VPS2_USER."
+          echo "fileguardian + /home/ubuntu/SMDG → обычно VPS2_USER=ubuntu."
           exit 1
 
       - name: 🐳 Deploy to VPS (${{ matrix.target }})
@@ -121,7 +127,8 @@ jobs:
           export REPO_URL="https://github.com/${REPO_SLUG}.git"
           export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
           echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
-          ssh -o BatchMode=yes \
+          ssh -i ~/.ssh/deploy_key \
+              -o BatchMode=yes \
               -o IdentitiesOnly=yes \
               -o PreferredAuthentications=publickey \
               -o PasswordAuthentication=no \

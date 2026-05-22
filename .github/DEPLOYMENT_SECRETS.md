@@ -6,7 +6,7 @@
 
 | Name | Описание |
 |------|----------|
-| `VPS_SSH_KEY` | Приватный SSH-ключ (один на **оба** сервера; публичная часть в `authorized_keys` на каждом VPS) |
+| `VPS_SSH_KEY` | Приватный SSH-ключ целиком (`-----BEGIN ... PRIVATE KEY-----` … `-----END ...`). Без лишних кавычек и пробелов в начале. После смены Secret перезапустите workflow. |
 | `VPS_GITHUB_TOKEN` | Опционально: PAT для `git clone`, если включён `VPS_AUTO_CLONE` / `VPS2_AUTO_CLONE` и репозиторий приватный |
 
 ## Сервер 1 (primary)
@@ -40,7 +40,7 @@
 
 ### Ошибка `Permission denied (publickey,password)` на fileguardian
 
-В логе Actions шаг **«SSH agent»** печатает строку `ssh-add -L` — **именно её** (одна строка) нужно добавить в `authorized_keys` на втором VPS. Локально ту же строку даёт:
+В логе Actions шаг **«Setup SSH»** печатает **«Строка для authorized_keys»** — **именно её** (одна строка) нужно добавить в `authorized_keys` на каждом VPS (разным пользователям, если пути разные). Локально ту же строку даёт:
 
 ```bash
 chmod +x scripts/show-deploy-ssh-pubkey.sh
