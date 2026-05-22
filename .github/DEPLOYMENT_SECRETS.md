@@ -40,6 +40,13 @@
 
 ### Ошибка `Permission denied (publickey,password)` на fileguardian
 
+В логе Actions шаг **«SSH agent»** печатает строку `ssh-add -L` — **именно её** (одна строка) нужно добавить в `authorized_keys` на втором VPS. Локально ту же строку даёт:
+
+```bash
+chmod +x scripts/show-deploy-ssh-pubkey.sh
+./scripts/show-deploy-ssh-pubkey.sh /path/to/тот_же_приватный_ключ
+```
+
 Один и тот же **`VPS_SSH_KEY`** должен быть принят на **обоих** серверах, но у **разных пользователей**, если пути разные:
 
 | Сервер | Типичный `VPS*_USER` | `authorized_keys` |
