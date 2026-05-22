@@ -33,8 +33,17 @@
 | `VPS2_DEPLOY_PATH` | `/home/smdg/SMDG` — каталог с clone на втором VPS |
 | `VPS2_AUTO_CLONE` | при необходимости |
 | `VPS2_DOMAIN` | опционально (по умолчанию smoke-тест: `fileguardian.info`) |
+| `VPS2_SSH_PROXY_JUMP` | для fileguardian: не `false` → SSH **через primary** (`ProxyJump` на `VPS_HOST`). Нужно, если с вашего ПК SSH работает, а GitHub Actions получает `Permission denied` / порт 22 закрыт с интернета |
 
-Оба сервера используют один **`VPS_SSH_KEY`**; публичная строка из лога шага **Setup SSH** должна быть в `/home/smdg/.ssh/authorized_keys` на **каждом** VPS.
+Оба сервера: пользователь **`smdg`**, путь **`/home/smdg/SMDG`**, один **`VPS_SSH_KEY`**. Публичная строка из лога **Setup SSH** — в `/home/smdg/.ssh/authorized_keys` на **каждом** VPS.
+
+**Важно:** на fileguardian в `authorized_keys` должна быть та же строка, что на primary. Проверка с primary:
+
+```bash
+ssh smdg@<VPS_HOST> 'ssh -o BatchMode=yes smdg@74.208.252.225 hostname'
+```
+
+Если это работает, а Actions — нет, оставьте `VPS2_SSH_PROXY_JUMP` включённым (по умолчанию в workflow).
 
 После деплоя для **fileguardian** проверяется `https://<domain>/health/ready`.
 

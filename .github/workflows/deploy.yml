@@ -3,7 +3,7 @@
 # Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY (общий ключ на оба VPS)
 #          VPS2_HOST, VPS2_USER
 #          VPS_GITHUB_TOKEN (опционально, автоклон)
-# Variables: VPS_DEPLOY_PATH, VPS_AUTO_CLONE, VPS2_DEPLOY_PATH, VPS2_AUTO_CLONE, VPS2_DOMAIN
+# Variables: VPS_DEPLOY_PATH, VPS_AUTO_CLONE, VPS2_* , VPS2_SSH_PROXY_JUMP (true = SSH на fileguardian через primary)
 #
 # Справка: ../DEPLOYMENT_SECRETS.md
 
@@ -72,11 +72,15 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
           DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
+          DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
+          JUMP_HOST: ${{ secrets.VPS_HOST }}
+          JUMP_USER: ${{ secrets.VPS_USER }}
+          MATRIX_TARGET: ${{ matrix.target }}
+          VPS2_SSH_PROXY_JUMP: ${{ vars.VPS2_SSH_PROXY_JUMP }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          # Ключ из Secret через env (многострочный PEM/OpenSSH); убираем CR при вставке из Windows
           printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           unset SSH_AUTH_SOCK SSH_AGENT_PID 2>/dev/null || true
@@ -84,10 +88,52 @@ jobs:
             echo "::error::VPS_SSH_KEY повреждён или неполный (ssh-keygen -y failed). Пересоздайте Secret: весь файл от BEGIN до END включительно."
             exit 1
           fi
-          echo "Строка для authorized_keys на сервере (${{ matrix.target }}):"
+          echo "Строка для authorized_keys (${MATRIX_TARGET}):"
           cat ~/.ssh/deploy_key.pub
           ssh-keygen -lf ~/.ssh/deploy_key
+
+          USE_PROXY_JUMP=false
+          if [[ "$MATRIX_TARGET" == "fileguardian" ]] && [[ "$VPS2_SSH_PROXY_JUMP" != "false" ]]; then
+            USE_PROXY_JUMP=true
+            echo "fileguardian: SSH через ProxyJump ${JUMP_USER}@${JUMP_HOST} (Variable VPS2_SSH_PROXY_JUMP=false — прямой SSH)"
+            ssh-keyscan -H "$JUMP_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          fi
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          {
+            if [[ "$USE_PROXY_JUMP" == true ]]; then
+              echo "Host vps-jump"
+              echo "  HostName ${JUMP_HOST}"
+              echo "  User ${JUMP_USER}"
+              echo "  IdentityFile ~/.ssh/deploy_key"
+              echo "  BatchMode yes"
+              echo "  IdentitiesOnly yes"
+              echo "  PreferredAuthentications publickey"
+              echo "  PasswordAuthentication no"
+              echo "  ConnectTimeout 30"
+              echo "  StrictHostKeyChecking accept-new"
+            fi
+            echo "Host vps-deploy"
+            echo "  HostName ${DEPLOY_HOST}"
+            echo "  User ${DEPLOY_USER}"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  BatchMode yes"
+            echo "  IdentitiesOnly yes"
+            echo "  PreferredAuthentications publickey"
+            echo "  PasswordAuthentication no"
+            echo "  ConnectTimeout 30"
+            echo "  StrictHostKeyChecking accept-new"
+            if [[ "$USE_PROXY_JUMP" == true ]]; then
+              echo "  ProxyJump vps-jump"
+            fi
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+          echo "USE_PROXY_JUMP=${USE_PROXY_JUMP}" >> "$GITHUB_ENV"
+
+          if command -v timeout >/dev/null 2>&1; then
+            timeout 5 bash -c "echo >/dev/tcp/${DEPLOY_HOST}/22" && echo "TCP 22 open on ${DEPLOY_HOST}" \
+              || echo "::warning::TCP 22 not reachable from Actions runner (firewall? try VPS2_SSH_PROXY_JUMP=true)"
+          fi
 
       - name: 🔌 Test SSH (${{ matrix.target }})
         shell: bash
@@ -96,24 +142,23 @@ jobs:
           DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
         run: |
           set -euo pipefail
-          SSH_BASE=(
-            ssh
-            -i ~/.ssh/deploy_key
-            -o BatchMode=yes
-            -o IdentitiesOnly=yes
-            -o PreferredAuthentications=publickey
-            -o PasswordAuthentication=no
-            -o ConnectTimeout=20
-          )
-          if "${SSH_BASE[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-              'echo "SSH OK on $(hostname) as $(whoami)"'; then
+          try_ssh() {
+            ssh vps-deploy "$@"
+          }
+          if try_ssh 'echo "SSH OK on $(hostname) as $(whoami)"'; then
             exit 0
           fi
-          echo "::error::SSH failed for ${{ matrix.target }} (${{ matrix.user_secret }} + ${{ matrix.host_secret }})"
-          echo ""
-          echo "Проверьте Secret VPS_SSH_KEY (шаг выше: «Строка для authorized_keys»)."
-          echo "На КАЖДОМ VPS эта строка должна быть в /home/<USER>/.ssh/authorized_keys для USER из VPS_USER / VPS2_USER."
-          echo "fileguardian: VPS2_USER обычно smdg, путь /home/smdg/SMDG (VPS2_DEPLOY_PATH)."
+          echo "::group::ssh -vvv (last 40 lines)"
+          ssh -vvv vps-deploy true 2>&1 | tail -40 || true
+          echo "::endgroup::"
+          echo "::error::SSH failed for ${{ matrix.target }}"
+          if [[ "${USE_PROXY_JUMP:-false}" == true ]]; then
+            echo "Сейчас: ProxyJump через primary (VPS_HOST). Нужен рабочий SSH на primary и ключ smdg на fileguardian."
+          else
+            echo "Прямой SSH. Если с ПК вход работает, а Actions нет — firewall на fileguardian режет IP GitHub."
+            echo "Задайте Variable VPS2_SSH_PROXY_JUMP=true (дефолт для fileguardian) или откройте порт 22 для Actions."
+          fi
+          echo "authorized_keys: строка из шага Setup SSH → /home/smdg/.ssh/authorized_keys на ОБОИХ VPS."
           exit 1
 
       - name: 🐳 Deploy to VPS (${{ matrix.target }})
@@ -127,12 +172,7 @@ jobs:
           export REPO_URL="https://github.com/${REPO_SLUG}.git"
           export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
           echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
-          ssh -i ~/.ssh/deploy_key \
-              -o BatchMode=yes \
-              -o IdentitiesOnly=yes \
-              -o PreferredAuthentications=publickey \
-              -o PasswordAuthentication=no \
-              "${VPS_USER}@${VPS_HOST}" \
+          ssh vps-deploy \
             env DEPLOY_PATH="$DEPLOY_PATH" \
                 REPO_URL="$REPO_URL" \
                 REPO_SLUG="$REPO_SLUG" \
