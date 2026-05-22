@@ -267,17 +267,30 @@ jobs:
           REMOTE
 
       - name: 🩺 Smoke test (${{ matrix.target }})
-        if: matrix.health_domain != ''
+        if: matrix.health_domain != '' && vars.VPS2_SKIP_SMOKE_TEST != 'true'
+        shell: bash
         env:
           HEALTH_DOMAIN: ${{ vars.VPS2_DOMAIN != '' && vars.VPS2_DOMAIN || matrix.health_domain }}
+          PATH_DEFAULT: ${{ matrix.path_default }}
         run: |
-          for i in {1..15}; do
-            if curl -fsS --max-time 10 "https://${HEALTH_DOMAIN}/health/ready" >/dev/null; then
-              echo "✅ https://${HEALTH_DOMAIN}/health/ready OK"
+          set -euo pipefail
+          URL="https://${HEALTH_DOMAIN}/health/ready"
+          echo "Проверка ${URL} (502/503 — приложение ещё поднимается после docker compose up, ждём до ~4 мин)"
+
+          for i in $(seq 1 40); do
+            code="$(curl -sS -o /tmp/smoke-body.txt -w "%{http_code}" --max-time 15 "$URL" || echo "000")"
+            if [[ "$code" == "200" ]]; then
+              echo "✅ ${URL} → HTTP 200"
+              head -c 500 /tmp/smoke-body.txt || true
               exit 0
             fi
-            echo "waiting... ${i}/15"
-            sleep 4
+            echo "attempt ${i}/40: HTTP ${code} ($( [[ "$code" == "502" ]] && echo 'nginx: бэкенд smdg недоступен' || [[ "$code" == "503" ]] && echo 'приложение живо, не ready' || echo 'сеть/DNS/TLS' ))"
+            sleep 6
           done
-          echo "::error::Health check failed for https://${HEALTH_DOMAIN}/health/ready"
+
+          echo "::group::Диагностика на сервере (docker + локальный health)"
+          ssh vps-deploy "set -e; cd \"${DEPLOY_PATH:-$PATH_DEFAULT}\"; docker compose ps; echo '---'; docker compose logs smdg --tail 40; echo '---'; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/live || true; curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/ready || true" \
+            || echo "SSH diagnostics skipped"
+          echo "::endgroup::"
+          echo "::error::Health check failed: ${URL} (последний HTTP ${code}). 502 = nginx не видит smdg:8000 — смотрите logs выше."
           exit 1
