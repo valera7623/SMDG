@@ -8,9 +8,17 @@
 #   docker compose -f docker-compose.demo.yml up -d --build
 #
 # First-time SSL (run once before starting nginx):
-#   docker compose -f docker-compose.demo.yml run --rm certbot \
+#   ./generate_cert.sh   # temporary self-signed so nginx can start
+#   docker compose -f docker-compose.demo.yml up -d
+#   docker compose -f docker-compose.demo.yml --profile ssl run --rm certbot \
 #     certonly --webroot --webroot-path /var/www/certbot \
-#     -d ${DOMAIN} --email ${LETSENCRYPT_EMAIL} --agree-tos --non-interactive
+#     -d ${DOMAIN} -d www.${DOMAIN} --email ${LETSENCRYPT_EMAIL} --agree-tos --non-interactive
+#   ./scripts/link_le_certs.sh
+#   docker compose -f docker-compose.demo.yml restart nginx
+#
+# Auto-renewal (cron on host):
+#   ./scripts/install_demo_cert_cron.sh
+#   ./scripts/renew_demo_tls.sh   # manual test
 
 services:
 
@@ -181,10 +189,11 @@ services:
       smdg:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health/live"]
+      test: ["CMD", "curl", "-fk", "https://localhost/health/live"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     networks:
       - frontend
 
@@ -202,6 +211,8 @@ services:
     volumes:
       - ./certs:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      # Deploy hook: refresh nginx symlinks after successful renew
+      - ./scripts/certbot-hooks/deploy:/etc/letsencrypt/renewal-hooks/deploy:ro
     networks:
       - frontend
 

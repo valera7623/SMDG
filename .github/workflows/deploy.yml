@@ -1,13 +1,9 @@
-# Cursor → GitHub → Actions → VPS (простой деплой)
+# Cursor → GitHub → Actions → VPS (простой деплой, два сервера)
 #
-# Secrets  (Settings → Secrets and variables → Actions):
-#   VPS_HOST, VPS_USER, VPS_SSH_KEY
-# Variables (optional):
-#   VPS_DEPLOY_PATH — каталог с git clone на сервере (default: /home/smdg/SMDG)
-#   VPS_AUTO_CLONE — если true и каталога нет: mkdir + git clone (публичный repo или см. VPS_GITHUB_TOKEN)
-#
-# Secrets (optional):
-#   VPS_GITHUB_TOKEN — PAT для git clone приватного репозитория на VPS (read-only достаточно)
+# Secrets: VPS_HOST, VPS_USER, VPS_SSH_KEY (общий ключ на оба VPS)
+#          VPS2_HOST, VPS2_USER
+#          VPS_GITHUB_TOKEN (опционально, автоклон)
+# Variables: VPS_DEPLOY_PATH, VPS_AUTO_CLONE, VPS2_DEPLOY_PATH, VPS2_AUTO_CLONE, VPS2_DOMAIN
 #
 # Справка: ../DEPLOYMENT_SECRETS.md
 
@@ -21,9 +17,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: primary
+            host_secret: VPS_HOST
+            user_secret: VPS_USER
+            path_default: /home/smdg/SMDG
+            deploy_path_var: VPS_DEPLOY_PATH
+            auto_clone_var: VPS_AUTO_CLONE
+            health_domain: ""
+          - target: fileguardian
+            host_secret: VPS2_HOST
+            user_secret: VPS2_USER
+            path_default: /home/ubuntu/SMDG
+            deploy_path_var: VPS2_DEPLOY_PATH
+            auto_clone_var: VPS2_AUTO_CLONE
+            health_domain: fileguardian.info
     env:
-      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
-      VPS_AUTO_CLONE: ${{ vars.VPS_AUTO_CLONE }}
+      DEPLOY_PATH: ${{ vars[matrix.deploy_path_var] }}
+      VPS_AUTO_CLONE: ${{ vars[matrix.auto_clone_var] }}
     steps:
       - name: 🚚 Get latest code
         uses: actions/checkout@v4
@@ -32,21 +46,25 @@ jobs:
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-      - name: 🔑 Setup SSH Key
+      - name: 🔑 Setup SSH (${{ matrix.target }})
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets[matrix.host_secret] }} >> ~/.ssh/known_hosts
 
-      - name: 🐳 Deploy to VPS
+      - name: 🐳 Deploy to VPS (${{ matrix.target }})
         env:
           REPO_SLUG: ${{ github.repository }}
+          VPS_HOST: ${{ secrets[matrix.host_secret] }}
+          VPS_USER: ${{ secrets[matrix.user_secret] }}
+          PATH_DEFAULT: ${{ matrix.path_default }}
         run: |
-          export DEPLOY_PATH="${DEPLOY_PATH:-/home/smdg/SMDG}"
+          export DEPLOY_PATH="${DEPLOY_PATH:-$PATH_DEFAULT}"
           export REPO_URL="https://github.com/${REPO_SLUG}.git"
           export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+          echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
+          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" \
             env DEPLOY_PATH="$DEPLOY_PATH" \
                 REPO_URL="$REPO_URL" \
                 REPO_SLUG="$REPO_SLUG" \
@@ -70,8 +88,8 @@ jobs:
               echo "Сделайте один из вариантов:"
               echo "  1) На сервере: mkdir -p \"$(dirname "$DEPLOY_PATH")\" && git clone $REPO_URL \"$DEPLOY_PATH\""
               echo "     (для приватного репозитория используйте deploy key или PAT при clone)"
-              echo "  2) Либо задайте в GitHub → Variables → VPS_DEPLOY_PATH путь к уже существующему clone."
-              echo "  3) Либо Variables → VPS_AUTO_CLONE=true для автоматического clone (публичный repo или Secrets → VPS_GITHUB_TOKEN)."
+              echo "  2) Либо задайте VPS_DEPLOY_PATH / VPS2_DEPLOY_PATH в GitHub Variables."
+              echo "  3) Либо VPS_AUTO_CLONE / VPS2_AUTO_CLONE=true (и при необходимости VPS_GITHUB_TOKEN)."
               exit 1
             fi
           fi
@@ -80,16 +98,12 @@ jobs:
           echo "🛑 Stopping containers before Git update..."
           docker compose down
 
-          # smdg runs as root in the container (see docker-compose user: 0:0), so bind-mounted
-          # dirs can be root-owned on the host and Git cannot unlink/replace tracked paths.
           echo "🔧 Fixing ownership of bind-mounted data dirs for deploy user..."
           mkdir -p audit_logs encrypted decrypted uploads static
-          # --pull=missing: use local alpine if present; avoid registry check when cached
           docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
             sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
 
           echo "📥 Pulling latest changes from Git..."
-          # audit_logs/ is runtime data (bind-mounted). If it was ever tracked, reset would drop it.
           if [[ -f audit_logs/audit.csv ]]; then
             cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.deploy.bak
           fi
@@ -108,10 +122,6 @@ jobs:
           }
           trap cleanup_build_context EXIT
 
-          # Docker/BuildKit can fail before applying .dockerignore when runtime
-          # bind mounts contain unreadable subtrees (for example certbot
-          # letsencrypt account files). Build from a clean staging context where
-          # those directories are physically absent.
           tar \
             --exclude='./.git' \
             --exclude='./certbot' \
@@ -147,3 +157,19 @@ jobs:
           docker compose -f docker-compose.yml -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
           echo "✅ Deployment complete!"
           REMOTE
+
+      - name: 🩺 Smoke test (${{ matrix.target }})
+        if: matrix.health_domain != ''
+        env:
+          HEALTH_DOMAIN: ${{ vars.VPS2_DOMAIN != '' && vars.VPS2_DOMAIN || matrix.health_domain }}
+        run: |
+          for i in {1..15}; do
+            if curl -fsS --max-time 10 "https://${HEALTH_DOMAIN}/health/ready" >/dev/null; then
+              echo "✅ https://${HEALTH_DOMAIN}/health/ready OK"
+              exit 0
+            fi
+            echo "waiting... ${i}/15"
+            sleep 4
+          done
+          echo "::error::Health check failed for https://${HEALTH_DOMAIN}/health/ready"
+          exit 1
