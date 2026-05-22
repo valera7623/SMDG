@@ -71,6 +71,30 @@ ssh smdg@<VPS_HOST> 'ssh -o BatchMode=yes smdg@74.208.252.225 hostname'
 
 Перед первым запуском на каждом VPS: Docker, `git clone` в `DEPLOY_PATH`, `secrets/`, `.env`, либо `VPS*_AUTO_CLONE=true`.
 
+### `password authentication failed for user "smdg_user"` (alembic / 502)
+
+Том **`pgdata`** хранит пароль Postgres **с первого** `docker compose up`. Файл **`secrets/postgres_password.txt`** меняется отдельно — если они разошлись, `smdg` не подключится к `db`.
+
+**Вариант A** — выровнять пароль в БД под текущий secret (данные сохраняются):
+
+```bash
+cd /home/smdg/SMDG
+./scripts/fix-postgres-password-mismatch.sh
+docker compose up -d smdg
+```
+
+**Вариант B** — вернуть в `secrets/postgres_password.txt` **старый** пароль (тот, с которым поднимали БД впервые).
+
+**Вариант C** — новый пароль и пустая БД (удалит данные):
+
+```bash
+docker compose down
+docker volume rm smdg_pgdata   # имя: docker volume ls | grep pgdata
+# затем снова up с актуальным secrets/postgres_password.txt
+```
+
+На **втором VPS** не копируйте `pgdata` с первого — только свой `secrets/postgres_password.txt` и свой том.
+
 ### Ошибка `Permission denied (publickey,password)`
 
 В логе Actions шаг **«Setup SSH»** печатает **«Строка для authorized_keys»** — добавьте её на **оба** сервера:
