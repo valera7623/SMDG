@@ -158,7 +158,7 @@ jobs:
             echo "Прямой SSH. Если с ПК вход работает, а Actions нет — firewall на fileguardian режет IP GitHub."
             echo "Задайте Variable VPS2_SSH_PROXY_JUMP=true (дефолт для fileguardian) или откройте порт 22 для Actions."
           fi
-          echo "authorized_keys: строка из шага Setup SSH → /home/smdg/.ssh/authorized_keys на ОБОИХ VPS."
+          echo "Парольный SSH между VPS не подходит для Actions — нужен publickey в /home/smdg/.ssh/authorized_keys на ОБОИХ серверах (строка из Setup SSH)."
           exit 1
 
       - name: 🐳 Deploy to VPS (${{ matrix.target }})

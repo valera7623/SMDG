@@ -37,7 +37,29 @@
 
 Оба сервера: пользователь **`smdg`**, путь **`/home/smdg/SMDG`**, один **`VPS_SSH_KEY`**. Публичная строка из лога **Setup SSH** — в `/home/smdg/.ssh/authorized_keys` на **каждом** VPS.
 
-**Важно:** на fileguardian в `authorized_keys` должна быть та же строка, что на primary. Проверка с primary:
+### Парольный SSH между VPS ≠ деплой из GitHub Actions
+
+Если **smdg@VPS1 → VPS2 по паролю** работает, это **не значит**, что Actions войдёт по ключу. Workflow использует только **`VPS_SSH_KEY`** (publickey, `BatchMode=yes`, пароль не спрашивается).
+
+На **каждом** VPS для пользователя **`smdg`** один раз добавьте публичный ключ деплоя (строка из лога Actions «Setup SSH» или `./scripts/show-deploy-ssh-pubkey.sh`):
+
+```bash
+# зайдите на сервер по паролю (или с консоли хостинга)
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys   # одна строка ssh-ed25519 ... или ssh-rsa ...
+chmod 600 ~/.ssh/authorized_keys
+```
+
+С вашего ПК (после этого Actions тоже сможет):
+
+```bash
+ssh-copy-id -i ./deploy_key.pub smdg@<VPS_HOST>
+ssh-copy-id -i ./deploy_key.pub smdg@74.208.252.225
+```
+
+`ProxyJump` (fileguardian через primary) всё равно проверяет **тот же публичный ключ** на конечном хосте; пароль между VPS для CI не используется.
+
+**Важно:** на fileguardian в `authorized_keys` должна быть та же строка, что на primary. Проверка с primary (после добавления ключа):
 
 ```bash
 ssh smdg@<VPS_HOST> 'ssh -o BatchMode=yes smdg@74.208.252.225 hostname'
