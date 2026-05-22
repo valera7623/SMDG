@@ -37,6 +37,26 @@ SHUTDOWN_GRACE_PERIOD_SEC: int = 30
 SHUTDOWN_LOG_INTERVAL_SEC: int = 5
 
 
+async def _demo_reset_loop() -> None:
+    """Background task: resets demo data every DEMO_RESET_INTERVAL_HOURS hours.
+
+    Runs indefinitely; cancelled automatically on application shutdown because
+    it is stored in app.state.background_tasks and cancelled in lifespan teardown.
+    """
+    from app.core.demo_seeder import reset_demo_data, seed_demo_data
+
+    interval = settings.demo_reset_interval_hours * 3600
+    while True:
+        await asyncio.sleep(interval)
+        try:
+            logger.info("Demo reset: starting scheduled reset...")
+            await reset_demo_data()
+            await seed_demo_data()
+            logger.info("Demo reset: complete, next reset in %dh", settings.demo_reset_interval_hours)
+        except Exception as exc:
+            logger.exception("Demo reset loop error: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager для управления жизненным циклом приложения."""
@@ -223,6 +243,21 @@ async def lifespan(app: FastAPI):
         logger.warning("Ошибка тестовой записи в Redis: %s", e)
 
     await create_first_admin()
+
+    if settings.demo_mode:
+        try:
+            from app.core.demo_seeder import seed_demo_data
+
+            await seed_demo_data()
+            logger.info("✅ Demo data seeded")
+
+            demo_task = asyncio.create_task(_demo_reset_loop(), name="demo_reset_loop")
+            app.state.background_tasks.append(demo_task)
+            logger.info(
+                "✅ Demo reset loop started (interval=%dh)", settings.demo_reset_interval_hours
+            )
+        except Exception as _exc:
+            logger.exception("⚠️ Demo seeder failed: %s", _exc)
 
     register_deploy_metrics(app)
 

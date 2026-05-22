@@ -443,6 +443,19 @@ class Settings(BaseSettings):
     s3_use_ssl: bool = False
     s3_enabled: bool = False
 
+    # === Demo mode ===
+    # Activated by DEMO_MODE=true / DEPLOYMENT_TYPE=demo.
+    # Controls: secrets bypass in entrypoint, upload cap, destructive-op guard,
+    # auto-seeding on startup, periodic reset, UI banner.
+    demo_mode: bool = False
+    demo_reset_interval_hours: int = 24
+    demo_max_upload_mb: int = 10
+
+    @property
+    def effective_max_upload_mb(self) -> int:
+        """Upload limit: capped in demo mode to keep disk usage minimal."""
+        return self.demo_max_upload_mb if self.demo_mode else self.MAX_UPLOAD_SIZE_MB
+
     @model_validator(mode="after")
     def validate_deployment_consistency(self) -> "Settings":
         """
@@ -456,7 +469,7 @@ class Settings(BaseSettings):
             )
         if self.deployment_type == DeploymentType.SAAS and not self.s3_enabled:
             # SaaS-профиль предполагает объектное хранилище; допускаем только явную конфигурацию S3.
-            if not self.dev_mode:
+            if not self.dev_mode and not self.demo_mode:
                 raise ValueError(
                     "Для deployment_type=SAAS включите S3 (S3_ENABLED=true и учётные данные endpoint/key)."
                 )

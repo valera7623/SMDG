@@ -8,6 +8,7 @@ import asyncio
 
 from app.core import ENCRYPTED_DIR, audit_logger
 from app.core.auth import get_current_user, TokenData
+from app.core.demo_guard import demo_readonly
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from app.models.file import File
@@ -130,6 +131,7 @@ async def _delete_user_file_by_name(
 # ==================== Эндпоинты ====================
 
 @router.post("/delete-user-file")
+@demo_readonly("Deleting files")
 async def delete_user_file(
     request: Request,
     filename: str = Form(...),
@@ -145,6 +147,7 @@ async def delete_user_file(
 
 
 @router.delete("/delete-user-file/{file_id}")
+@demo_readonly("Deleting files")
 async def delete_user_file_by_id(
     request: Request,
     file_id: Annotated[int, Path(..., description="ID файла")],

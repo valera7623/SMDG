@@ -21,6 +21,86 @@
 
 <body class="page-index">
 
+{% if demo_mode %}
+<!-- Demo mode banner — injected by Jinja2 when settings.demo_mode=True -->
+<div id="demoBanner" class="demo-banner" role="alert" aria-live="polite">
+    <div class="demo-banner__content">
+        <span class="demo-banner__icon" aria-hidden="true">&#x1F9EA;</span>
+        <span class="demo-banner__text">
+            <strong>Live Demo</strong> &mdash; Data resets every 24 hours.
+            Login as
+            <button class="demo-banner__cred" onclick="smdgFillDemo('admin_demo','Demo1234!')">Admin</button>,
+            <button class="demo-banner__cred" onclick="smdgFillDemo('doctor_demo','Demo1234!')">Doctor</button>, or
+            <button class="demo-banner__cred" onclick="smdgFillDemo('user_demo','Demo1234!')">Patient</button>
+            (password: <code>Demo1234!</code>)
+        </span>
+        <a class="demo-banner__link"
+           href="https://github.com/smdg-project/smdg"
+           target="_blank" rel="noopener noreferrer">
+            Deploy your own instance &rarr;
+        </a>
+    </div>
+</div>
+<style>
+.demo-banner {
+    position: sticky;
+    top: 0;
+    z-index: 9999;
+    background: linear-gradient(90deg, #1a56db 0%, #0e9f6e 100%);
+    color: #fff;
+    font-size: 0.875rem;
+    padding: 0.55rem 1rem;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.demo-banner__content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.demo-banner__icon { font-size: 1.1rem; }
+.demo-banner__cred {
+    background: rgba(255,255,255,.2);
+    border: 1px solid rgba(255,255,255,.5);
+    color: #fff;
+    border-radius: 4px;
+    padding: 1px 8px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background .15s;
+}
+.demo-banner__cred:hover { background: rgba(255,255,255,.35); }
+.demo-banner__link {
+    color: #fef9c3;
+    font-weight: 600;
+    text-decoration: underline;
+    white-space: nowrap;
+}
+.demo-banner code {
+    background: rgba(255,255,255,.15);
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 0.82rem;
+}
+</style>
+<script>
+function smdgFillDemo(username, password) {
+    var u = document.getElementById('loginUsername');
+    var p = document.getElementById('loginPassword');
+    if (u) u.value = username;
+    if (p) p.value = password;
+    // Show auth panel if hidden
+    var authForm = document.getElementById('authForm');
+    var mainApp  = document.getElementById('mainApp');
+    if (authForm && authForm.style.display === 'none') authForm.style.display = '';
+    if (mainApp  && mainApp.style.display  !== 'none') mainApp.style.display  = 'none';
+}
+</script>
+{% endif %}
+
     <div class="container">
 
         <!-- Login / registration form -->

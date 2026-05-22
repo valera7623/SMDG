@@ -15,6 +15,7 @@ class DeploymentType(str, Enum):
     INTERNATIONAL = "intl"
     SINGLE_TENANT = "single"
     SAAS = "saas"
+    DEMO = "demo"
 
 
 class Feature(str, Enum):
@@ -182,6 +183,39 @@ FEATURE_MATRIX: dict[DeploymentType, dict[Feature, Any]] = {
         Feature.AUTO_SSL: True,
         Feature.AUTO_BACKUP: False,
         Feature.SIMPLE_ADMIN: False,
+    },
+
+    DeploymentType.DEMO: {
+        # Core (enabled everywhere)
+        Feature.DICOM_VIEWER: True,        # key showcase feature for portfolio
+        Feature.TOTP_2FA: True,            # visible but not mandatory
+
+        # Storage — local only, no MinIO to fit 2GB RAM
+        Feature.LOCAL_STORAGE: True,
+        Feature.S3_STORAGE: False,
+
+        # Security
+        Feature.MANDATORY_2FA: False,      # don't block quick evaluation
+        Feature.GOST_CRYPTO: False,
+        Feature.AUDIT_3_YEARS: False,
+        Feature.GOSSOPKA: False,
+
+        # Integrations
+        Feature.PACS_INTEGRATION: False,
+
+        # Multi-tenancy
+        Feature.MULTI_TENANCY: False,
+        Feature.BILLING: False,
+        Feature.WHITE_LABEL: False,
+
+        # GDPR/HIPAA — show compliance capabilities to US audience
+        Feature.RIGHT_TO_BE_FORGOTTEN: True,
+        Feature.DATA_PORTABILITY: True,
+
+        # Self-hosted conveniences
+        Feature.AUTO_SSL: True,
+        Feature.AUTO_BACKUP: False,
+        Feature.SIMPLE_ADMIN: True,        # simplified admin for easy evaluation
     },
 }
 

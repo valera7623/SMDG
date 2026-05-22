@@ -285,6 +285,7 @@ async def index(request: Request):
             return get_templates().TemplateResponse(
                 request,
                 "index.html",
+                {"demo_mode": settings.demo_mode},
             )
         except Exception as e:  # noqa: BLE001
             logger.exception("index template render failed: %s", e)

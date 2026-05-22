@@ -10,6 +10,7 @@ from app.core import DECRYPTED_DIR, file_storage, audit_logger, cleanup_manager,
 from app.core.auth import get_current_admin, TokenData
 from app.core.constants import ENCRYPTED_DIR
 from app.core.database import get_db
+from app.core.demo_guard import demo_readonly
 from app.core.tenant import require_tenant, assert_tenant_access
 import logging
 from app.core.bulkhead import bulkhead
@@ -129,6 +130,7 @@ async def list_temp_files(
 
 
 @router.post("/force")
+@demo_readonly("Bulk file cleanup")
 @bulkhead(
     "cleanup",
     max_concurrent=settings.CLEANUP_BULKHEAD_MAX_CONCURRENT,

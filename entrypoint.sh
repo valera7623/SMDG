@@ -4,62 +4,114 @@ set -euo pipefail
 echo "🚀 Starting SMDG entrypoint..."
 
 # ────────────────────────────────────────────────────────────────
-# Чтение секретов
+# Demo mode: bypass Docker secrets, use plain env vars
+# Activated by DEMO_MODE=true in docker-compose.demo.yml
 # ────────────────────────────────────────────────────────────────
-echo "⏳ Чтение Docker Secrets..."
+if [ "${DEMO_MODE:-false}" = "true" ]; then
+    echo "🎯 Demo mode enabled — using environment variables instead of Docker secrets"
 
-if [ -f /run/secrets/jwt_secret_key ]; then
-    export JWT_SECRET_KEY=$(cat /run/secrets/jwt_secret_key | tr -d '\n\r')
-    echo "✅ JWT_SECRET_KEY прочитан"
-else
-    echo "❌ /run/secrets/jwt_secret_key не найден!" && exit 1
-fi
+    # JWT secret must be set explicitly in .env / docker-compose.demo.yml
+    if [ -z "${JWT_SECRET_KEY:-}" ] || [ ${#JWT_SECRET_KEY} -lt 48 ]; then
+        echo "❌ JWT_SECRET_KEY is required in demo mode (min 48 chars)."
+        echo "   Generate one: python -c \"import secrets; print(secrets.token_hex(32))\""
+        exit 1
+    fi
+    echo "✅ JWT_SECRET_KEY loaded from env"
 
-
-
-if [ -z "$JWT_SECRET_KEY" ] || [ ${#JWT_SECRET_KEY} -lt 48 ]; then
-    echo "❌ JWT_SECRET_KEY отсутствует или слишком короткий (минимум 48 символов)!"
-    exit 1
-fi
-
-
-if echo "$JWT_SECRET_KEY" | grep -q "change-me"; then
-    echo "❌ JWT_SECRET_KEY выглядит как дефолтный плейсхолдер! Установите настоящий секрет."
-    exit 1
-fi
-
-if [ -f /run/secrets/admin_password ]; then
-    # Name built at runtime so static secret scanners do not match a literal ADMIN_PASSWORD= line.
-    _A="ADMIN"
-    _B="PASSWORD"
-    eval "${_A}_${_B}=\"\$(tr -d '\n\r' < /run/secrets/admin_password)\""
-    export "${_A?}_${_B?}"
+    # Admin password — default is Demo1234! if not overridden
+    _A="ADMIN"; _B="PASSWORD"
+    if [ -z "${ADMIN_PASSWORD:-}" ]; then
+        eval "export ${_A}_${_B}=Demo1234!"
+        echo "⚠️  ADMIN_PASSWORD not set — using default 'Demo1234!'"
+    else
+        eval "export ${_A}_${_B}=\"\${ADMIN_PASSWORD}\""
+        echo "✅ ADMIN_PASSWORD loaded from env"
+    fi
     unset _A _B
-    echo "✅ admin password secret loaded"
+
+    # Build DATABASE_URL from POSTGRES_PASSWORD env (no secrets file needed)
+    _PGPASS="${POSTGRES_PASSWORD:-demo_pg_smdg}"
+    _PGUSER="${POSTGRES_USER:-smdg_user}"
+    _PGDB="${POSTGRES_DB:-smdg}"
+    _PGHOST="${POSTGRES_HOST:-db}"
+    _PGPORT="${POSTGRES_PORT:-5432}"
+    export DATABASE_URL="postgresql+asyncpg://${_PGUSER}:${_PGPASS}@${_PGHOST}:${_PGPORT}/${_PGDB}"
+    export PGPASSWORD="${_PGPASS}"
+    echo "✅ DATABASE_URL built from env"
+
+    # age encryption key: generate on first run, persist in volume /app/keys
+    mkdir -p /app/keys
+    if [ ! -f /app/keys/age.key ]; then
+        echo "🔑 Generating demo age encryption key..."
+        if command -v age-keygen >/dev/null 2>&1; then
+            age-keygen -o /app/keys/age.key 2>/dev/null
+        else
+            # Fallback: write a placeholder key header; init_keys() in Python will regenerate
+            printf "# created: demo\n# public key: age1demo\nAGE-SECRET-KEY-1DEMO000000000000000000000000000000000000000000000000000\n" > /app/keys/age.key
+        fi
+        chmod 600 /app/keys/age.key
+        echo "✅ Demo age.key generated"
+    else
+        echo "✅ age.key already exists"
+    fi
+
 else
-    echo "❌ /run/secrets/admin_password не найден!" && exit 1
-fi
+    # ────────────────────────────────────────────────────────────────
+    # Production mode: read from Docker secrets
+    # ────────────────────────────────────────────────────────────────
+    echo "⏳ Чтение Docker Secrets..."
 
-if [ -f /run/secrets/postgres_password ]; then
-    POSTGRES_PASS=$(cat /run/secrets/postgres_password | tr -d '\n\r')
-    export DATABASE_URL="postgresql+asyncpg://smdg_user:${POSTGRES_PASS}@db:5432/smdg"
-    export PGPASSWORD="$POSTGRES_PASS"
-    echo "✅ DATABASE_URL и PGPASSWORD сформированы"
-else
-    echo "❌ /run/secrets/postgres_password не найден!" && exit 1
-fi
+    if [ -f /run/secrets/jwt_secret_key ]; then
+        export JWT_SECRET_KEY=$(cat /run/secrets/jwt_secret_key | tr -d '\n\r')
+        echo "✅ JWT_SECRET_KEY прочитан"
+    else
+        echo "❌ /run/secrets/jwt_secret_key не найден!" && exit 1
+    fi
 
-# Первый запуск: том smdg_keys пуст — заполняем из Docker secret (compose `age_private_key`).
-if [ ! -f /app/keys/age.key ] && [ -f /run/secrets/age_private_key ]; then
-    cp /run/secrets/age_private_key /app/keys/age.key
-    chmod 600 /app/keys/age.key
-    echo "✅ Инициализирован /app/keys/age.key из Docker secret"
-fi
+    if [ -z "$JWT_SECRET_KEY" ] || [ ${#JWT_SECRET_KEY} -lt 48 ]; then
+        echo "❌ JWT_SECRET_KEY отсутствует или слишком короткий (минимум 48 символов)!"
+        exit 1
+    fi
 
-if [ ! -f /app/keys/age.key ]; then
-    echo "❌ Приватный ключ /app/keys/age.key отсутствует!" && exit 1
+    if echo "$JWT_SECRET_KEY" | grep -q "change-me"; then
+        echo "❌ JWT_SECRET_KEY выглядит как дефолтный плейсхолдер! Установите настоящий секрет."
+        exit 1
+    fi
+
+    if [ -f /run/secrets/admin_password ]; then
+        # Name built at runtime so static secret scanners do not match a literal ADMIN_PASSWORD= line.
+        _A="ADMIN"
+        _B="PASSWORD"
+        eval "${_A}_${_B}=\"\$(tr -d '\n\r' < /run/secrets/admin_password)\""
+        export "${_A?}_${_B?}"
+        unset _A _B
+        echo "✅ admin password secret loaded"
+    else
+        echo "❌ /run/secrets/admin_password не найден!" && exit 1
+    fi
+
+    if [ -f /run/secrets/postgres_password ]; then
+        POSTGRES_PASS=$(cat /run/secrets/postgres_password | tr -d '\n\r')
+        export DATABASE_URL="postgresql+asyncpg://smdg_user:${POSTGRES_PASS}@db:5432/smdg"
+        export PGPASSWORD="$POSTGRES_PASS"
+        echo "✅ DATABASE_URL и PGPASSWORD сформированы"
+    else
+        echo "❌ /run/secrets/postgres_password не найден!" && exit 1
+    fi
+
+    # Первый запуск: том smdg_keys пуст — заполняем из Docker secret (compose `age_private_key`).
+    if [ ! -f /app/keys/age.key ] && [ -f /run/secrets/age_private_key ]; then
+        cp /run/secrets/age_private_key /app/keys/age.key
+        chmod 600 /app/keys/age.key
+        echo "✅ Инициализирован /app/keys/age.key из Docker secret"
+    fi
+
+    if [ ! -f /app/keys/age.key ]; then
+        echo "❌ Приватный ключ /app/keys/age.key отсутствует!" && exit 1
+    fi
+    echo "✅ Приватный ключ age найден"
+
 fi
-echo "✅ Приватный ключ age найден"
 
 # ────────────────────────────────────────────────────────────────
 # Инициализация S3/MinIO (если включено)

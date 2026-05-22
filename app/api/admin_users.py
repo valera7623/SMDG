@@ -8,6 +8,7 @@ import re
 
 from app.core.database import get_db
 from app.core.auth import get_current_admin, TokenData
+from app.core.demo_guard import demo_readonly
 from app.core.security import get_password_hash, verify_password
 from app.models.deleted_user import DeletedUser
 from app.models.user import User
@@ -300,6 +301,7 @@ async def update_user(
 
 
 @router.delete("/{user_id}")
+@demo_readonly("Deleting users")
 async def delete_user(
     user_id: int,
     request: Request,
@@ -377,6 +379,7 @@ async def reset_user_password(
 
 
 @router.post("/bulk")
+@demo_readonly("Bulk user actions")
 async def bulk_user_actions(
     action_data: BulkUserActionRequest,
     request: Request,

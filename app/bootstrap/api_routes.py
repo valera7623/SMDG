@@ -52,6 +52,9 @@ def register_api_routers(app: FastAPI) -> None:
     app.include_router(dicom.router, prefix="/api")
     if settings.dev_mode or settings.load_test_mode:
         app.include_router(test.router, prefix="/api")
+    if settings.demo_mode:
+        from app.api.demo import router as demo_router
+        app.include_router(demo_router)
     app.include_router(tracing_router)
     app.include_router(health_router)
     app.include_router(alert_webhook_router)
