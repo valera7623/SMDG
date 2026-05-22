@@ -14,62 +14,58 @@
 | Name | Описание |
 |------|----------|
 | `VPS_HOST` | IP или hostname |
-| `VPS_USER` | SSH-пользователь |
+| `VPS_USER` | SSH-пользователь (например `smdg`) |
 
 | Variable | По умолчанию |
 |----------|----------------|
 | `VPS_DEPLOY_PATH` | `/home/smdg/SMDG` |
 | `VPS_AUTO_CLONE` | `true` — автоматический clone, если каталога ещё нет |
 
-## Сервер 2 (fileguardian — 74.208.252.225)
+## Сервер 2 (fileguardian — 74.208.252.225, https://fileguardian.info)
 
 | Name | Описание |
 |------|----------|
-| `VPS2_HOST` | `74.208.252.225` (или hostname, если резолвится с runner Actions) |
-| `VPS2_USER` | SSH-пользователь (часто `ubuntu` при пути `/home/ubuntu/SMDG`) |
+| `VPS2_HOST` | `74.208.252.225` (или hostname) |
+| `VPS2_USER` | Обычно **`smdg`** (тот же пользователь, что на primary) |
 
 | Variable | По умолчанию |
 |----------|----------------|
-| `VPS2_DEPLOY_PATH` | `/home/ubuntu/SMDG` |
-| `VPS2_AUTO_CLONE` | как на первом сервере, при необходимости |
-| `VPS2_DOMAIN` | опционально переопределить домен для smoke-теста (по умолчанию `fileguardian.info`) |
+| `VPS2_DEPLOY_PATH` | `/home/smdg/SMDG` — каталог с clone на втором VPS |
+| `VPS2_AUTO_CLONE` | при необходимости |
+| `VPS2_DOMAIN` | опционально (по умолчанию smoke-тест: `fileguardian.info`) |
 
-После деплоя для **fileguardian** workflow проверяет `https://<domain>/health/ready`.
+Оба сервера используют один **`VPS_SSH_KEY`**; публичная строка из лога шага **Setup SSH** должна быть в `/home/smdg/.ssh/authorized_keys` на **каждом** VPS.
 
-Перед первым запуском на каждом VPS: Docker, clone в `DEPLOY_PATH`, каталог `secrets/`, `.env`, либо `VPS*_AUTO_CLONE=true`.
+После деплоя для **fileguardian** проверяется `https://<domain>/health/ready`.
 
-### Ошибка `Permission denied (publickey,password)` на fileguardian
+Перед первым запуском на каждом VPS: Docker, `git clone` в `DEPLOY_PATH`, `secrets/`, `.env`, либо `VPS*_AUTO_CLONE=true`.
 
-В логе Actions шаг **«Setup SSH»** печатает **«Строка для authorized_keys»** — **именно её** (одна строка) нужно добавить в `authorized_keys` на каждом VPS (разным пользователям, если пути разные). Локально ту же строку даёт:
+### Ошибка `Permission denied (publickey,password)`
 
-```bash
-chmod +x scripts/show-deploy-ssh-pubkey.sh
-./scripts/show-deploy-ssh-pubkey.sh /path/to/тот_же_приватный_ключ
-```
-
-Один и тот же **`VPS_SSH_KEY`** должен быть принят на **обоих** серверах, но у **разных пользователей**, если пути разные:
-
-| Сервер | Типичный `VPS*_USER` | `authorized_keys` |
-|--------|----------------------|-------------------|
-| primary | `smdg` | `/home/smdg/.ssh/authorized_keys` |
-| fileguardian | **`ubuntu`** (не `smdg`) | `/home/ubuntu/.ssh/authorized_keys` |
-
-На **74.208.252.225** под пользователем из `VPS2_USER`:
+В логе Actions шаг **«Setup SSH»** печатает **«Строка для authorized_keys»** — добавьте её на **оба** сервера:
 
 ```bash
+# на каждом VPS, пользователь smdg:
 mkdir -p ~/.ssh && chmod 700 ~/.ssh
-# вставьте одну строку публичного ключа (пара к VPS_SSH_KEY)
+# вставьте одну строку из лога workflow
 nano ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-Проверка локально (тот же приватный ключ, что в GitHub Secret):
+Проверка с ПК:
 
 ```bash
-ssh -i ~/.ssh/id_rsa -o BatchMode=yes ubuntu@74.208.252.225 'hostname'
+ssh -i <deploy_key> -o BatchMode=yes smdg@<VPS_HOST> hostname
+ssh -i <deploy_key> -o BatchMode=yes smdg@74.208.252.225 hostname
 ```
 
-В GitHub Secrets: **`VPS2_USER`** = `ubuntu`, **`VPS2_HOST`** = `74.208.252.225`. Лишние пробелы/переносы в `VPS_SSH_KEY` ломают вход — в Secret только тело ключа, включая `-----BEGIN...-----`.
+Локально публичный ключ из приватного:
+
+```bash
+./scripts/show-deploy-ssh-pubkey.sh /path/to/deploy_key
+```
+
+В GitHub: **`VPS2_USER`** = `smdg`, **`VPS2_HOST`** = `74.208.252.225`, **`VPS2_DEPLOY_PATH`** можно не задавать (default `/home/smdg/SMDG`).
 
 ## Rolling / registry ([`workflows/deploy-rolling.yml`](workflows/deploy-rolling.yml))
 

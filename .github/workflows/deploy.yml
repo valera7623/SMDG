@@ -31,7 +31,7 @@ jobs:
           - target: fileguardian
             host_secret: VPS2_HOST
             user_secret: VPS2_USER
-            path_default: /home/ubuntu/SMDG
+            path_default: /home/smdg/SMDG
             deploy_path_var: VPS2_DEPLOY_PATH
             auto_clone_var: VPS2_AUTO_CLONE
             health_domain: fileguardian.info
@@ -61,7 +61,7 @@ jobs:
             missing=1
           fi
           if [[ -z "$DEPLOY_USER" ]]; then
-            echo "::error::Secret ${{ matrix.user_secret }} is not set (fileguardian: usually ubuntu)"
+            echo "::error::Secret ${{ matrix.user_secret }} is not set (обычно smdg, как VPS_USER)"
             missing=1
           fi
           if [[ "$missing" -ne 0 ]]; then exit 1; fi
@@ -113,7 +113,7 @@ jobs:
           echo ""
           echo "Проверьте Secret VPS_SSH_KEY (шаг выше: «Строка для authorized_keys»)."
           echo "На КАЖДОМ VPS эта строка должна быть в /home/<USER>/.ssh/authorized_keys для USER из VPS_USER / VPS2_USER."
-          echo "fileguardian + /home/ubuntu/SMDG → обычно VPS2_USER=ubuntu."
+          echo "fileguardian: VPS2_USER обычно smdg, путь /home/smdg/SMDG (VPS2_DEPLOY_PATH)."
           exit 1
 
       - name: 🐳 Deploy to VPS (${{ matrix.target }})
