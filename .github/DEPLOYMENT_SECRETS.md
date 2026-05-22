@@ -38,6 +38,32 @@
 
 Перед первым запуском на каждом VPS: Docker, clone в `DEPLOY_PATH`, каталог `secrets/`, `.env`, либо `VPS*_AUTO_CLONE=true`.
 
+### Ошибка `Permission denied (publickey,password)` на fileguardian
+
+Один и тот же **`VPS_SSH_KEY`** должен быть принят на **обоих** серверах, но у **разных пользователей**, если пути разные:
+
+| Сервер | Типичный `VPS*_USER` | `authorized_keys` |
+|--------|----------------------|-------------------|
+| primary | `smdg` | `/home/smdg/.ssh/authorized_keys` |
+| fileguardian | **`ubuntu`** (не `smdg`) | `/home/ubuntu/.ssh/authorized_keys` |
+
+На **74.208.252.225** под пользователем из `VPS2_USER`:
+
+```bash
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+# вставьте одну строку публичного ключа (пара к VPS_SSH_KEY)
+nano ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Проверка локально (тот же приватный ключ, что в GitHub Secret):
+
+```bash
+ssh -i ~/.ssh/id_rsa -o BatchMode=yes ubuntu@74.208.252.225 'hostname'
+```
+
+В GitHub Secrets: **`VPS2_USER`** = `ubuntu`, **`VPS2_HOST`** = `74.208.252.225`. Лишние пробелы/переносы в `VPS_SSH_KEY` ломают вход — в Secret только тело ключа, включая `-----BEGIN...-----`.
+
 ## Rolling / registry ([`workflows/deploy-rolling.yml`](workflows/deploy-rolling.yml))
 
 Один prod-сервер (`DEPLOY_HOST`, `DEPLOY_DOMAIN`). Для второго VPS rolling нужен отдельный workflow или дублирование job — см. комментарий в начале `deploy-rolling.yml`.

@@ -46,12 +46,58 @@ jobs:
         env:
           FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+      - name: ✅ Validate deploy secrets (${{ matrix.target }})
+        env:
+          DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
+          DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
+        run: |
+          missing=0
+          if [[ -z "${{ secrets.VPS_SSH_KEY }}" ]]; then
+            echo "::error::VPS_SSH_KEY is empty (required for all targets)"
+            missing=1
+          fi
+          if [[ -z "$DEPLOY_HOST" ]]; then
+            echo "::error::Secret ${{ matrix.host_secret }} is not set"
+            missing=1
+          fi
+          if [[ -z "$DEPLOY_USER" ]]; then
+            echo "::error::Secret ${{ matrix.user_secret }} is not set (fileguardian: usually ubuntu)"
+            missing=1
+          fi
+          if [[ "$missing" -ne 0 ]]; then exit 1; fi
+          echo "Secrets OK for ${{ matrix.target }} (user length=${#DEPLOY_USER})"
+
       - name: 🔑 Setup SSH (${{ matrix.target }})
+        env:
+          DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
+          DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets[matrix.host_secret] }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 🔌 Test SSH (${{ matrix.target }})
+        env:
+          DEPLOY_HOST: ${{ secrets[matrix.host_secret] }}
+          DEPLOY_USER: ${{ secrets[matrix.user_secret] }}
+        run: |
+          if ! ssh -i ~/.ssh/id_rsa \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o PreferredAuthentications=publickey \
+              -o PasswordAuthentication=no \
+              -o ConnectTimeout=20 \
+              "${DEPLOY_USER}@${DEPLOY_HOST}" 'echo "SSH OK on $(hostname)"'; then
+            echo "::error::SSH failed for ${{ matrix.target }} (${{ matrix.user_secret }}@${{ matrix.host_secret }})"
+            echo ""
+            echo "На VPS 74.208.252.225 (fileguardian) добавьте публичный ключ в:"
+            echo "  /home/<VPS2_USER>/.ssh/authorized_keys"
+            echo "Путь деплоя /home/ubuntu/SMDG → VPS2_USER чаще всего ubuntu, не smdg."
+            echo "Проверка с вашей машины:"
+            echo "  ssh -i <тот_же_ключ> \${VPS2_USER}@74.208.252.225"
+            exit 1
+          fi
 
       - name: 🐳 Deploy to VPS (${{ matrix.target }})
         env:
@@ -64,7 +110,12 @@ jobs:
           export REPO_URL="https://github.com/${REPO_SLUG}.git"
           export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
           echo "▶ Target: ${{ matrix.target }} → ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH}"
-          ssh -i ~/.ssh/id_rsa "${VPS_USER}@${VPS_HOST}" \
+          ssh -i ~/.ssh/id_rsa \
+              -o BatchMode=yes \
+              -o IdentitiesOnly=yes \
+              -o PreferredAuthentications=publickey \
+              -o PasswordAuthentication=no \
+              "${VPS_USER}@${VPS_HOST}" \
             env DEPLOY_PATH="$DEPLOY_PATH" \
                 REPO_URL="$REPO_URL" \
                 REPO_SLUG="$REPO_SLUG" \
