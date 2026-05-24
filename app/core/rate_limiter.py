@@ -4,6 +4,7 @@ from typing import Any, Awaitable, Callable, Optional, TypeVar
 
 from fastapi import Request
 from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from redis.asyncio import Redis, RedisError
 from app.core.config import build_redis_url, settings
@@ -81,6 +82,35 @@ def custom_key_func(request: Request) -> str:
     return key
 
 
+def register_rate_limit_key(request: Request) -> str:
+    """IP-scoped key for POST /auth/register (isolated from global limits)."""
+    ip = get_remote_address(request)
+    key = f"rate_limit:register:ip:{ip}"
+    logger.debug("Register rate limit key: %s", key)
+    return key
+
+
+def retry_after_seconds(exc: RateLimitExceeded) -> int:
+    """Seconds until the rate-limit window resets (for Retry-After header)."""
+    try:
+        limit_item = exc.limit.limit if exc.limit else None
+        if limit_item is not None:
+            return max(1, int(limit_item.get_expiry()))
+    except Exception:
+        pass
+    return 60
+
+
+def rate_limit_exceeded_response(exc: RateLimitExceeded) -> tuple[dict[str, str], dict[str, str]]:
+    """JSON body and headers for HTTP 429 rate-limit responses."""
+    detail = exc.detail if isinstance(exc.detail, str) else "Too many requests. Please try again later."
+    retry_after = str(retry_after_seconds(exc))
+    return (
+        {"detail": detail},
+        {"Retry-After": retry_after},
+    )
+
+
 default_limit = settings.rate_limit_default
 if settings.load_test_mode and default_limit == "100/minute":
     # Safe pre-prod default override for load tests (can be overridden via RATE_LIMIT_DEFAULT)
@@ -94,12 +124,10 @@ rate_limit_storage = settings.RATE_LIMIT_STORAGE
 if rate_limit_storage == "redis://redis:6379/2":
     rate_limit_storage = build_redis_url(2)
 
-if not settings.dev_mode and not settings.load_test_mode:
+if not settings.load_test_mode and (not settings.dev_mode or settings.demo_mode):
     limiter_kwargs["storage_uri"] = rate_limit_storage
 
-limiter = Limiter(
-    **limiter_kwargs
-)
+limiter = Limiter(**limiter_kwargs)
 
 if "storage_uri" in limiter_kwargs:
     logger.info("Rate limiter: используется Redis storage (%s)", rate_limit_storage)
@@ -134,6 +162,9 @@ async def reset_rate_limit_cache():
 __all__ = [
     "limiter",
     "custom_key_func",
+    "register_rate_limit_key",
+    "retry_after_seconds",
+    "rate_limit_exceeded_response",
     "check_redis_connection",
     "reset_rate_limit_cache",
     "redis_call_with_fallback",

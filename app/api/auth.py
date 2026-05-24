@@ -15,9 +15,10 @@ from app.models.user import User
 from app.models.tenant import Tenant
 from app.core.security import verify_password, get_password_hash
 from app.core import audit_logger
-from app.core.rate_limiter import limiter, get_remote_address
+from app.core.rate_limiter import limiter, get_remote_address, register_rate_limit_key
 from app.core.tenant import require_tenant, assert_tenant_access
 from app.core.feature_flags import Feature, is_enabled, is_2fa_required_for_user
+from app.core.demo_guard import is_demo_seed_user
 from datetime import timedelta
 import pyotp
 
@@ -26,6 +27,10 @@ LOGIN_RATE_LIMIT = settings.rate_limit_login
 if settings.load_test_mode and LOGIN_RATE_LIMIT == "10/minute;5/10seconds":
     # Safe pre-prod default override for auth capacity tests.
     LOGIN_RATE_LIMIT = "2000/minute;500/10seconds"
+
+REGISTER_RATE_LIMIT = settings.rate_limit_register
+if settings.load_test_mode:
+    REGISTER_RATE_LIMIT = "500/hour"
 
 
 # ==================== Pydantic V2 Models ====================
@@ -122,7 +127,7 @@ async def change_password(
     if not verify_password(request_body.old_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Неверный текущий пароль")
 
-    if user.otp_secret:
+    if user.otp_secret and not is_demo_seed_user(user):
         if not request_body.otp_code or not verify_otp_code(user.otp_secret, request_body.otp_code):
             if not request_body.otp_code:
                 raise HTTPException(status_code=400, detail="Требуется код 2FA")
@@ -131,13 +136,21 @@ async def change_password(
     if verify_password(request_body.new_password, user.hashed_password):
         raise HTTPException(status_code=400, detail="Новый пароль не должен совпадать со старым")
 
-    new_otp_secret = generate_otp_secret()
     new_hash = get_password_hash(request_body.new_password)
+    update_values: dict = {"hashed_password": new_hash}
+    response: dict = {"message": "Пароль успешно изменён"}
+
+    # Rotate 2FA secret only when 2FA was already enabled (do not auto-enable on password change)
+    if user.otp_secret and not is_demo_seed_user(user):
+        new_otp_secret = generate_otp_secret()
+        update_values["otp_secret"] = new_otp_secret
+        response["otp_secret"] = new_otp_secret
+        response["otp_url"] = get_otp_url(current_user.sub, new_otp_secret)
 
     await db.execute(
         update(User)
         .where(User.id == user.id)
-        .values(hashed_password=new_hash, otp_secret=new_otp_secret)
+        .values(**update_values)
     )
     await db.commit()
 
@@ -149,11 +162,7 @@ async def change_password(
         success=True
     )
 
-    return {
-        "message": "Пароль успешно изменён",
-        "otp_secret": new_otp_secret,
-        "otp_url": get_otp_url(current_user.sub, new_otp_secret)
-    }
+    return response
 
 
 @router.post("/login")
@@ -185,14 +194,14 @@ async def login(
         print("[LOGIN] ❌ Неверный пароль")
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
-    if is_enabled(Feature.MANDATORY_2FA) and not user.otp_secret:
+    if is_enabled(Feature.MANDATORY_2FA) and not user.otp_secret and not is_demo_seed_user(user):
         raise HTTPException(
             status_code=403,
             detail="Для данного развёртывания требуется 2FA. Настройте секрет через администратора или CLI",
         )
 
     # === ОБРАБОТКА 2FA ===
-    if user.otp_secret:
+    if user.otp_secret and not is_demo_seed_user(user):
         if not otp_code:
             # Это ключевой момент — фронтенд ждёт именно 400
             print("[LOGIN] ⚠️  2FA включена, но код не передан → показываем форму")
@@ -209,7 +218,7 @@ async def login(
 
 
     # === ПРОВЕРКА: ДОЛЖНА ЛИ БЫТЬ 2FA ВКЛЮЧЕНА ===
-    if is_2fa_required_for_user(user.role) and not user.otp_secret:
+    if is_2fa_required_for_user(user.role) and not user.otp_secret and not is_demo_seed_user(user):
         # Требуется 2FA, но она не настроена
         raise HTTPException(
             status_code=400,
@@ -246,7 +255,7 @@ async def login(
         "message": "Успешный вход",
         "username": user.username,
         "role": user.role,
-        "2fa_enabled": bool(user.otp_secret)
+        "2fa_enabled": bool(user.otp_secret) and not is_demo_seed_user(user)
     }
 
 
@@ -273,6 +282,12 @@ async def setup_2fa(
     tenant = require_tenant(request)
     assert_tenant_access(current_user.tenant_id, tenant.id, current_user.role)
     user = await _load_current_db_user(db, current_user, tenant)
+
+    if is_demo_seed_user(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="2FA setup is disabled for demo accounts. Deploy your own instance to test 2FA.",
+        )
 
     new_secret = generate_otp_secret()
 
@@ -350,7 +365,11 @@ async def disable_2fa(
 
 
 @router.post("/register")
-@limiter.limit("10/minute", key_func=get_remote_address)
+@limiter.limit(
+    REGISTER_RATE_LIMIT,
+    key_func=register_rate_limit_key,
+    error_message="Too many registration attempts from this IP. Please try again later.",
+)
 async def register(
     request: Request,
     user_data: RegisterRequest = Body(...),

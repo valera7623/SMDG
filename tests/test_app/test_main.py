@@ -144,15 +144,31 @@ def test_set_user_context_no_token(client):
 async def test_rate_limit_handler():
     request = MagicMock(spec=Request)
     limit_mock = MagicMock()
-    limit_mock.error_message = "Too Many Requests"
+    limit_mock.error_message = "Too many registration attempts from this IP. Please try again later."
     exc = RateLimitExceeded(limit=limit_mock)
 
     response = await rate_limit_handler(request, exc)
 
     assert response.status_code == 429
     body_text = response.body.decode("utf-8")
-    assert "Слишком много попыток" in body_text
+    assert "Too many registration attempts" in body_text
     assert response.headers.get("Retry-After") == "60"
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_handler_retry_after_from_limit():
+    from limits import parse
+
+    request = MagicMock(spec=Request)
+    limit_mock = MagicMock()
+    limit_mock.error_message = None
+    limit_mock.limit = parse("3/hour")[0]
+    exc = RateLimitExceeded(limit=limit_mock)
+
+    response = await rate_limit_handler(request, exc)
+
+    assert response.status_code == 429
+    assert response.headers.get("Retry-After") == "3600"
 
 
 # ====================== ADMIN CREATION ======================

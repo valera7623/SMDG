@@ -36,7 +36,7 @@ from app.core.middleware import (
     TimeoutMiddleware,
     TracingMiddleware,
 )
-from app.core.rate_limiter import limiter
+from app.core.rate_limiter import limiter, rate_limit_exceeded_response
 from app.core.tenant import resolve_tenant_from_request
 from app.core.timeout import TimeoutError
 from app.core.tracing import setup_tracing
@@ -242,13 +242,8 @@ app.state.limiter = limiter
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={
-            "detail": "Слишком много попыток. Попробуйте позже (лимит: 5 попыток в минуту)"
-        },
-        headers={"Retry-After": "60"}
-    )
+    content, headers = rate_limit_exceeded_response(exc)
+    return JSONResponse(status_code=429, content=content, headers=headers)
 
 
 @app.exception_handler(TimeoutError)

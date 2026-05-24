@@ -20,6 +20,22 @@ from typing import Any, Callable
 from fastapi import HTTPException, status
 
 
+def is_demo_seed_user(user: Any) -> bool:
+    """True for built-in demo accounts (admin_demo, doctor_demo, user_demo)."""
+    from app.core.config import settings
+
+    if not settings.demo_mode:
+        return False
+
+    username = getattr(user, "username", None)
+    if not username:
+        return False
+
+    from app.core.demo_seeder import DEMO_USERNAMES
+
+    return username in DEMO_USERNAMES
+
+
 def is_demo_seed_file(file: Any) -> bool:
     """True for files created by demo_seeder (protected from deletion in demo mode)."""
     from app.core.config import settings

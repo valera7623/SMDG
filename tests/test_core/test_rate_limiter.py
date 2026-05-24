@@ -12,6 +12,8 @@ from slowapi.wrappers import LimitGroup
 from app.core.rate_limiter import (
     limiter,
     custom_key_func,
+    register_rate_limit_key,
+    retry_after_seconds,
     reset_rate_limit_cache,
     check_redis_connection,
 )
@@ -67,6 +69,31 @@ def test_custom_key_func_user_is_none():
         result = custom_key_func(mock_request)
 
     assert result == "rate_limit:ip:10.0.0.2"
+
+
+def test_register_rate_limit_key():
+    mock_request = Mock()
+    mock_request.scope = {}
+
+    with patch("app.core.rate_limiter.get_remote_address", return_value="203.0.113.7"):
+        result = register_rate_limit_key(mock_request)
+
+    assert result == "rate_limit:register:ip:203.0.113.7"
+
+
+def test_retry_after_seconds_from_limit():
+    from limits import parse
+
+    limit_mock = Mock()
+    limit_mock.limit = parse("3/hour")[0]
+    exc = RateLimitExceeded(limit=limit_mock)
+
+    assert retry_after_seconds(exc) == 3600
+
+
+def test_retry_after_seconds_fallback():
+    exc = RateLimitExceeded(limit=Mock(error_message="limited", limit=None))
+    assert retry_after_seconds(exc) == 60
 
 
 # ============================================================================

@@ -230,6 +230,8 @@ class Settings(BaseSettings):
     rate_limit_default: str = "100/minute"
     # Dedicated login endpoint rate limit
     rate_limit_login: str = "10/minute;5/10seconds"
+    # Registration endpoint (stricter in demo via RATE_LIMIT_REGISTER=3/hour)
+    rate_limit_register: str = "10/minute"
 
     # Distributed job queue
     JOB_QUEUE_TYPE: str = "redis"  # redis | rabbitmq | celery

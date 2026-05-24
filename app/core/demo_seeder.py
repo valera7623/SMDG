@@ -25,7 +25,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy import delete, select, text
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -205,6 +205,7 @@ async def _ensure_demo_users(db: AsyncSession, tenant_id: int) -> dict[str, User
             # Ensure password is up to date (allows future password changes)
             user.hashed_password = get_password_hash(spec["password"])
             user.is_active = True
+            user.otp_secret = None  # demo logins must not require 2FA
         users[spec["username"]] = user
 
     await db.commit()
@@ -382,6 +383,13 @@ async def reset_demo_data() -> None:
                 await db.execute(
                     delete(File).where(File.id.in_(file_ids))
                 )
+
+            # Reset demo accounts: no 2FA, known passwords (re-applied on next seed)
+            await db.execute(
+                update(User)
+                .where(User.id.in_(demo_ids))
+                .values(otp_secret=None)
+            )
 
         # Delete non-demo users (users registered during the demo session)
         await db.execute(
