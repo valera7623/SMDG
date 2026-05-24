@@ -45,23 +45,23 @@ services:
     secrets:
       - source: age_private_key
         target: age_private_key
-        uid: "10001"
-        gid: "10001"
+        uid: "1000"
+        gid: "1000"
         mode: 0440
       - source: admin_password
         target: admin_password
-        uid: "10001"
-        gid: "10001"
+        uid: "1000"
+        gid: "1000"
         mode: 0440
       - source: jwt_secret_key
         target: jwt_secret_key
-        uid: "10001"
-        gid: "10001"
+        uid: "1000"
+        gid: "1000"
         mode: 0440
       - source: postgres_password
         target: postgres_password
-        uid: "10001"
-        gid: "10001"
+        uid: "1000"
+        gid: "1000"
         mode: 0440
     depends_on:
       redis:

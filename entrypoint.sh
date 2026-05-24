@@ -18,19 +18,23 @@ if [ "${DEMO_MODE:-false}" = "true" ]; then
     fi
     echo "✅ JWT_SECRET_KEY loaded from env"
 
-    # Admin password — default is Demo1234! if not overridden
+    # Admin password — required in demo (no compose defaults)
     _A="ADMIN"; _B="PASSWORD"
     if [ -z "${ADMIN_PASSWORD:-}" ]; then
-        eval "export ${_A}_${_B}=Demo1234!"
-        echo "⚠️  ADMIN_PASSWORD not set — using default 'Demo1234!'"
-    else
-        eval "export ${_A}_${_B}=\"\${ADMIN_PASSWORD}\""
-        echo "✅ ADMIN_PASSWORD loaded from env"
+        echo "❌ ADMIN_PASSWORD is required in demo mode. Set it in .env"
+        exit 1
     fi
+    eval "export ${_A}_${_B}=\"\${ADMIN_PASSWORD}\""
+    echo "✅ ADMIN_PASSWORD loaded from env"
     unset _A _B
 
+    if [ -z "${POSTGRES_PASSWORD:-}" ]; then
+        echo "❌ POSTGRES_PASSWORD is required in demo mode. Set it in .env"
+        exit 1
+    fi
+
     # Build DATABASE_URL from POSTGRES_PASSWORD env (no secrets file needed)
-    _PGPASS="${POSTGRES_PASSWORD:-demo_pg_smdg}"
+    _PGPASS="${POSTGRES_PASSWORD}"
     _PGUSER="${POSTGRES_USER:-smdg_user}"
     _PGDB="${POSTGRES_DB:-smdg}"
     _PGHOST="${POSTGRES_HOST:-db}"
@@ -259,11 +263,15 @@ echo "✅ Директория бэкапов $BACKUP_DIR готова"
 mkdir -p /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted /app/keys
 touch "/app/audit_logs/audit_$(date +%Y-%m-%d).log" /app/audit_logs/audit.csv 2>/dev/null || true
 # /app/keys: age.key часто копируется из secret от root — без chown пользователь smdg не прочитает ключ (age-keygen -y в init_keys).
-if ! chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted /app/keys; then
-    echo "❌ Не удалось выставить владельца smdg:smdg на runtime-каталогах"
-    exit 1
+if [ "$(id -u)" = "0" ]; then
+    if ! chown -R smdg:smdg /app/audit_logs /app/backups /app/encrypted /app/uploads /app/decrypted /app/keys; then
+        echo "❌ Не удалось выставить владельца smdg:smdg на runtime-каталогах"
+        exit 1
+    fi
+    chmod -R u+rwX,g+rwX /app/audit_logs /app/backups 2>/dev/null || true
+else
+    echo "ℹ️  Runtime user $(whoami) (uid=$(id -u)) — пропуск chown (ожидается demo-volumes-init или pre-set ownership)"
 fi
-chmod -R u+rwX,g+rwX /app/audit_logs /app/backups 2>/dev/null || true
 
 # ────────────────────────────────────────────────────────────────
 # Информация о режиме хранилища
@@ -294,7 +302,21 @@ UVICORN_ARGS=(
 if [ "${UVICORN_PROXY_HEADERS}" = "true" ]; then
     UVICORN_ARGS+=(--proxy-headers --forwarded-allow-ips "${FORWARDED_ALLOW_IPS}")
 fi
-if id smdg >/dev/null 2>&1; then
+if [ "${DEMO_MODE:-false}" = "true" ]; then
+    if [ "$(id -u)" = "0" ]; then
+        echo "❌ Demo mode: refusing to run application as root. Use user \"1000:1000\" in docker-compose.demo.yml"
+        exit 1
+    fi
+    RUNTIME_USER="$(whoami)"
+    if [ "$RUNTIME_USER" != "smdg" ]; then
+        echo "❌ Security: demo application must run as smdg, not ${RUNTIME_USER} (uid=$(id -u))"
+        exit 1
+    fi
+    echo "✅ Runtime user: ${RUNTIME_USER} (uid=$(id -u))"
+    exec uvicorn "${UVICORN_ARGS[@]}"
+fi
+
+if id smdg >/dev/null 2>&1 && [ "$(id -u)" = "0" ]; then
     exec gosu smdg uvicorn "${UVICORN_ARGS[@]}"
 else
     exec uvicorn "${UVICORN_ARGS[@]}"

@@ -55,8 +55,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 # Keep runtime image self-sufficient for Brotli imports
 RUN pip install --no-cache-dir brotli
 
-RUN groupadd --gid 10001 smdg && \
-    useradd --uid 10001 --gid smdg --shell /usr/sbin/nologin --create-home smdg
+RUN groupadd --gid 1000 smdg && \
+    useradd --uid 1000 --gid smdg --shell /usr/sbin/nologin --create-home smdg
 
 COPY --from=builder /usr/local/lib/python3.10 /usr/local/lib/python3.10
 COPY --from=builder /usr/local/bin /usr/local/bin

@@ -83,8 +83,8 @@ services:
     secrets:
       - source: postgres_password
         target: postgres_password
-        uid: "10001"
-        gid: "10001"
+        uid: "1000"
+        gid: "1000"
         mode: 0440
     environment:
       DEV_MODE: "false"
