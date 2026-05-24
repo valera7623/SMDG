@@ -22,6 +22,7 @@ import {
 } from './modules/admin-users.js';
 
 import { confirmAction, closeConfirmModal } from './utils/modals.js';
+import './page-transitions.js';
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme } from './theme-init.js';
 import { auth as authAPI } from './core/api.js';

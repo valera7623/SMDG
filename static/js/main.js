@@ -4,6 +4,7 @@
 import { initAuth, switchAuthTab, handleSetup2FA, logout } from './modules/auth.js';
 import { initFiles, loadFileList, downloadFile, copyToClipboard, openOHIFViewer } from './modules/files.js';
 import { showNotification } from './utils/notifications.js';
+import './page-transitions.js';
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme, setSmdgTheme } from './theme-init.js';
 

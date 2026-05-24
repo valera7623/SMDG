@@ -10,6 +10,7 @@ import {
     replayMessage,
     viewMessage,
 } from "./modules/admin-dlq.js";
+import "./page-transitions.js";
 import { initResponsiveUI } from "./responsive.js";
 import { bindThemeToggles, initTheme } from "./theme-init.js";
 

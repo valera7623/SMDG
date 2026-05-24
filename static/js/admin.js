@@ -8,6 +8,7 @@ import {
     purgeAllFiles,
 } from './modules/admin-files.js';
 import { initFileAudit, loadFileAuditEvents } from './modules/admin-file-audit.js';
+import './page-transitions.js';
 import { initResponsiveUI } from './responsive.js';
 import { bindThemeToggles, initTheme } from './theme-init.js';
 
