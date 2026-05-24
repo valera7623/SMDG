@@ -194,6 +194,9 @@
         "admin_file_audit.unknown": "inconnu",
         "admin_file_audit.previous": "Précédent",
         "admin_file_audit.next": "Suivant",
+        "admin_file_audit.events_count": "{{count}} événements",
+        "admin_file_audit.no_file": "Fichier inconnu",
+        "admin_file_audit.last_event": "Dernier : {{time}}",
 
         "admin_users.title": "Gestion des utilisateurs SMDG",
         "admin_users.stats_title": "Statistiques des utilisateurs",

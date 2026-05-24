@@ -1884,6 +1884,99 @@ body.smdg-nav-open {
     }
 }
 
+/* ═══ Admin file audit tree (grouped by file) ═══ */
+.file-audit-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.file-audit-group {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface, #fff);
+    overflow: hidden;
+}
+
+[data-theme="dark"] .file-audit-group {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.file-audit-group__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 600;
+    user-select: none;
+}
+
+.file-audit-group__summary::-webkit-details-marker {
+    display: none;
+}
+
+.file-audit-group__summary::before {
+    content: '▸';
+    flex: 0 0 auto;
+    margin-right: 8px;
+    color: var(--text-secondary, #6c757d);
+    transition: transform var(--transition-fast, 0.15s ease);
+}
+
+.file-audit-group[open] > .file-audit-group__summary::before {
+    transform: rotate(90deg);
+}
+
+.file-audit-group__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.file-audit-group__meta {
+    flex: 0 0 auto;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary, #6c757d);
+    white-space: nowrap;
+}
+
+.file-audit-group__body {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .file-audit-group__body {
+    border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.file-audit-group__table {
+    margin: 0;
+}
+
+.file-audit-group__table th,
+.file-audit-group__table td {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .file-audit-group__summary {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .file-audit-group__meta {
+        white-space: normal;
+    }
+}
+
 .responsive-data-table {
     width: 100%;
     border-collapse: collapse;

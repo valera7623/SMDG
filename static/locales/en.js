@@ -207,6 +207,9 @@
         "admin_file_audit.unknown": "unknown",
         "admin_file_audit.previous": "Previous",
         "admin_file_audit.next": "Next",
+        "admin_file_audit.events_count": "{{count}} events",
+        "admin_file_audit.no_file": "Unknown file",
+        "admin_file_audit.last_event": "Last: {{time}}",
 
         // Admin — user management
         "admin_users.title": "SMDG User management",

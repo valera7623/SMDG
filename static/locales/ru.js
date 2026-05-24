@@ -194,6 +194,9 @@
         "admin_file_audit.unknown": "неизвестно",
         "admin_file_audit.previous": "Назад",
         "admin_file_audit.next": "Вперёд",
+        "admin_file_audit.events_count": "{{count}} событий",
+        "admin_file_audit.no_file": "Неизвестный файл",
+        "admin_file_audit.last_event": "Последнее: {{time}}",
 
         "admin_users.title": "Управление пользователями SMDG",
         "admin_users.stats_title": "Статистика пользователей",
