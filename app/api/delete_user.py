@@ -8,7 +8,7 @@ import asyncio
 
 from app.core import ENCRYPTED_DIR, audit_logger
 from app.core.auth import get_current_user, TokenData
-from app.core.demo_guard import demo_readonly
+from app.core.demo_guard import assert_demo_file_deletable
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from app.models.file import File
@@ -18,6 +18,31 @@ from pathlib import Path as PathlibPath   # ← алиас для работы �
 import os
 
 router = APIRouter()
+
+
+async def _find_file_by_encrypted_name(
+    db: AsyncSession, tenant_id: int, filename: str
+) -> File | None:
+    """Resolve File row by encrypted_name (exact match, then optional .age suffix)."""
+    safe_filename = sanitize_filename(filename)
+    result = await db.execute(
+        select(File).where(
+            File.tenant_id == tenant_id,
+            File.encrypted_name == safe_filename,
+        )
+    )
+    db_file = result.scalar_one_or_none()
+    if db_file:
+        return db_file
+    if not safe_filename.endswith(".age"):
+        result = await db.execute(
+            select(File).where(
+                File.tenant_id == tenant_id,
+                File.encrypted_name == f"{safe_filename}.age",
+            )
+        )
+        return result.scalar_one_or_none()
+    return None
 
 
 # ==================== Pydantic V2 Модели ====================
@@ -42,18 +67,14 @@ async def _delete_user_file_by_name(
 
     safe_filename = sanitize_filename(filename)
 
-    # Автоматически добавляем .age, если не указано
-    if not safe_filename.endswith('.age'):
-        safe_filename = f"{safe_filename}.age"
-
-    # Ищем запись в БД по encrypted_name
-    result = await db.execute(
-        select(File).where(File.encrypted_name == safe_filename, File.tenant_id == current_user.tenant_id)
-    )
-    db_file = result.scalar_one_or_none()
+    # Ищем запись в БД по encrypted_name (без принудительного .age — demo/legacy имена)
+    db_file = await _find_file_by_encrypted_name(db, current_user.tenant_id, safe_filename)
 
     if not db_file:
         raise HTTPException(status_code=404, detail=f"Файл не найден в БД: {safe_filename}")
+
+    assert_demo_file_deletable(db_file)
+    safe_filename = db_file.encrypted_name
 
     # Проверяем наличие файла через storage backend (S3 или локальная ФС)
     storage_key = db_file.encrypted_path
@@ -131,7 +152,6 @@ async def _delete_user_file_by_name(
 # ==================== Эндпоинты ====================
 
 @router.post("/delete-user-file")
-@demo_readonly("Deleting files")
 async def delete_user_file(
     request: Request,
     filename: str = Form(...),
@@ -147,7 +167,6 @@ async def delete_user_file(
 
 
 @router.delete("/delete-user-file/{file_id}")
-@demo_readonly("Deleting files")
 async def delete_user_file_by_id(
     request: Request,
     file_id: Annotated[int, Path(..., description="ID файла")],
@@ -164,6 +183,8 @@ async def delete_user_file_by_id(
 
     if not db_file:
         raise HTTPException(status_code=404, detail=f"Файл с ID {file_id} не найден")
+
+    assert_demo_file_deletable(db_file)
 
     # 2. Проверка прав владельца
     if db_file.user_id:

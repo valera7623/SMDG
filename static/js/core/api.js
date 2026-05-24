@@ -15,10 +15,22 @@ async function request(path, options = {}) {
         ...options,
     });
 
-    if (response.status === 401 || response.status === 403) {
-        // Редирект выполняет вызывающий модуль — мы бросаем специальный флаг
+    if (response.status === 401) {
         const err = new Error('Unauthorized');
-        err.status = response.status;
+        err.status = 401;
+        throw err;
+    }
+
+    if (response.status === 403) {
+        const data = await response.json().catch(() => ({}));
+        let detail = 'Forbidden';
+        if (typeof data.detail === 'string') {
+            detail = data.detail;
+        } else if (Array.isArray(data.detail)) {
+            detail = data.detail.map((item) => item.msg || String(item)).join(', ');
+        }
+        const err = new Error(detail);
+        err.status = 403;
         throw err;
     }
 

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from app.core import ENCRYPTED_DIR, audit_logger, encrypted_storage
 from app.core.webhook import webhook_dispatcher
 from app.core.auth import get_current_admin, TokenData
+from app.core.demo_guard import assert_demo_file_deletable
 from app.core.utils import calculate_hash_async, sanitize_filename
 from app.core.database import get_db
 from app.core.tenant import require_tenant, assert_tenant_access
@@ -50,6 +51,7 @@ async def _delete_file(
     file_row = (await db.execute(stmt)).scalars().first()
     if not file_row:
         raise HTTPException(status_code=404, detail=f"Файл не найден: {safe_filename}")
+    assert_demo_file_deletable(file_row)
     storage_key = file_row.encrypted_path
     safe_filename = file_row.encrypted_name
 

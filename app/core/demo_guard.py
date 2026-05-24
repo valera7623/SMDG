@@ -20,6 +20,41 @@ from typing import Any, Callable
 from fastapi import HTTPException, status
 
 
+def is_demo_seed_file(file: Any) -> bool:
+    """True for files created by demo_seeder (protected from deletion in demo mode)."""
+    from app.core.config import settings
+
+    if not settings.demo_mode:
+        return False
+
+    metadata = getattr(file, "medical_metadata", None) or {}
+    if isinstance(metadata, dict) and metadata.get("demo") is True:
+        return True
+
+    patient_id = getattr(file, "patient_id", None)
+    if isinstance(patient_id, str) and patient_id.startswith("demo-"):
+        return True
+
+    encrypted_name = getattr(file, "encrypted_name", "") or ""
+    if encrypted_name.startswith("demo_"):
+        return True
+
+    return False
+
+
+def assert_demo_file_deletable(file: Any) -> None:
+    """Raise 403 if the file is a demo seed artifact that must stay for the showcase."""
+    if not is_demo_seed_file(file):
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail=(
+            "This is a demo sample file and cannot be deleted. "
+            "Upload your own file to test the delete workflow."
+        ),
+    )
+
+
 def demo_readonly(operation: str = "This operation") -> Callable:
     """Decorator: raises HTTP 403 if the application is running in demo mode.
 
