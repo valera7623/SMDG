@@ -129,10 +129,15 @@ jobs:
           echo "🛑 Stopping containers..."
           docker compose -f docker-compose.yml down 2>/dev/null || true
 
-          # ── Права на bind-mount директории ───────────────────────────
-          mkdir -p audit_logs encrypted decrypted uploads static secrets
+          # ── Права на bind-mount директории ДО git операций ─────────────
+          # Контейнер user: "0:0" → файлы в encrypted/ и др. принадлежат root.
+          # git reset --hard падает с "Permission denied" если не сменить владельца.
+          mkdir -p audit_logs encrypted decrypted uploads static backups secrets
           docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
-            sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
+            sh -c "chown -R $(id -u):$(id -g) \
+              /w/audit_logs /w/encrypted /w/decrypted \
+              /w/uploads /w/static /w/backups \
+              2>/dev/null || true"
 
           # ── Git update ───────────────────────────────────────────────
           echo "📥 Pulling main..."

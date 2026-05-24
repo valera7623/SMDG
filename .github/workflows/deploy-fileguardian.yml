@@ -186,10 +186,16 @@ jobs:
           docker compose -f "$COMPOSE_FILE" down 2>/dev/null || true
           docker compose -f docker-compose.yml down 2>/dev/null || true
 
-          # ── Подготовка директорий ────────────────────────────────────
-          mkdir -p static certbot/www certs
+          # ── Права на bind-mount директории ДО git операций ─────────────
+          # Контейнер запускается с user: "0:0", поэтому файлы в encrypted/,
+          # uploads/, decrypted/ и др. принадлежат root.
+          # git reset --hard не может удалить/перезаписать файлы чужого владельца.
+          mkdir -p encrypted decrypted uploads audit_logs backups static certbot/www certs
           docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
-            sh -c "chown -R $(id -u):$(id -g) /w/static /w/certbot 2>/dev/null || true"
+            sh -c "chown -R $(id -u):$(id -g) \
+              /w/encrypted /w/decrypted /w/uploads \
+              /w/audit_logs /w/backups /w/static /w/certbot \
+              2>/dev/null || true"
 
           # ── Git update ───────────────────────────────────────────────
           echo "📥 Pulling main..."
