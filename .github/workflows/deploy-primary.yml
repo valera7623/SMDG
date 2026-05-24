@@ -1,0 +1,181 @@
+# Deploy SMDG → primary VPS (186.246.3.65)
+#
+# Compose: docker-compose.yml (полный стек: Postgres, Redis, smdg, Nginx, MinIO, Prometheus, Grafana)
+#
+# Required Secrets:
+#   VPS_HOST     — IP/hostname сервера (186.246.3.65)
+#   VPS_USER     — SSH-пользователь (smdg)
+#   VPS_SSH_KEY  — приватный SSH-ключ
+#
+# Optional Variables:
+#   VPS_DEPLOY_PATH  — путь к репозиторию (default: /home/smdg/SMDG)
+#   VPS_AUTO_CLONE   — true: git clone при первом запуске
+
+name: 🚀 Deploy SMDG → primary VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: ${{ vars.VPS_DEPLOY_PATH }}
+      VPS_AUTO_CLONE: ${{ vars.VPS_AUTO_CLONE }}
+
+    steps:
+      - name: 🚚 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: ✅ Validate secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_USER: ${{ secrets.VPS_USER }}
+        run: |
+          missing=0
+          [[ -z "${{ secrets.VPS_SSH_KEY }}" ]] && echo "::error::VPS_SSH_KEY не задан" && missing=1
+          [[ -z "$DEPLOY_HOST" ]]                && echo "::error::VPS_HOST не задан"    && missing=1
+          [[ -z "$DEPLOY_USER" ]]                && echo "::error::VPS_USER не задан"    && missing=1
+          [[ "$missing" -ne 0 ]] && exit 1
+          echo "Secrets OK — ${DEPLOY_USER}@${DEPLOY_HOST}"
+
+      - name: 🔑 Setup SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.VPS_HOST }}
+          DEPLOY_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub 2>/dev/null; then
+            echo "::error::VPS_SSH_KEY повреждён — вставьте ключ целиком от BEGIN до END"
+            exit 1
+          fi
+          echo "Публичный ключ (должен быть в /home/smdg/.ssh/authorized_keys на VPS):"
+          cat ~/.ssh/deploy_key.pub
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          cat > ~/.ssh/config <<EOF
+          Host vps-deploy
+            HostName ${DEPLOY_HOST}
+            User ${DEPLOY_USER}
+            IdentityFile ~/.ssh/deploy_key
+            BatchMode yes
+            IdentitiesOnly yes
+            PreferredAuthentications publickey
+            PasswordAuthentication no
+            ConnectTimeout 30
+            StrictHostKeyChecking accept-new
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: 🔌 Test SSH
+        run: |
+          if ! ssh vps-deploy 'echo "SSH OK on $(hostname) as $(whoami)"'; then
+            echo "::group::ssh -vvv"
+            ssh -vvv vps-deploy true 2>&1 | tail -50 || true
+            echo "::endgroup::"
+            echo "::error::SSH не работает. Публичный ключ из шага Setup SSH должен быть в /home/smdg/.ssh/authorized_keys"
+            exit 1
+          fi
+
+      - name: 🐳 Deploy (docker-compose.yml)
+        env:
+          REPO_SLUG: ${{ github.repository }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          export DEPLOY_PATH="${DEPLOY_PATH:-/home/smdg/SMDG}"
+          export REPO_URL="https://github.com/${REPO_SLUG}.git"
+          export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
+          echo "▶ ${VPS_USER}@${VPS_HOST}:${DEPLOY_PATH} — docker-compose.yml"
+          ssh vps-deploy \
+            env DEPLOY_PATH="$DEPLOY_PATH" \
+                REPO_URL="$REPO_URL" \
+                REPO_SLUG="$REPO_SLUG" \
+                VPS_AUTO_CLONE="$VPS_AUTO_CLONE" \
+                VPS_GIT_CLONE_TOKEN="${{ secrets.VPS_GITHUB_TOKEN }}" \
+            bash -s << 'REMOTE'
+          set -euo pipefail
+
+          # ── Автоклон при первом запуске ──────────────────────────────
+          if [[ ! -d "$DEPLOY_PATH" ]]; then
+            if [[ "${VPS_AUTO_CLONE:-false}" == "true" ]]; then
+              echo "📂 Клонируем репозиторий..."
+              mkdir -p "$(dirname "$DEPLOY_PATH")"
+              if [[ -n "${VPS_GIT_CLONE_TOKEN:-}" ]]; then
+                git clone "https://x-access-token:${VPS_GIT_CLONE_TOKEN}@github.com/${REPO_SLUG}.git" "$DEPLOY_PATH"
+              else
+                git clone "$REPO_URL" "$DEPLOY_PATH"
+              fi
+            else
+              echo "::error::Каталог не существует: $DEPLOY_PATH"
+              echo "  git clone $REPO_URL $DEPLOY_PATH  — или Variable VPS_AUTO_CLONE=true"
+              exit 1
+            fi
+          fi
+
+          cd "$DEPLOY_PATH"
+
+          # ── Остановка ────────────────────────────────────────────────
+          echo "🛑 Stopping containers..."
+          docker compose -f docker-compose.yml down 2>/dev/null || true
+
+          # ── Права на bind-mount директории ───────────────────────────
+          mkdir -p audit_logs encrypted decrypted uploads static secrets
+          docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
+            sh -c "chown -R $(id -u):$(id -g) /w/audit_logs /w/encrypted /w/decrypted /w/uploads /w/static"
+
+          # ── Git update ───────────────────────────────────────────────
+          echo "📥 Pulling main..."
+          if [[ -f audit_logs/audit.csv ]]; then
+            cp -a audit_logs/audit.csv /tmp/smdg-audit-csv.bak
+          fi
+          git fetch origin main
+          git reset --hard origin/main
+          mkdir -p audit_logs
+          if [[ -f /tmp/smdg-audit-csv.bak ]]; then
+            cp -a /tmp/smdg-audit-csv.bak audit_logs/audit.csv
+            rm -f /tmp/smdg-audit-csv.bak
+          fi
+
+          # ── Чистый build context (без секретов и runtime-данных) ─────
+          BUILD_CONTEXT="$(mktemp -d /tmp/smdg-build-context.XXXXXX)"
+          COMPOSE_BUILD_OVERRIDE="$(mktemp /tmp/smdg-compose-build.XXXXXX.yml)"
+          trap 'rm -rf "$BUILD_CONTEXT" "$COMPOSE_BUILD_OVERRIDE"' EXIT
+
+          tar \
+            --exclude='./.git' \
+            --exclude='./certbot/**' \
+            --exclude='./certs/**' \
+            --exclude='./secrets/**' \
+            --exclude='./keys/**' \
+            --exclude='./uploads/**' \
+            --exclude='./encrypted/**' \
+            --exclude='./decrypted/**' \
+            --exclude='./audit_logs/**' \
+            --exclude='./backups/**' \
+            -cf - . | tar -xf - -C "$BUILD_CONTEXT"
+
+          cat > "$COMPOSE_BUILD_OVERRIDE" << EOF
+          services:
+            smdg:
+              image: smdg-smdg:latest
+              build:
+                context: "$BUILD_CONTEXT"
+                dockerfile: Dockerfile
+          EOF
+
+          # ── Up ───────────────────────────────────────────────────────
+          echo "🐳 docker compose -f docker-compose.yml up -d --build"
+          docker compose -f docker-compose.yml -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
+          echo "✅ primary deploy complete"
+          REMOTE

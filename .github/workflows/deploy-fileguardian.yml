@@ -1,0 +1,273 @@
+# Deploy SMDG Demo → fileguardian VPS (74.208.252.225, https://fileguardian.info)
+#
+# Compose: docker-compose.demo.yml (без MinIO/Prometheus, секреты из .env)
+# Требует на сервере: .env (cp .env.demo.example .env, заполнить DOMAIN, JWT_SECRET_KEY, POSTGRES_PASSWORD)
+#
+# Required Secrets:
+#   VPS2_HOST    — IP/hostname (74.208.252.225)
+#   VPS2_USER    — SSH-пользователь (smdg)
+#   VPS_SSH_KEY  — приватный SSH-ключ (общий с primary)
+#
+# Optional Secrets:
+#   VPS_GITHUB_TOKEN — PAT для git clone (приватный репозиторий + VPS2_AUTO_CLONE)
+#
+# Optional Variables:
+#   VPS2_DEPLOY_PATH     — путь к репозиторию (default: /home/smdg/SMDG)
+#   VPS2_AUTO_CLONE      — true: git clone при первом запуске
+#   VPS2_SSH_PROXY_JUMP  — не false: SSH через primary (VPS_HOST) если нет прямого доступа
+#   VPS2_DOMAIN          — домен для smoke-теста (default: fileguardian.info)
+#   VPS2_SKIP_SMOKE_TEST — true: пропустить smoke-тест
+
+name: 🚀 Deploy SMDG Demo → fileguardian
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_PATH: ${{ vars.VPS2_DEPLOY_PATH }}
+      VPS_AUTO_CLONE: ${{ vars.VPS2_AUTO_CLONE }}
+
+    steps:
+      - name: 🚚 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+      - name: ✅ Validate secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.VPS2_HOST }}
+          DEPLOY_USER: ${{ secrets.VPS2_USER }}
+        run: |
+          missing=0
+          [[ -z "${{ secrets.VPS_SSH_KEY }}" ]] && echo "::error::VPS_SSH_KEY не задан"  && missing=1
+          [[ -z "$DEPLOY_HOST" ]]                && echo "::error::VPS2_HOST не задан"    && missing=1
+          [[ -z "$DEPLOY_USER" ]]                && echo "::error::VPS2_USER не задан (обычно smdg)" && missing=1
+          [[ "$missing" -ne 0 ]] && exit 1
+          echo "Secrets OK — ${DEPLOY_USER}@${DEPLOY_HOST}"
+
+      - name: 🔑 Setup SSH
+        shell: bash
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.VPS2_HOST }}
+          DEPLOY_USER: ${{ secrets.VPS2_USER }}
+          JUMP_HOST: ${{ secrets.VPS_HOST }}
+          JUMP_USER: ${{ secrets.VPS_USER }}
+          VPS2_SSH_PROXY_JUMP: ${{ vars.VPS2_SSH_PROXY_JUMP }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub 2>/dev/null; then
+            echo "::error::VPS_SSH_KEY повреждён — вставьте ключ целиком от BEGIN до END"
+            exit 1
+          fi
+          echo "Публичный ключ (должен быть в /home/smdg/.ssh/authorized_keys на fileguardian):"
+          cat ~/.ssh/deploy_key.pub
+
+          # ProxyJump: по умолчанию включён, если VPS2_SSH_PROXY_JUMP != "false"
+          USE_PROXY_JUMP=true
+          [[ "${VPS2_SSH_PROXY_JUMP:-}" == "false" ]] && USE_PROXY_JUMP=false
+
+          if [[ "$USE_PROXY_JUMP" == true && -n "${JUMP_HOST:-}" ]]; then
+            echo "SSH через ProxyJump: ${JUMP_USER}@${JUMP_HOST} → ${DEPLOY_USER}@${DEPLOY_HOST}"
+            ssh-keyscan -H "$JUMP_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          else
+            echo "Прямой SSH: ${DEPLOY_USER}@${DEPLOY_HOST}"
+            ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          fi
+
+          {
+            if [[ "$USE_PROXY_JUMP" == true && -n "${JUMP_HOST:-}" ]]; then
+              echo "Host vps-jump"
+              echo "  HostName ${JUMP_HOST}"
+              echo "  User ${JUMP_USER}"
+              echo "  IdentityFile ~/.ssh/deploy_key"
+              echo "  BatchMode yes"
+              echo "  IdentitiesOnly yes"
+              echo "  PreferredAuthentications publickey"
+              echo "  PasswordAuthentication no"
+              echo "  ConnectTimeout 30"
+              echo "  StrictHostKeyChecking accept-new"
+            fi
+            echo "Host vps-deploy"
+            echo "  HostName ${DEPLOY_HOST}"
+            echo "  User ${DEPLOY_USER}"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  BatchMode yes"
+            echo "  IdentitiesOnly yes"
+            echo "  PreferredAuthentications publickey"
+            echo "  PasswordAuthentication no"
+            echo "  ConnectTimeout 30"
+            echo "  StrictHostKeyChecking accept-new"
+            if [[ "$USE_PROXY_JUMP" == true && -n "${JUMP_HOST:-}" ]]; then
+              echo "  ProxyJump vps-jump"
+            fi
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+          echo "USE_PROXY_JUMP=${USE_PROXY_JUMP}" >> "$GITHUB_ENV"
+
+          # Проверка TCP/22
+          timeout 5 bash -c "echo >/dev/tcp/${DEPLOY_HOST}/22" \
+            && echo "TCP 22 open on ${DEPLOY_HOST}" \
+            || echo "::warning::TCP 22 недоступен напрямую (firewall?). ProxyJump=${USE_PROXY_JUMP}"
+
+      - name: 🔌 Test SSH
+        run: |
+          if ! ssh vps-deploy 'echo "SSH OK on $(hostname) as $(whoami)"'; then
+            echo "::group::ssh -vvv (last 50 lines)"
+            ssh -vvv vps-deploy true 2>&1 | tail -50 || true
+            echo "::endgroup::"
+            echo "::error::SSH не работает на fileguardian"
+            if [[ "${USE_PROXY_JUMP:-true}" == "true" ]]; then
+              echo "ProxyJump включён — нужен рабочий SSH на primary И ключ smdg на fileguardian"
+            else
+              echo "Прямой SSH. Если с ПК работает, а Actions нет — firewall. Попробуйте VPS2_SSH_PROXY_JUMP=true"
+            fi
+            echo "Строка публичного ключа (шаг Setup SSH) должна быть в /home/smdg/.ssh/authorized_keys на ОБОИХ VPS"
+            exit 1
+          fi
+
+      - name: 🐳 Deploy (docker-compose.demo.yml)
+        env:
+          REPO_SLUG: ${{ github.repository }}
+        run: |
+          export DEPLOY_PATH="${DEPLOY_PATH:-/home/smdg/SMDG}"
+          export REPO_URL="https://github.com/${REPO_SLUG}.git"
+          export VPS_AUTO_CLONE="${VPS_AUTO_CLONE:-false}"
+          echo "▶ fileguardian: ${DEPLOY_PATH} — docker-compose.demo.yml"
+          ssh vps-deploy \
+            env DEPLOY_PATH="$DEPLOY_PATH" \
+                REPO_URL="$REPO_URL" \
+                REPO_SLUG="$REPO_SLUG" \
+                VPS_AUTO_CLONE="$VPS_AUTO_CLONE" \
+                VPS_GIT_CLONE_TOKEN="${{ secrets.VPS_GITHUB_TOKEN }}" \
+            bash -s << 'REMOTE'
+          set -euo pipefail
+          COMPOSE_FILE="docker-compose.demo.yml"
+
+          # ── Автоклон при первом запуске ──────────────────────────────
+          if [[ ! -d "$DEPLOY_PATH" ]]; then
+            if [[ "${VPS_AUTO_CLONE:-false}" == "true" ]]; then
+              echo "📂 Клонируем репозиторий..."
+              mkdir -p "$(dirname "$DEPLOY_PATH")"
+              if [[ -n "${VPS_GIT_CLONE_TOKEN:-}" ]]; then
+                git clone "https://x-access-token:${VPS_GIT_CLONE_TOKEN}@github.com/${REPO_SLUG}.git" "$DEPLOY_PATH"
+              else
+                git clone "$REPO_URL" "$DEPLOY_PATH"
+              fi
+            else
+              echo "::error::Каталог не существует: $DEPLOY_PATH"
+              echo "  git clone $REPO_URL $DEPLOY_PATH  — или Variable VPS2_AUTO_CLONE=true"
+              exit 1
+            fi
+          fi
+
+          cd "$DEPLOY_PATH"
+
+          # ── Проверка .env ────────────────────────────────────────────
+          if [[ ! -f .env ]]; then
+            echo "::error::На сервере нет .env. Выполните:"
+            echo "  cp .env.demo.example .env"
+            echo "  # Задайте DOMAIN=fileguardian.info, JWT_SECRET_KEY (≥48 символов), POSTGRES_PASSWORD"
+            exit 1
+          fi
+
+          # ── Остановка предыдущего стека ──────────────────────────────
+          echo "🛑 Stopping containers..."
+          docker compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+          docker compose -f docker-compose.yml down 2>/dev/null || true
+
+          # ── Подготовка директорий ────────────────────────────────────
+          mkdir -p static certbot/www certs
+          docker run --pull=missing --rm -v "$(pwd):/w" alpine:3.20 \
+            sh -c "chown -R $(id -u):$(id -g) /w/static /w/certbot 2>/dev/null || true"
+
+          # ── Git update ───────────────────────────────────────────────
+          echo "📥 Pulling main..."
+          git fetch origin main
+          git reset --hard origin/main
+
+          # ── Чистый build context ─────────────────────────────────────
+          BUILD_CONTEXT="$(mktemp -d /tmp/smdg-build-context.XXXXXX)"
+          COMPOSE_BUILD_OVERRIDE="$(mktemp /tmp/smdg-compose-build.XXXXXX.yml)"
+          trap 'rm -rf "$BUILD_CONTEXT" "$COMPOSE_BUILD_OVERRIDE"' EXIT
+
+          tar \
+            --exclude='./.git' \
+            --exclude='./certbot/**' \
+            --exclude='./certs/**' \
+            --exclude='./secrets/**' \
+            --exclude='./keys/**' \
+            --exclude='./uploads/**' \
+            --exclude='./encrypted/**' \
+            --exclude='./decrypted/**' \
+            --exclude='./audit_logs/**' \
+            --exclude='./backups/**' \
+            -cf - . | tar -xf - -C "$BUILD_CONTEXT"
+
+          cat > "$COMPOSE_BUILD_OVERRIDE" << EOF
+          services:
+            smdg:
+              image: smdg-smdg-demo:latest
+              build:
+                context: "$BUILD_CONTEXT"
+                dockerfile: Dockerfile
+          EOF
+
+          # ── Up ───────────────────────────────────────────────────────
+          echo "🐳 docker compose -f $COMPOSE_FILE up -d --build"
+          docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_BUILD_OVERRIDE" up -d --build
+          echo "✅ fileguardian demo deploy complete"
+          REMOTE
+
+      - name: 🩺 Smoke test
+        if: vars.VPS2_SKIP_SMOKE_TEST != 'true'
+        env:
+          HEALTH_DOMAIN: ${{ vars.VPS2_DOMAIN || 'fileguardian.info' }}
+          DEPLOY_PATH: ${{ vars.VPS2_DEPLOY_PATH || '/home/smdg/SMDG' }}
+        run: |
+          set -euo pipefail
+          URL="https://${HEALTH_DOMAIN}/health/ready"
+          echo "Проверка ${URL} (502 = nginx ждёт smdg, ждём до ~4 мин)"
+
+          for i in $(seq 1 40); do
+            code="$(curl -sS -o /tmp/smoke-body.txt -w "%{http_code}" --max-time 15 "$URL" || echo "000")"
+            if [[ "$code" == "200" ]]; then
+              echo "✅ ${URL} → HTTP 200"
+              head -c 500 /tmp/smoke-body.txt || true
+              exit 0
+            fi
+            if [[ "$code" == "502" ]]; then
+              msg="nginx: smdg ещё не готов"
+            elif [[ "$code" == "503" ]]; then
+              msg="smdg жив, ждёт БД/Redis"
+            else
+              msg="сеть/DNS/TLS"
+            fi
+            echo "attempt ${i}/40: HTTP ${code} (${msg})"
+            sleep 6
+          done
+
+          echo "::group::Диагностика на сервере"
+          ssh vps-deploy "
+            set -e
+            cd '${DEPLOY_PATH}'
+            docker compose -f docker-compose.demo.yml ps
+            echo '--- smdg logs (last 50) ---'
+            docker compose -f docker-compose.demo.yml logs smdg --tail 50
+            echo '--- local health ---'
+            curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/live  || true
+            curl -sS -w '\nHTTP %{http_code}\n' --max-time 10 http://127.0.0.1:8000/health/ready || true
+          " || echo "SSH diagnostics skipped"
+          echo "::endgroup::"
+          echo "::error::Smoke test failed: ${URL} — последний HTTP ${code}"
+          exit 1
