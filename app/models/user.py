@@ -1,5 +1,5 @@
 # app/models/user.py
-from sqlalchemy import String, Integer, Text, ForeignKey
+from sqlalchemy import String, Integer, Text, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
@@ -25,6 +25,12 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     otp_secret: Mapped[str] = mapped_column(
         Text, nullable=True, default=None
+    )
+    # 2FA считается включённой только когда секрет создан И подтверждён кодом.
+    # Без этого флага начатая, но незавершённая настройка 2FA блокировала бы
+    # вход формой ввода кода.
+    otp_confirmed: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
     )
     tenant_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("tenants.id"), nullable=False, index=True, default=1

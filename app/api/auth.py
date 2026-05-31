@@ -92,6 +92,20 @@ def verify_otp_code(secret: str, code: str) -> bool:
     return totp.verify(code, valid_window=1)
 
 
+def is_2fa_completed(user: User) -> bool:
+    """2FA реально включена: секрет создан И подтверждён кодом.
+
+    Начатая, но не подтверждённая настройка (есть ``otp_secret``, но
+    ``otp_confirmed`` ещё False) не должна требовать код при входе.
+    """
+    return bool(user.otp_secret) and bool(user.otp_confirmed)
+
+
+def user_requires_otp_on_login(user: User) -> bool:
+    """Нужно ли требовать код 2FA при входе данного пользователя."""
+    return is_2fa_completed(user) and not is_demo_seed_user(user)
+
+
 async def _load_current_db_user(
     db: AsyncSession,
     current_user: TokenData,
@@ -127,7 +141,7 @@ async def change_password(
     if not verify_password(request_body.old_password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Неверный текущий пароль")
 
-    if user.otp_secret and not is_demo_seed_user(user):
+    if user_requires_otp_on_login(user):
         if not request_body.otp_code or not verify_otp_code(user.otp_secret, request_body.otp_code):
             if not request_body.otp_code:
                 raise HTTPException(status_code=400, detail="Требуется код 2FA")
@@ -141,9 +155,10 @@ async def change_password(
     response: dict = {"message": "Пароль успешно изменён"}
 
     # Rotate 2FA secret only when 2FA was already enabled (do not auto-enable on password change)
-    if user.otp_secret and not is_demo_seed_user(user):
+    if user_requires_otp_on_login(user):
         new_otp_secret = generate_otp_secret()
         update_values["otp_secret"] = new_otp_secret
+        update_values["otp_confirmed"] = True
         response["otp_secret"] = new_otp_secret
         response["otp_url"] = get_otp_url(current_user.sub, new_otp_secret)
 
@@ -194,14 +209,15 @@ async def login(
         print("[LOGIN] ❌ Неверный пароль")
         raise HTTPException(status_code=401, detail="Неверное имя пользователя или пароль")
 
-    if is_enabled(Feature.MANDATORY_2FA) and not user.otp_secret and not is_demo_seed_user(user):
+    if is_enabled(Feature.MANDATORY_2FA) and not is_2fa_completed(user) and not is_demo_seed_user(user):
         raise HTTPException(
             status_code=403,
             detail="Для данного развёртывания требуется 2FA. Настройте секрет через администратора или CLI",
         )
 
     # === ОБРАБОТКА 2FA ===
-    if user.otp_secret and not is_demo_seed_user(user):
+    # Код требуется только если 2FA реально включена (секрет создан И подтверждён).
+    if user_requires_otp_on_login(user):
         if not otp_code:
             # Это ключевой момент — фронтенд ждёт именно 400
             print("[LOGIN] ⚠️  2FA включена, но код не передан → показываем форму")
@@ -214,11 +230,11 @@ async def login(
             raise HTTPException(status_code=401, detail="Неверный код 2FA")
         print("[LOGIN] ✅ Код 2FA верный")
     else:
-        print("[LOGIN] 2FA отключена — вход без кода")
+        print("[LOGIN] 2FA отключена/не подтверждена — вход без кода")
 
 
     # === ПРОВЕРКА: ДОЛЖНА ЛИ БЫТЬ 2FA ВКЛЮЧЕНА ===
-    if is_2fa_required_for_user(user.role) and not user.otp_secret and not is_demo_seed_user(user):
+    if is_2fa_required_for_user(user.role) and not is_2fa_completed(user) and not is_demo_seed_user(user):
         # Требуется 2FA, но она не настроена
         raise HTTPException(
             status_code=400,
@@ -255,7 +271,7 @@ async def login(
         "message": "Успешный вход",
         "username": user.username,
         "role": user.role,
-        "2fa_enabled": bool(user.otp_secret) and not is_demo_seed_user(user)
+        "2fa_enabled": user_requires_otp_on_login(user)
     }
 
 
@@ -291,10 +307,13 @@ async def setup_2fa(
 
     new_secret = generate_otp_secret()
 
+    # Секрет создаётся, но 2FA ещё НЕ включена: otp_confirmed=False до
+    # успешного подтверждения кодом в /verify-2fa-setup. Иначе незавершённая
+    # настройка блокировала бы вход формой ввода кода.
     await db.execute(
         update(User)
         .where(User.id == user.id)
-        .values(otp_secret=new_secret)
+        .values(otp_secret=new_secret, otp_confirmed=False)
     )
     await db.commit()
 
@@ -326,6 +345,13 @@ async def verify_2fa_setup(
         raise HTTPException(status_code=400, detail="2FA ещё не настроена")
 
     if verify_otp_code(user.otp_secret, req.code):
+        # Только теперь 2FA считается включённой.
+        await db.execute(
+            update(User)
+            .where(User.id == user.id)
+            .values(otp_confirmed=True)
+        )
+        await db.commit()
         audit_logger.log_operation("verify_2fa_success", "", current_user.sub, success=True)
         return {"message": "2FA успешно настроена и проверена!"}
     else:
@@ -356,7 +382,9 @@ async def disable_2fa(
             detail="Отключение 2FA запрещено политикой развёртывания",
         )
 
-    await db.execute(update(User).where(User.id == user.id).values(otp_secret=None))
+    await db.execute(
+        update(User).where(User.id == user.id).values(otp_secret=None, otp_confirmed=False)
+    )
     await db.commit()
 
     audit_logger.log_operation("disable_2fa", "", current_user.sub, success=True)

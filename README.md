@@ -1,32 +1,124 @@
 **English** | [Русский](README.ru.md) | [Deutsch](README.de.md) | [Français](README.fr.md)
 
-# SMDG — Secure Medical Data Gateway
+<div align="center">
 
-**Self-hosted, end-to-end encrypted medical file exchange.**
+# 🔐 SMDG — Secure Medical Data Gateway
 
-Version: **4.0.0** (core and DICOM Viewer) · audit export: **3.1.0**.
+**A self-hosted, zero-trust platform for end-to-end encrypted medical file exchange — built to production standards.**
 
-SMDG lets doctors, clinics and patients exchange medical files safely.
-Every file is encrypted server-side with [age](https://age-encryption.org/),
-protected by time-limited one-shot links and logged in
-a full audit trail. A built-in DICOM viewer renders studies in the browser
-without shipping decrypted data to the client.
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-asyncpg-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
+![Tests](https://img.shields.io/badge/tests-60%2B%20modules-0A9EDC?logo=pytest&logoColor=white)
+![Security](https://img.shields.io/badge/security-SAST%20%7C%20SCA%20%7C%20DAST-critical)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## Documentation
+</div>
 
-Full user- and operator-facing documentation lives in
-[`docs/`](docs/README.md). The English source of truth sits under
-[`docs/src/`](docs/src/), with translations under
-[`docs/locales/{ru,de,fr}/`](docs/locales/).
+---
 
-- Overview — [`docs/src/README.md`](docs/src/README.md)
-- API guide — [`docs/src/API_GUIDE.md`](docs/src/API_GUIDE.md)
-- Architecture — [`docs/src/ARCHITECTURE.md`](docs/src/ARCHITECTURE.md)
-- Deployment profiles — [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md)
-- Horizontal scaling runbook — [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md#horizontal-scaling-stateless-cluster)
-- Rollback to baseline runbook — [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md)
-- DICOM Viewer — [`docs/src/DICOM_VIEWER.md`](docs/src/DICOM_VIEWER.md)
-- Security policy — [`docs/src/SECURITY.md`](docs/src/SECURITY.md)
+## Why this project exists
+
+Healthcare data is among the most sensitive — and most regulated — data on earth. SMDG lets doctors, clinics and patients exchange medical files (including DICOM imaging) **without ever trusting the network, the client, or the storage layer**. Every file is encrypted server-side with [age](https://age-encryption.org/), shared through time-limited one-shot links, and recorded in a tamper-evident audit trail. A built-in DICOM viewer renders studies in the browser **without shipping decrypted data to the client**.
+
+It is engineered the way a real medical product has to be: **multi-tenant, observable, resilient, horizontally scalable, and compliant (FZ-152 / GDPR / HIPAA-oriented).**
+
+> This repository doubles as an engineering portfolio: it demonstrates end-to-end ownership of a secure, async Python backend — from cryptography and multi-tenancy to CI/CD, SRE resilience patterns, and a full security-scanning pipeline.
+
+---
+
+## What it demonstrates (skills at a glance)
+
+| Domain | In this codebase |
+|---|---|
+| **Backend (senior)** | Async FastAPI, SQLAlchemy 2.0 async + SQLModel, PostgreSQL (asyncpg), Alembic **zero-downtime** migrations, Redis-backed sessions/cache/queue |
+| **Security / AppSec** | `age` encryption at rest, Argon2 + bcrypt, JWT, TOTP 2FA, TLS 1.3 + HSTS, one-shot signed links, full audit logging, secrets management |
+| **Multi-tenancy** | Shared-DB isolation by `tenant_id`, subdomain-based tenant resolution, cross-tenant access guards, `super_admin` escape hatch |
+| **Reliability / SRE** | Circuit breaker, bulkhead, timeouts, rate limiting, dead-letter queue, SLA/SLI/SLO tracking, disaster-recovery & load tests |
+| **DevOps / Platform** | Docker Compose (prod / scale / demo), Nginx reverse proxy, blue/green & rolling deploys, 10 GitHub Actions workflows |
+| **Observability** | Prometheus metrics, OpenTelemetry distributed tracing, health/readiness probes, structured audit export |
+| **Domain depth** | DICOM (`pydicom`) in-browser viewer, S3/MinIO object storage, medical-grade compliance templates |
+
+---
+
+## Architecture
+
+```mermaid
+graph TD
+    subgraph Client
+        A[Web UI · HTML + Vanilla JS · i18n]
+    end
+    subgraph Edge
+        B[Nginx · HTTPS · TLS 1.3 · HSTS]
+    end
+    subgraph Application["SMDG · FastAPI (async)"]
+        C[API Layer]
+        D[Middleware · Tenant · Auth · Rate limit · Audit]
+        E[Lifespan · schedulers · health]
+    end
+    subgraph Core
+        F[(PostgreSQL)]
+        G[(Redis)]
+    end
+    subgraph Storage["Storage & Crypto"]
+        I[Encrypted files /encrypted]
+        J[age encryption]
+        K[Ephemeral decrypted /decrypted]
+        S3[(S3 / MinIO)]
+    end
+
+    A --> B --> C
+    C --> D
+    C --> E
+    C --> F & G
+    C --> I & S3
+    C <--> J
+    C --> K
+```
+
+**Tenant isolation** is enforced at request time: the tenant is resolved from the `Host` subdomain, the JWT carries `tenant_id`, and every data access checks that the token and the request agree (a mismatch returns `403 Cross-tenant access`).
+
+Full details: [`docs/src/ARCHITECTURE.md`](docs/src/ARCHITECTURE.md) · [`docs/src/MULTI_TENANCY.md`](docs/src/MULTI_TENANCY.md)
+
+---
+
+## Key features
+
+- 🔒 **End-to-end encryption** — files encrypted server-side with `age`; decrypted copies are ephemeral and cleaned up automatically.
+- 🔗 **One-shot, time-limited links** — share a file without exposing the store; links expire and self-destruct.
+- 🩻 **In-browser DICOM viewer** — render medical imaging without sending decrypted data to the client ([`docs/src/DICOM_VIEWER.md`](docs/src/DICOM_VIEWER.md)).
+- 🏢 **Multi-tenant** — one deployment serves many clinics with strict data isolation.
+- 🛡️ **2FA (TOTP)**, role-based access, and a complete **audit trail** with export (CSV/JSON).
+- ♻️ **Resilience built-in** — circuit breaker, bulkhead, timeouts, dead-letter queue, graceful degradation.
+- 📈 **Production observability** — Prometheus + OpenTelemetry tracing, health/readiness endpoints.
+- 🌍 **Multilingual** — UI and API docs in English / Русский / Deutsch / Français.
+
+See the full list in [`docs/src/FEATURES.md`](docs/src/FEATURES.md).
+
+---
+
+## Tech stack
+
+**Core:** Python 3.10+, FastAPI, Starlette, Uvicorn, Pydantic v2
+**Data:** PostgreSQL (asyncpg), SQLAlchemy 2.0 (async) + SQLModel, Alembic, Redis
+**Crypto & auth:** age, Argon2, bcrypt/passlib, PyJWT / python-jose, PyOTP
+**Storage:** local FS, S3 / MinIO (aiobotocore, boto3)
+**Imaging:** pydicom (+ GDCM), Pillow, NumPy
+**Ops:** Docker Compose, Nginx, Prometheus, OpenTelemetry, APScheduler
+**Quality:** pytest (+asyncio, cov), Ruff, Bandit, factory-boy, respx
+
+---
+
+## Quality & security engineering
+
+- ✅ **60+ test modules** spanning unit, API, integration, security, replication, SLA/SLI/SLO, tracing and disaster-recovery scenarios ([`tests/`](tests/)).
+- 🔁 **10 GitHub Actions workflows**: CI, security scanning, load testing, disaster-recovery drills, docs i18n, rolling/blue-green deploys ([`.github/workflows/`](.github/workflows/)).
+- 🔬 **Defense-in-depth security pipeline** — SAST (Bandit, Semgrep, SonarQube), SCA (Safety, Snyk), secrets (Gitleaks, TruffleHog), container (Trivy, Grype) and DAST (OWASP ZAP, Nuclei). Modes auto-switch per event (`balanced` / `strict` / `audit`). See [`docs/src/SECURITY.md`](docs/src/SECURITY.md).
+- 📊 **Load-tested baseline** documented in [`docs/load-testing.md`](docs/load-testing.md).
+
+---
 
 ## Quick start
 
@@ -37,228 +129,77 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open <https://localhost>. Default dev credentials: `admin` / `admin`
-(change them immediately).
+Open <https://localhost>. Default dev credentials: `admin` / `admin` — **change them immediately.**
 
-## Deployment profiles
+### Deployment profiles
 
-The environment variable `DEPLOYMENT_TYPE` selects the feature matrix:
+`DEPLOYMENT_TYPE` selects the feature matrix:
 
-| Profile  | Summary                                                         |
-|----------|-----------------------------------------------------------------|
-| `russia` | FZ-152 compliant: local storage, mandatory 2FA, 3-year audit    |
-| `intl`   | S3/MinIO, DICOM, GDPR/HIPAA-oriented features                   |
-| `single` | Single tenant, simplified admin, local disk by default          |
-| `saas`   | Multi-tenant, billing/white-label, object storage               |
-| `demo`   | Public showcase: local storage, optional 2FA, small upload cap, 24h data reset |
+| Profile | Summary |
+|---|---|
+| `russia` | FZ-152 compliant: local storage, mandatory 2FA, 3-year audit |
+| `intl` | S3/MinIO, DICOM, GDPR/HIPAA-oriented features |
+| `single` | Single tenant, simplified admin, local disk |
+| `saas` | Multi-tenant, billing / white-label, object storage |
+| `demo` | Public showcase: small upload cap, 24h data reset |
 
-See [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) for details.
+CI/CD pushes to a VPS via [`deploy-primary.yml`](.github/workflows/deploy-primary.yml); rolling updates via [`deploy-rolling.yml`](.github/workflows/deploy-rolling.yml). Horizontal scaling (stateless Redis-backed cluster, Nginx LB, blue/green cutover) and rollback runbooks are in [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) and [`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md).
 
-**CI/CD (GitHub → VPS):** push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) (SSH + `docker compose`). Configure `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` and optionally repository variable `VPS_DEPLOY_PATH`; see [`.github/DEPLOYMENT_SECRETS.md`](.github/DEPLOYMENT_SECRETS.md). Rolling updates with a registry image use [`.github/workflows/deploy-rolling.yml`](.github/workflows/deploy-rolling.yml).
+---
 
-For stateless horizontal scaling (Redis-backed sessions/cache/queue, Nginx load
-balancer, health/readiness checks, blue/green cutover scripts), use the section
-**"Horizontal scaling (stateless cluster)"** in the deployment guide.
-Rollback procedure is documented in
-[`docs/runbooks/rollback-to-baseline.md`](docs/runbooks/rollback-to-baseline.md).
+## Screenshots & demo
 
-## Multilingual support
+<!--
+  Add 2–4 screenshots / a short GIF here to maximize impact for reviewers:
+  - login + 2FA screen
+  - file upload & one-shot link creation
+  - DICOM viewer rendering a study
+  - admin audit dashboard
+  Drop images under docs/assets/ and reference them:
+  ![Upload flow](docs/assets/upload.png)
 
-- Web UI: English / Русский / Deutsch / Français with a runtime language
-  switcher (see [`static/js/i18n.js`](static/js/i18n.js)).
-- API documentation: `/docs` (English), `/docs/ru`, `/docs/de`, `/docs/fr`
-  and `/openapi.{ru,de,fr}.json`.
-- User documentation: `docs/src/` (English) + `docs/locales/<lang>/`.
+  Optional: deploy the `demo` profile somewhere public and link it here:
+  **Live demo:** https://your-demo-url
+-->
 
-## Security Scanning
+> 📸 Screenshots and a live demo (`demo` profile) can be added under `docs/assets/`.
 
-The CI workflow [`security-scan.yml`](.github/workflows/security-scan.yml)
-runs SAST, SCA, secrets, container and DAST checks on push, PR, schedule and
-manual trigger.
+---
 
-### Required secrets matrix
+## Documentation
 
-| Secret | Required | Used by | Notes |
-|---|---|---|---|
-| `SNYK_TOKEN` | Optional (required for Snyk jobs) | `sca-snyk`, `sca-snyk-container` | If missing, Snyk jobs are skipped. |
-| `SONAR_TOKEN` | Optional (required for SonarQube job) | `sast-sonarqube` | Must be paired with `SONAR_HOST_URL`. |
-| `SONAR_HOST_URL` | Optional (required for SonarQube job) | `sast-sonarqube` | Example: `https://sonar.company.local`. |
+| Topic | Link |
+|---|---|
+| Overview | [`docs/src/README.md`](docs/src/README.md) |
+| Architecture | [`docs/src/ARCHITECTURE.md`](docs/src/ARCHITECTURE.md) |
+| API guide | [`docs/src/API_GUIDE.md`](docs/src/API_GUIDE.md) |
+| Features | [`docs/src/FEATURES.md`](docs/src/FEATURES.md) |
+| Deployment | [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) |
+| Security policy | [`docs/src/SECURITY.md`](docs/src/SECURITY.md) |
+| Multi-tenancy | [`docs/src/MULTI_TENANCY.md`](docs/src/MULTI_TENANCY.md) |
+| DICOM viewer | [`docs/src/DICOM_VIEWER.md`](docs/src/DICOM_VIEWER.md) |
+| Testing | [`docs/src/TESTING.md`](docs/src/TESTING.md) |
+| Compliance template | [`docs/src/COMPLIANCE_TEMPLATE.md`](docs/src/COMPLIANCE_TEMPLATE.md) |
 
-### Mode auto-switching (`SECURITY_SCAN_MODE`)
+API docs are served live at `/docs` (and `/docs/ru`, `/docs/de`, `/docs/fr`).
 
-The workflow auto-selects scan mode by event:
+---
 
-- `schedule` -> `audit`
-- `push` / `pull_request` / `workflow_dispatch` -> `balanced` (default)
-- override for non-scheduled events via repository variable
-  `SECURITY_SCAN_MODE=strict` (or `balanced`)
+## About the author
 
-Effective expression in workflow:
+Built and maintained by **Valeriy Popov** — backend & secure-systems engineer focused on **healthcare, security and compliance-heavy systems** (FastAPI, async Python, Postgres, Docker, SRE).
 
-```yaml
-env:
-  SECURITY_SCAN_MODE: ${{ github.event_name == 'schedule' && 'audit' || (vars.SECURITY_SCAN_MODE == 'strict' && 'strict' || 'balanced') }}
-```
+- 📫 valera7623@gmail.com
+<!-- Add your professional links to strengthen the portfolio:
+- 💼 LinkedIn: https://linkedin.com/in/your-handle
+- 🧑‍💻 GitHub: https://github.com/your-handle
+- 🌐 Portfolio / Upwork: https://...
+-->
 
-How to set repository variable in GitHub:
+*Open to freelance and remote opportunities in secure backend / healthtech engineering.*
 
-1. Open repository -> **Settings** -> **Secrets and variables** -> **Actions**.
-2. Go to **Variables** tab.
-3. Click **New repository variable**.
-4. Set:
-   - Name: `SECURITY_SCAN_MODE`
-   - Value: `strict` (or `balanced`)
-
-GitHub CLI example:
-
-```bash
-gh variable set SECURITY_SCAN_MODE --body strict
-```
-
-### Fail policy (pipeline break conditions)
-
-Current workflow policy is designed to always produce artifacts and summary, so
-many scanners run with non-blocking mode (`|| true`) to keep full visibility.
-
-| Stage | Tool | Pipeline fails on |
-|---|---|---|
-| SAST | Bandit | Blocking on findings and execution/runtime errors (non-zero exit). |
-| SAST | Semgrep | Blocking on findings and execution/runtime errors (non-zero exit). |
-| SAST | SonarQube | Sonar scan job failure (when enabled with secrets). |
-| SCA | Safety | Blocking on findings and execution/runtime errors (non-zero exit). |
-| SCA | Snyk (code) | Non-zero exit from Snyk test action (policy is managed in Snyk org/project). |
-| SCA | Snyk (container) | Non-zero exit from Snyk docker action (policy is managed in Snyk org/project). |
-| Secrets | Gitleaks | Blocking on leaked secrets and execution/runtime errors (non-zero exit). |
-| Secrets | TruffleHog | Blocking on findings and execution/runtime errors (non-zero exit). |
-| Container | Trivy | Blocking on `CRITICAL` vulnerabilities (`exit-code: 1`, `ignore-unfixed: true`). |
-| Container | Grype | Blocking on `high`+ vulnerabilities (`fail-build: true`, `severity-cutoff: high`). |
-| DAST | OWASP ZAP | ZAP action failure. |
-| DAST | Nuclei | Nuclei action failure. |
-| DAST | API security tests | Pytest test failures are blocking. |
-
-Production hardening is enabled in the current workflow. If you want a stricter
-gate, increase Trivy threshold from `CRITICAL` to `HIGH,CRITICAL`.
-
-### Policy toggles
-
-Use these snippets as ready-to-copy switches for
-`.github/workflows/security-scan.yml`.
-
-**Strict mode (recommended for protected branches)**
-
-```yaml
-# Semgrep: fail on findings
-- name: Save Semgrep JSON report
-  run: semgrep --config .semgrep.yml --json --output semgrep-report.json
-
-# Trivy: fail on HIGH + CRITICAL
-- name: Run Trivy scanner
-  uses: aquasecurity/trivy-action@master
-  with:
-    image-ref: smdg:latest
-    format: sarif
-    output: trivy-report.sarif
-    severity: HIGH,CRITICAL
-    exit-code: "1"
-    ignore-unfixed: false
-
-# Grype: fail on medium+
-- name: Run Grype scanner
-  uses: anchore/scan-action@v3
-  with:
-    image: smdg:latest
-    fail-build: true
-    severity-cutoff: medium
-    output-format: json
-    output-file: grype-report.json
-```
-
-**Balanced mode (fewer false positives for fast delivery)**
-
-```yaml
-# Semgrep: fail only on ERROR severity
-- name: Save Semgrep JSON report
-  run: semgrep --config .semgrep.yml --severity ERROR --json --output semgrep-report.json
-
-# Trivy: fail on CRITICAL only
-- name: Run Trivy scanner
-  uses: aquasecurity/trivy-action@master
-  with:
-    image-ref: smdg:latest
-    format: sarif
-    output: trivy-report.sarif
-    severity: CRITICAL
-    exit-code: "1"
-    ignore-unfixed: true
-
-# Grype: fail on high+
-- name: Run Grype scanner
-  uses: anchore/scan-action@v3
-  with:
-    image: smdg:latest
-    fail-build: true
-    severity-cutoff: high
-    output-format: json
-    output-file: grype-report.json
-```
-
-**Audit mode (nightly/scheduled, non-blocking artifacts only)**
-
-```yaml
-# Semgrep: do not fail pipeline
-- name: Save Semgrep JSON report
-  run: semgrep --config .semgrep.yml --json --output semgrep-report.json || true
-
-# Bandit / Safety / Gitleaks / TruffleHog: non-blocking scan runs
-- name: Run Bandit
-  run: bandit -c .bandit.yaml -r app/ -f json -o bandit-report.json || true
-
-- name: Run Safety
-  run: safety check -r requirements.txt --json > safety-report.json || true
-
-- name: Run Gitleaks
-  run: |
-    docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect \
-      --source /repo \
-      --config /repo/.gitleaks.toml \
-      --report-format json \
-      --report-path /repo/gitleaks-report.json || true
-
-- name: Run TruffleHog
-  run: |
-    docker run --rm -v "$PWD:/pwd" trufflesecurity/trufflehog:latest filesystem /pwd \
-      --json > trufflehog-report.json || true
-
-# Trivy / Grype: report-only mode
-- name: Run Trivy scanner
-  uses: aquasecurity/trivy-action@master
-  with:
-    image-ref: smdg:latest
-    format: sarif
-    output: trivy-report.sarif
-    severity: HIGH,CRITICAL
-    exit-code: "0"
-    ignore-unfixed: true
-
-- name: Run Grype scanner
-  uses: anchore/scan-action@v3
-  with:
-    image: smdg:latest
-    fail-build: false
-    severity-cutoff: high
-    output-format: json
-    output-file: grype-report.json
-```
-
-## Changelog (Load Testing)
-
-- Added auth capacity baseline to [`docs/load-testing.md`](docs/load-testing.md) under
-  **"Known baseline (single instance)"**.
-- Current measured baseline for one SMDG instance:
-  - safe: `AUTH_RPS=3` (`error_rate=0`, `503_count=0`)
-  - warning: `AUTH_RPS=4` (degradation starts)
-  - overload: `AUTH_RPS>=5` (sustained `503` growth)
+---
 
 ## License
 
-MIT. Author: Valeriy Popov.
+[MIT](LICENSE) © Valeriy Popov

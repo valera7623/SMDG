@@ -28,10 +28,16 @@ def make_user(
     role="user",
     is_active=True,
     otp_secret=None,
+    otp_confirmed=True,
     id=1,
     tenant_id=1,
 ):
-    """Создаёт мок-объект User"""
+    """Создаёт мок-объект User.
+
+    ``otp_confirmed`` по умолчанию True: когда тест задаёт ``otp_secret``,
+    это означает полностью настроенную 2FA. Для сценария незавершённой
+    настройки передайте ``otp_confirmed=False``.
+    """
     user = MagicMock()
     user.id = id
     user.username = username
@@ -40,6 +46,7 @@ def make_user(
     user.role = role
     user.is_active = is_active
     user.otp_secret = otp_secret
+    user.otp_confirmed = otp_confirmed
     user.tenant_id = tenant_id
     return user
 
@@ -131,6 +138,32 @@ class TestLogin:
         assert data["2fa_enabled"] is False
 
         # Проверяем что cookie установлен
+        assert "access_token" in response.cookies
+
+    @patch("app.api.auth.verify_password", return_value=True)
+    @patch("app.api.auth.create_access_token", return_value="fake_jwt_token")
+    @patch("app.api.auth.audit_logger")
+    def test_login_unconfirmed_2fa_does_not_require_code(
+        self, mock_audit, mock_token, mock_verify, base_client
+    ):
+        """Секрет создан, но 2FA не подтверждена → вход без кода, форма не нужна."""
+        user = make_user(otp_secret="JBSWY3DPEHPK3PXP", otp_confirmed=False)
+        mock_db = make_mock_db(user=user)
+
+        async def override_db():
+            yield mock_db
+
+        app.dependency_overrides[get_db] = override_db
+
+        response = base_client.post(
+            "/api/auth/login",
+            data={"username": "testuser", "password": "correctpass"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Успешный вход"
+        assert data["2fa_enabled"] is False
         assert "access_token" in response.cookies
 
     @patch("app.api.auth.verify_password", return_value=True)

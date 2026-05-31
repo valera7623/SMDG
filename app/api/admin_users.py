@@ -27,11 +27,13 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     otp_secret: Optional[str] = Field(default=None, exclude=True, repr=False)
+    otp_confirmed: bool = Field(default=False, exclude=True, repr=False)
 
     @computed_field
     @property
     def has_2fa(self) -> bool:
-        return bool(self.otp_secret)
+        # 2FA считается включённой только после подтверждения кодом.
+        return bool(self.otp_secret) and bool(self.otp_confirmed)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -282,6 +284,7 @@ async def update_user(
 
     if update_data.reset_2fa and user.otp_secret:
         user.otp_secret = None
+        user.otp_confirmed = False
         changes["2fa_reset"] = True
 
     if changes:
@@ -498,7 +501,7 @@ async def get_user_stats(
     admins = sum(1 for u in all_users if u.role == "admin")
     doctors = sum(1 for u in all_users if u.role == "doctor")
     regular = sum(1 for u in all_users if u.role == "user")
-    with_2fa = sum(1 for u in all_users if u.otp_secret)
+    with_2fa = sum(1 for u in all_users if u.otp_secret and u.otp_confirmed)
 
     return UserStatsResponse(
         total_users=total,

@@ -48,6 +48,7 @@ def _make_user(
     role: str = "user",
     is_active: bool = True,
     otp_secret: str | None = None,
+    otp_confirmed: bool = True,
     hashed_password: str = "hashed",
     tenant_id: int = 1,
 ):
@@ -58,6 +59,7 @@ def _make_user(
     u.role = role
     u.is_active = is_active
     u.otp_secret = otp_secret
+    u.otp_confirmed = otp_confirmed
     u.hashed_password = hashed_password
     u.tenant_id = tenant_id
     return u
