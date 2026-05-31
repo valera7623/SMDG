@@ -3,7 +3,7 @@ source: docs/src/CHANGELOG.md
 source_sha1: 6f148bebc20423b8db6fe49ef992df783e73d09e
 language: ru
 last_sync: 2026-05-31
-status: needs-translation
+status: translated
 smdg-i18n-header-end -->
 
 # Changelog
@@ -16,6 +16,16 @@ smdg-i18n-header-end -->
 ---
 
 ## [Unreleased]
+
+### Added
+- Новый профиль развёртывания `demo` (`DEPLOYMENT_TYPE=demo`): только локальное
+  хранилище, опциональная 2FA, небольшой лимит загрузки, публичный эндпоинт
+  `GET /api/demo/info` и автоматический сброс данных каждые 24 часа.
+- Ограничение частоты регистрации (`RATE_LIMIT_REGISTER`, по умолчанию
+  `10/minute`, в демо — `3/hour`) на `POST /api/auth/register`.
+- Дерево аудита доступа к файлам в админ-панели на базе
+  `GET /api/admin/file-audit/`.
+- Плавные переходы между страницами во всём веб-интерфейсе.
 
 ## [3.1.0] - 2026-04-18
 

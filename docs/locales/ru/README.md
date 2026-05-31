@@ -3,7 +3,7 @@ source: docs/src/README.md
 source_sha1: 231cd132ac83d5971a90dcb1e979cea1ab468499
 language: ru
 last_sync: 2026-05-31
-status: needs-translation
+status: translated
 smdg-i18n-header-end -->
 
 # Secure Medical Data Gateway (SMDG)
@@ -124,7 +124,7 @@ python scripts/migrate_to_s3.py --delete-local
 
 ## Типы развёртывания (Feature Flags)
 
-Один код собирается под несколько профилей через **`DEPLOYMENT_TYPE`** (`russia` | `intl` | `single` | `saas`): матрица фич в `app/core/feature_flags.py`, проверки в `GET /health/features` и CLI `python -m app.cli feature-info`.
+Один код собирается под несколько профилей через **`DEPLOYMENT_TYPE`** (`russia` | `intl` | `single` | `saas` | `demo`): матрица фич в `app/core/feature_flags.py`, проверки в `GET /health/features` и CLI `python -m app.cli feature-info`.
 
 | Профиль  | Кратко                                                                                        |
 |----------|-----------------------------------------------------------------------------------------------|
@@ -132,6 +132,7 @@ python scripts/migrate_to_s3.py --delete-local
 | `intl`   | S3/MinIO, DICOM, GDPR/HIPAA-ориентированные фичи, 2FA                                         |
 | `single` | Один tenant, упрощённая админка,DICOM, 2FA, локальный диск по умолчанию                       |
 | `saas`   | Multi-tenant, биллинг/white-label в матрице, объектное хранилище, DICOM, 2FA                  |
+| `demo`   | Публичное демо: локальное хранилище, 2FA опционально, DICOM, фичи GDPR/HIPAA, лимит загрузки, сброс данных раз в 24 ч |
 
 Подробнее: [DEPLOYMENT.md](DEPLOYMENT.md), список фич: [FEATURES.md](FEATURES.md).
 

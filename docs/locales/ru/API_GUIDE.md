@@ -3,7 +3,7 @@ source: docs/src/API_GUIDE.md
 source_sha1: ca3dfa26670673cb4087f0facd55128535dfaf8f
 language: ru
 last_sync: 2026-05-31
-status: needs-translation
+status: translated
 smdg-i18n-header-end -->
 
 # API Guide — Secure Medical Data Gateway (SMDG)
@@ -257,11 +257,12 @@ Rate Limit (429)
 ### 6.1. Лимиты по умолчанию
 
 Тип эндпоинтов	                        Лимит	            Окно
-Аутентификация (/auth/login)	          5 попыток	        5 минут
+Аутентификация (/auth/login)	          10/мин; 5/10 сек	  настраивается RATE_LIMIT_LOGIN
+Регистрация (/auth/register)	          10 запросов (демо: 3)	1 минута (демо: 1 час), RATE_LIMIT_REGISTER
 Загрузка файлов (/upload)	              10 запросов	      1 минута
 Скачивание (/download)	                20 запросов	      1 минута
 Админские операции	                    30 запросов	      1 минута
-Остальные	                              60 запросов	      1 минута
+Остальные (по умолчанию)	              100 запросов	      1 минута, RATE_LIMIT_DEFAULT
 
 ### 6.2. Заголовки rate limit
 
