@@ -88,7 +88,7 @@ def demo_readonly(operation: str = "This operation") -> Callable:
                     detail=(
                         f"{operation} is disabled in Demo mode. "
                         "Deploy your own instance for unrestricted access: "
-                        "https://github.com/smdg-project/smdg"
+                        "https://github.com/valera7623/SMDG"
                     ),
                 )
             return await func(*args, **kwargs)
