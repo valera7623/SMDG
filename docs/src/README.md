@@ -116,7 +116,7 @@ python scripts/migrate_to_s3.py --delete-local
 
 ## Deployment profiles (feature flags)
 
-One codebase supports several profiles via **`DEPLOYMENT_TYPE`** (`russia` | `intl` | `single` | `saas`): the feature matrix lives in `app/core/feature_flags.py`, runtime checks under `GET /health/features` and CLI `python -m app.cli feature-info`.
+One codebase supports several profiles via **`DEPLOYMENT_TYPE`** (`russia` | `intl` | `single` | `saas` | `demo`): the feature matrix lives in `app/core/feature_flags.py`, runtime checks under `GET /health/features` and CLI `python -m app.cli feature-info`.
 
 | Profile  | Summary                                                                                             |
 |----------|-----------------------------------------------------------------------------------------------------|
@@ -124,6 +124,7 @@ One codebase supports several profiles via **`DEPLOYMENT_TYPE`** (`russia` | `in
 | `intl`   | S3/MinIO, DICOM, GDPR/HIPAA-oriented features, 2FA                                                  |
 | `single` | Single tenant, simplified admin, DICOM, 2FA, local disk by default                                  |
 | `saas`   | Multi-tenant, billing/white-label in matrix, object storage, DICOM, 2FA                             |
+| `demo`   | Public showcase: local storage, optional 2FA, DICOM, GDPR/HIPAA features, small upload cap, 24h data reset |
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) and the full feature list in [FEATURES.md](FEATURES.md).
 

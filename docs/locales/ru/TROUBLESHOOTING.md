@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/TROUBLESHOOTING.md
-source_sha1: f7841599db340b9f0fe061ed835c6b2cc4ccd365
+source_sha1: eb6eb9ffe365e420cefad59bebde5cbdd87d7323
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/SECURITY.md
-source_sha1: 835dc5d07058b45e7600f0f53fd243ea4770d2a6
+source_sha1: b1a16307bc180e30adcff8953e49b5054aa9b0ab
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

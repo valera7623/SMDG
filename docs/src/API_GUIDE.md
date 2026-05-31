@@ -31,17 +31,26 @@ distinguishes `admin`, `doctor`, `user`, and `super_admin`.
 |-----------------|-----------------------------------|--------------|
 | Authentication  | `/api/auth/login`                 | POST         |
 | Authentication  | `/api/auth/logout`                | POST         |
-| Authentication  | `/api/auth/2fa/setup`             | POST         |
+| Authentication  | `/api/auth/register`              | POST         |
+| Authentication  | `/api/auth/change-password`       | POST         |
+| Authentication  | `/api/auth/setup-2fa`             | POST         |
+| Authentication  | `/api/auth/verify-2fa-setup`      | POST         |
+| Authentication  | `/api/auth/disable-2fa`           | POST         |
 | Files           | `/api/upload`                     | POST         |
 | Files           | `/api/files`                      | GET          |
 | Files           | `/api/download/{file_id}`         | GET          |
 | Files           | `/api/files/{file_id}`            | DELETE       |
 | Admin users     | `/api/admin/users`                | GET/POST     |
+| Admin users     | `/api/admin/users/{id}`           | DELETE       |
 | Audit export    | `/api/admin/audit/export`         | GET          |
+| File audit      | `/api/admin/file-audit/`          | GET          |
 | DICOM           | `/api/dicom/studies`              | GET          |
 | DICOMweb        | `/wado-rs/...`, `/qido-rs/...`    | GET          |
 | Webhooks        | `/api/webhooks`                   | GET/POST     |
-| Health          | `/health`                         | GET          |
+| Health          | `/health`, `/health/live`, `/health/ready` | GET |
+| Feature flags   | `/health/features`, `/health/deployment` | GET   |
+| SLO / SLI       | `/api/slo`, `/api/sli`            | GET          |
+| Demo (demo mode)| `/api/demo/info`                  | GET          |
 | Metrics         | `/metrics`                        | GET          |
 
 ## Audit export API
@@ -71,6 +80,16 @@ messages. The server always emits English strings.
 
 ## Rate limiting
 
-- Default limit: 100 requests per minute per authenticated user.
-- Login endpoint: 5 requests per minute per IP.
-- `429 Too Many Requests` responses include a `Retry-After` header.
+Limits are enforced per IP via slowapi (Redis-backed in scaled mode) and are
+configurable through environment variables (see `.env.example`).
+
+| Scope                       | Default                    | Env override            |
+|-----------------------------|----------------------------|-------------------------|
+| Global default              | `100/minute`               | `RATE_LIMIT_DEFAULT`    |
+| Login (`/api/auth/login`)   | `10/minute;5/10seconds`    | `RATE_LIMIT_LOGIN`      |
+| Register (`/api/auth/register`) | `10/minute` (`3/hour` in demo) | `RATE_LIMIT_REGISTER` |
+| `change-password`, `verify-2fa-setup` | `5/minute`      | —                       |
+| `setup-2fa`, `disable-2fa`  | `3/minute`                 | —                       |
+| `logout`                    | `60/minute`                | —                       |
+
+`429 Too Many Requests` responses include a `Retry-After` header.

@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/ARCHITECTURE.md
-source_sha1: e5c11ec5423adb53aa092380da2625bb0cd1c771
+source_sha1: 112033e9d39e57481a89dea28fc98832e235c658
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

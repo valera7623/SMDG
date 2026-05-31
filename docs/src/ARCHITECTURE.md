@@ -66,8 +66,8 @@ The default model uses a **shared database**: `tenant_id` scopes `User` and `Fil
 |-------|------------------|
 | **API** (`app/api/`) | Upload, download, links, auth, admin, DICOMweb, health, SLO/SLI |
 | **Core** (`app/core/`) | Config, storage backends, crypto hooks, middleware, rate limiting, sessions (Redis), job queue, tracing |
-| **Services** (`app/services/`) | Archive, DLQ, webhooks, notifications |
-| **Models** (`app/models/`) | SQLModel/SQLAlchemy entities (tenant, user, file, links, DICOM view tokens, webhooks) |
+| **Services** (`app/services/`) | Archive, dead-letter queue, webhooks, file-access audit, e-mail/Telegram notifications, CDN |
+| **Models** (`app/models/`) | SQLModel/SQLAlchemy entities (tenant, user, file, file links, DICOM view tokens, webhooks, file-access events, archive, dead-letter, deleted-user) |
 
 Runtime dependencies: **PostgreSQL** (authoritative metadata), **Redis** (rate limits, optional sessions/cache/queues in scaled mode), **object storage or local paths** for ciphertext.
 
@@ -121,7 +121,7 @@ For threat modelling and dependency CVE notes, see [`docs/src/SECURITY.md`](SECU
 
 ## 7. Deployment profiles
 
-`DEPLOYMENT_TYPE` selects feature combinations (`russia`, `intl`, `single`, `saas`). Stateless scaling uses Redis for shared session/cache/queue state and a shared object store—see [`docs/src/DEPLOYMENT.md`](DEPLOYMENT.md).
+`DEPLOYMENT_TYPE` selects feature combinations (`russia`, `intl`, `single`, `saas`, `demo`). The `demo` profile is a public-showcase variant (local storage, optional 2FA, small upload cap, automatic data reset). Stateless scaling uses Redis for shared session/cache/queue state and a shared object store—see [`docs/src/DEPLOYMENT.md`](DEPLOYMENT.md).
 
 **Python runtime:** production Docker images use **Python 3.10**; CI tests against 3.10–3.12.
 

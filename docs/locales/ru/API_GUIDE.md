@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/API_GUIDE.md
-source_sha1: 6d4922fb5e9ab729f466079b442f89ba5ef97e3b
+source_sha1: ca3dfa26670673cb4087f0facd55128535dfaf8f
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

@@ -51,6 +51,7 @@ docker compose up --build
 | `intl`   | S3/MinIO, DICOM, GDPR/HIPAA                                             |
 | `single` | Один tenant, упрощённая админка, локальный диск по умолчанию            |
 | `saas`   | Multi-tenant, биллинг/white-label, объектное хранилище                  |
+| `demo`   | Публичное демо: локальное хранилище, 2FA опционально, лимит загрузки, сброс данных раз в 24 ч |
 
 Подробнее: [`docs/locales/ru/DEPLOYMENT.md`](docs/locales/ru/DEPLOYMENT.md).
 

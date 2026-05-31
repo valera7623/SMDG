@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/COMPLIANCE_TEMPLATE.md
-source_sha1: 2262b429cd5d5244f81eb5aba07451f46c442e1e
+source_sha1: 2af8030b492b704a06e4d1cc53e87e05097f7d30
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

@@ -50,6 +50,7 @@ The environment variable `DEPLOYMENT_TYPE` selects the feature matrix:
 | `intl`   | S3/MinIO, DICOM, GDPR/HIPAA-oriented features                   |
 | `single` | Single tenant, simplified admin, local disk by default          |
 | `saas`   | Multi-tenant, billing/white-label, object storage               |
+| `demo`   | Public showcase: local storage, optional 2FA, small upload cap, 24h data reset |
 
 See [`docs/src/DEPLOYMENT.md`](docs/src/DEPLOYMENT.md) for details.
 

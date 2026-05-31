@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/DEPLOYMENT.md
-source_sha1: b23f0469215797d128b33765288f7ea12ec45b97
+source_sha1: 836132a041338d707275005b013252066a179eb1
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

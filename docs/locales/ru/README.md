@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/README.md
-source_sha1: 807c9fb5a5a1668db49304528f6e7633867de341
+source_sha1: 231cd132ac83d5971a90dcb1e979cea1ab468499
 language: ru
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

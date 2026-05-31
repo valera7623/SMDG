@@ -1,8 +1,8 @@
 <!-- smdg-i18n-header-start
 source: docs/src/CHANGELOG.md
-source_sha1: e06f9cfeba9a9218a2cbcda27089ce85f7890a66
+source_sha1: 6f148bebc20423b8db6fe49ef992df783e73d09e
 language: fr
-last_sync: 2026-04-20
+last_sync: 2026-05-31
 status: needs-translation
 smdg-i18n-header-end -->
 

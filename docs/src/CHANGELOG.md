@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+- New `demo` deployment profile (`DEPLOYMENT_TYPE=demo`): local storage only,
+  optional 2FA, small upload cap, public `GET /api/demo/info` endpoint and
+  automatic data reset every 24 hours.
+- Registration rate limiting (`RATE_LIMIT_REGISTER`, `10/minute` by default,
+  `3/hour` in demo) on `POST /api/auth/register`.
+- File access audit tree in the admin panel, backed by
+  `GET /api/admin/file-audit/`.
+- Smooth page transitions across the web UI.
+
 ## [4.0.0] — 2026-04
 
 - Full internationalisation (i18n) of the web UI: English / Russian /

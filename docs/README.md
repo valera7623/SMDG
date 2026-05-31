@@ -43,6 +43,7 @@ missing or stale.
 | Deployment profiles       | [src/DEPLOYMENT.md](src/DEPLOYMENT.md)                   |
 | DICOM Viewer              | [src/DICOM_VIEWER.md](src/DICOM_VIEWER.md)               |
 | Feature matrix            | [src/FEATURES.md](src/FEATURES.md)                       |
+| i18n guide                | [src/I18N_GUIDE.md](src/I18N_GUIDE.md)                   |
 | Multi-tenancy             | [src/MULTI_TENANCY.md](src/MULTI_TENANCY.md)             |
 | Security policy           | [src/SECURITY.md](src/SECURITY.md)                       |
 | Testing strategy          | [src/TESTING.md](src/TESTING.md)                         |
