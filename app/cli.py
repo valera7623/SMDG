@@ -10,7 +10,7 @@ from app.core.database import AsyncSessionLocal
 from app.models.user import User
 from app.models.tenant import Tenant  # нужно будет создать
 from app.core.security import get_password_hash
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 cli = typer.Typer()
 
@@ -45,6 +45,29 @@ async def _create_admin_async(username: str, password: str, email: str) -> str:
             session.add(user)
             await session.commit()
             return f"Админ {username} создан с email {email}."
+
+
+async def _reset_2fa_async(username: str) -> str:
+    """Сбросить 2FA пользователю: очистить секрет и снять подтверждение.
+
+    Полезно, когда настройка 2FA была начата, но не завершена, и форма
+    ввода кода блокирует вход.
+    """
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(User).where(User.username == username)
+        )
+        user = result.scalar_one_or_none()
+        if not user:
+            return f"❌ Пользователь '{username}' не найден"
+
+        await session.execute(
+            update(User)
+            .where(User.id == user.id)
+            .values(otp_secret=None, otp_confirmed=False)
+        )
+        await session.commit()
+        return f"✅ 2FA сброшена для пользователя '{username}'. Вход теперь без кода."
 
 
 async def _create_tenant_async(
@@ -274,6 +297,25 @@ def create_admin(
         output = asyncio.run(_create_admin_async(username, password, email))
         print(output)
         print("Готово. Теперь можно логиниться.")
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+        raise typer.Exit(code=1)
+
+
+@cli.command(name="reset-2fa")
+def reset_2fa(
+    username: str = typer.Argument(..., help="Имя пользователя для сброса 2FA"),
+):
+    """Сбрасывает 2FA пользователю (снимает otp_secret и otp_confirmed).
+
+    Используйте, если незавершённая настройка 2FA блокирует вход формой
+    ввода кода:
+
+        python -m app.cli reset-2fa admin
+    """
+    try:
+        output = asyncio.run(_reset_2fa_async(username))
+        print(output)
     except Exception as e:
         print(f"❌ Ошибка: {e}")
         raise typer.Exit(code=1)
