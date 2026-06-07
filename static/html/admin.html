@@ -110,8 +110,8 @@
           const r = await fetch('/health/deployment');
           if (!r.ok) return;
           const d = await r.json();
+          // simple_admin hides destructive actions only; user management and DLQ stay available.
           if (d.simple_admin) {
-            document.getElementById('admin-advanced-wrap')?.setAttribute('hidden', 'hidden');
             document.getElementById('admin-danger-wrap')?.setAttribute('hidden', 'hidden');
           }
         } catch (e) { /* offline */ }
