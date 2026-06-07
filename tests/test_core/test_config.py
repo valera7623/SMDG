@@ -71,6 +71,41 @@ def test_redis_password_is_url_encoded(monkeypatch):
     assert settings.JOB_QUEUE_REDIS_URL == "redis://:abc%3A123%40xyz%2F%21@redis:6379/3"
 
 
+def test_empty_redis_urls_from_prod_compose_are_resolved(monkeypatch):
+    """Prod compose used to pass empty REDIS_* URLs; they must not reach redis.from_url."""
+    monkeypatch.setenv("REDIS_PASSWORD", "prod-redis-secret")
+    monkeypatch.setenv("REDIS_URL", "")
+    monkeypatch.setenv("SESSION_REDIS_URL", "")
+    monkeypatch.setenv("CACHE_REDIS_URL", "")
+    monkeypatch.setenv("RATE_LIMIT_STORAGE", "")
+    monkeypatch.setenv("JOB_QUEUE_REDIS_URL", "")
+
+    from app.core.config import Settings
+
+    settings = Settings()
+    assert settings.SESSION_REDIS_URL == "redis://:prod-redis-secret@redis:6379/0"
+    assert settings.CACHE_REDIS_URL == "redis://:prod-redis-secret@redis:6379/1"
+    assert settings.RATE_LIMIT_STORAGE == "redis://:prod-redis-secret@redis:6379/2"
+    assert settings.JOB_QUEUE_REDIS_URL == "redis://:prod-redis-secret@redis:6379/3"
+
+
+def test_empty_redis_urls_without_password_fall_back_to_defaults(monkeypatch):
+    """Empty REDIS_* env vars without REDIS_PASSWORD still yield valid redis:// URLs."""
+    monkeypatch.delenv("REDIS_PASSWORD", raising=False)
+    monkeypatch.setenv("SESSION_REDIS_URL", "")
+    monkeypatch.setenv("CACHE_REDIS_URL", "")
+    monkeypatch.setenv("RATE_LIMIT_STORAGE", "")
+    monkeypatch.setenv("JOB_QUEUE_REDIS_URL", "")
+
+    from app.core.config import Settings
+
+    settings = Settings()
+    assert settings.SESSION_REDIS_URL == "redis://redis:6379/0"
+    assert settings.CACHE_REDIS_URL == "redis://redis:6379/1"
+    assert settings.RATE_LIMIT_STORAGE == "redis://redis:6379/2"
+    assert settings.JOB_QUEUE_REDIS_URL == "redis://redis:6379/3"
+
+
 def test_config_import():
     """Тест импорта конфигурации"""
     from app.core.config import Settings, settings

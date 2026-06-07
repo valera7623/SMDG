@@ -155,12 +155,8 @@ services:
 
     environment:
       DEV_MODE: "false"
+      # REDIS_PASSWORD only — app derives REDIS_URL / SESSION_REDIS_URL / etc.
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
-      REDIS_URL: ""
-      SESSION_REDIS_URL: ""
-      CACHE_REDIS_URL: ""
-      RATE_LIMIT_STORAGE: ""
-      JOB_QUEUE_REDIS_URL: ""
       LOG_LEVEL: "WARNING"
       COOKIE_SECURE: "true"
       REQUIRE_SECURE_COOKIES: "true"

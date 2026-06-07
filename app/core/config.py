@@ -477,16 +477,18 @@ class Settings(BaseSettings):
                 )
         if self.require_secure_cookies and not self.cookie_secure:
             raise ValueError("COOKIE_SECURE=true is required when REQUIRE_SECURE_COOKIES=true")
+        # docker-compose.prod.yml may set REDIS_* URLs to "" so compose injects
+        # REDIS_PASSWORD only; empty strings must still resolve to valid redis:// URLs.
         redis_password = read_secret("redis_password", "REDIS_PASSWORD")
-        if redis_password:
-            if _redis_url_needs_password(self.SESSION_REDIS_URL, redis_password, 0):
-                self.SESSION_REDIS_URL = build_redis_url(0)
-            if _redis_url_needs_password(self.CACHE_REDIS_URL, redis_password, 1):
-                self.CACHE_REDIS_URL = build_redis_url(1)
-            if _redis_url_needs_password(self.RATE_LIMIT_STORAGE, redis_password, 2):
-                self.RATE_LIMIT_STORAGE = build_redis_url(2)
-            if _redis_url_needs_password(self.JOB_QUEUE_REDIS_URL, redis_password, 3):
-                self.JOB_QUEUE_REDIS_URL = build_redis_url(3)
+        for field_name, db_index in (
+            ("SESSION_REDIS_URL", 0),
+            ("CACHE_REDIS_URL", 1),
+            ("RATE_LIMIT_STORAGE", 2),
+            ("JOB_QUEUE_REDIS_URL", 3),
+        ):
+            current = getattr(self, field_name)
+            if _redis_url_needs_password(current, redis_password, db_index):
+                setattr(self, field_name, build_redis_url(db_index))
         return self
 
     @property
