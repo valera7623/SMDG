@@ -158,11 +158,10 @@ CI/CD pushes to a VPS via [`deploy-primary.yml`](.github/workflows/deploy-primar
   Drop images under docs/assets/ and reference them:
   ![Upload flow](docs/assets/upload.png)
 
-  Optional: deploy the `demo` profile somewhere public and link it here:
-  **Live demo:** https://your-demo-url
+  Live demo (`demo` profile): https://fileguardian.info
 -->
 
-> 📸 Screenshots and a live demo (`demo` profile) can be added under `docs/assets/`.
+**Live demo (`demo` profile):** https://fileguardian.info
 
 ---
 
