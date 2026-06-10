@@ -60,3 +60,4 @@ load-test-results/*.json
 audit_logs/
 encrypted/
 uploads/
+OUTREACH_TARGETS.md

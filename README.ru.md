@@ -22,7 +22,7 @@ DICOM Viewer рендерит исследования в браузере, не
 Пилотное внедрение для клиник (профиль `russia`, 5 рабочих дней, от 150 000 ₽):
 [`docs/locales/ru/COMMERCIAL_PILOT.md`](docs/locales/ru/COMMERCIAL_PILOT.md)
 
-Приложения к КП: [архитектура для ИБ (PDF)](docs/locales/ru/commercial/ARCHITECTURE_FOR_IB.pdf) · [черновик политики ПДн](docs/locales/ru/commercial/COMPLIANCE_DRAFT_CONTRACTOR.md)
+Приложения к КП: [архитектура для ИБ (PDF)](docs/locales/ru/commercial/ARCHITECTURE_FOR_IB.pdf) · [черновик политики ПДн](docs/locales/ru/commercial/COMPLIANCE_DRAFT_CONTRACTOR.md) · [целевые контакты](docs/locales/ru/OUTREACH_TARGETS.md)
 
 ## Документация
 
