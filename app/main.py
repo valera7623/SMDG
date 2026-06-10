@@ -314,7 +314,14 @@ async def admin(_current_admin: Annotated[TokenData, Depends(get_current_admin)]
     """Панель администратора"""
     try:
         with open("static/html/admin.html", "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+        if settings.demo_mode:
+            content = content.replace(
+                '<section id="admin-danger-wrap"',
+                '<section id="admin-danger-wrap" hidden',
+                1,
+            )
+        return content
     except FileNotFoundError:
         return """
         <html>
