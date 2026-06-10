@@ -2,7 +2,7 @@
 
 **Автор:** Валерий Попов · SMDG  
 **Перед отправкой:** замените `[ваш@email.ru]` и `[ваш Telegram / телефон]` на реальные контакты.  
-**Вложение / ссылка:** [COMMERCIAL_PILOT.md](COMMERCIAL_PILOT.md) или PDF-экспорт · репозиторий: `https://github.com/valera7623/SMDG`
+**Вложение / ссылка:** [COMMERCIAL_PILOT.md](../COMMERCIAL_PILOT.md) · [ARCHITECTURE_FOR_IB.pdf](commercial/ARCHITECTURE_FOR_IB.pdf) · [COMPLIANCE_DRAFT_CONTRACTOR.md](commercial/COMPLIANCE_DRAFT_CONTRACTOR.md) · демо: https://fileguardian.info
 
 ---
 
