@@ -287,7 +287,7 @@
                 <button class="lang-btn" id="lang-btn" type="button"
                         aria-haspopup="listbox" aria-expanded="false"
                         title="${this.escapeHtml(this.t("language.selector"))}">
-                    <span aria-hidden="true">🌐</span>
+                    <span class="lang-btn-prefix" aria-hidden="true">${this.escapeHtml(this.t("language.selector"))}:</span>
                     <span class="lang-btn-label">${this.escapeHtml(this.langNames[this.currentLang])}</span>
                 </button>
                 <div class="lang-dropdown" id="lang-dropdown" role="listbox">

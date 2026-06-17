@@ -6,7 +6,9 @@ import { formatBytes }       from '../utils/formats.js';
 import { escapeHtml, createElement } from '../utils/dom.js';
 import { t } from '../utils/i18n.js';
 
-const REDIRECT_HOME = () => { window.location.href = '/'; };
+import { redirectToLogin } from '../spa-nav.js';
+
+const REDIRECT_HOME = () => redirectToLogin();
 
 // ── Admin file list ──────────────────────────────────────────────────────────
 

@@ -1,206 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title data-i18n="app.title">SMDG — Secure Medical Data Gateway</title>
-    <link rel="stylesheet" href="/static/css/style.css?v=page-transitions1">
-    <link rel="stylesheet" href="/static/css/language-selector.css?v=i18n4-theme-inline">
-    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <!-- qrcode must be loaded before main.js -->
-    <script src="/static/js/vendors/qrcode.min.js"></script>
-    <!-- i18n runtime (auto-initialises on DOMContentLoaded) -->
-    <script src="/static/js/i18n.js?v=i18n4-theme-inline" defer></script>
-    <script type="module" src="/static/js/main.js?v=page-transitions1"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <title>SMDG — Secure Medical Data Gateway</title>
+  <meta name="description" content="SMDG: безопасная передача и хранение медицинских файлов с шифрованием, аудитом и DICOM-просмотром." />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="canonical" href="/" />
+
+  <link rel="icon" href="/static/favicon.ico" sizes="any" />
+
+  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="stylesheet" href="/static/css/smdg-extensions.css" />
+  <link rel="stylesheet" href="/static/css/language-selector.css" />
+
+  <script>
+    (function () {
+      var map = {
+        "/admin": "#/admin/files",
+        "/admin/": "#/admin/files",
+        "/admin/users": "#/admin/users",
+        "/admin/users/": "#/admin/users",
+        "/admin/dlq": "#/admin/dlq",
+        "/admin/dlq/": "#/admin/dlq",
+      };
+      var target = map[location.pathname];
+      if (target && !location.hash) location.replace(target);
+    })();
+  </script>
+
+  <script src="/static/js/vendors/qrcode.min.js"></script>
+  <script src="/static/js/i18n.js?v=spa1" defer></script>
 </head>
-
-<body class="page-index">
-
-    <div class="container">
-
-        <!-- Login / registration form -->
-        <div id="authForm" class="auth-panel" style="display: none;">
-            <div class="auth-theme-toolbar">
-                <span id="authThemeToolbarLabel" class="auth-toolbar__label" data-i18n="theme.toolbar_label">Theme</span>
-                <div class="theme-switch theme-switch--stretch-sm" role="group" aria-labelledby="authThemeToolbarLabel">
-                    <button type="button" class="theme-switch__btn" data-smdg-theme="light" aria-pressed="false">
-                        <span class="theme-switch__glyph" aria-hidden="true">☀️</span>
-                        <span class="theme-switch__text" data-i18n="theme.light">Light</span>
-                    </button>
-                    <button type="button" class="theme-switch__btn" data-smdg-theme="dark" aria-pressed="false">
-                        <span class="theme-switch__glyph" aria-hidden="true">🌙</span>
-                        <span class="theme-switch__text" data-i18n="theme.dark">Dark</span>
-                    </button>
-                </div>
-            </div>
-            <header>
-                <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
-                <p class="subtitle" id="authSubtitle" data-i18n="auth.subtitle_login">Sign in to your account</p>
-            </header>
-
-            <!-- Tab switcher -->
-            <div class="auth-tabs">
-                <button class="tab-btn active" id="loginTabBtn" onclick="switchAuthTab('login')"
-                    data-i18n="auth.tab_login">Log in</button>
-                <button class="tab-btn" id="registerTabBtn" onclick="switchAuthTab('register')"
-                    data-i18n="auth.tab_register">Register</button>
-            </div>
-
-            <!-- Login form -->
-            <form id="loginForm" style="display: block;">
-                <div class="form-group">
-                    <label for="loginUsername" data-i18n="auth.username">Username</label>
-                    <input type="text" id="loginUsername"
-                        data-i18n-placeholder="auth.username" placeholder="Username" required>
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword" data-i18n="auth.password">Password</label>
-                    <input type="password" id="loginPassword"
-                        data-i18n-placeholder="auth.password" placeholder="Password" required>
-                </div>
-                <div class="form-group" id="loginOtpGroup" style="display: none;">
-                    <label for="loginOtpCode" data-i18n="auth.2fa_code">2FA code</label>
-                    <input type="text" id="loginOtpCode"
-                        data-i18n-placeholder="auth.2fa_code" placeholder="6-digit code"
-                        maxlength="6" pattern="[0-9]{6}">
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary" data-i18n="auth.login">Log in</button>
-                </div>
-                <div class="form-footer">
-                    <a href="#" onclick="showForgotPassword()"
-                        data-i18n="auth.forgot_password">Forgot password?</a>
-                </div>
-            </form>
-
-            <!-- Registration form -->
-            <form id="registerForm" style="display: none;">
-                <div class="form-group">
-                    <label for="registerUsername" data-i18n="auth.username">Username</label>
-                    <input type="text" id="registerUsername"
-                        data-i18n-placeholder="auth.username" placeholder="Username"
-                        required minlength="3" maxlength="50">
-                </div>
-                <div class="form-group">
-                    <label for="registerEmail" data-i18n="auth.email">Email</label>
-                    <input type="email" id="registerEmail"
-                        data-i18n-placeholder="auth.email" placeholder="Email" required>
-                </div>
-                <div class="form-group">
-                    <label for="registerPassword" data-i18n="auth.password">Password</label>
-                    <input type="password" id="registerPassword"
-                        data-i18n-placeholder="auth.password" placeholder="Password"
-                        required minlength="8">
-                    <div class="password-strength" id="passwordStrength">
-                        <div class="strength-bar"></div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="registerConfirmPassword" data-i18n="auth.password_confirm">Confirm password</label>
-                    <input type="password" id="registerConfirmPassword"
-                        data-i18n-placeholder="auth.password_confirm" placeholder="Confirm password" required>
-                </div>
-                <div class="form-group checkbox-group">
-                    <label>
-                        <input type="checkbox" id="registerAgreeTerms" required>
-                        <span data-i18n="auth.agree_terms">I agree to the terms of use</span>
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-success" data-i18n="auth.register">Register</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Main UI -->
-        <div id="mainApp" style="display: none;">
-            <header class="site-header" id="mainHeader" role="banner">
-                <div id="smdgNavBackdrop" class="nav-backdrop" hidden aria-hidden="true"></div>
-                <div class="site-header__top">
-                    <div class="site-header__left site-header__left--dashboard">
-                        <div class="site-header__brand">
-                            <h1>🔐 <span data-i18n="app.title">Secure Medical Data Gateway</span></h1>
-                            <p class="subtitle" data-i18n="app.subtitle">Secure transfer of medical files</p>
-                        </div>
-                        <nav class="main-nav" id="smdgMainNav" aria-label="Main navigation">
-                            <a href="/admin" class="main-nav__link btn-admin" data-admin-only="true" hidden>⚙️ <span data-i18n="nav.admin">Admin panel</span></a>
-                            <a href="/health" class="main-nav__link btn-info">🩺 <span data-i18n="nav.health">Health</span></a>
-                            <a href="/docs" class="main-nav__link btn-info">📚 <span data-i18n="nav.api_docs">API documentation</span></a>
-                        </nav>
-                    </div>
-                    <div class="site-header__trailing">
-                    <div class="user-info user-info--header">
-                    <span id="currentUsername"></span>
-                    <button id="setup2faDashboardBtn" class="btn btn-outline-primary"
-                        onclick="handleSetup2FA()" data-i18n="auth.2fa_setup">Set up 2FA</button>
-                    <button type="button" onclick="logout()" class="btn-danger">
-                        🚪 <span data-i18n="auth.logout">Log out</span>
-                    </button>
-                    </div>
-                    <div id="smdgLangAndMenu" class="site-header__lang-menu" aria-label="Menu and language">
-                    <div class="site-header__theme-wrap">
-                        <span id="mainThemeToolbarLabel" class="auth-toolbar__label site-header__theme-label" data-i18n="theme.toolbar_label">Theme</span>
-                        <div class="theme-switch theme-switch--compact-header" role="group" aria-labelledby="mainThemeToolbarLabel">
-                            <button type="button" class="theme-switch__btn" data-smdg-theme="light" aria-pressed="false">
-                                <span class="theme-switch__glyph" aria-hidden="true">☀️</span>
-                                <span class="theme-switch__text" data-i18n="theme.light">Light</span>
-                            </button>
-                            <button type="button" class="theme-switch__btn" data-smdg-theme="dark" aria-pressed="false">
-                                <span class="theme-switch__glyph" aria-hidden="true">🌙</span>
-                                <span class="theme-switch__text" data-i18n="theme.dark">Dark</span>
-                            </button>
-                        </div>
-                    </div>
-                    <button type="button" class="hamburger" id="smdgMenuToggle" aria-label="Menu"
-                        aria-controls="smdgMainNav" aria-expanded="false" title="Menu">
-                        <span></span><span></span><span></span>
-                    </button>
-                    <!-- language selector: i18n.js appends #language-selector here -->
-                    </div>
-                    </div>
-                </div>
-            </header>
-
-            <div class="status ok">
-                ✅ <span data-i18n="system.running">System running. Keys initialised.</span><br>
-                🚮 <span data-i18n="system.autocleanup">Automatic cleanup: enabled (30-day TTL)</span>
-            </div>
-
-            <section class="section">
-                <h2>📤 <span data-i18n="files.upload">Upload file</span></h2>
-                <form id="uploadForm">
-                    <div class="file-picker">
-                        <input type="file" id="fileInput" class="file-picker__input" required>
-                        <label for="fileInput" class="file-picker__button btn-secondary"
-                               data-i18n="files.choose_file">Choose file</label>
-                        <span id="fileInputName" class="file-picker__name"
-                              data-i18n="files.no_file_chosen">No file chosen</span>
-                    </div>
-                    <br>
-                    <button type="submit" class="btn-primary"
-                        data-i18n="files.upload_button">Upload</button>
-                </form>
-                <div id="uploadResult"></div>
-            </section>
-
-            <section class="section">
-                <h2>📋 <span data-i18n="files.list">File list</span></h2>
-                <button id="refreshBtn" class="btn-secondary">🔄 <span data-i18n="common.refresh">Refresh</span></button>
-                <div id="fileList" class="file-list"></div>
-            </section>
-
-            <footer>
-                <p><strong data-i18n="system.info_heading">System info</strong></p>
-                <ul>
-                    <li data-i18n="system.info_encrypt">All files are encrypted on upload</li>
-                    <li data-i18n="system.info_retention">Encrypted files are kept for 30 days</li>
-                    <li data-i18n="system.info_audit">All operations are logged for audit</li>
-                    <li data-i18n="system.info_api">API: /health, /docs, /admin</li>
-                </ul>
-            </footer>
-        </div>
-    </div>
+<body>
+  <div id="app"></div>
+  <div id="toast-container" aria-live="polite"></div>
+  <div id="modal-root"></div>
+  <noscript>
+    <p style="padding:1rem;font-family:system-ui,sans-serif">
+      SMDG требует JavaScript. <a href="#/login">Войти</a> или откройте <a href="/docs">документацию API</a>.
+    </p>
+  </noscript>
+  <script type="module" src="/static/js/app.js"></script>
 </body>
-
 </html>

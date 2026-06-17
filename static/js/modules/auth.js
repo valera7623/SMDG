@@ -6,6 +6,7 @@ import { showNotification }  from '../utils/notifications.js';
 import { validateUsername, validatePassword, isValidEmail, passwordStrength } from '../utils/validators.js';
 import { setVisible }        from '../utils/dom.js';
 import { loadFileList }      from './files.js';
+import { redirectToLogin }   from '../spa-nav.js';
 
 const ADMIN_ROLES = new Set(['admin', 'super_admin']);
 
@@ -27,18 +28,18 @@ async function _refreshCurrentUser() {
     try {
         const data = await authAPI.whoami();
         setCurrentUser(data.sub);
-        const usernameEl = document.getElementById('currentUsername');
-        if (usernameEl) usernameEl.textContent = data.sub;
         _setAdminNavigationVisible(data.role);
-        setVisible(document.getElementById('authForm'), false);
-        setVisible(document.getElementById('mainApp'), true);
+        if (typeof window.__smdgOnAuthSuccess === 'function') {
+            await window.__smdgOnAuthSuccess();
+        }
         return data;
     } catch (error) {
         setCurrentUser(null);
         _setAdminNavigationVisible(null);
-        setVisible(document.getElementById('authForm'), true);
-        setVisible(document.getElementById('mainApp'), false);
-        if (error.status === 401 || error.status === 403) return;
+        if (error.status === 401 || error.status === 403) {
+            redirectToLogin();
+            return;
+        }
         console.warn('Не удалось получить текущего пользователя:', error);
         return null;
     }
@@ -101,16 +102,16 @@ export async function handleLogin(event) {
         const data = await response.json();
 
         setCurrentUser(data.username);
-        document.getElementById('currentUsername').textContent = data.username;
         _setAdminNavigationVisible(data.role);
-
-        setVisible(document.getElementById('authForm'), false);
-        setVisible(document.getElementById('mainApp'),  true);
 
         showNotification(`Добро пожаловать, ${data.username}!`, 'success');
 
-        loadFileList();
-        _attach2FAButton();
+        if (typeof window.__smdgOnAuthSuccess === 'function') {
+            await window.__smdgOnAuthSuccess();
+        } else {
+            loadFileList();
+            _attach2FAButton();
+        }
 
     } catch (error) {
         if (error.status === 401 || error.status === 403) return; // уже обработано в api.js
@@ -187,9 +188,7 @@ export async function logout() {
         if (response.ok) {
             setCurrentUser(null);
             _setAdminNavigationVisible(null);
-
-            setVisible(document.getElementById('authForm'), true);
-            setVisible(document.getElementById('mainApp'),  false);
+            redirectToLogin();
 
             const fileList = document.getElementById('fileList');
             if (fileList) fileList.innerHTML = '';

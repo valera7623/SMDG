@@ -308,29 +308,33 @@ async def service_status_page():
     )
 
 
+def _serve_static_html(html_path: str, missing_title: str) -> HTMLResponse:
+    """Отдать HTML-файл из static/ с no-cache заголовками.
+
+    Args:
+        html_path: Путь к файлу относительно корня проекта.
+        missing_title: Заголовок (используется как тело), если файл не найден.
+    """
+    try:
+        with open(html_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        response = HTMLResponse(content=content)
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+        return response
+    except FileNotFoundError:
+        return HTMLResponse(
+            status_code=500,
+            content=f"<h1>{missing_title}</h1>",
+        )
+
+
 # Панель администратора
 @app.get("/admin", response_class=HTMLResponse)
-async def admin(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
-    """Панель администратора"""
-    try:
-        with open("static/html/admin.html", "r", encoding="utf-8") as f:
-            content = f.read()
-        if settings.demo_mode:
-            content = content.replace(
-                '<section id="admin-danger-wrap"',
-                '<section id="admin-danger-wrap" hidden',
-                1,
-            )
-        return content
-    except FileNotFoundError:
-        return """
-        <html>
-            <body>
-                <h1>Панель администратора SMDG</h1>
-                <p>Ошибка: не найден файл admin.html</p>
-            </body>
-        </html>
-        """
+async def admin():
+    """SPA: админ-панель (hash #/admin/files)."""
+    return _serve_static_html("static/html/index.html", "SMDG UI не найден")
 
 # Проверка здоровья
 @app.get("/health")
@@ -361,26 +365,6 @@ async def health_check():
     }
 
 
-def _serve_static_html(html_path: str, missing_title: str) -> HTMLResponse:
-    """Отдать HTML-файл из static/ с no-cache заголовками.
-
-    Args:
-        html_path: Путь к файлу относительно корня проекта.
-        missing_title: Заголовок (используется как тело), если файл не найден.
-    """
-    try:
-        with open(html_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        response = HTMLResponse(content=content)
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "0"
-        return response
-    except FileNotFoundError:
-        return HTMLResponse(
-            status_code=500,
-            content=f"<h1>{missing_title}</h1>",
-        )
 
 
 # Страница DICOM Viewer
@@ -441,37 +425,15 @@ async def view_logs(_current_admin: Annotated[TokenData, Depends(get_current_adm
 
 
 @app.get("/admin/users", response_class=HTMLResponse)
-async def admin_users(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
-    """Страница управления пользователями"""
-    try:
-        with open("static/html/admin_users.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return """
-        <html>
-            <body>
-                <h1>Управление пользователями</h1>
-                <p>Ошибка: не найден файл admin_users.html</p>
-            </body>
-        </html>
-        """
+async def admin_users():
+    """SPA: управление пользователями (hash #/admin/users)."""
+    return _serve_static_html("static/html/index.html", "SMDG UI не найден")
 
 
 @app.get("/admin/dlq", response_class=HTMLResponse)
-async def admin_dlq(_current_admin: Annotated[TokenData, Depends(get_current_admin)]):
-    """Страница управления DLQ."""
-    try:
-        with open("static/html/admin_dlq.html", "r", encoding="utf-8") as f:
-            return f.read()
-    except FileNotFoundError:
-        return """
-        <html>
-            <body>
-                <h1>Управление DLQ</h1>
-                <p>Ошибка: не найден файл admin_dlq.html</p>
-            </body>
-        </html>
-        """
+async def admin_dlq():
+    """SPA: DLQ (hash #/admin/dlq)."""
+    return _serve_static_html("static/html/index.html", "SMDG UI не найден")
     
 @app.middleware("http")
 async def add_rate_limit_headers(request: Request, call_next):

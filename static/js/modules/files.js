@@ -5,6 +5,7 @@ import { showNotification } from '../utils/notifications.js';
 import { formatBytes } from '../utils/formats.js';
 import { FILE_AUTO_REMOVE_DELAY, FILE_REFRESH_INTERVAL } from '../core/config.js';
 import { setVisible } from '../utils/dom.js';
+import { redirectToLogin } from '../spa-nav.js';
 import { t, currentLocale } from '../utils/i18n.js';
 
 // ── File list ────────────────────────────────────────────────────────────────
@@ -28,8 +29,7 @@ export async function loadFileList() {
 
     } catch (error) {
         if (error.status === 401 || error.status === 403) {
-            setVisible(document.getElementById('authForm'), true);
-            setVisible(document.getElementById('mainApp'), false);
+            redirectToLogin();
             return;
         }
         fileList.innerHTML = `<div class="error">❌ ${error.message}</div>`;
@@ -290,7 +290,7 @@ export function showUploadResult(data) {
 
     const copyBtn = document.createElement('button');
     copyBtn.textContent = `📋 ${t('files.copy_link', 'Copy link')}`;
-    copyBtn.className = 'btn-secondary';
+    copyBtn.className = 'btn';
     copyBtn.style.marginBottom = '10px';
     copyBtn.addEventListener('click', () => {
         linkInput.select();

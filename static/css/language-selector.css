@@ -19,18 +19,31 @@
 }
 
 .language-selector .lang-btn {
-    background: transparent;
-    border: 1px solid rgba(13, 110, 253, 0.25);
-    border-radius: var(--radius-sm, 6px);
+    background: var(--bg-card, #ffffff);
+    border: 1px solid var(--border, #cbd5e1);
+    border-radius: var(--radius, 8px);
     padding: 6px 12px;
     cursor: pointer;
-    color: var(--text-primary, #1a1a2e);
+    color: var(--text, #0f172a);
     font-size: 13px;
     line-height: 1.3;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    transition: background-color 120ms ease, border-color 120ms ease;
+    font-weight: 500;
+    min-height: 2.25rem;
+    transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.language-selector .lang-btn-prefix {
+    color: var(--text-muted, #64748b);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.language-selector .lang-btn-label {
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 .language-selector .lang-btn:hover,
@@ -114,4 +127,81 @@
         color: #0969da;
         background: rgba(9, 105, 218, 0.08);
     }
+}
+
+/* DICOM / OHIF viewer pages — тёмный фон, контрастная кнопка языка в шапке */
+#viewer-header .viewer-lang-slot,
+#ohif-header .viewer-lang-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+#viewer-header .language-selector,
+#ohif-header .language-selector,
+body:has(#viewer-layout) .language-selector,
+body:has(#ohif-layout) .language-selector {
+  margin-left: 0;
+}
+
+#viewer-header .language-selector .lang-btn,
+#ohif-header .language-selector .lang-btn,
+body:has(#viewer-layout) .language-selector .lang-btn,
+body:has(#ohif-layout) .language-selector .lang-btn {
+    background: #1e293b;
+    border: 2px solid #6ea8fe;
+    color: #f8fafc;
+    box-shadow: 0 0 0 1px rgba(110, 168, 254, 0.35);
+}
+
+#viewer-header .language-selector .lang-btn-prefix,
+#ohif-header .language-selector .lang-btn-prefix,
+body:has(#viewer-layout) .language-selector .lang-btn-prefix,
+body:has(#ohif-layout) .language-selector .lang-btn-prefix {
+    color: #94a3b8;
+}
+
+#viewer-header .language-selector .lang-btn-label,
+#ohif-header .language-selector .lang-btn-label,
+body:has(#viewer-layout) .language-selector .lang-btn-label,
+body:has(#ohif-layout) .language-selector .lang-btn-label {
+    color: #f8fafc;
+}
+
+#viewer-header .language-selector .lang-btn:hover,
+#ohif-header .language-selector .lang-btn:hover,
+body:has(#viewer-layout) .language-selector .lang-btn:hover,
+body:has(#ohif-layout) .language-selector .lang-btn:hover {
+    background: #253041;
+    border-color: #93c5fd;
+}
+
+#viewer-header .language-selector .lang-dropdown,
+#ohif-header .language-selector .lang-dropdown,
+body:has(#viewer-layout) .language-selector .lang-dropdown,
+body:has(#ohif-layout) .language-selector .lang-dropdown {
+    background: #1e293b;
+    border: 1px solid #6ea8fe;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+#viewer-header .language-selector .lang-option,
+#ohif-header .language-selector .lang-option,
+body:has(#viewer-layout) .language-selector .lang-option,
+body:has(#ohif-layout) .language-selector .lang-option {
+    color: #e2e8f0;
+}
+
+#viewer-header .language-selector .lang-option:hover,
+#ohif-header .language-selector .lang-option:hover,
+body:has(#viewer-layout) .language-selector .lang-option:hover,
+body:has(#ohif-layout) .language-selector .lang-option:hover {
+    background: #334155;
+}
+
+#viewer-header .language-selector .lang-option.active,
+#ohif-header .language-selector .lang-option.active,
+body:has(#viewer-layout) .language-selector .lang-option.active,
+body:has(#ohif-layout) .language-selector .lang-option.active {
+    color: #93c5fd;
+    background: rgba(110, 168, 254, 0.15);
 }

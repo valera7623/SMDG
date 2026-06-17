@@ -9,7 +9,9 @@ const PAGE_SIZE = 20;
 let currentSkip = 0;
 let currentTotal = 0;
 
-const REDIRECT_HOME = () => { window.location.href = '/'; };
+import { redirectToLogin } from '../spa-nav.js';
+
+const REDIRECT_HOME = () => redirectToLogin();
 
 export function initFileAudit() {
     document.getElementById('fileAuditRefresh')?.addEventListener('click', () => {

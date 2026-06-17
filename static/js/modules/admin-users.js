@@ -14,7 +14,9 @@ import {
     currentFilters, setFilters, resetFilters,
 } from '../core/state.js';
 
-const REDIRECT_HOME = () => { window.location.href = '/'; };
+import { redirectToLogin } from '../spa-nav.js';
+
+const REDIRECT_HOME = () => redirectToLogin();
 
 /**
  * Единая обработка ошибок API:
@@ -566,7 +568,7 @@ export async function logout() {
     try {
         const { auth: authAPI } = await import('../core/api.js');
         const res = await authAPI.logout();
-        if (res.ok) window.location.href = '/';
+        if (res.ok) redirectToLogin();
         else showNotification(t('admin_users.logout_error', 'Logout error'), 'error');
     } catch (e) {
         showNotification(
