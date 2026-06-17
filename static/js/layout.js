@@ -66,6 +66,7 @@ export function renderShell(contentHtml, title = "") {
 
 export function mountShell(root, title, contentHtml, bindExtra) {
   root.innerHTML = renderShell(contentHtml, title);
+  window.I18N?.addLanguageSelector?.();
   root.querySelector('[data-action="toggle-sidebar"]')?.addEventListener("click", () => toggleSidebar());
   root.querySelector('[data-action="close-sidebar"]')?.addEventListener("click", () => toggleSidebar(false));
   root.querySelector('[data-action="toggle-theme"]')?.addEventListener("click", () => toggleTheme());

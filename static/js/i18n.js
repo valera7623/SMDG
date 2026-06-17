@@ -272,48 +272,27 @@
             );
         },
 
-        /**
-         * Inject a language dropdown into the page.  The dropdown
-         * attaches itself to the first matching container or to the
-         * document body as a fixed element.
-         */
-        addLanguageSelector(containerSelector) {
-            if (document.getElementById("language-selector")) return;
-
-            const selector = document.createElement("div");
-            selector.id = "language-selector";
-            selector.className = "language-selector";
-            selector.innerHTML = `
-                <button class="lang-btn" id="lang-btn" type="button"
-                        aria-haspopup="listbox" aria-expanded="false"
-                        title="${this.escapeHtml(this.t("language.selector"))}">
-                    <span class="lang-btn-prefix" aria-hidden="true">${this.escapeHtml(this.t("language.selector"))}:</span>
-                    <span class="lang-btn-label">${this.escapeHtml(this.langNames[this.currentLang])}</span>
-                </button>
-                <div class="lang-dropdown" id="lang-dropdown" role="listbox">
-                    ${this.availableLangs
-                        .map(
-                            (lang) => `
-                        <a href="#" data-lang="${lang}" role="option"
-                           class="lang-option ${lang === this.currentLang ? "active" : ""}">
-                            ${this.escapeHtml(this.langNames[lang])}
-                        </a>`
-                        )
-                        .join("")}
-                </div>
-            `;
-
-            const container = containerSelector
+        _resolveLangContainer(containerSelector) {
+            return containerSelector
                 ? document.querySelector(containerSelector)
                 : document.querySelector(
-                    "#smdgLangAndMenu, #ohif-header .buttons, #viewer-header, #ohif-header, .navbar, header .user-info, header"
+                    "#smdgLangAndMenu, #ohif-header .buttons, #viewer-header .header-buttons, #viewer-header, #ohif-header, .navbar, header .user-info, header"
                 );
+        },
+
+        _mountLanguageSelector(selector, container) {
             if (container) {
-                container.appendChild(selector);
-            } else {
-                selector.classList.add("floating");
-                document.body.appendChild(selector);
+                selector.classList.remove("floating");
+                container.prepend(selector);
+                return;
             }
+            selector.classList.add("floating");
+            document.body.appendChild(selector);
+        },
+
+        _bindLanguageSelectorEvents(selector) {
+            if (selector.dataset.smdgBound === "1") return;
+            selector.dataset.smdgBound = "1";
 
             const btn = selector.querySelector("#lang-btn");
             const dropdown = selector.querySelector("#lang-dropdown");
@@ -356,6 +335,48 @@
                     btn.setAttribute("aria-expanded", "false");
                 }
             });
+        },
+
+        /**
+         * Inject a language dropdown into the page.  The dropdown
+         * attaches itself to the first matching container or to the
+         * document body as a fixed element.  When the container appears
+         * later (SPA shell), call again to move the selector left of
+         * the other header controls.
+         */
+        addLanguageSelector(containerSelector) {
+            const container = this._resolveLangContainer(containerSelector);
+            const existing = document.getElementById("language-selector");
+            if (existing) {
+                this._mountLanguageSelector(existing, container);
+                return;
+            }
+
+            const selector = document.createElement("div");
+            selector.id = "language-selector";
+            selector.className = "language-selector";
+            selector.innerHTML = `
+                <button class="lang-btn" id="lang-btn" type="button"
+                        aria-haspopup="listbox" aria-expanded="false"
+                        title="${this.escapeHtml(this.t("language.selector"))}">
+                    <span class="lang-btn-prefix" aria-hidden="true">${this.escapeHtml(this.t("language.selector"))}:</span>
+                    <span class="lang-btn-label">${this.escapeHtml(this.langNames[this.currentLang])}</span>
+                </button>
+                <div class="lang-dropdown" id="lang-dropdown" role="listbox">
+                    ${this.availableLangs
+                        .map(
+                            (lang) => `
+                        <a href="#" data-lang="${lang}" role="option"
+                           class="lang-option ${lang === this.currentLang ? "active" : ""}">
+                            ${this.escapeHtml(this.langNames[lang])}
+                        </a>`
+                        )
+                        .join("")}
+                </div>
+            `;
+
+            this._mountLanguageSelector(selector, container);
+            this._bindLanguageSelectorEvents(selector);
         },
 
         /**

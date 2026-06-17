@@ -10,6 +10,11 @@
     font-family: inherit;
 }
 
+#smdgLangAndMenu .language-selector,
+.header-lang .language-selector {
+    margin-left: 0;
+}
+
 .language-selector.floating {
     position: fixed;
     top: 12px;

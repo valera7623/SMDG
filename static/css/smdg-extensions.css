@@ -1,5 +1,15 @@
 /* SMDG extensions on top of ReportAgent dashboard styles */
 
+.header-actions .header-lang {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.header-actions .language-selector {
+  margin-left: 0;
+}
+
 .file-picker {
   display: flex;
   flex-wrap: wrap;

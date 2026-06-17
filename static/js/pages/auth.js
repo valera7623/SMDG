@@ -116,6 +116,8 @@ export async function renderLogin(root, params = {}) {
   passInput?.addEventListener("input", () => updatePasswordStrength(passInput));
 
   if (params.tab === "register") showTab("register");
+
+  window.I18N?.addLanguageSelector?.();
 }
 
 export { handleSetup2FA, moduleLogout as doLogout };

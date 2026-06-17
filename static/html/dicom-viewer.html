@@ -141,9 +141,9 @@
             <span class="file-name" id="fileName">—</span>
             <span class="meta" id="fileMeta">—</span>
             <div class="header-buttons">
+                <div id="smdgLangAndMenu" class="viewer-lang-slot" aria-label="Language"></div>
                 <button class="tool-btn" onclick="toggleMetadata()" data-i18n-title="viewer.metadata" title="Metadata">ℹ️</button>
                 <button class="tool-btn" onclick="downloadDicom()" data-i18n-title="viewer.download_dicom" title="Download original DICOM">💾</button>
-                <div id="smdgLangAndMenu" class="viewer-lang-slot" aria-label="Language"></div>
                 <button class="tool-btn danger" onclick="window.parent.postMessage('dicom-close','*')" data-i18n-title="viewer.close" title="Close">✕</button>
             </div>
         </div>

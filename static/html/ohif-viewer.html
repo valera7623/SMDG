@@ -114,9 +114,9 @@
             </div>
             <span class="study-info" id="studyInfo">—</span>
             <div class="buttons">
+                <div id="smdgLangAndMenu" class="viewer-lang-slot" aria-label="Language"></div>
                 <button class="ohif-tool" onclick="toggleMetadataOHIF()" data-i18n-title="viewer.metadata" title="Metadata">ℹ️</button>
                 <button class="ohif-tool" onclick="takeScreenshotOHIF()" data-i18n-title="dicom.screenshot" title="Screenshot">📸 <span data-i18n="dicom.screenshot">Screenshot</span></button>
-                <div id="smdgLangAndMenu" class="viewer-lang-slot" aria-label="Language"></div>
                 <button class="close-btn" onclick="window.parent.postMessage('ohif-close','*')" data-i18n-title="viewer.close" title="Close">✕</button>
                 <!-- language selector is auto-injected into #smdgLangAndMenu by i18n.js -->
             </div>

@@ -1291,7 +1291,7 @@ body.page-index #mainApp > footer li:before {
     font-weight: 600;
 }
 
-/* index: смена темы в шапке (i18n дописывает #language-selector в конец #smdgLangAndMenu) */
+/* index: смена темы в шапке (i18n вставляет #language-selector первым в #smdgLangAndMenu) */
 .site-header__theme-wrap {
     display: inline-flex;
     flex-wrap: wrap;
@@ -1309,11 +1309,12 @@ body.page-index #mainApp > footer li:before {
     flex-shrink: 0;
 }
 
-#smdgLangAndMenu.site-header__lang-menu .site-header__theme-wrap {
+#smdgLangAndMenu.site-header__lang-menu #language-selector {
     order: 1;
 }
 
-#smdgLangAndMenu.site-header__lang-menu #language-selector {
+#smdgLangAndMenu.site-header__lang-menu .site-header__theme-wrap,
+#smdgLangAndMenu.site-header__lang-menu .theme-switch {
     order: 2;
 }
 
