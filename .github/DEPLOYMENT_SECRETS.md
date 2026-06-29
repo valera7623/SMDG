@@ -61,6 +61,7 @@ secrets/age.key
 |------|----------|
 | `VPS2_HOST` | `74.208.252.225` |
 | `VPS2_USER` | `smdg` |
+| `VPS2_SSH_KEY` | Приватный SSH-ключ для fileguardian (можно использовать общий `VPS_SSH_KEY`) |
 
 ### Optional Secrets
 
