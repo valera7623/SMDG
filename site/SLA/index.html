@@ -1,0 +1,2426 @@
+
+<!doctype html>
+<html lang="ru" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Secure Medical Data Gateway — руководства для пользователей, администраторов и разработчиков">
+      
+      
+      
+        <link rel="canonical" href="https://fileguardian.info/help/SLA/">
+      
+      
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="ru">
+        
+          <link rel="alternate" href="../en/SLA/" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Service Level Agreement (SLA) — SMDG - SMDG — документация</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#service-level-agreement-sla-smdg" class="md-skip">
+          Перейти к содержанию
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Верхний колонтитул">
+    <a href=".." title="SMDG — документация" class="md-header__button md-logo" aria-label="SMDG — документация" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SMDG — документация
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Service Level Agreement (SLA) — SMDG
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Тёмная тема"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Тёмная тема" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal"  aria-label="Светлая тема"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Светлая тема" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Выберите язык">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="ru" class="md-select__link">
+              Русский
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../en/SLA/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Поиск" placeholder="Поиск" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Поиск">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Очистить" aria-label="Очистить" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Инициализация поиска
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/valera7623/SMDG" title="Перейти к репозиторию" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    valera7623/SMDG
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Вкладки" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Главная
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../user-guide/getting-started/" class="md-tabs__link">
+          
+  
+  
+  Руководство пользователя
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../admin-guide/deployment/" class="md-tabs__link">
+          
+  
+  
+  Руководство администратора
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../developer-guide/architecture/" class="md-tabs__link">
+          
+  
+  
+  Руководство разработчика
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deployment/docker/" class="md-tabs__link">
+          
+  
+  
+  Деплой
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../misc/changelog/" class="md-tabs__link">
+          
+  
+  
+  Дополнительно
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Навигация" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="SMDG — документация" class="md-nav__button md-logo" aria-label="SMDG — документация" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SMDG — документация
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/valera7623/SMDG" title="Перейти к репозиторию" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    valera7623/SMDG
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Главная
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Руководство пользователя
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Руководство пользователя
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Начало работы
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Работа с файлами
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/links-and-sharing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ссылки и обмен файлами
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-guide/dicom/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DICOM Viewer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Руководство администратора
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Руководство администратора
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin-guide/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Деплой (администратор)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin-guide/configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Конфигурация
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin-guide/backup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Резервное копирование
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../admin-guide/monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Мониторинг
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Руководство разработчика
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Руководство разработчика
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guide/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Архитектура
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guide/multi-tenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Мультитенантность
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developer-guide/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Тестирование
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — обзор
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — аутентификация
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/files/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — файлы
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/dicom/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — DICOM
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/webhooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — Webhooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API — администрирование
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Деплой
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Деплой
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/docker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/vps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    VPS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/ci-cd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/environment-variables/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Переменные окружения
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Дополнительно
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Дополнительно
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Глоссарий
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../misc/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Безопасность
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Содержание">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Содержание
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Общие положения
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Общие положения">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1. Цель документа
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2. Стороны
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-in-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.3. Область действия (in scope)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-service-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Уровни обслуживания (Service Levels)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Уровни обслуживания (Service Levels)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-availability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1. Доступность (Availability)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2. Производительность (Performance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3. Доступность по функциям (ориентиры)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-exclusions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Исключения (Exclusions)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Исключения (Exclusions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1. Плановое обслуживание
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2. Форс-мажор
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3. Действия и инфраструктура клиента
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4. Внешние зависимости
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.5. События безопасности
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Мониторинг и измерение
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Мониторинг и измерение">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1. Каналы и инструменты
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2. Расчёт доступности (упрощённо)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3. Пример (иллюстративно)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-service-credits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Компенсации (Service credits)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Компенсации (Service credits)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1. Матрица (месячная доступность, проектный уровень)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2. Условия
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Процедуры реагирования
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. Процедуры реагирования">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-playbooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1. Классификация (пример; уточняется в playbooks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2. Каналы уведомлений
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-ddos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Безопасность и DDoS
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. Безопасность и DDoS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1. Меры (ориентиры)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72-ddos-sla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2. DDoS и SLA
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Отчётность
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. Отчётность">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1. Ежемесячные отчёты
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2. Канал доступа
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. История изменений
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="service-level-agreement-sla-smdg">Service Level Agreement (SLA) — SMDG<a class="headerlink" href="#service-level-agreement-sla-smdg" title="Permanent link">&para;</a></h1>
+<p><strong>Версия:</strong> 1.0<br />
+<strong>Дата:</strong> 2026-04-25<br />
+<strong>Действителен до:</strong> 2026-12-31  </p>
+<h2 id="1">1. Общие положения<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="11">1.1. Цель документа<a class="headerlink" href="#11" title="Permanent link">&para;</a></h3>
+<p>Настоящий SLA определяет обязательства по доступности и производительности сервиса SMDG (Secure Medical Data Gateway) между поставщиком сервиса и заказчиком (организацией). Документ дополняет коммерческий договор и применяется к средам, явно указанным в приложении к договору.</p>
+<h3 id="12">1.2. Стороны<a class="headerlink" href="#12" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Роль</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Провайдер</strong></td>
+<td>Команда эксплуатации SMDG (SMDG Operations)</td>
+</tr>
+<tr>
+<td><strong>Клиент</strong></td>
+<td>Организации, использующие SMDG по соглашению/лицензии</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-in-scope">1.3. Область действия (in scope)<a class="headerlink" href="#13-in-scope" title="Permanent link">&para;</a></h3>
+<ul>
+<li>REST API SMDG (аутентификация, загрузка, скачивание, списки, DICOM, webhooks, админ-API);</li>
+<li>веб-интерфейс (страницы, отдаваемые приложением);</li>
+<li>DICOM Viewer (как компонент SMDG, при включённой функции);</li>
+<li>непрерывность записи в журнал аудита (хранимость согласно политике ретенции);</li>
+<li>публичные health/metrics, если отнесены к договору.</li>
+</ul>
+<p><strong>Вне scope</strong> (отдельные соглашения): инфраструктура заказчика, каналы связи, сторонние PACS, облачные квоты вне зоны ответственности провайдера.</p>
+<hr />
+<h2 id="2-service-levels">2. Уровни обслуживания (Service Levels)<a class="headerlink" href="#2-service-levels" title="Permanent link">&para;</a></h2>
+<h3 id="21-availability">2.1. Доступность (Availability)<a class="headerlink" href="#21-availability" title="Permanent link">&para;</a></h3>
+<p>Совокупная доступность измеряется по SLI <strong>доли успешных HTTP-запросов (2xx) к публичному API SMDG</strong> за отчётный период, за исключением случаев из раздела 3, либо по эквивалентной метрике, согласованной в приложении (например, по synthetic probes).</p>
+<table>
+<thead>
+<tr>
+<th>Уровень</th>
+<th>Доступность (год)</th>
+<th>Макс. непокрытого простоя / год*</th>
+<th>Макс. / месяц (оценка)**</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Целевой (SLO)</strong></td>
+<td><strong>99.9%</strong></td>
+<td><strong>8,76 ч</strong></td>
+<td><strong>~43,8 мин</strong></td>
+</tr>
+<tr>
+<td><strong>Минимальный (порог ремедиации)</strong></td>
+<td>99,5%</td>
+<td>43,8 ч</td>
+<td>~3,6 ч</td>
+</tr>
+<tr>
+<td><strong>Расширенный (опциональный tier)</strong></td>
+<td>99,99%</td>
+<td>52,6 мин</td>
+<td>~4,4 мин</td>
+</tr>
+</tbody>
+</table>
+<p>* Для 99,9%: максимальное <strong>целевое</strong> время недоступности, выраженное в часах за 365,25 дня.<br />
+** Месячные лимиты — ориентир (365/12); расчёты в биллинге/кредитах ведутся за календарный месяц.</p>
+<h3 id="22-performance">2.2. Производительность (Performance)<a class="headerlink" href="#22-performance" title="Permanent link">&para;</a></h3>
+<p>Ориентиры (не всегда отдельные обязательства, если в договоре не выделен отдельный SLO; измеряются в Prometheus / APM, см. <a href="../SLI/">SLI.md</a>):</p>
+<table>
+<thead>
+<tr>
+<th>Метрика</th>
+<th>Целевое значение</th>
+<th>Метод</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>API p95 латентность</strong></td>
+<td>&lt; 500 мс</td>
+<td><code>http_request_duration_seconds</code> / <code>smdg_api_latency_p90</code></td>
+</tr>
+<tr>
+<td><strong>API p99 латентность</strong></td>
+<td>&lt; 1000 мс</td>
+<td>То же</td>
+</tr>
+<tr>
+<td><strong>Загрузка (upload, типичный сценарий)</strong></td>
+<td>&lt; 5 с на <strong>10 МБ</strong> при штатной сети</td>
+<td>Эндпоинт <code>POST /api/upload</code>, трассировка</td>
+</tr>
+<tr>
+<td><strong>DICOM рендер кадра</strong></td>
+<td>&lt; 3 с (типичный сценарий)</td>
+<td>DICOM API, <code>dicom_render_duration_seconds</code></td>
+</tr>
+<tr>
+<td><strong>Список файлов</strong></td>
+<td>&lt; 200 мс p95</td>
+<td><code>GET /api/list</code> (при пагинации по умолчанию)</td>
+</tr>
+<tr>
+<td><strong>Экспорт аудита</strong></td>
+<td>&lt; 30 с на <strong>1000</strong> записей (пригодно для пакетов)</td>
+<td>Админ-экспорт (см. API аудита)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="23">2.3. Доступность по функциям (ориентиры)<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Функция</th>
+<th>Целевой аптайм (ориентир)</th>
+<th>Комментарий</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Аутентификация / сессии</td>
+<td>99,99%</td>
+<td>Критичный путь</td>
+</tr>
+<tr>
+<td>Загрузка / скачивание файлов</td>
+<td>99,9%</td>
+<td>Основной продукт</td>
+</tr>
+<tr>
+<td>DICOM Viewer</td>
+<td>99,9%</td>
+<td>Мед. визуализация</td>
+</tr>
+<tr>
+<td>Экспорт аудита</td>
+<td>99,5%</td>
+<td>Админ-функция</td>
+</tr>
+<tr>
+<td>Webhook доставка</td>
+<td>99,0%</td>
+<td>Best-effort, ретраи; зависит от endpoint клиента</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-exclusions">3. Исключения (Exclusions)<a class="headerlink" href="#3-exclusions" title="Permanent link">&para;</a></h2>
+<p>Следующие ситуации <strong>не</strong> засчитываются как нарушение целевой доступности (при условии документирования и, где требуется, уведомления):</p>
+<h3 id="31">3.1. Плановое обслуживание<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Окна согласуются заранее; типичные примеры: <strong>еженедельно</strong> 02:00–04:00 (MSK), <strong>ежемесячно</strong> 01:00–05:00 (первое воскресенье) — конкретные график и продолжительность фиксируются в приложении/календаре.</li>
+<li>Минимум <strong>7 дней</strong> уведомления по согласованным каналам (email, Telegram, status page).</li>
+<li>Плановое время <strong>вычитается</strong> из <code>Downtime</code> при расчёте SLA, если отмечено в тикетинге/статус-странице.</li>
+</ul>
+<h3 id="32-">3.2. Форс-мажор<a class="headerlink" href="#32-" title="Permanent link">&para;</a></h3>
+<p>Стихийные бедствия, войны, теракты, решения уполномоченных органов, отключения на стороне Tier-1 провайдера, деградировавшие не по вине SMDG.</p>
+<h3 id="33">3.3. Действия и инфраструктура клиента<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Некорректная конфигурация (DNS, TLS, firewall, rate limit client-side);</li>
+<li>превышение API rate limits (HTTP 429);</li>
+<li>использование <strong>устаревших</strong> или неподдерживаемых клиентов API;</li>
+<li>внутренние сети/прокси заказчика, блокировки, MITM, антивирус с SSL inspection.</li>
+</ul>
+<h3 id="34">3.4. Внешние зависимости<a class="headerlink" href="#34" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Провайдер DNS заказчика, ISP, корпоративный прокси;</li>
+<li>глобальные DDoS/BGP-инциденты (см. раздел 7);</li>
+<li>отказ S3-совместимого хранилища <strong>только</strong> если по договору оно <strong>не</strong> в зоне ответственности провайдера.</li>
+</ul>
+<h3 id="35">3.5. События безопасности<a class="headerlink" href="#35" title="Permanent link">&para;</a></h3>
+<p>Заблокированные запросы WAF, инциденты с подтверждённой компрометацией — по регламенту поставщика, без влияния на SLA, если требуется остановка сервиса по решению CISO/инцидент-респонс.</p>
+<hr />
+<h2 id="4">4. Мониторинг и измерение<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<h3 id="41">4.1. Каналы и инструменты<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Канал</th>
+<th>Назначение</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Prometheus</strong> + <strong>Grafana</strong></td>
+<td>Метрики, дашборды, SLI</td>
+</tr>
+<tr>
+<td><strong>Blackbox / synthetic</strong></td>
+<td>Проверки снаружи (период, например, 30 с)</td>
+</tr>
+<tr>
+<td><strong>Логи</strong></td>
+<td>JSON/структурированные; хранение по политике (ELK/Loki и т.д.)</td>
+</tr>
+<tr>
+<td><strong>Status page</strong></td>
+<td>Публичный статус (<code>/status</code>, при включении)</td>
+</tr>
+<tr>
+<td><strong>Алертинг</strong></td>
+<td>Alertmanager → PagerDuty/Telegram/email по severity</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><span class="c1"># Пример: источники (обобщённо)</span>
+<span class="nt">Метрики</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">HTTP</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">стандартные + smdg_* (см. app/core/slo_metrics.py)</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Probes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">blackbox</span>
+<span class="nt">Логи</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">access / application JSON</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">тикеты инцидентов</span>
+</code></pre></div>
+<h3 id="42">4.2. Расчёт доступности (упрощённо)<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<p>[
+\text{Availability} = \frac{\text{TotalTime} - \text{Downtime_eligible}}{\text{TotalTime}} \times 100\%
+]</p>
+<ul>
+<li><strong>Downtime_eligible</strong> — периоды, когда SMDG не удовлетворяет SLO, <strong>и</strong> не попадает под раздел 3.  </li>
+<li>Согласованный <strong>источник истины</strong>: внутренние <code>smdg_slo_*</code> + внешние probes, зафиксированные в отчёте.</li>
+</ul>
+<h3 id="43">4.3. Пример (иллюстративно)<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Период: 30 суток = 43 200 минут.  </li>
+<li>Плановый простой (исключение): 120 мин.  </li>
+<li>Внеплановый простой (учтённый): 15 мин.  </li>
+</ul>
+<p>[
+\text{Availability} = \frac{43\,200 - 15}{43\,200} \times 100\% \approx 99,965\%
+]</p>
+<p>(Фактическая методика согласуется в приложении к договору.)</p>
+<hr />
+<h2 id="5-service-credits">5. Компенсации (Service credits)<a class="headerlink" href="#5-service-credits" title="Permanent link">&para;</a></h2>
+<h3 id="51">5.1. Матрица (месячная доступность, проектный уровень)<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Фактическое значение (месяц)</th>
+<th>Сервисный кредит*</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>99,0% – &lt; 99,5%</td>
+<td>10% от месячной подписки (fee)</td>
+</tr>
+<tr>
+<td>98,0% – &lt; 99,0%</td>
+<td>25%</td>
+</tr>
+<tr>
+<td>&lt; 98,0%</td>
+<td>50% (макс. в таблице)</td>
+</tr>
+</tbody>
+</table>
+<p>*Кредит <strong>не</strong> является штрафом/неустойкой; применяется к <strong>следующему</strong> счёту, если клиент в течение <strong>30</strong> дней направит обоснованный запрос. Максимальная кумулятивная скидка за месяц согласуется в договоре (часто cap <strong>50%</strong> fee).</p>
+<h3 id="52">5.2. Условия<a class="headerlink" href="#52" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Инциденты должны соответствовать критериям раздела 4.  </li>
+<li>Не кумулируется с кредитами за другой SLA (например, support), если в договоре не сказано иначе.  </li>
+<li>Force majeure / исключения из разд. 3 <strong>не</strong> дают кредит.</li>
+</ul>
+<hr />
+<h2 id="6">6. Процедуры реагирования<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="61-playbooks">6.1. Классификация (пример; уточняется в playbooks)<a class="headerlink" href="#61-playbooks" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Priority</th>
+<th>Пример</th>
+<th>Цель на реакцию*</th>
+<th>Цель на восстановление*</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>P1</strong></td>
+<td>Полная деградация API/БД</td>
+<td>15 мин</td>
+<td>4 ч</td>
+</tr>
+<tr>
+<td><strong>P2</strong></td>
+<td>Частичная: конкретный шард/функция</td>
+<td>30 мин</td>
+<td>8 ч</td>
+</tr>
+<tr>
+<td><strong>P3</strong></td>
+<td>Существенная деградация (латентность)</td>
+<td>2 ч</td>
+<td>24 ч</td>
+</tr>
+<tr>
+<td><strong>P4</strong></td>
+<td>Косметика, не-SLA</td>
+<td>8 ч (раб. время)</td>
+<td>5 р.д.</td>
+</tr>
+</tbody>
+</table>
+<p>* Рабочие ориентиры для команды, не публичная гарантия восстановления при форс-мажоре.</p>
+<h3 id="62">6.2. Каналы уведомлений<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Канал</th>
+<th>Содержание</th>
+<th>Аудитория</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Email</td>
+<td>Сводка по P2+ (настраивается)</td>
+<td>Согласованные контакты</td>
+</tr>
+<tr>
+<td>Telegram / IM</td>
+<td>P1, P2</td>
+<td>On-call, опционально клиент (VIP)</td>
+</tr>
+<tr>
+<td>Status page</td>
+<td>Статусы, история</td>
+<td>Публично (если развёрнута)</td>
+</tr>
+<tr>
+<td>SMS</td>
+<td>P1, по opt-in</td>
+<td>Критичные контакты</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-ddos">7. Безопасность и DDoS<a class="headerlink" href="#7-ddos" title="Permanent link">&para;</a></h2>
+<h3 id="71">7.1. Меры (ориентиры)<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Ограничение частоты (rate limiting) на API;</li>
+<li>WAF/обратный прокси, фильтрация, списки;</li>
+<li>DDoS-защита на уровне облачного/edge провайдера (CloudFront, AWS Shield, Cloudflare и т.д.);</li>
+<li>Горизонтальное масштабирование и readiness gates.</li>
+</ul>
+<h3 id="72-ddos-sla">7.2. DDoS и SLA<a class="headerlink" href="#72-ddos-sla" title="Permanent link">&para;</a></h3>
+<p>Продолжительные DDoS могут <strong>не</strong> учитываться в uptime по соглашению сторон, если ведение журнала инцидента подтверждает внешнюю природу. Цель <strong>восстановить нормальную</strong> работу: ориентир <strong>≤ 2 ч</strong> с момента классификации как DDoS (не юридическая гарантия).</p>
+<hr />
+<h2 id="8">8. Отчётность<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="81">8.1. Ежемесячные отчёты<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Доступность и ключевые SLI/ошибка бюджета;  </li>
+<li>инциденты P1–P2 (время, причина, root cause на уровне, допустимом для КП);  </li>
+<li>планы улучшений.  </li>
+</ul>
+<h3 id="82">8.2. Канал доступа<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Grafana (закрытая/публичная view по согласованию);  </li>
+<li>email-рассылка;  </li>
+<li><strong>GET</strong> <code>/api/slo/report</code> (админ, JSON) в продукте;  </li>
+<li>скрипт <code>scripts/monthly_sla_report.py</code> для офлайн-отчёта.</li>
+</ul>
+<hr />
+<h2 id="9">9. История изменений<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Версия</th>
+<th>Дата</th>
+<th>Описание</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.0</td>
+<td>2026-04-25</td>
+<td>Первичная публикация для SMDG 4.x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Контакты, юрисдикция и ссылки на runbook подставляются в отдельном юридическом приложении.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  К началу
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/valera7623/SMDG" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "content.code.copy", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e \u0432 \u0431\u0443\u0444\u0435\u0440", "clipboard.copy": "\u041a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0432 \u0431\u0443\u0444\u0435\u0440", "search.result.more.one": "\u0415\u0449\u0451 1 \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.more.other": "\u0415\u0449\u0451 # \u043d\u0430 \u044d\u0442\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435", "search.result.none": "\u0421\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u043e", "search.result.one": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e 1 \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0435", "search.result.other": "\u041d\u0430\u0439\u0434\u0435\u043d\u043e \u0441\u043e\u0432\u043f\u0430\u0434\u0435\u043d\u0438\u0439: #", "search.result.placeholder": "\u041d\u0430\u0447\u043d\u0438\u0442\u0435 \u043f\u0435\u0447\u0430\u0442\u0430\u0442\u044c \u0434\u043b\u044f \u043f\u043e\u0438\u0441\u043a\u0430", "search.result.term.missing": "\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u0435\u0442", "select.version": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0432\u0435\u0440\u0441\u0438\u044e"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../javascripts/lang-redirect.js"></script>
+      
+    
+  </body>
+</html>
