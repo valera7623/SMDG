@@ -107,6 +107,7 @@
         "system.info_audit": "Toutes les opérations sont journalisées pour l'audit",
         "system.info_api": "API : /health, /docs, /admin",
         "nav.health": "Vérification de santé",
+        "nav.docs": "Documentation",
         "nav.api_docs": "Documentation API",
         "nav.admin": "Panneau d'administration",
 

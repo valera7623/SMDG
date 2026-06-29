@@ -107,6 +107,7 @@
         "system.info_audit": "Alle Vorgänge werden für das Audit protokolliert",
         "system.info_api": "API: /health, /docs, /admin",
         "nav.health": "Health-Check",
+        "nav.docs": "Dokumentation",
         "nav.api_docs": "API-Dokumentation",
         "nav.admin": "Administrationsbereich",
 

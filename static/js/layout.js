@@ -1,7 +1,11 @@
 import { appState, subscribe, toggleSidebar, toggleTheme } from "./app-state.js";
 import { navigate } from "./router.js";
 import { escapeHtml } from "./utils.js";
-import { t } from "./utils/i18n.js";
+import { t, currentLang } from "./utils/i18n.js";
+
+function docsHref() {
+  return currentLang() === "ru" ? "/help/" : "/help/en/";
+}
 
 const userNav = [
   { path: "/files", labelKey: "files.list", fallback: "Файлы", icon: "📋" },
@@ -13,10 +17,13 @@ const adminNav = [
   { path: "/admin/dlq", labelKey: "admin_dlq.title", fallback: "DLQ", icon: "📬" },
 ];
 
-const externalNav = [
-  { href: "/health", labelKey: "nav.health", fallback: "Health", icon: "🩺" },
-  { href: "/docs", labelKey: "nav.api_docs", fallback: "API", icon: "📚" },
-];
+function externalNavItems() {
+  return [
+    { href: docsHref(), labelKey: "nav.docs", fallback: "Документация", icon: "📖" },
+    { href: "/health", labelKey: "nav.health", fallback: "Health", icon: "🩺" },
+    { href: "/docs", labelKey: "nav.api_docs", fallback: "API", icon: "📚" },
+  ];
+}
 
 function navLink(item, current) {
   const active = current === item.path ? "active" : "";
@@ -45,7 +52,7 @@ export function renderShell(contentHtml, title = "") {
           ${userNav.map((n) => navLink(n, current)).join("")}
           ${adminSection}
           <div class="nav-section">${t("nav.external", "Сервис")}</div>
-          ${externalNav.map((n) => externalLink(n)).join("")}
+          ${externalNavItems().map((n) => externalLink(n)).join("")}
         </nav>
       </aside>
       <div class="main">
@@ -53,6 +60,7 @@ export function renderShell(contentHtml, title = "") {
           <button type="button" class="btn-icon menu-btn" data-action="toggle-sidebar">☰</button>
           <p class="header-title" role="heading" aria-level="2">${escapeHtml(title)}</p>
           <div class="header-actions">
+            <a href="${docsHref()}" class="btn btn-outline btn-sm" target="_blank" rel="noopener">${t("nav.docs", "Документация")}</a>
             <div id="smdgLangAndMenu" class="header-lang"></div>
             <span class="key-badge" title="${t("auth.username", "Пользователь")}">👤 ${escapeHtml(appState.username || "—")}${appState.isAdmin ? ' <span class="badge">Admin</span>' : ""}</span>
             <button type="button" class="btn-icon" data-action="toggle-theme" title="${t("theme.toolbar_label", "Тема")}">${appState.theme === "dark" ? "☀️" : "🌙"}</button>

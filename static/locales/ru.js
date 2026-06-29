@@ -107,6 +107,7 @@
         "system.info_audit": "Все операции логируются для аудита",
         "system.info_api": "API: /health, /docs, /admin",
         "nav.health": "Проверка здоровья",
+        "nav.docs": "Документация",
         "nav.api_docs": "Документация API",
         "nav.admin": "Панель администратора",
 

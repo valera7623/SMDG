@@ -117,6 +117,7 @@
         "system.info_audit": "All operations are logged for audit",
         "system.info_api": "API: /health, /docs, /admin",
         "nav.health": "Health",
+        "nav.docs": "Documentation",
         "nav.api_docs": "API documentation",
         "nav.admin": "Admin panel",
 
