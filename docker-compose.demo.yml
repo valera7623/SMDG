@@ -212,6 +212,7 @@ services:
       - ./certs:/etc/nginx/certs:ro
       - ./certbot/www:/var/www/certbot:ro
       - ./static:/app/static:ro
+      - ./site:/app/help:ro
     deploy:
       resources:
         limits:
