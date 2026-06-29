@@ -300,6 +300,7 @@
         "files.choose_file": "Выбрать файл",
         "files.no_file_chosen": "Файл не выбран",
         "files.btn_encrypting": "Шифрование…",
+        "files.btn_uploading": "Загрузка…",
         "files.btn_view": "Просмотр",
         "files.btn_view_title": "Открыть встроенный DICOM Viewer",
         "files.btn_ohif": "OHIF",

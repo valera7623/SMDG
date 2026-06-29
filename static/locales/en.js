@@ -315,6 +315,7 @@
         "files.choose_file": "Choose file",
         "files.no_file_chosen": "No file chosen",
         "files.btn_encrypting": "Encrypting…",
+        "files.btn_uploading": "Uploading…",
         "files.btn_view": "View",
         "files.btn_view_title": "Open embedded DICOM Viewer",
         "files.btn_ohif": "OHIF",

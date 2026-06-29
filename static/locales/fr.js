@@ -300,6 +300,7 @@
         "files.choose_file": "Parcourir",
         "files.no_file_chosen": "Aucun fichier choisi",
         "files.btn_encrypting": "Chiffrement…",
+        "files.btn_uploading": "Téléversement…",
         "files.btn_view": "Voir",
         "files.btn_view_title": "Ouvrir le DICOM Viewer intégré",
         "files.btn_ohif": "OHIF",

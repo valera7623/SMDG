@@ -300,6 +300,7 @@
         "files.choose_file": "Datei auswählen",
         "files.no_file_chosen": "Keine Datei ausgewählt",
         "files.btn_encrypting": "Wird verschlüsselt…",
+        "files.btn_uploading": "Hochladen…",
         "files.btn_view": "Ansehen",
         "files.btn_view_title": "Eingebauten DICOM Viewer öffnen",
         "files.btn_ohif": "OHIF",

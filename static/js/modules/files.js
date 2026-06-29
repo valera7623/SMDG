@@ -136,11 +136,21 @@ export async function handleFileUpload(event) {
     }
 
     const originalText = submitBtn.textContent;
-    submitBtn.textContent = `⏳ ${t('files.btn_encrypting', 'Encrypting…')}`;
+    const file = fileInput.files[0];
+    submitBtn.textContent = `⏳ ${t('files.btn_uploading', 'Uploading…')} 0%`;
     submitBtn.disabled = true;
 
+    const onUploadProgress = (loaded, total) => {
+        if (total > 0 && loaded < total) {
+            const pct = Math.round((loaded / total) * 100);
+            submitBtn.textContent = `⏳ ${t('files.btn_uploading', 'Uploading…')} ${pct}%`;
+        } else {
+            submitBtn.textContent = `⏳ ${t('files.btn_encrypting', 'Encrypting…')}`;
+        }
+    };
+
     try {
-        const data = await filesAPI.upload(fileInput.files[0]);
+        const data = await filesAPI.upload(file, onUploadProgress);
 
         console.log('Upload response:', data);
 

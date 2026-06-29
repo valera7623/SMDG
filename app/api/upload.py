@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import logging
+import time
 
 import aiofiles
 
@@ -205,7 +206,7 @@ def _confirm_mime_from_preview(preview: bytes, orig_ext: str, mime_type: str) ->
 
 @router.post("/upload")
 @limiter.limit("10/minute")
-@timeout(60.0, "File upload timed out after 60 seconds", service="api", operation="upload_file")
+@timeout(600.0, "File upload timed out after 600 seconds", service="api", operation="upload_file")
 @bulkhead(
     "upload",
     max_concurrent=settings.UPLOAD_BULKHEAD_MAX_CONCURRENT,
@@ -241,6 +242,9 @@ async def upload_file(
         except Exception:
             pass
 
+    pipeline_start = time.perf_counter()
+    save_done_at = encrypt_done_at = None
+
     try:
         params = UploadParams(
             ttl_days=ttl_days,
@@ -263,6 +267,7 @@ async def upload_file(
             file_size, original_hash = await _save_upload_to_disk(
                 file, temp_upload_path, preview, max_bytes
             )
+        save_done_at = time.perf_counter()
         if current_span is not None:
             try:
                 current_span.set_attribute("file.size_bytes", file_size)
@@ -288,6 +293,7 @@ async def upload_file(
                 public_key=get_public_key(),
                 output_path=final_encrypted_path
             )
+        encrypt_done_at = time.perf_counter()
 
         # Загрузка в хранилище (S3 или локальное)
         storage_key = final_encrypted_name  # S3 key или относительный путь
@@ -415,7 +421,18 @@ async def upload_file(
             )
         )
 
-        logger.info(f"✅ Файл успешно загружен: {original_filename}")
+        total_s = time.perf_counter() - pipeline_start
+        receive_s = (save_done_at - pipeline_start) if save_done_at else 0.0
+        encrypt_s = (encrypt_done_at - save_done_at) if save_done_at and encrypt_done_at else 0.0
+        after_encrypt_s = max(0.0, total_s - receive_s - encrypt_s)
+        logger.info(
+            "upload complete size=%sB receive=%.2fs encrypt=%.2fs post=%.2fs total=%.2fs",
+            file_size,
+            receive_s,
+            encrypt_s,
+            after_encrypt_s,
+            total_s,
+        )
 
         return {
             "message": "Файл успешно загружен и зашифрован",

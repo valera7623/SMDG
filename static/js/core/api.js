@@ -111,17 +111,72 @@ export const files = {
         return requestJSON('/list');
     },
 
-    async upload(file) {
+    /**
+     * @param {File} file
+     * @param {(loaded: number, total: number) => void} [onProgress] bytes sent to server
+     */
+    upload(file, onProgress) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const data = await requestJSON('/upload', {
-            method: 'POST',
-            body: formData,
-        });
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE}/upload`, true);
+            xhr.withCredentials = true;
 
-        console.log('API upload response:', data);
-        return data;
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable && onProgress) {
+                    onProgress(event.loaded, event.total);
+                }
+            };
+
+            xhr.onload = () => {
+                if (xhr.status === 401) {
+                    const err = new Error('Unauthorized');
+                    err.status = 401;
+                    reject(err);
+                    return;
+                }
+
+                let data = {};
+                try {
+                    data = JSON.parse(xhr.responseText || '{}');
+                } catch {
+                    data = {};
+                }
+
+                if (xhr.status === 403) {
+                    let detail = 'Forbidden';
+                    if (typeof data.detail === 'string') {
+                        detail = data.detail;
+                    } else if (Array.isArray(data.detail)) {
+                        detail = data.detail.map((item) => item.msg || String(item)).join(', ');
+                    }
+                    const err = new Error(detail);
+                    err.status = 403;
+                    reject(err);
+                    return;
+                }
+
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    console.log('API upload response:', data);
+                    resolve(data);
+                    return;
+                }
+
+                const err = new Error(data.detail || `HTTP ${xhr.status}`);
+                err.status = xhr.status;
+                reject(err);
+            };
+
+            xhr.onerror = () => {
+                const err = new Error('Network error');
+                err.status = 0;
+                reject(err);
+            };
+
+            xhr.send(formData);
+        });
     },
 
     async download(filename) {
