@@ -179,6 +179,20 @@ class LocalStorageBackend(StorageBackend):
     async def upload(self, key: str, file_path: Path, content_type: Optional[str] = None) -> ObjectMetadata:
         """Копировать файл в хранилище (для локального режима это просто копирование)."""
         dest_path = self._resolve_path(key)
+        src_path = file_path.resolve()
+
+        if src_path == dest_path.resolve():
+            if not dest_path.exists():
+                raise FileNotFoundError(f"Source file not found: {file_path}")
+            stat = dest_path.stat()
+            logger.debug(f"📤 Upload skipped (already in place): {key} ({stat.st_size} bytes)")
+            return ObjectMetadata(
+                key=key,
+                size=stat.st_size,
+                last_modified=stat.st_mtime,
+                content_type=content_type,
+            )
+
         dest_path.parent.mkdir(parents=True, exist_ok=True)
 
         import aiofiles

@@ -69,6 +69,21 @@ async def test_upload_creates_nested_dirs(local_backend, sample_file):
 
 
 @pytest.mark.asyncio
+async def test_upload_same_path_no_copy(local_backend, sample_file):
+    """upload is a no-op when source file is already at destination key."""
+    key = "sample.txt"
+    dest = local_backend.base_dir / key
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(sample_file.read_bytes())
+
+    metadata = await local_backend.upload(key, dest)
+
+    assert metadata.key == key
+    assert metadata.size == sample_file.stat().st_size
+    assert dest.read_bytes() == sample_file.read_bytes()
+
+
+@pytest.mark.asyncio
 async def test_download_retrieves_file(local_backend, sample_file):
     """download извлекает файл из хранилища."""
     key = "test/sample.txt"

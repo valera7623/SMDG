@@ -5,9 +5,12 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict, ValidationEr
 import magic
 import uuid
 import asyncio
+import hashlib
 import json
 from pathlib import Path
 import logging
+
+import aiofiles
 
 from app.core import (
     UPLOAD_DIR,
@@ -26,7 +29,7 @@ try:
 except ImportError:  # pragma: no cover - tracing is optional
     trace = None  # type: ignore[assignment]
 from app.crypto.crypto import crypto_manager
-from app.core.utils import calculate_hash_async, sanitize_filename
+from app.core.utils import sanitize_filename
 from app.core.auth import get_current_user, TokenData
 from app.core.dependencies import get_db_for_write
 from app.core.database import execute_with_timeout as execute_db_with_timeout
@@ -145,6 +148,59 @@ def validate_file_safety(
     return detected_mime, orig_ext
 
 
+async def _save_upload_to_disk(
+    upload: UploadFile,
+    dest: Path,
+    preview: bytes,
+    max_bytes: int,
+) -> tuple[int, str]:
+    """Stream upload to disk in chunks; return (size, sha256 hex)."""
+    hasher = hashlib.sha256()
+    size = 0
+    chunk_size = 1024 * 1024
+
+    async with aiofiles.open(dest, "wb") as out:
+        for chunk in (preview,):
+            if not chunk:
+                continue
+            size += len(chunk)
+            if size > max_bytes:
+                raise HTTPException(413, f"Файл слишком большой (макс. {max_bytes // (1024 * 1024)}MB)")
+            hasher.update(chunk)
+            await out.write(chunk)
+
+        while True:
+            chunk = await upload.read(chunk_size)
+            if not chunk:
+                break
+            size += len(chunk)
+            if size > max_bytes:
+                raise HTTPException(413, f"Файл слишком большой (макс. {max_bytes // (1024 * 1024)}MB)")
+            hasher.update(chunk)
+            await out.write(chunk)
+
+    return size, hasher.hexdigest()
+
+
+def _confirm_mime_from_preview(preview: bytes, orig_ext: str, mime_type: str) -> str:
+    """Second-pass MIME check using preview only (avoids loading full file into RAM)."""
+    detected_mime = magic.Magic(mime=True).from_buffer(preview)
+    allowed = any(
+        detected_mime == candidate or detected_mime.startswith(candidate.rstrip('*'))
+        for candidate in ALLOWED_MIME_PREFIXES
+    )
+    if allowed:
+        return detected_mime
+
+    if detected_mime == "application/octet-stream":
+        if len(preview) >= 132 and preview[128:132] == b'DICM':
+            return "application/dicom"
+        if orig_ext in {'.jpg', '.jpeg', '.png', '.gif'}:
+            return mime_type
+
+    raise HTTPException(400, f"Недопустимый тип файла: {detected_mime}")
+
+
 # ==================== Основной эндпоинт ====================
 
 @router.post("/upload")
@@ -198,43 +254,23 @@ async def upload_file(
         with tracer.start_as_current_span("upload.validate_mime"):
             preview = await file.read(8192)
             await file.seek(0)
-            mime_type, _ = validate_file_safety(original_filename, preview, 0)
+            mime_type, orig_ext = validate_file_safety(original_filename, preview, 0)
 
-        file_content = await file.read()
+        max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+        temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
+
+        with tracer.start_as_current_span("upload.write_temp"):
+            file_size, original_hash = await _save_upload_to_disk(
+                file, temp_upload_path, preview, max_bytes
+            )
         if current_span is not None:
             try:
-                current_span.set_attribute("file.size_bytes", len(file_content))
+                current_span.set_attribute("file.size_bytes", file_size)
                 current_span.set_attribute("file.mime_type", mime_type)
             except Exception:
                 pass
 
-        if len(file_content) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-            raise HTTPException(413, f"Файл слишком большой (макс. {settings.MAX_UPLOAD_SIZE_MB}MB)")
-
-        # Вторая проверка MIME (для octet-stream image fallback)
-        mime = magic.Magic(mime=True)
-        detected_mime = mime.from_buffer(file_content)
-
-        orig_ext = Path(original_filename).suffix.lower()
-
-        allowed = any(
-            detected_mime == mime_type or detected_mime.startswith(mime_type.rstrip('*'))
-            for mime_type in ALLOWED_MIME_PREFIXES
-        )
-
-        if not allowed and detected_mime == "application/octet-stream":
-            if len(file_content) >= 132 and file_content[128:132] == b'DICM':
-                detected_mime = "application/dicom"
-                allowed = True
-            elif orig_ext in {'.jpg', '.jpeg', '.png', '.gif'}:
-                allowed = True
-
-        if not allowed:
-            raise HTTPException(400, f"Недопустимый тип файла: {detected_mime}")
-
-        temp_upload_path = UPLOAD_DIR / f"{uuid.uuid4()}_{safe_filename}"
-        with open(temp_upload_path, "wb") as buffer:
-            buffer.write(file_content)
+        mime_type = _confirm_mime_from_preview(preview, orig_ext, mime_type)
 
         # Шифрование
         final_encrypted_name = f"{uuid.uuid4()}_{safe_filename}.age"
@@ -252,9 +288,6 @@ async def upload_file(
                 public_key=get_public_key(),
                 output_path=final_encrypted_path
             )
-
-        with tracer.start_as_current_span("upload.hash_original"):
-            original_hash = await calculate_hash_async(temp_upload_path)
 
         # Загрузка в хранилище (S3 или локальное)
         storage_key = final_encrypted_name  # S3 key или относительный путь
@@ -303,7 +336,7 @@ async def upload_file(
             original_name=original_filename,
             encrypted_name=final_encrypted_name,
             encrypted_path=storage_key,  # Теперь хранит S3 key или относительный путь
-            original_size=len(file_content),
+            original_size=file_size,
             encrypted_size=encrypted_size,
             original_hash=original_hash,
             mime_type=mime_type,
@@ -358,7 +391,7 @@ async def upload_file(
             success=True,
             metadata={
                 "mime_type": mime_type,
-                "size": len(file_content),
+                "size": file_size,
                 "encrypted_name": final_encrypted_name,
                 "ttl_days": params.ttl_days
             }
@@ -372,7 +405,7 @@ async def upload_file(
                     "file_id": new_file.id,
                     "original_name": original_filename,
                     "encrypted_name": final_encrypted_name,
-                    "size": len(file_content),
+                    "size": file_size,
                     "mime_type": mime_type,
                     "patient_id": params.patient_id,
                     "download_url": download_url,
