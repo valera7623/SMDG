@@ -4,6 +4,17 @@ site_url: https://fileguardian.info/help/
 repo_url: https://github.com/valera7623/SMDG
 repo_name: valera7623/SMDG
 
+exclude_docs: |
+  src/**
+  locales/**
+  runbooks/**
+  ARCHIVE_E2E.md
+  ZERO_DOWNTIME_DEPLOY.md
+  load-testing.md
+  generate_i18n.py
+  MKDOCS.md
+  README.md
+
 theme:
   name: material
   language: ru

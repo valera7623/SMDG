@@ -31,7 +31,7 @@ jobs:
         run: |
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
-          poetry install --only main --with docs --no-interaction --no-ansi
+          poetry install --without dev --with docs --no-interaction --no-ansi
 
       - name: Build MkDocs site
         run: poetry run mkdocs build
