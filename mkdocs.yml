@@ -1,0 +1,116 @@
+site_name: SMDG — документация
+site_description: Secure Medical Data Gateway — руководства для пользователей, администраторов и разработчиков
+site_url: https://fileguardian.info/help/
+repo_url: https://github.com/valera7623/SMDG
+repo_name: valera7623/SMDG
+
+theme:
+  name: material
+  language: ru
+  palette:
+    - scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Тёмная тема
+    - scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Светлая тема
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+    - toc.follow
+
+plugins:
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: ru
+          default: true
+          name: Русский
+          build: true
+          site_name: SMDG — документация
+          site_description: Secure Medical Data Gateway — руководства для пользователей, администраторов и разработчиков
+          theme:
+            language: ru
+        - locale: en
+          name: English
+          build: true
+          site_name: SMDG Documentation
+          site_description: Secure Medical Data Gateway — guides for users, administrators, and developers
+          theme:
+            language: en
+          nav_translations:
+            Главная: Home
+            Руководство пользователя: User Guide
+            Руководство администратора: Admin Guide
+            Руководство разработчика: Developer Guide
+            API: API
+            Деплой: Deployment
+            Дополнительно: More
+  - search
+  - mermaid2
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Главная: index.md
+  - Руководство пользователя:
+      - user-guide/getting-started.md
+      - user-guide/files.md
+      - user-guide/links-and-sharing.md
+      - user-guide/dicom.md
+  - Руководство администратора:
+      - admin-guide/deployment.md
+      - admin-guide/configuration.md
+      - admin-guide/backup.md
+      - admin-guide/monitoring.md
+  - Руководство разработчика:
+      - developer-guide/architecture.md
+      - developer-guide/multi-tenancy.md
+      - developer-guide/testing.md
+  - API:
+      - api/index.md
+      - api/auth.md
+      - api/files.md
+      - api/dicom.md
+      - api/webhooks.md
+      - api/admin.md
+  - Деплой:
+      - deployment/docker.md
+      - deployment/vps.md
+      - deployment/ci-cd.md
+      - deployment/environment-variables.md
+  - Дополнительно:
+      - misc/changelog.md
+      - misc/faq.md
+      - misc/glossary.md
+      - misc/security.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/valera7623/SMDG
+
+extra_javascript:
+  - javascripts/lang-redirect.js

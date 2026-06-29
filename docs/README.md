@@ -4,7 +4,30 @@
 
 This directory contains the SMDG user- and operator-facing documentation.
 
-## Structure
+## MkDocs site (MedInsight-style)
+
+Интерактивный сайт документации на **MkDocs Material** с i18n (RU + EN):
+
+```bash
+poetry install --with docs
+poetry run mkdocs serve    # http://127.0.0.1:8000
+poetry run mkdocs build    # → site/
+```
+
+| Раздел | Аудитория |
+|--------|-----------|
+| [user-guide/](user-guide/) | Пользователи |
+| [admin-guide/](admin-guide/) | Администраторы |
+| [developer-guide/](developer-guide/) | Разработчики |
+| [api/](api/) | Интеграторы |
+| [deployment/](deployment/) | DevOps |
+| [misc/](misc/) | Changelog, FAQ |
+
+Подробнее: [MKDOCS.md](MKDOCS.md). Конфигурация: [`mkdocs.yml`](../mkdocs.yml) в корне репозитория.
+
+На проде (demo): `https://fileguardian.info/help/`
+
+## Structure (legacy i18n markdown)
 
 ```
 docs/
