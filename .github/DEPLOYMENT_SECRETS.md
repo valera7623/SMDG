@@ -63,6 +63,10 @@ secrets/age.key
 | `VPS2_USER` | `smdg` |
 | `VPS2_SSH_KEY` | Приватный SSH-ключ для fileguardian (можно использовать общий `VPS_SSH_KEY`) |
 
+**ProxyJump:** если `VPS2_SSH_PROXY_JUMP` не `false`, тот же публичный ключ из `VPS2_SSH_KEY` должен быть в `/home/smdg/.ssh/authorized_keys` на **обоих** VPS (primary и fileguardian). В логе шага «Setup SSH» Actions печатает строку ключа — сверьте с `authorized_keys` на fileguardian.
+
+Для ProxyJump также нужны секреты primary: `VPS_HOST`, `VPS_USER` (и тот же ключ в `VPS_SSH_KEY` или общий `VPS2_SSH_KEY`).
+
 ### Optional Secrets
 
 | Name | Описание |
