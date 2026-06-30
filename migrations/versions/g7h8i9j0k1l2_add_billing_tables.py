@@ -1,7 +1,7 @@
 """add billing subscriptions and payments tables
 
 Revision ID: g7h8i9j0k1l2
-Revises: f6a7b8c9d0e1
+Revises: a2b3c4d5e6f7
 Create Date: 2026-06-29
 """
 
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision: str = "g7h8i9j0k1l2"
-down_revision: Union[str, Sequence[str], None] = "f6a7b8c9d0e1"
+down_revision: Union[str, Sequence[str], None] = "a2b3c4d5e6f7"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
