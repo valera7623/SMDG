@@ -126,6 +126,7 @@ services:
       DEMO_MODE: "true"
       DEPLOYMENT_TYPE: "demo"
       DEV_MODE: "true"
+      YANDEX_METRIKA_COUNTER_ID: ${YANDEX_METRIKA_COUNTER_ID:-110273525}
 
       # Secrets via env (no Docker secrets in demo)
       # Required: set POSTGRES_PASSWORD and ADMIN_PASSWORD in .env

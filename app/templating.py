@@ -51,6 +51,7 @@ def _apply_jinja_env_globals(environment: Any) -> None:
     environment.globals["api_url"] = settings.API_PUBLIC_URL
     environment.globals["asset_pipeline"] = asset_pipeline
     environment.globals["demo_mode"] = settings.demo_mode
+    environment.globals["yandex_metrika_counter_id"] = settings.yandex_metrika_counter_id
 
 
 def create_jinja_env(template_dir: str | None = None) -> "Environment":

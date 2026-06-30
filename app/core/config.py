@@ -452,6 +452,7 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     demo_reset_interval_hours: int = 24
     demo_max_upload_mb: int = 10
+    yandex_metrika_counter_id: str = ""
 
     @property
     def effective_max_upload_mb(self) -> int:
