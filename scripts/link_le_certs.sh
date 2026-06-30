@@ -90,3 +90,5 @@ if command -v openssl >/dev/null 2>&1; then
   echo "Issuer: $(openssl x509 -in "${CERTS_DIR}/fullchain.pem" -noout -issuer 2>/dev/null | sed 's/issuer= //')"
   echo "Expires: $(openssl x509 -in "${CERTS_DIR}/fullchain.pem" -noout -enddate 2>/dev/null | sed 's/notAfter=//')"
 fi
+
+"${ROOT_DIR}/scripts/fix_docker_build_permissions.sh"
