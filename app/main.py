@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from slowapi.errors import RateLimitExceeded
@@ -434,6 +434,31 @@ async def admin_users():
 async def admin_dlq():
     """SPA: DLQ (hash #/admin/dlq)."""
     return _serve_static_html("static/html/index.html", "SMDG UI не найден")
+
+
+@app.get("/payment/success")
+async def payment_success_redirect(request: Request):
+    query = request.url.query
+    suffix = f"?{query}" if query else ""
+    return RedirectResponse(url=f"/#/payment/success{suffix}", status_code=302)
+
+
+@app.get("/payment/cancel")
+async def payment_cancel_redirect(request: Request):
+    query = request.url.query
+    suffix = f"?{query}" if query else ""
+    return RedirectResponse(url=f"/#/payment/cancel{suffix}", status_code=302)
+
+
+@app.get("/success")
+async def legacy_success_redirect(request: Request):
+    return await payment_success_redirect(request)
+
+
+@app.get("/cancel")
+async def legacy_cancel_redirect(request: Request):
+    return await payment_cancel_redirect(request)
+
     
 @app.middleware("http")
 async def add_rate_limit_headers(request: Request, call_next):

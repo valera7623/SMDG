@@ -205,7 +205,7 @@ FEATURE_MATRIX: dict[DeploymentType, dict[Feature, Any]] = {
 
         # Multi-tenancy
         Feature.MULTI_TENANCY: False,
-        Feature.BILLING: False,
+        Feature.BILLING: True,
         Feature.WHITE_LABEL: False,
 
         # GDPR/HIPAA — show compliance capabilities to US audience

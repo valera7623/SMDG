@@ -70,6 +70,7 @@ opentelemetry-instrumentation-httpx = "^0.49b0"
 opentelemetry-propagator-b3 = "^1.28.0"
 
 httpx = "0.28.1"
+stripe = "^11.0.0"
 nest-asyncio = "1.6.0"
 pyotp = "^2.9.0"
 aiofiles = "^25.1.0"

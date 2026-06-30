@@ -32,7 +32,21 @@ from app.api.sli import router as sli_router
 from app.api.sli import sli_root
 from app.api.slo import router as slo_router
 from app.api.tracing import router as tracing_router
+from app.api.payments import admin_router as payments_admin_router
+from app.api.payments import router as payments_router
+from app.api.payments_yookassa import admin_router as yookassa_admin_router
+from app.api.payments_yookassa import router as yookassa_router
+from app.api.payment_webhooks import router as payment_webhooks_router
 from app.core.config import settings
+
+
+def register_billing_routers(app: FastAPI) -> None:
+    """Stripe / YooKassa billing (same pattern as ReportAgent)."""
+    app.include_router(payments_router, prefix="/api")
+    app.include_router(payments_admin_router, prefix="/api")
+    app.include_router(yookassa_router, prefix="/api")
+    app.include_router(yookassa_admin_router, prefix="/api")
+    app.include_router(payment_webhooks_router)
 
 
 def register_api_routers(app: FastAPI) -> None:
@@ -64,6 +78,8 @@ def register_api_routers(app: FastAPI) -> None:
     app.include_router(dead_letter_router)
     app.include_router(bulkhead.router)
     app.include_router(archive.router)
+
+    register_billing_routers(app)
 
     app.add_api_route(
         "/api/sli",

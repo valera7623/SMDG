@@ -206,6 +206,46 @@ export const files = {
     },
 };
 
+// ── Billing (Stripe + YooKassa) ───────────────────────────────────────────────
+
+export const payments = {
+    async config() {
+        return requestJSON('/payments/config');
+    },
+
+    async prices() {
+        return requestJSON('/payments/prices');
+    },
+
+    async createCheckout(body) {
+        return requestJSON('/payments/create-checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+    },
+
+    async subscription() {
+        return requestJSON('/payments/subscription');
+    },
+
+    async cancelSubscription() {
+        return requestJSON('/payments/cancel-subscription', { method: 'POST' });
+    },
+
+    async yookassaCreate(planType) {
+        return requestJSON('/payments/yookassa/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan_type: planType }),
+        });
+    },
+
+    async yookassaStatus(paymentId) {
+        return requestJSON(`/payments/yookassa/status/${encodeURIComponent(paymentId)}`);
+    },
+};
+
 // ── Admin — файлы ─────────────────────────────────────────────────────────────
 
 export const adminFiles = {

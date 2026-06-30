@@ -43,6 +43,7 @@ from sqlalchemy import select
 from datetime import datetime, timedelta, timezone
 from app.core.timeout import TimeoutError, timeout
 from app.core.bulkhead import bulkhead
+from app.billing.usage import check_upload_allowed, consume_upload_slot
 from app.services.file_audit_service import get_client_ip, safe_record_file_access_event
 
 logger = logging.getLogger(__name__)
@@ -325,6 +326,7 @@ async def upload_file(
         db_user = result.scalar_one_or_none()
         if db_user:
             user_id = db_user.id
+            await check_upload_allowed(db, user_id)
         else:
             audit_logger.log_operation(
                 action="upload_warning",
@@ -386,6 +388,10 @@ async def upload_file(
                 },
             )
             await execute_db_with_timeout(db.commit(), operation="upload_commit_link")
+
+        if user_id:
+            await consume_upload_slot(db, user_id, tenant.id)
+            await execute_db_with_timeout(db.commit(), operation="upload_commit_usage")
 
         download_url = str(request.url_for('download_by_token')) + f"?token={token}"
 

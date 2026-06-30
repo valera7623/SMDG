@@ -118,6 +118,7 @@
         "system.info_api": "API: /health, /docs, /admin",
         "nav.health": "Health",
         "nav.docs": "Documentation",
+        "nav.billing": "Pricing",
         "nav.api_docs": "API documentation",
         "nav.admin": "Admin panel",
 

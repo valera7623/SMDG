@@ -108,6 +108,7 @@
         "system.info_api": "API: /health, /docs, /admin",
         "nav.health": "Проверка здоровья",
         "nav.docs": "Документация",
+        "nav.billing": "Тарифы",
         "nav.api_docs": "Документация API",
         "nav.admin": "Панель администратора",
 

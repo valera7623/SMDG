@@ -6,7 +6,15 @@ import { renderLogin, doLogout } from "./pages/auth.js";
 import { renderFiles } from "./pages/files.js";
 import { renderAdminFiles } from "./pages/admin-files-page.js";
 import { renderAdminUsers, renderAdminDlq, stopDlqTimer } from "./pages/admin-pages.js";
+import { renderBillingPricing } from "./pages/billing-pricing.js";
+import { renderBillingPricingYookassa } from "./pages/billing-pricing-yookassa.js";
+import { renderBillingSubscription } from "./pages/billing-subscription.js";
+import { renderBillingPaymentSuccess } from "./pages/billing-payment-success.js";
+import { renderBillingPaymentCancel } from "./pages/billing-payment-cancel.js";
+import { payments as paymentsAPI } from "./core/api.js";
 import { appState } from "./app-state.js";
+
+window.__BILLING_UI_ENABLED__ = false;
 
 async function checkFeatureFlags() {
   try {
@@ -14,9 +22,22 @@ async function checkFeatureFlags() {
     if (resp.ok) {
       const data = await resp.json();
       window.__DICOM_VIEWER_ENABLED__ = !!data.features?.dicom_viewer;
+      window.__BILLING_FEATURE__ = !!data.features?.billing;
     }
   } catch {
     window.__DICOM_VIEWER_ENABLED__ = false;
+    window.__BILLING_FEATURE__ = false;
+  }
+
+  if (appState.isAuthenticated) {
+    try {
+      const cfg = await paymentsAPI.config();
+      window.__BILLING_UI_ENABLED__ = !!(
+        window.__BILLING_FEATURE__ || cfg.billing_enabled || cfg.stripe_enabled || cfg.yookassa_enabled
+      );
+    } catch {
+      window.__BILLING_UI_ENABLED__ = !!window.__BILLING_FEATURE__;
+    }
   }
 }
 
@@ -53,6 +74,13 @@ async function boot() {
   registerRoute("/admin/files", (root) => renderAdminFiles(root));
   registerRoute("/admin/users", (root) => renderAdminUsers(root));
   registerRoute("/admin/dlq", (root) => renderAdminDlq(root));
+  registerRoute("/pricing", (root) => renderBillingPricing(root));
+  registerRoute("/pricing-yookassa", (root) => renderBillingPricingYookassa(root));
+  registerRoute("/subscription", (root) => renderBillingSubscription(root));
+  registerRoute("/payment/success", (root, params) => renderBillingPaymentSuccess(root, params));
+  registerRoute("/payment/cancel", (root) => renderBillingPaymentCancel(root));
+  registerRoute("/success", (root, params) => renderBillingPaymentSuccess(root, params));
+  registerRoute("/cancel", (root) => renderBillingPaymentCancel(root));
 
   await checkFeatureFlags();
   await refreshSession();
@@ -79,6 +107,7 @@ async function boot() {
 
   window.__smdgOnAuthSuccess = async () => {
     const data = await refreshSession();
+    await checkFeatureFlags();
     if (data) navigate("/files");
   };
 

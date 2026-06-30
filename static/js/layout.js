@@ -7,6 +7,21 @@ function docsHref() {
   return currentLang() === "ru" ? "/help/" : "/help/en/";
 }
 
+function billingNavItem(current) {
+  if (!window.__BILLING_UI_ENABLED__) return '';
+  return navLink(
+    { path: '/pricing', labelKey: 'nav.billing', fallback: 'Тарифы', icon: '💳' },
+    current,
+  );
+}
+
+function userNavItems(current) {
+  return [
+    ...userNav.map((n) => navLink(n, current)),
+    billingNavItem(current),
+  ].join('');
+}
+
 const userNav = [
   { path: "/files", labelKey: "files.list", fallback: "Файлы", icon: "📋" },
 ];
@@ -49,7 +64,7 @@ export function renderShell(contentHtml, title = "") {
       <aside class="sidebar">
         <div class="sidebar-brand">🔐 SMDG</div>
         <nav class="sidebar-nav">
-          ${userNav.map((n) => navLink(n, current)).join("")}
+          ${userNavItems(current)}
           ${adminSection}
           <div class="nav-section">${t("nav.external", "Сервис")}</div>
           ${externalNavItems().map((n) => externalLink(n)).join("")}

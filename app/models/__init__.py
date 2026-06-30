@@ -10,6 +10,8 @@ from app.models.dead_letter import DeadLetterMessage, DeadLetterLog
 from app.models.archive import ArchiveRecord, ArchiveRestoreRequest
 from app.models.deleted_user import DeletedUser
 from app.models.file_access_event import FileAccessEvent
+from app.models.subscription import Subscription
+from app.models.payment import Payment
 
 __all__ = [
     'User',
@@ -25,4 +27,6 @@ __all__ = [
     'ArchiveRestoreRequest',
     'DeletedUser',
     'FileAccessEvent',
+    'Subscription',
+    'Payment',
 ]
