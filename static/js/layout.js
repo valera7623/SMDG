@@ -9,10 +9,10 @@ function docsHref() {
 
 function billingNavItem(current) {
   if (!window.__BILLING_UI_ENABLED__) return '';
-  return navLink(
-    { path: '/pricing', labelKey: 'nav.billing', fallback: 'Тарифы', icon: '💳' },
-    current,
-  );
+  return [
+    navLink({ path: '/pricing', labelKey: 'nav.billing', fallback: 'Тарифы', icon: '💳' }, current),
+    navLink({ path: '/subscription', labelKey: 'nav.subscription', fallback: 'Подписка', icon: '📊' }, current),
+  ].join('');
 }
 
 function userNavItems(current) {
@@ -75,6 +75,7 @@ export function renderShell(contentHtml, title = "") {
           <button type="button" class="btn-icon menu-btn" data-action="toggle-sidebar">☰</button>
           <p class="header-title" role="heading" aria-level="2">${escapeHtml(title)}</p>
           <div class="header-actions">
+            ${window.__BILLING_UI_ENABLED__ ? `<a href="#/pricing" class="btn btn-outline btn-sm">${t("nav.billing", "Тарифы")}</a>` : ""}
             <a href="${docsHref()}" class="btn btn-outline btn-sm" target="_blank" rel="noopener">${t("nav.docs", "Документация")}</a>
             <div id="smdgLangAndMenu" class="header-lang"></div>
             <span class="key-badge" title="${t("auth.username", "Пользователь")}">👤 ${escapeHtml(appState.username || "—")}${appState.isAdmin ? ' <span class="badge">Admin</span>' : ""}</span>

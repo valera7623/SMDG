@@ -119,6 +119,7 @@
         "nav.health": "Health",
         "nav.docs": "Documentation",
         "nav.billing": "Pricing",
+        "nav.subscription": "Subscription",
         "nav.api_docs": "API documentation",
         "nav.admin": "Admin panel",
 

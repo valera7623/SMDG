@@ -109,6 +109,7 @@
         "nav.health": "Проверка здоровья",
         "nav.docs": "Документация",
         "nav.billing": "Тарифы",
+        "nav.subscription": "Подписка",
         "nav.api_docs": "Документация API",
         "nav.admin": "Панель администратора",
 

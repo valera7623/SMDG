@@ -26,7 +26,7 @@ from app.core.auth_utils import TokenData
 from app.core.bulkhead import BulkheadRejectedError, BulkheadTimeoutError
 from app.core.config import get_cors_allow_origins, settings
 from app.core.database import AsyncSessionLocal
-from app.core.feature_flags import get_deployment_info
+from app.core.feature_flags import Feature, get_deployment_info, is_enabled
 from app.core.middleware import (
     ActiveRequestsMiddleware,
     AuditMiddleware,
@@ -355,6 +355,7 @@ async def health_check():
             "web_interface": True,
             "static_files": True,
             "dicom_viewer": settings.dicom_viewer_enabled,
+            "billing": is_enabled(Feature.BILLING),
         },
         "directories": {
             "static": os.path.exists("static"),

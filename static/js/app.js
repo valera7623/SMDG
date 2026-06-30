@@ -29,6 +29,8 @@ async function checkFeatureFlags() {
     window.__BILLING_FEATURE__ = false;
   }
 
+  window.__BILLING_UI_ENABLED__ = !!window.__BILLING_FEATURE__;
+
   if (appState.isAuthenticated) {
     try {
       const cfg = await paymentsAPI.config();
@@ -36,7 +38,7 @@ async function checkFeatureFlags() {
         window.__BILLING_FEATURE__ || cfg.billing_enabled || cfg.stripe_enabled || cfg.yookassa_enabled
       );
     } catch {
-      window.__BILLING_UI_ENABLED__ = !!window.__BILLING_FEATURE__;
+      /* keep feature-flag default */
     }
   }
 }
@@ -82,8 +84,8 @@ async function boot() {
   registerRoute("/success", (root, params) => renderBillingPaymentSuccess(root, params));
   registerRoute("/cancel", (root) => renderBillingPaymentCancel(root));
 
-  await checkFeatureFlags();
   await refreshSession();
+  await checkFeatureFlags();
 
   if (!location.hash || location.hash === "#") {
     location.hash = appState.isAuthenticated ? "#/files" : "#/login";
